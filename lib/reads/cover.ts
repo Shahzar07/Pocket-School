@@ -36,6 +36,19 @@ export interface CoverBrief {
   ageNote?: string;
 }
 
+const GENERIC_COVER_PROMPT = /^(uploaded cover|book cover|cover)$/i;
+
+/** Alt text for a cover. A real picture brief wins. A title is the fallback. */
+export function coverAltText(input: { title?: string; prompt?: string }): string {
+  const prompt = (input.prompt ?? '').replace(/\s+/g, ' ').trim();
+  if (prompt && !GENERIC_COVER_PROMPT.test(prompt)) {
+    return prompt.length > 200 ? `${prompt.slice(0, 199).trimEnd()}…` : prompt;
+  }
+  const title = (input.title ?? '').trim();
+  if (title && !/^untitled (book|story)$/i.test(title)) return `Cover of ${title}`;
+  return 'Book cover';
+}
+
 const RISKS: Record<string, RegExp[]> = {
   '5+': [/blood/i, /kill/i, /gun/i, /horror/i, /death/i, /weapon/i, /romance/i, /kiss/i, /nude/i],
   '8+': [/gore/i, /sexual/i, /explicit/i, /horror/i, /weapon/i, /nude/i],

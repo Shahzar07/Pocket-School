@@ -75,6 +75,14 @@ export interface BookSeries {
   nextBlurb?: string;
 }
 
+/** Home carousel window. Empty dates mean the book can show on any day. */
+export interface BookShowcase {
+  featured: boolean;
+  priority: number;
+  from: string;
+  until: string;
+}
+
 export interface Book {
   id: string;
   title: string;
@@ -113,6 +121,8 @@ export interface Book {
   allocateLibrary: boolean;
   /** Listed in the store once published. */
   allocateMarketplace: boolean;
+  /** Carousel settings. A published marketplace book appears when featured is set. */
+  showcase?: BookShowcase;
   /** Who this book is for. Absent means the default set from the library and marketplace flags. */
   targets?: string[];
   series?: BookSeries;

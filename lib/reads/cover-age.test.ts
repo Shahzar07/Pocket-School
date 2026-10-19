@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { BRAND_COVER, COVER_BRAND_PALETTE, publishIssues, screenCoverAge } from './cover';
+import { BRAND_COVER, COVER_BRAND_PALETTE, coverAltText, publishIssues, screenCoverAge } from './cover';
 
 describe('cover age screen', () => {
   it('blocks a violent brief on a young title', () => {
@@ -32,6 +32,16 @@ describe('cover age screen', () => {
       chapters: [{ markdown: '![A harbour](pic)' }],
     });
     assert.deepEqual(ready, []);
+  });
+
+  it('writes cover alt text from the picture brief', () => {
+    assert.equal(
+      coverAltText({ prompt: 'A blue harbour at dawn', title: 'Harbour' }),
+      'A blue harbour at dawn',
+    );
+    assert.equal(coverAltText({ prompt: 'Uploaded cover', title: 'The Harbour Light' }), 'Cover of The Harbour Light');
+    assert.equal(coverAltText({ prompt: '', title: 'Untitled book' }), 'Book cover');
+    assert.equal(coverAltText({ prompt: 'x'.repeat(240) }).length, 200);
   });
 
   it('asks the cover model for the blue palette and keeps light text on brand ink', () => {

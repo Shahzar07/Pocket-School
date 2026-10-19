@@ -1,8 +1,32 @@
 import { proceduralArt } from '@/components/media/fallback-art';
 import { seedPricing } from '@/lib/pricing';
 import { storedBookPriceRM } from '@/lib/platform/pricing';
+import type { CoverBrief } from '@/lib/reads/cover';
 import { fullPageImage } from '@/lib/reads/picture-book';
-import type { Book } from './types';
+import type { Book, BookShowcase } from './types';
+
+function shelfCover(styleId: string, prompt: string, alt: string, font: CoverBrief['font'] = 'serif'): { image: string; brief: CoverBrief } {
+  const artSrc = proceduralArt(styleId, prompt, 0);
+  return {
+    image: artSrc,
+    brief: {
+      styleId,
+      artSrc,
+      prompt,
+      placement: 'bottom',
+      font,
+      brand: true,
+      alt,
+      ageOk: true,
+    },
+  };
+}
+
+function featuredSpot(priority: number): BookShowcase {
+  return { featured: true, priority, from: '', until: '' };
+}
+
+const QUIET_SPOT: BookShowcase = { featured: false, priority: 0, from: '', until: '' };
 
 const DEFAULT_BOOK_USD = seedPricing().defaultBookUsd;
 const DEFAULT_BOOK_RM = storedBookPriceRM(DEFAULT_BOOK_USD);
@@ -191,13 +215,21 @@ Hold those three gates in your head before you learn a single case name: agreeme
 
 const MONSOON = `A draft about a night market that appears only when the wind turns, and the girl who prices other people’s memories. Outline only — not for the shelf.`;
 
+const HARBOUR_COVER = shelfCover('novel', 'A harbour at night, a lighthouse, and a small fishing boat', 'A harbour at night with a lighthouse and a small fishing boat');
+const NOTEBOOK_COVER = shelfCover('illustrated-kids', 'A blue notebook open on a kitchen table', 'A blue notebook open on a kitchen table', 'rounded');
+const CELLS_COVER = shelfCover('academic', 'A plant cell and a red blood cell on a textbook plate', 'A plant cell and a red blood cell drawn as a textbook plate');
+const MALACCA_COVER = shelfCover('novel', 'Sailing ships at the river mouth of Malacca', 'Sailing ships at the river mouth of Malacca');
+const CONTRACT_COVER = shelfCover('minimalist', 'An open contract and a pen on a plain desk', 'An open contract and a pen on a plain desk');
+const WINDOW_COVER = shelfCover('illustrated-kids', 'A child in a yellow raincoat at a yellow window', 'A child in a yellow raincoat at a yellow window', 'rounded');
+const MONSOON_COVER = shelfCover('novel', 'A night market stall under a turning wind', 'A night market stall under a turning wind');
+
 export const BOOKS: Book[] = [
   {
     id: 'harbour-light',
     title: 'The Harbour Light',
     author: 'ET AI',
     blurb: 'A girl, a lighthouse that should be empty, and a line in her father’s handwriting telling her to come before the monsoon.',
-    cover: { from: '#1E6A83', to: '#14343F', accent: '#E9F7FA' },
+    cover: { from: '#1E6A83', to: '#14343F', accent: '#E9F7FA', image: HARBOUR_COVER.image },
     category: 'general',
     form: 'fiction',
     genre: 'Adventure',
@@ -216,6 +248,7 @@ export const BOOKS: Book[] = [
     programme: 'Lower Secondary',
     allocateLibrary: true,
     allocateMarketplace: true,
+    showcase: featuredSpot(40),
     series: {
       id: 'straits',
       name: 'The Straits',
@@ -223,14 +256,7 @@ export const BOOKS: Book[] = [
       nextTitle: 'The Lantern Market',
       nextBlurb: 'The second book follows the blue notebook off the water and into the market that only opens when the wind changes.',
     },
-    coverBrief: {
-      styleId: 'novel',
-      placement: 'bottom',
-      font: 'serif',
-      brand: true,
-      ageOk: true,
-      ageNote: 'Suitable for 12+.',
-    },
+    coverBrief: { ...HARBOUR_COVER.brief, ageNote: 'Suitable for 12+.' },
     weeklyReads: 980,
     releasedAt: '2026-09-02',
     region: 'MY',
@@ -280,7 +306,7 @@ export const BOOKS: Book[] = [
     title: 'The Blue Notebook',
     author: 'ET AI',
     blurb: 'Imran is allowed one true sentence every Tuesday. Then the notebook starts writing back.',
-    cover: { from: '#1E6A83', to: '#16364B', accent: '#E9F7FA' },
+    cover: { from: '#1E6A83', to: '#16364B', accent: '#E9F7FA', image: NOTEBOOK_COVER.image },
     category: 'general',
     form: 'fiction',
     genre: 'Story',
@@ -299,6 +325,8 @@ export const BOOKS: Book[] = [
     programme: 'Primary',
     allocateLibrary: true,
     allocateMarketplace: true,
+    showcase: featuredSpot(30),
+    coverBrief: { ...NOTEBOOK_COVER.brief, ageNote: 'Suitable for 8+.' },
     weeklyReads: 640,
     releasedAt: '2026-08-12',
     region: 'MY',
@@ -312,7 +340,7 @@ export const BOOKS: Book[] = [
     title: 'Cells to Systems',
     author: 'ET AI',
     blurb: 'IGCSE Biology from a single cell to a whole organism, written so the mark scheme and the idea are the same thing.',
-    cover: { from: '#1E6A83', to: '#14343F', accent: '#E9F7FA' },
+    cover: { from: '#1E6A83', to: '#14343F', accent: '#E9F7FA', image: CELLS_COVER.image },
     category: 'academic',
     form: 'non-fiction',
     genre: 'Biology',
@@ -331,6 +359,8 @@ export const BOOKS: Book[] = [
     programme: 'IGCSE',
     allocateLibrary: true,
     allocateMarketplace: true,
+    showcase: featuredSpot(50),
+    coverBrief: { ...CELLS_COVER.brief, ageNote: 'Suitable for 14+.' },
     weeklyReads: 1240,
     releasedAt: '2026-09-20',
     region: 'MY',
@@ -357,7 +387,7 @@ export const BOOKS: Book[] = [
     title: 'A Short History of Malacca',
     author: 'ET AI',
     blurb: 'Why a muddy river mouth became one of the world’s ports, and what changed when the promise changed.',
-    cover: { from: '#1E6A83', to: '#2786A4', accent: '#E9F7FA' },
+    cover: { from: '#1E6A83', to: '#2786A4', accent: '#E9F7FA', image: MALACCA_COVER.image },
     category: 'general',
     form: 'non-fiction',
     genre: 'History',
@@ -376,6 +406,8 @@ export const BOOKS: Book[] = [
     programme: 'Lower Secondary',
     allocateLibrary: true,
     allocateMarketplace: true,
+    showcase: featuredSpot(20),
+    coverBrief: { ...MALACCA_COVER.brief, ageNote: 'Suitable for 12+.' },
     weeklyReads: 540,
     releasedAt: '2026-07-28',
     region: 'MY',
@@ -389,7 +421,7 @@ export const BOOKS: Book[] = [
     title: 'Plain Words for Contract',
     author: 'ET AI',
     blurb: 'Agreement, consideration, intention — the three gates of a contract, in language you can reuse in an essay.',
-    cover: { from: '#1E6A83', to: '#171B2B', accent: '#E9F7FA' },
+    cover: { from: '#1E6A83', to: '#171B2B', accent: '#E9F7FA', image: CONTRACT_COVER.image },
     category: 'academic',
     form: 'non-fiction',
     genre: 'Law',
@@ -408,6 +440,8 @@ export const BOOKS: Book[] = [
     programme: 'LLB Law',
     allocateLibrary: true,
     allocateMarketplace: true,
+    showcase: featuredSpot(10),
+    coverBrief: { ...CONTRACT_COVER.brief, ageNote: 'Suitable for 16+.' },
     weeklyReads: 310,
     releasedAt: '2026-10-01',
     region: 'MY',
@@ -426,7 +460,7 @@ export const BOOKS: Book[] = [
     title: 'The yellow window',
     author: 'ET AI',
     blurb: 'A picture book for Ages 5–7. The same child, in the same yellow raincoat, on every page.',
-    cover: { from: '#1E6A83', to: '#2786A4', accent: '#E9F7FA', image: proceduralArt('illustrated-kids', 'yellow window cover', 0) },
+    cover: { from: '#1E6A83', to: '#2786A4', accent: '#E9F7FA', image: WINDOW_COVER.image },
     category: 'childrens_stories',
     form: 'fiction',
     genre: "Children's Stories",
@@ -445,6 +479,8 @@ export const BOOKS: Book[] = [
     programme: 'Primary',
     allocateLibrary: true,
     allocateMarketplace: true,
+    showcase: featuredSpot(5),
+    coverBrief: { ...WINDOW_COVER.brief, ageNote: 'Suitable for ages 5–7.' },
     targets: ['students'],
     weeklyReads: 40,
     releasedAt: '2026-10-16',
@@ -475,7 +511,7 @@ export const BOOKS: Book[] = [
     title: 'The Monsoon Market',
     author: 'ET AI',
     blurb: 'A market that opens only when the wind turns. Still a draft.',
-    cover: { from: '#1E6A83', to: '#232033', accent: '#E9F7FA' },
+    cover: { from: '#1E6A83', to: '#232033', accent: '#E9F7FA', image: MONSOON_COVER.image },
     category: 'general',
     form: 'fiction',
     genre: 'Fantasy',
@@ -494,6 +530,8 @@ export const BOOKS: Book[] = [
     programme: 'Lower Secondary',
     allocateLibrary: false,
     allocateMarketplace: false,
+    showcase: QUIET_SPOT,
+    coverBrief: { ...MONSOON_COVER.brief, ageNote: 'Suitable for 12+.' },
     weeklyReads: 0,
     releasedAt: '2026-10-14',
     chapters: [

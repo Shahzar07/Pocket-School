@@ -32,4 +32,10 @@ export const PREVIEW = {
   needChapter: 'Add at least one chapter before publishing.',
   stored: 'Cover saved.',
   storeFailed: 'The cover is on this page. Storage did not keep the file.',
+  featured: 'Feature on the home carousel',
+  featuredHelp: 'The carousel includes this book when it is published, listed in the marketplace, and this box is ticked.',
+  priority: 'Carousel order',
+  priorityHelp: 'A higher number is offered first.',
+  from: 'Show from',
+  until: 'Show until',
 } as const;
