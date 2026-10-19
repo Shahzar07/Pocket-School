@@ -28,8 +28,8 @@ import {
   readsDailyUsd,
   readsMonthlyUsd,
   readsYearlyUsd,
+  READS_BOOK_USD,
 } from '@/lib/reads-offer';
-import { READS_BOOK_USD } from '@/lib/payments/reads';
 
 const focus =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
@@ -251,7 +251,7 @@ export function ReadsOfferLetter() {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What you are buying</p>
           <h2 id="stack-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">The books and the shelf, priced only where we have a price.</h2>
           <p className="mt-4 text-[17px] leading-[1.7]">
-            Every book on this list is {readsMoneyWords(READS_BOOK_USD)} to buy and keep. {booksVersusUnlimitedLine()}. Those books together come to {readsMoneyWords(ownedTotal)} if you purchase each of them once. That is the cost of owning those files, not a value of the subscription. The subscription does not include the LLB book or the IGCSE book.
+            The shelf price for a book is {readsMoneyWords(READS_BOOK_USD)}. {booksVersusUnlimitedLine()}. Each title below uses the price stored for that book. Buying each of them once comes to {readsMoneyWords(ownedTotal)}. That is the cost of owning those files, not a value of the subscription. The subscription does not include the LLB book or the IGCSE book.
           </p>
           <ul className="mt-8 divide-y divide-border rounded-3xl border border-border bg-background">
             {READS_OFFER_BOOKS.map(book => (

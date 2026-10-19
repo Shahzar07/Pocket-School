@@ -1,16 +1,49 @@
 import { LEGAL_COMPANY_NO, LEGAL_ENTITY } from './legal';
 import { LANGUAGES } from './languages';
-import {
-  READS_BOOKS,
-  READS_BOOK_USD,
-  booksVersusUnlimitedLine,
-  formatShelfUsd,
-  ownOrReadLine,
-  readsDailyUsd,
-  readsPlanItem,
-} from './payments/reads';
+import { READS_BOOKS, readsPlanItem } from './payments/reads';
+import { seedPricing } from './pricing';
 
-export { READS_BOOK_USD, booksVersusUnlimitedLine, ownOrReadLine, readsDailyUsd, formatShelfUsd };
+const COUNT_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'] as const;
+
+/** Shelf price for a book that does not store its own. `seedPricing().defaultBookUsd`. */
+export function shelfBookUsd(): number {
+  return seedPricing().defaultBookUsd;
+}
+
+export const READS_BOOK_USD = shelfBookUsd();
+
+export function formatShelfUsd(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+/** How many shelf-price books it takes before their price passes one month of Reads. */
+export function booksDearerThanUnlimited(): number {
+  const month = readsPlanItem('reads', 'month');
+  if (!month || !(READS_BOOK_USD > 0)) return 0;
+  return Math.floor(month.unitAmount / READS_BOOK_USD) + 1;
+}
+
+/** Own-or-subscribe line. Amounts come from the shared shelf. */
+export function ownOrReadLine(): string {
+  const month = readsPlanItem('reads', 'month');
+  if (!month) throw new Error('Reads price is missing from the shared shelf.');
+  return `Own a book at the shelf price of ${formatShelfUsd(READS_BOOK_USD)}, or read everything for ${formatShelfUsd(month.unitAmount)}/month`;
+}
+
+/** Shelf-price books whose total passes one month of unlimited reading. */
+export function booksVersusUnlimitedLine(): string {
+  const count = booksDearerThanUnlimited();
+  const word = COUNT_WORDS[count] ?? String(count);
+  const titled = word.charAt(0).toUpperCase() + word.slice(1);
+  return `${titled} books at the shelf price cost more than a month of unlimited`;
+}
+
+/** Monthly price spread over 30 days, rounded to cents. Label it as approximate. */
+export function readsDailyUsd(sku: 'reads' | 'reads-family' = 'reads'): number {
+  const month = readsPlanItem(sku, 'month');
+  if (!month) throw new Error(`Unknown Reads plan ${sku}`);
+  return Math.round((month.unitAmount / 30) * 100) / 100;
+}
 
 /** Public sales letter. Separate from the Poket School plan ladder at /offer. */
 export const READS_OFFER_PATH = '/reads/offer';
@@ -135,7 +168,7 @@ export const READS_OFFER_FAQ: OfferFaq[] = [
   },
   {
     question: 'What does the monthly Reads price include?',
-    answer: `Poket Reads is ${formatShelfUsd(readsMonthlyUsd('reads'))} a month, or ${formatShelfUsd(readsYearlyUsd('reads'))} for the year. It opens the shelf at Primary and Lower Secondary, plus general fiction, non-fiction and children’s stories on that shelf. It does not include every IGCSE, A-Level or LLB title. Those books sit on the same shelf. The first chapter of a published book is free to sample. Any book is ${formatShelfUsd(READS_BOOK_USD)} to buy and keep. ${booksVersusUnlimitedLine()}.`,
+    answer: `Poket Reads is ${formatShelfUsd(readsMonthlyUsd('reads'))} a month, or ${formatShelfUsd(readsYearlyUsd('reads'))} for the year. It opens the shelf at Primary and Lower Secondary, plus general fiction, non-fiction and children’s stories on that shelf. It does not include every IGCSE, A-Level or LLB title. Those books sit on the same shelf. The first chapter of a published book is free to sample. The shelf price for a book is ${formatShelfUsd(READS_BOOK_USD)} to buy and keep. A title that stores its own price uses that figure. ${booksVersusUnlimitedLine()}.`,
   },
   {
     question: 'What is Reads Family?',
@@ -143,7 +176,7 @@ export const READS_OFFER_FAQ: OfferFaq[] = [
   },
   {
     question: 'If I buy a book, do I keep it?',
-    answer: `Yes. A book is ${formatShelfUsd(READS_BOOK_USD)} to buy, and it stays in your library after a subscription ends.`,
+    answer: `Yes. You buy it at the price stored for that title. The shelf price is ${formatShelfUsd(READS_BOOK_USD)} when a title does not store its own. The file stays in your library after a subscription ends.`,
   },
   {
     question: 'What does Ask ET do inside a book?',
@@ -173,7 +206,7 @@ export const READS_OFFER_FOUNDER = {
   paragraphs: [
     'I am Harry Seggu, founder of Poket School.',
     'Poket Reads is a shelf we sell on its own, from Malaysia. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. A household can subscribe, or buy one published book and keep it.',
-    `The figures on this page are the prices in the product. A book is ${readsUsdWords(READS_BOOK_USD)} to buy and keep. Reads is ${readsUsdWords(readsMonthlyUsd('reads'))} a month, or ${readsUsdWords(readsYearlyUsd('reads'))} for the year. Reads Family is ${readsUsdWords(readsMonthlyUsd('reads-family'))} a month, or ${readsUsdWords(readsYearlyUsd('reads-family'))} for the year. ${booksVersusUnlimitedLine()}. The subscription opens Primary and Lower Secondary, plus general fiction, non-fiction and children’s stories on that shelf. IGCSE, A-Level and LLB titles can be sampled and bought. They are not included in that monthly price.`,
+    `The figures on this page are the prices in the product. The shelf price for a book is ${readsUsdWords(READS_BOOK_USD)} to buy and keep. A title that stores its own price uses that figure. Reads is ${readsUsdWords(readsMonthlyUsd('reads'))} a month, or ${readsUsdWords(readsYearlyUsd('reads'))} for the year. Reads Family is ${readsUsdWords(readsMonthlyUsd('reads-family'))} a month, or ${readsUsdWords(readsYearlyUsd('reads-family'))} for the year. ${booksVersusUnlimitedLine()}. The subscription opens Primary and Lower Secondary, plus general fiction, non-fiction and children’s stories on that shelf. IGCSE, A-Level and LLB titles can be sampled and bought. They are not included in that monthly price.`,
     'The lines under Read a page are the openings of published chapters. I have not put a customer’s words on this page. We do not have them yet.',
   ],
 } as const;
@@ -220,7 +253,7 @@ export function readsOfferJsonLd() {
           ...productOffers,
           {
             '@type': 'Offer',
-            name: 'Own a book',
+            name: 'Shelf price for a book',
             price: READS_BOOK_USD.toFixed(2),
             priceCurrency: 'USD',
             url: READS_OFFER_URL,

@@ -245,7 +245,8 @@ async function og(covers: Buffer[]): Promise<Buffer> {
   <text x="72" y="300" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">Books you can</text>
   <text x="72" y="376" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">subscribe to</text>
   <text x="72" y="452" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">from Malaysia.</text>
-  <text x="72" y="530" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="26">${escapeXml(ownOrReadLine())}.</text>
+  <text x="72" y="516" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="24">${escapeXml(ownOrReadLine().split(', ')[0])},</text>
+  <text x="72" y="550" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="24">${escapeXml(ownOrReadLine().split(', ')[1] ?? '')}.</text>
 </svg>`);
   let image = sharp(board);
   const composites = thumbs.map((input, index) => ({ input, left: 760 + (index % 2) * 188, top: 70 + Math.floor(index / 2) * 270 }));

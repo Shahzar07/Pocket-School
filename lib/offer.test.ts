@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { OFFER_BUNDLE_EXTRAS, OFFER_ROUTES, offerIncludedFeatures, offerPlans, offerPublicStrings } from './offer';
-import { booksVersusUnlimitedLine, ownOrReadLine, readsPlanItem } from './payments/reads';
+import { readsPlanItem } from './payments/reads';
+import { booksVersusUnlimitedLine, ownOrReadLine } from './reads-offer';
 
 const FORBIDDEN = [
   /\bPROPOSED\b/i,

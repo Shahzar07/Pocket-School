@@ -6,7 +6,8 @@
  * Standalone Poket Reads uses the shared shelf price and links to /reads/offer.
  */
 
-import { booksVersusUnlimitedLine, ownOrReadLine, readsPlanItem } from './payments/reads';
+import { readsPlanItem } from './payments/reads';
+import { booksVersusUnlimitedLine, ownOrReadLine } from './reads-offer';
 
 export const OFFER_BUNDLE_EXTRAS = true;
 

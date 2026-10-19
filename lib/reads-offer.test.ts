@@ -6,22 +6,20 @@ import { BANNED_OFFER_COLOURS, OFFER_JACKETS } from './reads-offer-media';
 import { readsOfferExcerpts } from './reads-offer-excerpts';
 import { LANGUAGES } from './languages';
 import { BOOKS } from './reads/seed';
+import { READS_BOOKS, readsPlanItem } from './payments/reads';
+import { seedPricing } from './pricing';
 import {
-  READS_BOOKS,
   READS_BOOK_USD,
-  READS_PLANS,
-  booksDearerThanUnlimited,
-  booksVersusUnlimitedLine,
-  ownOrReadLine,
-  readsPlanItem,
-} from './payments/reads';
-import {
+  READS_OFFER_BOOKS,
   READS_OFFER_CHECKOUTS,
   READS_OFFER_FAQ,
   READS_OFFER_FOUNDER,
   READS_OFFER_LANGUAGE_COUNT,
   READS_OFFER_TESTIMONIALS,
   bookCheckoutHref,
+  booksDearerThanUnlimited,
+  booksVersusUnlimitedLine,
+  ownOrReadLine,
   readsCheckoutHref,
   readsMonthlyUsd,
   readsOfferJsonLd,
@@ -35,9 +33,9 @@ test('Reads prices match the shared shelf', () => {
   assert.equal(readsYearlyUsd('reads'), 49.99);
   assert.equal(readsMonthlyUsd('reads-family'), 7.99);
   assert.equal(readsYearlyUsd('reads-family'), 79.99);
-  assert.equal(READS_PLANS.find(plan => plan.id === 'reads')?.monthlyUsd, 4.99);
-  assert.equal(READS_PLANS.find(plan => plan.id === 'reads')?.yearlyUsd, 49.99);
+  assert.equal(readsPlanItem('reads', 'year')?.unitAmount, 49.99);
   assert.notEqual(readsYearlyUsd('reads'), readsMonthlyUsd('reads') * 10);
+  assert.notEqual(readsYearlyUsd('reads-family'), readsMonthlyUsd('reads-family') * 10);
   assert.deepEqual(
     READS_OFFER_CHECKOUTS.map(item => item.usd),
     [4.99, 49.99, 7.99, 79.99],
@@ -51,18 +49,24 @@ test('checkout links use the unified Reads checkout', () => {
   assert.equal(bookCheckoutHref('harbour-light'), '/dashboard/checkout?kind=book&sku=harbour-light');
 });
 
-test('buy-to-own prices are the shared own-forever price', () => {
+test('buy-to-own prices come from the shared shelf', () => {
+  const config = seedPricing();
   const harbour = READS_BOOKS.find(book => book.id === 'harbour-light');
-  assert.equal(harbour?.usd, READS_BOOK_USD);
-  assert.equal(harbour?.usd, 1.99);
+  const harbourSeed = BOOKS.find(book => book.id === 'harbour-light');
+  assert.equal(READS_BOOK_USD, config.defaultBookUsd);
+  assert.equal(READS_BOOK_USD, 1.99);
+  assert.equal(harbour?.usd, config.defaultBookUsd);
+  assert.equal(harbourSeed?.priceUsd, config.defaultBookUsd);
   assert.equal(harbour?.title, 'The Harbour Light');
-  assert.equal(READS_BOOKS.every(book => book.usd === READS_BOOK_USD), true);
-  assert.equal(BOOKS.every(book => book.priceUsd === READS_BOOK_USD), true);
+  assert.deepEqual(
+    READS_OFFER_BOOKS.map(book => [book.id, book.usd]),
+    READS_BOOKS.map(book => [book.id, book.usd]),
+  );
   assert.equal(booksDearerThanUnlimited(), 3);
   assert.equal(3 * READS_BOOK_USD > readsMonthlyUsd('reads'), true);
   assert.equal(2 * READS_BOOK_USD > readsMonthlyUsd('reads'), false);
-  assert.equal(ownOrReadLine(), 'Own any book for $1.99, or read everything for $4.99/month');
-  assert.equal(booksVersusUnlimitedLine(), 'Three books cost more than a month of unlimited');
+  assert.equal(ownOrReadLine(), 'Own a book at the shelf price of $1.99, or read everything for $4.99/month');
+  assert.equal(booksVersusUnlimitedLine(), 'Three books at the shelf price cost more than a month of unlimited');
 });
 
 test('excerpts are the opening of real seed chapters', () => {
@@ -118,7 +122,8 @@ test('the letter has a founder note and no invented reviews, guarantee or bonus'
   assert.match(faqBlob, /\$7\.99/);
   assert.match(faqBlob, /\$79\.99/);
   assert.match(founderBlob, /1\.99 US dollars/);
-  assert.match(founderBlob, /Three books cost more than a month of unlimited/);
+  assert.match(founderBlob, /A title that stores its own price uses that figure/);
+  assert.match(founderBlob, /Three books at the shelf price cost more than a month of unlimited/);
   const json = JSON.stringify(readsOfferJsonLd());
   assert.equal(json.includes('"@type":"Review"'), false);
   assert.equal(json.includes('aggregateRating'), false);
