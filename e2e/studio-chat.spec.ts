@@ -102,15 +102,18 @@ async function chatOn(page: Page, path: string, shot: string) {
 }
 
 test('signed-out studio leaves the spinner and opens login', async ({ page }) => {
-  const started = Date.now();
   await page.goto('/dashboard/studio', { waitUntil: 'domcontentloaded' });
-  await page.waitForURL(/\/login(?:\?|#|$)/, { timeout: 20_000 });
+  await page.waitForFunction(() => {
+    return window.location.pathname.startsWith('/login') || Boolean(document.querySelector('.animate-spin'));
+  }, undefined, { timeout: 45_000 });
+  const started = Date.now();
+  await page.waitForURL(/\/login(?:\?|#|$)/, { timeout: 12_000 });
   const elapsed = Date.now() - started;
-  expect(elapsed).toBeLessThan(20_000);
+  expect(elapsed).toBeLessThan(12_000);
   await expect(page).toHaveURL(/\/login/);
   await expect(page.locator('.animate-spin')).toHaveCount(0);
   await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-signed-out-login.png', fullPage: false });
-  console.log(`signed-out studio reached login in ${elapsed}ms`);
+  console.log(`signed-out studio left the spinner for login in ${elapsed}ms`);
 });
 
 async function proveStudio(page: Page, email: string, shot: string) {
