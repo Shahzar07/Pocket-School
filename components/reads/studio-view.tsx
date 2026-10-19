@@ -91,11 +91,15 @@ export function StudioView() {
         }
       }
       if (!live) return;
-      const byId = new Map<string, Book>();
-      for (const item of cloneBooks()) byId.set(item.id, item);
-      for (const item of local) if (item?.id) byId.set(item.id, item);
-      for (const item of remote) byId.set(item.id, item);
-      if (local.length > 0 || remote.length > 0) setBooks([...byId.values()]);
+      setBooks(current => {
+        const byId = new Map<string, Book>();
+        for (const item of cloneBooks()) byId.set(item.id, item);
+        for (const item of local) if (item?.id) byId.set(item.id, item);
+        for (const item of remote) byId.set(item.id, item);
+        for (const item of current) if (item?.id && !byId.has(item.id)) byId.set(item.id, item);
+        if (local.length === 0 && remote.length === 0) return current;
+        return [...byId.values()];
+      });
     };
     void load();
     return () => { live = false; };

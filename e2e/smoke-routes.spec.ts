@@ -107,8 +107,17 @@ async function visitAll(page: Page, role: string) {
       failures.push(`${path} rendered not-found`);
       continue;
     }
-    const text = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').trim();
-    if (text.length < 12) failures.push(`${path} empty main (${text.length} chars)`);
+    // Dashboard routes render a spinner with no text until auth restores, then
+    // a role gate may redirect. Wait until the settled page has real text.
+    try {
+      await page.waitForFunction(
+        () => (document.body?.innerText || '').replace(/\s+/g, ' ').trim().length >= 12,
+        { timeout: 15_000 },
+      );
+    } catch {
+      const text = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').trim();
+      failures.push(`${path} empty main (${text.length} chars)`);
+    }
   }
   expect(failures, `${role} route failures:\n${failures.join('\n')}`).toEqual([]);
 }

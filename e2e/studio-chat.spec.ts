@@ -7,10 +7,11 @@ const API_KEY = 'AIzaSyCh4W5ioD6lcD1Sb8Y3cE601t6bVVVchKU';
 
 async function dismissCookies(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Cookie consent' });
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  const accept = page.getByRole('button', { name: 'Accept all' });
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     if (!(await dialog.isVisible().catch(() => false))) return;
-    await page.getByRole('button', { name: 'Accept all' }).click();
-    await dialog.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => undefined);
+    await accept.click({ force: true }).catch(() => undefined);
+    await dialog.waitFor({ state: 'hidden', timeout: 3_000 }).catch(() => undefined);
   }
 }
 
@@ -38,7 +39,7 @@ async function signIn(page: Page, email: string) {
     appName: '[DEFAULT]',
   };
   const storageKey = `firebase:authUser:${API_KEY}:[DEFAULT]`;
-  await page.goto('/login', { waitUntil: 'load' });
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(async ({ storageKey: key, user: value }) => {
     await new Promise<void>((resolve, reject) => {
       const open = indexedDB.open('firebaseLocalStorageDb');
@@ -56,7 +57,7 @@ async function signIn(page: Page, email: string) {
       };
     });
   }, { storageKey, user });
-  await page.goto('/dashboard', { waitUntil: 'load' });
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await dismissCookies(page);
 }
 
@@ -88,6 +89,7 @@ async function chatOn(page: Page, path: string, shot: string) {
   await expect(page.locator('[data-photo-pending="1"]')).toBeVisible();
   await page.screenshot({ path: `/opt/cursor/artifacts/screenshots/${shot}-composer.png`, fullPage: false });
   await box.fill('What is two plus two? Read the attached photo if you can.');
+  await dismissCookies(page);
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.locator('[data-assistant="1"]').last()).toBeVisible({ timeout: 60_000 });
   for (const tab of ['AI Teachers', 'ET Maths', 'ET Exams', 'ET Essays', 'ET AI']) {

@@ -8,8 +8,10 @@ const TITLE = 'E2E Harbour Notes';
 
 async function dismissCookies(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Cookie consent' });
-  if (await dialog.isVisible().catch(() => false)) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (!(await dialog.isVisible().catch(() => false))) return;
     await page.getByRole('button', { name: 'Accept all' }).click();
+    await dialog.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => undefined);
   }
 }
 
@@ -83,11 +85,17 @@ test.describe('AI Book Creator previews', () => {
       emailVerified: false,
       twoFactorEnabled: false,
     }, { merge: true });
+    const existing = await adminDb().collection('books').get();
+    for (const book of existing.docs) {
+      const title = String(book.get('title') || '');
+      if (title.startsWith('E2E Harbour Notes')) await book.ref.delete();
+    }
   });
 
   test('a super admin covers, previews, publishes, and finds the book on PoketReads', async ({ page }) => {
     test.setTimeout(180_000);
     await signIn(page, 'admin.e2e@poketschool.ai');
+    await page.evaluate(() => localStorage.removeItem('poket-studio-books'));
     await page.goto('/dashboard/admin/books', { waitUntil: 'domcontentloaded' });
     await dismissCookies(page);
     await expect(page.getByRole('heading', { name: /Book Studio|AI Book Creator|Studio/i }).first()).toBeVisible({ timeout: 60_000 });
@@ -119,6 +127,7 @@ test.describe('AI Book Creator previews', () => {
     await expect(page.locator('[data-book-status="draft"]')).toBeVisible();
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/book-library-preview.png', fullPage: true });
 
+    await dismissCookies(page);
     await page.getByRole('button', { name: 'Preview as student' }).click();
     await expect(page.locator('[data-student-preview="1"]')).toBeVisible({ timeout: 30_000 });
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/book-student-preview.png', fullPage: false });

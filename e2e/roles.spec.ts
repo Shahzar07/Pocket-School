@@ -29,8 +29,10 @@ const PUBLIC_PAGES = [
 
 async function dismissCookies(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Cookie consent' });
-  if (await dialog.isVisible().catch(() => false)) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (!(await dialog.isVisible().catch(() => false))) return;
     await page.getByRole('button', { name: 'Accept all' }).click();
+    await dialog.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => undefined);
   }
 }
 
@@ -60,7 +62,7 @@ async function signIn(page: Page, email: string) {
     appName: '[DEFAULT]',
   };
   const storageKey = `firebase:authUser:${API_KEY}:[DEFAULT]`;
-  await page.goto('/login', { waitUntil: 'load' });
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(async ({ storageKey: key, user: value }) => {
     await new Promise<void>((resolve, reject) => {
       const open = indexedDB.open('firebaseLocalStorageDb');
@@ -78,7 +80,7 @@ async function signIn(page: Page, email: string) {
       };
     });
   }, { storageKey, user });
-  await page.goto('/dashboard', { waitUntil: 'load' });
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await dismissCookies(page);
 }
 
@@ -92,12 +94,16 @@ test('marketing pages from the landing footer answer', async ({ page }) => {
     const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
     expect(response?.status() ?? 0, path).toBeLessThan(400);
     await expect(page.locator('h1').first()).toBeVisible({ timeout: 30_000 });
+    if (path === '/ai-teachers') {
+      await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/teacher-portraits.png', fullPage: false });
+    }
   }
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-landing="v3"]')).toBeVisible();
   const html = await page.locator('[data-landing="v3"]').innerHTML();
   expect(html.toLowerCase()).not.toContain('#c8820a');
   expect(html).not.toContain('Years 1');
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/landing-v3.png', fullPage: false });
 });
 
 test.describe('role journeys on the emulator preview', () => {
@@ -187,6 +193,7 @@ test.describe('role journeys on the emulator preview', () => {
     await openDash(page, '/dashboard/student/planner');
     await expect(page.getByRole('heading', { name: 'Planner' })).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-planner-board="1"]')).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/planner-student.png', fullPage: false });
   });
 
   test('parent sees a grade and a goal', async ({ page }) => {
@@ -197,14 +204,17 @@ test.describe('role journeys on the emulator preview', () => {
     await expect(page.getByText('grade 9')).toBeVisible({ timeout: 30_000 });
     await openDash(page, '/dashboard/parent/planner');
     await expect(page.locator('[data-planner-board="1"]')).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/planner-parent.png', fullPage: false });
   });
 
   test('teacher opens a classroom and the course copyright signature', async ({ page }) => {
     await signIn(page, 'teacher.e2e@poketschool.ai');
     await openDash(page, '/dashboard/teacher/classes');
     await expect(page.getByLabel('Who can join')).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/private-classroom.png', fullPage: false });
     await openDash(page, '/dashboard/teacher/upload');
     await expect(page.locator('[data-copyright-sign="1"]')).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/esign-course.png', fullPage: false });
     await openDash(page, '/dashboard/teacher/planner');
     await expect(page.locator('[data-planner-view="month"]')).toBeVisible();
   });
@@ -227,6 +237,11 @@ test.describe('role journeys on the emulator preview', () => {
     await openDash(page, '/dashboard/admin/signatures');
     await expect(page.getByRole('heading', { name: 'Copyright signatures' })).toBeVisible();
     await expect(page.locator('[data-signature-search="1"]')).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/esign-admin.png', fullPage: false });
+    await openDash(page, '/dashboard/admin/planner');
+    await expect(page.getByRole('heading', { name: 'Planner' })).toBeVisible();
+    await expect(page.locator('[data-planner-board="1"]')).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/planner-admin.png', fullPage: false });
     await openDash(page, '/dashboard/admin/books');
     await expect(page.getByRole('link', { name: 'AI Book Creator' })).toBeVisible();
     await expect(page.locator('[data-book-status]').first()).toBeVisible();

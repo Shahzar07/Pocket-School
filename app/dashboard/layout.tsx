@@ -445,7 +445,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!useAuthSTORE.getState().user) {
         router.push(pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login');
       }
-    }, 600);
+    }, 2500);
     return () => window.clearTimeout(timer);
   }, [user, loading, router, pathname]);
 
