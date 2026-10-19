@@ -37,6 +37,10 @@ describe('dashboard role guard', () => {
   });
 
   it('keeps platform admin pages to platform admins and the audit log to super admins', () => {
+    assert.equal(decideDashboardAccess('/dashboard/admin/books', admin).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/books', { role: 'admin', adminRole: 'content_editor' }).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/books', { ...teacher, cms: true }).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/books', teacher).allowed, false);
     assert.equal(decideDashboardAccess('/dashboard/admin/courses', admin).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/admin/payments', admin).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/admin/finance', parent, 'parent').allowed, false);

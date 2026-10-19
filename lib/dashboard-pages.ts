@@ -766,8 +766,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   },
   {
     path: '/dashboard/admin/books',
-    title: 'Book Studio',
-    purpose: 'The same Book Studio as Poket Reads, opened from the CMS, including children\'s stories.',
+    title: 'AI Book Creator',
+    purpose: 'Create a PoketReads book with ET AI, a cover, pages, and pictures, then preview, publish, and export.',
     audience: ['admin'],
     overlaps: 'Poket Reads studio.',
     decision: 'Keep. Books are written here and read in Poket Reads.',

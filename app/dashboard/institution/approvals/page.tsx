@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { authedFetch } from '@/lib/api-client';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { DashHeader, DashPage, Panel } from '@/components/dash-ui';
 import { Button } from '@/components/ui/button';
-import { decideJoinRequest, listJoinRequests, type StoredJoinRequest } from '@/lib/institution-membership-store';
+import { listJoinRequests, type StoredJoinRequest } from '@/lib/institution-membership-store';
 import { VOLUME_PLANS, type VolumePlanId } from '@/lib/institution-pricing';
 
 export default function ApprovalsPage() {
@@ -22,14 +23,14 @@ export default function ApprovalsPage() {
   const decide = async (row: StoredJoinRequest, decision: 'approved' | 'rejected') => {
     if (!user) return;
     try {
-      await decideJoinRequest({
-        institutionId,
-        request: row,
-        decision,
-        level: levels[row.id] || row.level || 'igcse_alevel',
-        classIds: row.classIds,
-        courseIds: row.courseIds,
-        actorId: user.uid,
+      await authedFetch('/api/institutions/membership', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'decide',
+          institutionId,
+          userId: row.userId,
+          decision,
+        }),
       });
       setRows((current) => current.map((item) => item.id === row.id ? { ...item, status: decision } : item));
       toast.success(decision === 'approved' ? 'Approved. Poket School does not charge this person for the seat.' : 'Request declined.');

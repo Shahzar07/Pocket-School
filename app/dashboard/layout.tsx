@@ -51,6 +51,7 @@ import { PagePurpose } from '@/components/page-purpose';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { hasCmsAddon } from '@/lib/entitlements';
+import { SIGNUP_SCHOOL } from '@/lib/institutions/signup-copy';
 import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
@@ -181,7 +182,6 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio/exam-prep', icon: PenSquare, labelKey: 'nav.exams', label: 'ET Exams' },
       { href: '/dashboard/studio/essays', icon: PenSquare, labelKey: 'nav.aiStudio', label: 'ET Essays' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', label: 'Creator Store', flag: 'creatorStore' },
-      { href: '/dashboard/admin/books', icon: BookMarked, labelKey: 'nav.books', label: 'Book Studio' },
     ]},
     { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
@@ -230,6 +230,7 @@ const NAV: Record<Role, NavGroup[]> = {
   admin: [
     { items: [
       { href: '/dashboard/admin', icon: BarChart, labelKey: 'nav.analytics' },
+      { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.aiBookCreator', label: 'AI Book Creator' },
       { href: '/dashboard/admin/queues', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Queues' },
       { href: '/dashboard/admin/platform', icon: Settings, labelKey: 'nav.systemSettings', label: 'Platform tools' },
       { href: '/dashboard/admin/pulse', icon: Activity, labelKey: 'nav.insights', label: 'Pulse' },
@@ -241,7 +242,6 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/help', icon: HelpCircle, labelKey: 'nav.helpArticles', label: 'Admin help' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
       { href: '/dashboard/admin/planner', icon: Target, labelKey: 'nav.goals', label: 'Study planner', superOnly: true },
-      { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
@@ -624,10 +624,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
   const nav = (NAV[role] ?? NAV.student).map((group, index) => {
     const cmsItem: NavEntry = { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' };
-    const bookItem: NavEntry = { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.books', label: 'Book Studio' };
+    const bookItem: NavEntry = { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.aiBookCreator', label: 'AI Book Creator' };
     const withCms = index !== 0 || role === 'admin' || !hasCmsAddon(profile) || (role !== 'teacher' && role !== 'institution_admin')
       ? group.items
-      : [...group.items, cmsItem, bookItem];
+      : [bookItem, cmsItem, ...group.items];
     return {
       ...group,
       items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.flag || isFeatureEnabled(flags, item.flag))),
@@ -679,6 +679,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {compactNav ? null : <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
             </span>
           </AccountMenu>
+          {profile.membershipStatus === 'pending' && !compactNav ? (
+            <p className="mt-2 rounded-full bg-[#3FE0D0] px-3 py-1 text-xs font-semibold text-[#203337]" data-pending-approval="1">
+              {SIGNUP_SCHOOL.pending}{profile.pendingInstitutionName ? ` · ${profile.pendingInstitutionName}` : ''}
+            </p>
+          ) : null}
         </div>
 
         {/* Nav */}

@@ -1,5 +1,10 @@
 node_modules/
 .next/
+.next-build/
+.next-e2e/
+.next-live/
+test-results/
+playwright-report/
 coverage/
 .DS_Store
 *.log

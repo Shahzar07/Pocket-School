@@ -10,7 +10,7 @@ const LINKS = [
   { href: '/dashboard/studio/exam-prep', label: 'ET Exams' },
   { href: '/dashboard/studio/essays', label: 'ET Essays' },
   { href: '/dashboard/store', label: 'Creator Store' },
-  { href: '/dashboard/admin/books', label: 'Book Studio' },
+  { href: '/dashboard/admin/books', label: 'AI Book Creator' },
 ] as const;
 
 export function StudioNav() {

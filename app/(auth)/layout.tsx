@@ -26,16 +26,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen flex" style={{ fontFamily: 'var(--font-institution), inherit', background: dark.bg }}>
       {/* ── Left: video hero panel ── */}
       <div className="hidden lg:block w-[52%] shrink-0 p-5">
-        <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black min-h-[calc(100vh-2.5rem)]">
-          {/* Video — NO overlay/tint */}
-          <video
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+        <div className="relative w-full h-full rounded-3xl overflow-hidden min-h-[calc(100vh-2.5rem)]" style={{ background: 'linear-gradient(160deg, #0B1417 0%, #1E6A83 46%, #2786A4 78%, #3FE0D0 100%)' }} data-auth-panel="brand">
 
           {/* Floating content — no full-screen overlay, text/cards carry their own blur */}
           <div className="relative z-10 h-full flex flex-col justify-between p-10">

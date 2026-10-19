@@ -4,13 +4,6 @@ import { useState } from 'react';
 import { SelfJoinPicker } from '@/components/institutions/self-join-picker';
 import { StudentPassCard } from '@/components/student-pass-card';
 import { JoinByCode, type JoinStudentCard } from '@/components/join-by-code';
-import type { JoinDirectoryRow } from '@/lib/institution-membership';
-
-const SCHOOLS: JoinDirectoryRow[] = [
-  { id: 'north', name: 'North Academy', country: 'MY', state: 'Selangor', status: 'active', listedForSelfJoin: true },
-  { id: 'harbour', name: 'Harbour College', country: 'MY', state: 'Penang', status: 'active', listedForSelfJoin: true },
-  { id: 'lakeside', name: 'Lakeside School', country: 'GB', state: 'England', status: 'active', listedForSelfJoin: true },
-];
 
 const SAMPLE: JoinStudentCard = {
   studentNumber: 'PS-K7NP-4R2C',
@@ -26,7 +19,6 @@ export function StudentJoinPreview({ panel }: { panel: string }) {
   const [institutionId, setInstitutionId] = useState('');
   const [schoolName, setSchoolName] = useState('Harbour Tuition');
   const [path, setPath] = useState<'independent' | 'institution'>('independent');
-  const listed = SCHOOLS.filter((row) => row.country === country && row.state === state);
 
   return (
     <main className="min-h-screen bg-[#F6F1E7] px-4 py-8 text-[#203337]">
@@ -42,15 +34,14 @@ export function StudentJoinPreview({ panel }: { panel: string }) {
             </div>
             <div className="mt-5">
               <SelfJoinPicker
-                student
                 path={path}
                 country={country}
                 state={state}
                 institutionId={institutionId}
-                institutions={listed}
                 inviteCode=""
                 childEmails=""
                 showChildren={false}
+                role="student"
                 onPath={setPath}
                 onCountry={(next) => { setCountry(next); setState(''); setInstitutionId(''); }}
                 onState={(next) => { setState(next); setInstitutionId(''); }}

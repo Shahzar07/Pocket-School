@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isNextResponse, loadUser, requirePlatformAdmin } from '@/lib/api-guard';
 import { isSuperDesk } from '@/lib/admin/desk';
+import { ADMIN_SETUP_MESSAGE } from '@/lib/admin/desk-gate';
 import { isAdminConfigured } from '@/lib/firebase-admin';
 import { ActionError } from '@/lib/server/actions';
 import { actorFromProfile, exportDeskLog, loadAdminDesk, runDeskAction, searchDesk } from '@/lib/server/admin-desk';
@@ -13,11 +14,11 @@ async function actorFor(uid: string) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!isAdminConfigured()) {
-    return NextResponse.json({ configured: false, comingSoon: true, counts: {}, queues: {}, kpis: { signups: 0, active: 0, revenue: 0, alerts: 0, reports: 0, slaBreaches: 0 } });
-  }
   const user = await requirePlatformAdmin(req);
   if (isNextResponse(user)) return user;
+  if (!isAdminConfigured()) {
+    return NextResponse.json({ configured: false, setupNeeded: true, message: ADMIN_SETUP_MESSAGE });
+  }
   const actor = await actorFor(user.uid);
   if (!actor.staffRole) return NextResponse.json({ error: 'This account cannot use the admin desk.', code: 'FORBIDDEN' }, { status: 403 });
   const format = req.nextUrl.searchParams.get('export');
@@ -46,11 +47,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isAdminConfigured()) {
-    return NextResponse.json({ ok: false, comingSoon: true, message: 'This admin tool is coming soon.' });
-  }
   const user = await requirePlatformAdmin(req);
   if (isNextResponse(user)) return user;
+  if (!isAdminConfigured()) {
+    return NextResponse.json({ ok: false, setupNeeded: true, message: ADMIN_SETUP_MESSAGE }, { status: 503 });
+  }
   const actor = await actorFor(user.uid);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   try {

@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "clean": "next clean",
     "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
     "test:rules": "firebase emulators:exec --only firestore --project demo-poket \"npx tsx --test tests/firestore.rules.test.ts\""
   },
   "dependencies": {
@@ -78,6 +79,7 @@
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
     "@firebase/rules-unit-testing": "^5.0.2",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "4.1.11",
     "@tailwindcss/typography": "^0.5.19",
     "@types/d3": "^7.4.3",

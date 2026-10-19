@@ -1,17 +1,11 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { StudioBoot } from '@/components/studio/boot';
+import { EtCanvas } from '@/components/studio/et-canvas';
+import { useAuthSTORE } from '@/hooks/use-auth';
 
-const AiStudio = dynamic(() => import('@/components/studio/ai-studio').then(mod => mod.AiStudio), {
-  loading: () => <StudioBoot />,
-});
-
-/** ET AI, inside the dashboard shell rather than as its own app. */
+/** ET AI, inside the dashboard shell. The sidebar stays. There is no nested frame. */
 export default function StudioEt() {
-  return (
-    <div className="h-[calc(100dvh-3rem)] overflow-hidden">
-      <AiStudio embedded />
-    </div>
-  );
+  const { profile, user } = useAuthSTORE();
+  const name = profile?.displayName || profile?.name || user?.displayName || '';
+  return <EtCanvas name={name} />;
 }
