@@ -104,6 +104,19 @@ test('marketing pages from the landing footer answer', async ({ page }) => {
   expect(html.toLowerCase()).not.toContain('#c8820a');
   expect(html).not.toContain('Years 1');
   await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/landing-v3.png', fullPage: false });
+  const story = page.locator('[data-our-story]');
+  await expect(story).toContainText('school of entrepreneurship and success');
+  await expect(story).toContainText('City of Millionaires');
+  await expect(story.getByRole('link', { name: 'Our story' })).toHaveAttribute('href', '/about#our-story');
+  await story.scrollIntoViewIfNeeded();
+  await story.screenshot({ path: '/opt/cursor/artifacts/our-story-home-strip.png' });
+  await story.getByRole('link', { name: 'Our story' }).click();
+  await expect(page).toHaveURL(/\/about#our-story$/);
+  const section = page.locator('#our-story');
+  await expect(section).toContainText('21st century and beyond');
+  await expect(section).toContainText('Lifelong learning');
+  await expect(section).toContainText('Ipoh - The City of Millionaires');
+  await section.screenshot({ path: '/opt/cursor/artifacts/our-story-about-section.png' });
 });
 
 test.describe('role journeys on the emulator preview', () => {
