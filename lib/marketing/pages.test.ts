@@ -13,20 +13,6 @@ test('every marketing link has a page', () => {
   assert.equal(MARKET_PAGES.length >= 12, true);
 });
 
-test('about page tells the Ipoh story and the homepage points at it', () => {
-  const about = MARKET_PAGES.find((page) => page.slug === 'about');
-  const story = about?.sections.find((section) => section.id === 'our-story');
-  assert.equal(story?.heading, 'Our story');
-  assert.match(story?.body ?? '', /school of entrepreneurship and success/);
-  assert.match(story?.body ?? '', /City of Millionaires/);
-  assert.match(story?.body ?? '', /21st century and beyond/);
-  assert.match(story?.body ?? '', /Lifelong learning/);
-  assert.equal(story?.points.some((point) => point.includes('Ipoh - The City of Millionaires')), true);
-  const home = readFileSync('lib/marketing/home.ts', 'utf8');
-  assert.match(home, /storyHref: '\/about#our-story'/);
-  assert.equal(home.includes('tin '), false);
-});
-
 test('landing copy avoids gold and numbered school years', () => {
   const home = readFileSync('lib/marketing/home.ts', 'utf8');
   const pages = readFileSync('lib/marketing/pages.ts', 'utf8');

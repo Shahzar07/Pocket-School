@@ -33,12 +33,6 @@ export function HomeV3() {
           </dl>
         </div>
       </section>
-      <div className="border-b border-[#1E6A83]/15 bg-white px-6 py-3" data-our-story>
-        <p className="mx-auto max-w-5xl text-sm leading-relaxed text-[#1E6A83]">
-          {HOME.story}{' '}
-          <Link className="font-semibold text-[#203337] underline decoration-[#3FE0D0] decoration-2 underline-offset-4" href={HOME.storyHref}>{HOME.storyLink}</Link>
-        </p>
-      </div>
       <div className="border-b border-[#1E6A83]/15 bg-[#F4FBFA] px-6 py-4">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-[#1E6A83]">{HOME.aligned}</span>

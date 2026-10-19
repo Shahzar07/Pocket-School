@@ -20,7 +20,6 @@ Sign-off for PR 147. A row is Yes only when a named test passed or a screenshot 
 | Blog images | Yes | `lib/blog/images.test.ts`. The admin journey opens `/dashboard/admin/blog` and expects the Blog heading. A new cover upload was not repeated in this pass. | None for the page. Production uploads still need deployed Storage rules. |
 | School wall | No | No post was made. `wallNotice` in `lib/wall/live.ts` is the permission copy, and it has no test in this pass. | None. Production reads stay blocked until Firestore rules are deployed. |
 | Landing v3 | Yes | `e2e/roles.spec.ts` “marketing pages from the landing footer answer” checks `data-landing="v3"`. Screenshot `landing-v3.png`. | None |
-| Our story | Yes | Same marketing test. Homepage strip `data-our-story` links to `/about#our-story`. Screenshots `/opt/cursor/artifacts/our-story-home-strip.png` and `/opt/cursor/artifacts/our-story-about-section.png`. Hero headline unchanged. | None |
 | Copyright e-sign | Yes | Teacher journey shows `[data-copyright-sign="1"]`. Screenshot `esign-course.png`. Admin signatures page: `esign-admin.png`. A new signature document was not created in this pass. | None |
 | Planner | Yes | Student, parent, and admin boards: `planner-student.png`, `planner-parent.png`, `planner-admin.png`. Teacher journey expects `[data-planner-view="month"]`. A drag-and-drop was not clicked. | None |
 | Private classrooms | Yes | Teacher classes page shows “Who can join”. Screenshot `private-classroom.png`. Join route `/join/class/[code]` is in the smoke list. A student self-enrol click was not completed. | None |
@@ -30,7 +29,7 @@ Sign-off for PR 147. A row is Yes only when a named test passed or a screenshot 
 | Featured impressions and clicks | Yes | Counters are written by the carousel and read on the placement page. A live increment was not required for the screenshot. Rules for the client increment are not deployed. | None |
 | Placement data QC | Yes | Same test. Biology 101 stays two rows. Rochford's International School is flagged once. `Physics — Year 11` suggests `Physics — IGCSE` and is not renamed by itself. | None |
 
-Counts: 24 yes, 1 no, 7 rows that name a key (`FIREBASE_SERVICE_ACCOUNT` on sign-up directory and the admin desk; `OPENROUTER_API_KEY` on book generation, student chat, student photo, teacher chat, and teacher photo).
+Counts: 23 yes, 1 no, 7 rows that name a key (`FIREBASE_SERVICE_ACCOUNT` on sign-up directory and the admin desk; `OPENROUTER_API_KEY` on book generation, student chat, student photo, teacher chat, and teacher photo).
 
 ## Checks run for this pass
 
@@ -43,4 +42,3 @@ Counts: 24 yes, 1 no, 7 rows that name a key (`FIREBASE_SERVICE_ACCOUNT` on sign
 - Every-route smoke on its own, same production server: 5 passed, 4.6m.
 - Lighthouse on `http://127.0.0.1:3465/` (Next dev, not a production build), fetch `2026-10-19T07:19:18.064Z`. Performance 45, accessibility 93, best-practices 96, SEO 92. FCP 1.1s, LCP 39.6s, TBT 6300ms, CLS 0, speed index 2.6s. The LCP element is the cookie-consent paragraph. After warmup the homepage responded in under a second, so this LCP is dev-server work, not the earlier credential hang. JSON `/tmp/qa-logs/lighthouse.json`.
 - `next build` on Next 15.5.15 flakes when Google Fonts returns an extension-less `/l/font?kit=` URL (`TypeError: Cannot read properties of null (reading '1')`). A rebuild that receives `.woff2` URLs succeeds. CI Playwright uses `next dev`, which falls back instead of failing the job. Firestore rules were not deployed.
-- Our story, this pass: `npx tsx --test lib/marketing/pages.test.ts` — 4 passed. Playwright `e2e/roles.spec.ts` “marketing pages from the landing footer answer” checks the homepage strip and `/about#our-story`. Desktop and mobile screenshots: `/opt/cursor/artifacts/our-story-home-strip.png`, `/opt/cursor/artifacts/our-story-home-mobile.png`, `/opt/cursor/artifacts/our-story-about-section.png`.

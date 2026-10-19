@@ -14,7 +14,7 @@ export function ProductView({ page }: { page: MarketPage }) {
       </header>
       <div className="mx-auto max-w-3xl space-y-10 px-6 py-12">
         {page.sections.map((section) => (
-          <section key={section.heading} id={section.id} className={section.id ? 'scroll-mt-24' : undefined}>
+          <section key={section.heading}>
             <h2 className="text-2xl" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif' }}>{section.heading}</h2>
             <p className="mt-3 text-sm leading-relaxed text-[#203337]/85">{section.body}</p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#1E6A83]">

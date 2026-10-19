@@ -1,5 +1,4 @@
 export interface MarketSection {
-  id?: string;
   heading: string;
   body: string;
   points: string[];
@@ -331,15 +330,6 @@ export const MARKET_PAGES: MarketPage[] = [
     title: 'About Poket School',
     lede: 'Poket School is the learning platform from Poket Media Sdn Bhd. ET AI is the teacher layer. Poket SafeLine is the reporting line. The school desk is the register, the gradebook, and the planner.',
     sections: [
-      {
-        id: 'our-story',
-        heading: 'Our story',
-        body: 'Poket School is the school of entrepreneurship and success, born from the spirit and grit of the forefathers who built Ipoh into the City of Millionaires. Their stories inspire learning for the 21st century and beyond. Lifelong learning is how that inspiration continues, from the first class through the years after school.',
-        points: [
-          'A lifelong-learning platform, from the first class through work and the years after.',
-          'Harry, founder of the series Ipoh - The City of Millionaires, tells those stories.',
-        ],
-      },
       {
         heading: 'What we build',
         body: 'Named ET AI teachers for Primary, IGCSE, A-Level, LLB, MBBS foundation, and independent study. A studio for lessons and books. A desk for real classes, including private classrooms. A parent view that shows grades and goals when the accounts are linked.',
