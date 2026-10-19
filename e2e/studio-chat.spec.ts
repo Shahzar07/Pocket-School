@@ -57,8 +57,50 @@ async function signIn(page: Page, email: string) {
       };
     });
   }, { storageKey, user });
+  await page.evaluate(() => {
+    localStorage.setItem('poket-pip-onboarded', '1');
+    localStorage.setItem('poket-cookie-consent', JSON.stringify({
+      essential: true,
+      functional: true,
+      analytics: false,
+      aiPerformance: false,
+      decidedAt: '2026-10-19T00:00:00.000Z',
+    }));
+  });
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await dismissCookies(page);
+}
+
+async function expectDarkStudio(page: Page, role: 'student' | 'teacher') {
+  await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible();
+  const nav = page.getByRole('navigation', { name: 'AI Studio' });
+  await expect(nav).toHaveCount(1);
+  for (const name of ['New chat', 'Chats', 'Library', 'All tools']) {
+    await expect(nav.getByRole('button', { name, exact: true })).toBeVisible();
+  }
+  for (const name of ['AI Teachers', 'ET + Subject', 'ET Maths', 'ET Exams', 'ET Essays', 'ET AI', 'Book Studio', 'PoketReads', 'AI Book Creator', 'Creator Store', 'Planner', 'Calendar']) {
+    await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole('link', { name: 'Back to Poket School' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Upload photo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Skills' })).toBeVisible();
+  await expect(page.getByLabel('Subject')).toBeVisible();
+  await expect(page.getByLabel('Level')).toBeVisible();
+  await expect(page.getByLabel('Mode', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Switch to (dark|light) mode/ })).toBeVisible();
+  await expect(page.locator('[data-studio-tools="chips"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open the guided tour' })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Research Helper', exact: true })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Parent Explainer', exact: true })).toHaveCount(0);
+  if (role === 'teacher') {
+    await expect(nav.getByRole('link', { name: 'Timetabler', exact: true })).toBeVisible();
+    await expect(page.locator('[data-studio-entry="timetable"]')).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Teacher Toolkit', exact: true })).toBeVisible();
+  } else {
+    await expect(nav.getByRole('link', { name: 'Timetabler', exact: true })).toHaveCount(0);
+    await expect(page.locator('[data-studio-entry="timetable"]')).toHaveCount(0);
+    await expect(nav.getByRole('button', { name: 'Teacher Toolkit', exact: true })).toHaveCount(0);
+  }
 }
 
 async function chatOn(page: Page, path: string, shot: string) {
@@ -77,6 +119,8 @@ async function chatOn(page: Page, path: string, shot: string) {
   await expect(page.locator('[data-photo-file="1"]')).toBeAttached();
   await expect(page.locator('[data-camera-file="1"]')).toBeAttached();
   await expect(page.locator('[data-file="1"]')).toBeVisible();
+  await expectDarkStudio(page, path.includes('/et') ? 'teacher' : 'student');
+  await page.screenshot({ path: `/opt/cursor/artifacts/screenshots/${shot}-empty.png`, fullPage: false });
   await page.getByRole('button', { name: 'Explain quadratic equations' }).click();
   const reply = page.locator('[data-assistant="1"]').last();
   await expect(reply).toBeVisible({ timeout: 60_000 });
@@ -123,6 +167,7 @@ async function proveStudio(page: Page, email: string, shot: string) {
   const box = page.getByRole('textbox', { name: 'Message ET AI' });
   await expect(box).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('[data-studio-home="chat"]')).toBeVisible();
+  await expectDarkStudio(page, email.startsWith('teacher') ? 'teacher' : 'student');
   const mic = page.locator('[data-mic="1"]');
   const attach = page.locator('[data-attach="1"]');
   await expect(mic).toBeVisible();
@@ -195,5 +240,46 @@ test.describe('ET AI studio chat', () => {
 
   test('teacher studio home shows chat, mic, and attach', async ({ page }) => {
     await proveStudio(page, 'teacher.e2e@poketschool.ai', 'studio-teacher-proof');
+  });
+
+  test('dark layout keeps the tools for a student and opens on a phone', async ({ page }) => {
+    await signIn(page, 'student.e2e@poketschool.ai');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/dashboard/studio', { waitUntil: 'domcontentloaded' });
+    await dismissCookies(page);
+    await expect(page.getByRole('textbox', { name: 'Message ET AI' })).toBeVisible({ timeout: 60_000 });
+    await expectDarkStudio(page, 'student');
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-student-empty.png', fullPage: false });
+    await page.locator('[data-photo-file="1"]').setInputFiles('public/blog/thumbs/igcse-revision-with-et-ai.webp');
+    await expect(page.getByText('Photo attached')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-photo.png', fullPage: false });
+    await page.getByRole('button', { name: 'Explain quadratic equations' }).click();
+    await expect(page.locator('[data-assistant="1"]').last()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('button', { name: 'Read aloud' }).last()).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-student-reply.png', fullPage: false });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => {
+      document.querySelector<HTMLButtonElement>('[aria-label="Toggle sidebar"]')?.click();
+    });
+    await expect(page.getByRole('button', { name: 'Toggle sidebar' })).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => {
+      document.querySelector<HTMLButtonElement>('[aria-label="Open ET AI menu"]')?.click();
+    });
+    await expect(page.getByRole('button', { name: 'Open ET AI menu' })).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('navigation', { name: 'AI Studio' })).toBeVisible();
+    await expect(page.locator('[data-studio-sidebar="1"]')).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-mobile-sidebar.png', fullPage: false });
+  });
+
+  test('dark layout keeps the teacher tools', async ({ page }) => {
+    await signIn(page, 'teacher.e2e@poketschool.ai');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/dashboard/studio', { waitUntil: 'domcontentloaded' });
+    await dismissCookies(page);
+    await expect(page.getByRole('textbox', { name: 'Message ET AI' })).toBeVisible({ timeout: 60_000 });
+    await expectDarkStudio(page, 'teacher');
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-teacher.png', fullPage: false });
   });
 });
