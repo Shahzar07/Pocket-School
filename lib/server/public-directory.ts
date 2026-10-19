@@ -1,4 +1,3 @@
-import { isAdminConfigured, adminDb } from '../firebase-admin';
 import {
   filterPublicDirectory,
   isPublicDirectorySchool,
@@ -11,11 +10,25 @@ import {
 export const DIRECTORY_UNAVAILABLE =
   'School list is unavailable until FIREBASE_SERVICE_ACCOUNT is set. You can still join independently.';
 
+type AdminDb = ReturnType<Awaited<typeof import('../firebase-admin')>['adminDb']>;
+
+/** Loads the Admin SDK only when this request needs it. A missing optional package degrades. */
+async function loadAdmin(): Promise<{ configured: false } | { configured: true; db: AdminDb }> {
+  try {
+    const admin = await import('../firebase-admin');
+    if (!admin.isAdminConfigured()) return { configured: false };
+    return { configured: true, db: admin.adminDb() };
+  } catch (error) {
+    console.error('School directory is unavailable', error);
+    return { configured: false };
+  }
+}
+
 function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function sourceFrom(id: string, data: FirebaseFirestore.DocumentData): DirectorySource {
+function sourceFrom(id: string, data: Record<string, unknown>): DirectorySource {
   const branding = data.branding && typeof data.branding === 'object' ? data.branding as DirectorySource['branding'] : undefined;
   const address = data.address && typeof data.address === 'object' ? data.address as DirectorySource['address'] : undefined;
   return {
@@ -46,10 +59,11 @@ export async function listPublicInstitutions(input: {
   state?: string;
   q?: string;
 }): Promise<{ configured: boolean; institutions: PublicInstitution[]; message?: string }> {
-  if (!isAdminConfigured()) {
+  const admin = await loadAdmin();
+  if (!admin.configured) {
     return { configured: false, institutions: [], message: DIRECTORY_UNAVAILABLE };
   }
-  const snap = await adminDb().collection('institutions').limit(400).get();
+  const snap = await admin.db.collection('institutions').limit(400).get();
   const rows = snap.docs.map((doc) => sourceFrom(doc.id, doc.data()));
   return { configured: true, institutions: filterPublicDirectory(rows, input) };
 }
@@ -61,13 +75,14 @@ export async function lookupInviteCode(code: string): Promise<{
   valid: boolean;
 }> {
   const cleaned = code.trim().toUpperCase();
-  if (!isAdminConfigured()) return { configured: false, institution: null, autoApprove: false, valid: false };
+  const admin = await loadAdmin();
+  if (!admin.configured) return { configured: false, institution: null, autoApprove: false, valid: false };
   if (!/^[A-Z0-9-]{4,16}$/.test(cleaned)) return { configured: true, institution: null, autoApprove: false, valid: false };
-  const snap = await adminDb().doc(`join_codes/${cleaned}`).get();
+  const snap = await admin.db.doc(`join_codes/${cleaned}`).get();
   if (!snap.exists) return { configured: true, institution: null, autoApprove: false, valid: false };
   const institutionId = text(snap.get('institutionId'));
   if (!institutionId) return { configured: true, institution: null, autoApprove: false, valid: false };
-  const academy = await adminDb().doc(`institutions/${institutionId}`).get();
+  const academy = await admin.db.doc(`institutions/${institutionId}`).get();
   if (!academy.exists) return { configured: true, institution: null, autoApprove: false, valid: false };
   const source = sourceFrom(academy.id, academy.data() ?? {});
   if (!isPublicDirectorySchool(source)) return { configured: true, institution: null, autoApprove: false, valid: false };
