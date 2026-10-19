@@ -1,4 +1,4 @@
-Sign-off for Shahzar as of `main` `de07f29b121001e80714bc839a914158a0e6d780` (#147 and #148). A row is Yes only when a named test passed or a screenshot shows the surface. A row is No when the feature was not seen working. Keys are names only. The #147 and #148 tables below are the earlier preview evidence. The production table is the 19 Oct 2026 smoke of the live alias.
+Sign-off for Shahzar as of `main` `f9d395cb84d904c123b77abb599eea441e934bd8` (#151, which includes #147 and #148). A row is Yes only when a named test passed or a screenshot shows the surface. A row is No when the feature was not seen working. Keys are names only. The #147 and #148 tables below are the earlier preview evidence. The production table is the 19 Oct 2026 smoke of `f9d395c` on the live alias.
 
 | Feature | Yes or no | Evidence | Needs key |
 | --- | --- | --- | --- |
@@ -9,11 +9,11 @@ Sign-off for Shahzar as of `main` `de07f29b121001e80714bc839a914158a0e6d780` (#1
 | ET AI Studio chat, student | Yes | `e2e/studio-chat.spec.ts` “student composer sends, and mic and photo controls answer”. Screenshot `studio-student-reply.png`. The bubble is the empty-reply line when the model key is missing. | `OPENROUTER_API_KEY` |
 | ET AI Studio mic, student | Yes | Same test clicks the mic and checks `data-voice-status`. Screenshot `studio-student-composer.png`. | None. Browser speech. |
 | ET AI Studio photo, student | Yes | Same test attaches `public/blog/thumbs/igcse-revision-with-et-ai.webp` and checks `data-photo-pending`. Screenshot `studio-student-composer.png`. | `OPENROUTER_API_KEY` if the model should read the photo. Attach itself needs no key. |
-| ET AI Studio header tabs, student | Yes | Same test clicks AI Teachers, ET Maths, ET Exams, ET Essays, and ET AI. Screenshot `studio-student-reply.png`. | None |
+| ET AI Studio tool hops, student | Yes | Same test opens AI Teachers, ET Maths, ET Exams, ET Essays, and ET AI. On #151 those hops are the dark sidebar and the empty-state chips. Screenshot `studio-dark-student-reply.png`. | None |
 | ET AI Studio chat, teacher | Yes | `e2e/studio-chat.spec.ts` “teacher composer sends on the ET page”. Screenshot `studio-teacher-reply.png`. | `OPENROUTER_API_KEY` |
 | ET AI Studio mic, teacher | Yes | Same teacher test. Screenshot `studio-teacher-composer.png`. | None |
 | ET AI Studio photo, teacher | Yes | Same teacher test. Screenshot `studio-teacher-composer.png`. | `OPENROUTER_API_KEY` to have the model read the photo. |
-| ET AI Studio header tabs, teacher | Yes | Same teacher test. Screenshot `studio-teacher-reply.png`. | None |
+| ET AI Studio tool hops, teacher | Yes | Same teacher test. On #151 those hops are the dark sidebar and the empty-state chips. Screenshot `studio-dark-teacher.png`. | None |
 | Teacher portraits | Yes | Marketing walk screenshots `/ai-teachers` to `teacher-portraits.png`. `lib/teacher-portrait.test.ts`. | None |
 | Blog images | Yes | `lib/blog/images.test.ts`. The admin journey opens `/dashboard/admin/blog` and expects the Blog heading. A new cover upload was not repeated in this pass. | None for the page. Production uploads still need deployed Storage rules. |
 | School wall | No | No post was made. `wallNotice` in `lib/wall/live.ts` is the permission copy, and it has no test in this pass. | None. Production reads stay blocked until Firestore rules are deployed. |
@@ -60,9 +60,26 @@ These rows are for this add-on on top of the handover table above. A row is key-
 | Google Calendar OAuth sync | key-blocked | Connect and sync need a Google client. Not run. | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` |
 | Timetable Firestore rules | key-blocked | Rules are in git and were not deployed. The edited week is in `localStorage` (`poket-timetable-v1`). | Firestore rules deploy |
 
-## Production smoke, 19 Oct 2026
+## Production smoke of `f9d395c`, 19 Oct 2026
 
-Alias https://pocket-school-ochre.vercel.app. Deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL`, state READY, commit `de07f29`.
+Alias https://pocket-school-ochre.vercel.app. Deployment `dpl_14rQsk7dNuwsVEwsrWhBCVnP1VE6`, state READY, commit `f9d395cb84d904c123b77abb599eea441e934bd8`.
+
+| Feature | Yes, no, or key-blocked | Evidence | Needs key |
+| --- | --- | --- | --- |
+| Marketing walk on production | Yes | `e2e/roles.spec.ts` “marketing pages from the landing footer answer”, `E2E_EMULATOR=1`, 1 passed. `data-landing="v3"`. | None |
+| Home, about, studio, login | Yes | 200 and a visible heading. Screenshot `prod-home.png`. | None |
+| Blog | Yes for the page. Content pending | 200, “The journal”, drafts still unpublished. Screenshot `prod-blog.png`. | None for the empty page. Publishing is an admin action. |
+| Marketplace listings | Yes | `/courses` rendered 9 public items. | None |
+| Featured carousel on production | No | `#featured` was empty. The preview fixture still passes. No live course is marked featured. | None. Admin marks Featured spot. |
+| Signed-out studio home | Yes | `/dashboard/studio` first response 200, then `/login`. `/ai-studio` is 307 to `/dashboard/studio`, then `/login`. No page error. | None |
+| Signed-out timetable routes | Yes | Teacher, institution, student, and parent: 307 then `/login`. Admin timetable: `/admin/login`. Studio timetable: shell then `/login`. No 500. | None |
+| Calendar feed with no token | Yes | `GET /api/calendar/ics` is 404. A trailing slash 308s to that path. A bad token is 404 with “This calendar link is not active.” | None |
+| Timetabler price | Yes | Still `TBC by Harry`. Do not invent a number. | None |
+| Timetable Firestore persistence | No | The edited week is still `localStorage` (`poket-timetable-v1`). A production Firestore write is a TODO. | Firestore rules deploy, then the write itself. |
+
+## Earlier production smoke of `de07f29`, 19 Oct 2026
+
+Alias https://pocket-school-ochre.vercel.app at that time. Deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL`, state READY, commit `de07f29`. Kept as the record of that deploy. The current alias is the `f9d395c` table above.
 
 | Feature | Yes, no, or key-blocked | Evidence | Needs key |
 | --- | --- | --- | --- |
@@ -77,22 +94,21 @@ Alias https://pocket-school-ochre.vercel.app. Deployment `dpl_3oPXzYfPsmmboz57ZW
 
 ## Keys on the Vercel project
 
-Configured (name present, value not read): `OTP_SECRET`, `DASHBOARD_SESSION_SECRET`, `CARD_TOKEN_SECRET`, `CRON_SECRET`, `SUPER_ADMIN_EMAILS`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `API_KEY`, `VITE_GEMINI_API_KEY`, `VITE_GOOGLE_API_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`.
+Names only, checked 19 Oct 2026. The per-environment table (set or missing on production, preview, and development) is in `HANDOVER.md` under Start here. `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is the only name set on all three. `DASHBOARD_SESSION_SECRET`, `OTP_SECRET`, and `SUPER_ADMIN_EMAILS` are production only. `FIREBASE_SERVICE_ACCOUNT` is missing on every target. Firestore rules are not deployed. Firebase Blaze was not verified. `poketschool.ai` is not a project domain.
 
-Not configured: `FIREBASE_SERVICE_ACCOUNT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`, `RESEND_API_KEY`, `MAIL_FROM`, `RESEND_WEBHOOK_SECRET`, `IPAY88_DUITNOW_PAYMENT_ID`, `PAYMENTS_SANDBOX`. Firestore rules are not deployed. Firebase Blaze was not verified. `poketschool.ai` is not a project domain.
-
-Admin actions still open: publish the six blog drafts, mark featured courses, merge duplicate course titles and duplicate institution records. The go-live order is `FINAL_AUDIT.md` section 9.
+Admin actions still open: publish the six blog drafts, mark featured courses, merge duplicate course titles and duplicate institution records. The edited timetable week is still browser storage. The timetabler price stays TBC by Harry. The go-live order is `FINAL_AUDIT.md` section 9.
 
 ## Dark AI Studio layout
 
-The signed-in home at `/dashboard/studio` and `/ai-studio` (redirect) is the dark ET AI chat at full viewport height. The light dashboard sidebar and top bar stay off this page. Cyan `#3FE0D0` with `#203337` ink. Dashboard sits above New chat and returns students to `/dashboard`, and teachers, parents, and institutions to their own home. Back to Poket School stays at the bottom. The light card list stays behind All tools. Nothing from the previous studio was removed.
+#151. The signed-in home at `/dashboard/studio` and `/ai-studio` (redirect) is the dark ET AI chat at full viewport height. The light dashboard sidebar and top bar stay off this page. Cyan `#3FE0D0` with `#203337` ink. No gold. Dashboard sits above New chat and returns students to `/dashboard`, teachers to `/dashboard/teacher`, parents to `/dashboard/parent`, institution admins to `/dashboard/institution`, platform admins to `/dashboard/admin`, and partners to `/dashboard/partner`. Back to Poket School stays at the bottom. The light card list stays behind All tools. Nothing from the previous studio was removed.
 
 | Feature | Yes, no, or key-blocked | Evidence | Needs key |
 | --- | --- | --- | --- |
-| Dark studio chat, student and teacher | Yes | `e2e/studio-chat.spec.ts` checks `data-studio-layout="dark"`, the message box, a reply, and Read aloud. Screenshots `studio-dark-student-empty.png`, `studio-dark-student-reply.png`, `studio-dark-teacher.png`. | `OPENROUTER_API_KEY` for a model answer. The empty-reply line still shows without it. |
+| Dark studio chat, student and teacher | Yes | `e2e/studio-chat.spec.ts` checks `data-studio-layout="dark"`, `data-studio-immersive="1"`, the message box, a reply, and Read aloud. Screenshots `studio-dark-desktop-1440.png`, `studio-dark-student-empty.png`, `studio-dark-student-reply.png`, `studio-dark-teacher.png`. | `OPENROUTER_API_KEY` for a model answer. The empty-reply line still shows without it. |
+| Dashboard home | Yes | Same spec. Dashboard is the first sidebar link. Student href `/dashboard`. Teacher href `/dashboard/teacher`. | None |
 | Mic, attach, photo, Upload photo | Yes | Same spec. Mic sets `data-voice-status`. Attach and Upload photo use the photo input. Photo attached and Remove photo. Screenshot `studio-dark-photo.png`. | None for the controls. |
-| Sidebar tools | Yes | Same spec, one navigation named AI Studio: New chat, Chats, Library, AI Teachers, ET + Subject, ET Maths, ET Exams, ET Essays, ET AI, Book Studio, PoketReads, AI Book Creator, Creator Store, Planner, Calendar, All tools, and the empty-state chips. | None |
-| Timetabler entry | Yes | Teacher sees Timetabler and `data-studio-entry="timetable"`. A student does not. | None |
+| Sidebar tools | Yes | Same spec, one navigation named AI Studio: Dashboard, New chat, Chats, Library, then AI Teachers, ET + Subject, ET Maths, ET Exams, ET Essays, Book Studio, Planner, Calendar, All tools. ET AI, PoketReads, AI Book Creator, and Creator Store are the empty-state chips and the All tools cards, not a second copy in that list. | None |
+| Timetabler entry | Yes | Teacher sees Timetabler in the dark sidebar and `data-studio-entry="timetable"`. A student does not. | None |
 | Role desks | Yes | Teacher Toolkit for the teacher. Research Helper for student and teacher. Parent Explainer for neither of those roles. | None |
-| Mobile sidebar | Yes | 390px width, Open ET AI menu, sidebar visible. Screenshot `studio-dark-mobile-sidebar.png`. | None |
-| Pip and theme | Yes | Pip stays the dashboard header control (`Open the guided tour`). The studio canvas stays dark when the site theme is light (`data-studio-theme="dark-default"`). | None |
+| Mobile sidebar | Yes | 390px width. Dashboard is in the tools row. Open ET AI menu opens the dark sidebar. Screenshot `studio-dark-mobile-sidebar.png`. | None |
+| Pip and theme | Yes | Pip is inside the dark studio essentials (`Open the guided tour`). The studio canvas stays dark when the site theme is light (`data-studio-theme="dark-default"`). | None |
