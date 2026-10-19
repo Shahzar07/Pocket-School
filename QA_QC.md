@@ -82,3 +82,17 @@ Configured (name present, value not read): `OTP_SECRET`, `DASHBOARD_SESSION_SECR
 Not configured: `FIREBASE_SERVICE_ACCOUNT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`, `RESEND_API_KEY`, `MAIL_FROM`, `RESEND_WEBHOOK_SECRET`, `IPAY88_DUITNOW_PAYMENT_ID`, `PAYMENTS_SANDBOX`. Firestore rules are not deployed. Firebase Blaze was not verified. `poketschool.ai` is not a project domain.
 
 Admin actions still open: publish the six blog drafts, mark featured courses, merge duplicate course titles and duplicate institution records. The go-live order is `FINAL_AUDIT.md` section 9.
+
+## Dark AI Studio layout
+
+The signed-in home at `/dashboard/studio` and `/ai-studio` (redirect) is the dark ET AI chat at full viewport height. The light dashboard sidebar and top bar stay off this page. Cyan `#3FE0D0` with `#203337` ink. Dashboard sits above New chat and returns students to `/dashboard`, and teachers, parents, and institutions to their own home. Back to Poket School stays at the bottom. The light card list stays behind All tools. Nothing from the previous studio was removed.
+
+| Feature | Yes, no, or key-blocked | Evidence | Needs key |
+| --- | --- | --- | --- |
+| Dark studio chat, student and teacher | Yes | `e2e/studio-chat.spec.ts` checks `data-studio-layout="dark"`, the message box, a reply, and Read aloud. Screenshots `studio-dark-student-empty.png`, `studio-dark-student-reply.png`, `studio-dark-teacher.png`. | `OPENROUTER_API_KEY` for a model answer. The empty-reply line still shows without it. |
+| Mic, attach, photo, Upload photo | Yes | Same spec. Mic sets `data-voice-status`. Attach and Upload photo use the photo input. Photo attached and Remove photo. Screenshot `studio-dark-photo.png`. | None for the controls. |
+| Sidebar tools | Yes | Same spec, one navigation named AI Studio: New chat, Chats, Library, AI Teachers, ET + Subject, ET Maths, ET Exams, ET Essays, ET AI, Book Studio, PoketReads, AI Book Creator, Creator Store, Planner, Calendar, All tools, and the empty-state chips. | None |
+| Timetabler entry | Yes | Teacher sees Timetabler and `data-studio-entry="timetable"`. A student does not. | None |
+| Role desks | Yes | Teacher Toolkit for the teacher. Research Helper for student and teacher. Parent Explainer for neither of those roles. | None |
+| Mobile sidebar | Yes | 390px width, Open ET AI menu, sidebar visible. Screenshot `studio-dark-mobile-sidebar.png`. | None |
+| Pip and theme | Yes | Pip stays the dashboard header control (`Open the guided tour`). The studio canvas stays dark when the site theme is light (`data-studio-theme="dark-default"`). | None |

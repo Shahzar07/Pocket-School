@@ -56,6 +56,15 @@ export function StudioFrame({ children }: { children: React.ReactNode }) {
   if (pathname.startsWith('/dashboard/studio/timetable')) {
     return <div className="min-h-[calc(100vh-4rem)] bg-background" data-nested-frame="0">{children}</div>;
   }
+  /* Chat homes own the only "AI Studio" navigation, inside the dark sidebar. */
+  const chatHome = pathname === '/dashboard/studio' || pathname === '/dashboard/studio/et';
+  if (chatHome) {
+    return (
+      <div className="flex min-h-0 flex-col bg-background" data-studio-shell="chat">
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-0 flex-col bg-background" data-studio-shell="standalone">
       <StudioNav />

@@ -22,7 +22,7 @@ const TYPE_COLORS: Record<string, string> = {
   general: 'bg-gray-100 text-gray-700',
 };
 
-export function NotificationsBell() {
+export function NotificationsBell({ tone = 'default' }: { tone?: 'default' | 'onDark' } = {}) {
   const { user } = useAuthSTORE();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -71,7 +71,8 @@ export function NotificationsBell() {
       <Button
         variant="ghost"
         size="icon"
-        className="relative text-gray-600"
+        className={`relative ${tone === 'onDark' ? 'text-[#EDEAE4] hover:bg-white/10' : 'text-gray-600'}`}
+        aria-label="Notifications"
         onClick={() => setOpen(o => !o)}
       >
         <Bell className="w-5 h-5" />
