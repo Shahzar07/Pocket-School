@@ -9,9 +9,18 @@ import {
 } from '@/lib/school-desk/model';
 import { GoalRoster } from './goals';
 import { DeskFrame, DeskLinks, deskHref, deskStyles, resetToDemo, useDesk } from './ui';
+import { applyTimetableToDesk } from '@/lib/timetable/publish';
+import { readTimetableFeed } from '@/lib/timetable/store';
 
 export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'dashboard' | 'preview'; role?: DeskRole }) {
   const { state, setState } = useDesk();
+  useEffect(() => {
+    if (!state.institution.demo) return;
+    const feed = readTimetableFeed();
+    if (!feed) return;
+    const next = applyTimetableToDesk(state, feed);
+    if (next !== state) setState(next);
+  }, [state, setState]);
   const [query, setQuery] = useState('');
   const [subject, setSubject] = useState('');
   const [level, setLevel] = useState('');

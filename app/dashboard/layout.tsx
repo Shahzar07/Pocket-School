@@ -52,6 +52,7 @@ import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { hasCmsAddon } from '@/lib/entitlements';
 import { SIGNUP_SCHOOL } from '@/lib/institutions/signup-copy';
+import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
@@ -93,6 +94,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/exams', icon: PenSquare, labelKey: 'nav.exams' },
       { href: '/dashboard/student/transcript', icon: GraduationCap, labelKey: 'nav.transcript' },
       { href: '/dashboard/student/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
+      { href: '/dashboard/student/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
       { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
       { href: '/dashboard/student/goals', icon: ListTodo, labelKey: 'nav.dailyGoals' },
       { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
@@ -140,6 +142,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher', icon: Home, labelKey: 'nav.overview' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/teacher/classes', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/teacher/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
       { href: '/dashboard/teacher/courses', icon: Presentation, labelKey: 'nav.coursesProducts' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
@@ -204,6 +207,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/parent/hotline', icon: Phone, labelKey: 'nav.mailbox', label: 'Poket SafeLine' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
+      { href: '/dashboard/parent/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/parent/goals', icon: Target, labelKey: 'nav.goals' },
@@ -242,6 +246,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/help', icon: HelpCircle, labelKey: 'nav.helpArticles', label: 'Admin help' },
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
       { href: '/dashboard/admin/planner', icon: Target, labelKey: 'nav.goals', label: 'Study planner', superOnly: true },
+      { href: '/dashboard/admin/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
@@ -290,6 +295,7 @@ const NAV: Record<Role, NavGroup[]> = {
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
+      { href: '/dashboard/institution/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
       { href: '/dashboard/institution/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights' },
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
       { href: '/dashboard/institution/join', icon: Users, labelKey: 'nav.join', label: 'Join settings' },

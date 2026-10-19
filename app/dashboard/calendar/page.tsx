@@ -17,6 +17,7 @@ import type { CalendarItem } from '@/lib/insights/calendar';
 import { Timestamp } from 'firebase/firestore';
 import { YearPlanner, type PlannerRole } from '@/components/planner/year-planner';
 import { isoDateKey } from '@/lib/insights/dates';
+import { readTimetableFeed } from '@/lib/timetable/store';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets, recordVisible } from '@/lib/allocation-targets';
 
@@ -67,7 +68,17 @@ export default function CalendarPage() {
 
   const load = async () => {
     const data = await getCalendarEvents({});
-    setEvents(data);
+    const feed = readTimetableFeed();
+    const lessons = (feed?.calendar ?? []).map((item, index) => ({
+      id: `tt-${index}-${item.date}`,
+      title: item.title,
+      description: item.description,
+      startDate: Timestamp.fromDate(new Date(`${item.date}T00:00:00`)),
+      type: 'class' as const,
+      audience: 'all' as const,
+      createdBy: 'timetable',
+    }));
+    setEvents([...data, ...lessons]);
     setLoading(false);
   };
 

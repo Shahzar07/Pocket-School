@@ -17,7 +17,11 @@ Poket School (poketschool.ai) is a Next.js 15 app with Firebase Auth, Firestore 
 | Parent | `/dashboard/parent` | grades, goals, reports |
 | Teacher | `/dashboard/teacher` | classes, gradebook, courses, AI Book Creator when the CMS add-on is on |
 | Institution admin | `/dashboard/institution` | approvals at `/dashboard/institution/approvals` |
-| Platform admin (`role: admin`, including `content_editor` and `super_admin`) | `/dashboard/admin` | queues, platform, pulse, AI Book Creator at `/dashboard/admin/books` |
+| Platform admin (`role: admin`, including `content_editor` and `super_admin`) | `/dashboard/admin` | queues, platform, pulse, AI Book Creator at `/dashboard/admin/books`, ET AI Timetabler at `/dashboard/admin/timetable` |
+| Institution admin with the timetabler add-on | `/dashboard/institution/timetable` | School week. Enterprise (`plan` or `package:enterprise`) can use more than one campus. |
+| Teacher | `/dashboard/teacher/timetable` | Published lessons. The add-on unlocks a personal timetable for private classrooms. |
+| Student | `/dashboard/student/timetable` | Own lessons and option choices. |
+| Parent | `/dashboard/parent/timetable` | Child’s lessons and option choices. |
 
 ## Signup schools
 
@@ -43,7 +47,7 @@ npx firebase deploy --only firestore:rules,firestore:indexes --project ringed-se
 | Malaysian gateway | `IPAY88_DUITNOW_PAYMENT_ID`, `PAYMENTS_SANDBOX` |
 | `MYINVOIS_CLIENT_ID`, `MYINVOIS_SECRET`, `MYINVOIS_TIN` or `TIN`, `MYINVOIS_ENV` | E-invoice |
 | `RESEND_API_KEY`, `MAIL_FROM` | Alternate mail |
-| `OPENROUTER_API_KEY` | ET AI and AI Book Creator. Missing key returns a clear error, no crash. |
+| `OPENROUTER_API_KEY` | ET AI and AI Book Creator. The timetabler solver runs without it. The key only adds a model paragraph on `POST /api/timetable/explain`. |
 | `OTP_SECRET`, `CRON_SECRET`, `CARD_TOKEN_SECRET`, `DASHBOARD_SESSION_SECRET`, `SUPER_ADMIN_EMAILS` | Session, OTP, cron, cards |
 | Firebase Blaze | Storage and Functions |
 | DNS | poketschool.ai |

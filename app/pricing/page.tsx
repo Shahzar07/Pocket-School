@@ -131,6 +131,7 @@ const INSTITUTION_FEATURES = [
   { icon: <LayoutDashboard className="w-4 h-4" />, label: 'Admin console', desc: 'Cohort analytics, usage and oversight.' },
   { icon: <Users className="w-4 h-4" />, label: 'Bulk seats', desc: 'Volume licensing from 25 learners up.' },
   { icon: <BookOpen className="w-4 h-4" />, label: 'Custom curriculum', desc: 'We ingest your schemes of work.' },
+  { icon: <LayoutDashboard className="w-4 h-4" />, label: 'ET AI Timetabler', desc: 'Whole-school week, cover, and option blocks. Price TBC by Harry.' },
 ];
 
 const SPARK_USES = [
@@ -295,7 +296,7 @@ export default function PricingPage() {
           </div>
 
           {ADDONS.map(a => {
-            const quoted = quoteAddon(config, a.id, currency);
+            const quoted = a.priceNote ? null : quoteAddon(config, a.id, currency);
             const addonQuoteAmount = quoted ? formatMoney(quoted.amount, quoted.currency) : formatMoney(0, currency);
             return (
             <div
@@ -308,21 +309,23 @@ export default function PricingPage() {
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-lg text-slate-900">{a.name}</h3>
                 <p className="text-sm text-slate-600 mt-1 leading-relaxed">{a.blurb}</p>
+                {a.requiresLabel ? <p className="text-xs text-slate-500 mt-2">{a.requiresLabel}</p> : (
                 <p className="text-xs text-slate-500 mt-2">
                   Requires the {TIERS.find(t => t.tier === a.requiresTier)?.name} plan or above.
                 </p>
+                )}
               </div>
               <div className="text-center sm:text-right shrink-0">
                 <p className="text-2xl font-extrabold text-slate-900">
-                  {addonQuoteAmount}<span className="text-sm font-medium text-slate-500">/mo</span>
+                  {a.priceNote ? a.priceNote : <>{addonQuoteAmount}<span className="text-sm font-medium text-slate-500">/mo</span></>}
                 </p>
                 <button
                   type="button"
                   onClick={() => checkout('addon', a.id)}
-                  disabled={checkingOut === `addon:${a.id}`}
+                  disabled={Boolean(a.priceNote) || checkingOut === `addon:${a.id}`}
                   className="mt-3 inline-flex items-center justify-center h-10 px-5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-60"
                 >
-                  {checkingOut === `addon:${a.id}` ? 'Starting checkout…' : 'Subscribe'}
+                  {checkingOut === `addon:${a.id}` ? 'Starting checkout…' : (a.priceNote ? a.priceNote : 'Subscribe')}
                 </button>
               </div>
             </div>

@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { buildSchedule } from '@/lib/study/schedule';
+import { hardViolations } from './clashes';
+import { applyTimetableToDesk, buildFeed, publishTimetable, rollbackTimetable, visibleLessons } from './publish';
+import { schoolTimetable } from './seed';
+import { solveTimetable } from './solver';
+import { createDemoDesk } from '@/lib/school-desk/model';
+
+describe('publish', () => {
+  it('feeds the calendar, planner, registers, classrooms, and iCal, and can roll back', () => {
+    const solved = solveTimetable(schoolTimetable());
+    const draft = { ...schoolTimetable(), lessons: solved.lessons, quality: solved.quality, unmet: solved.unmet };
+    assert.deepEqual(hardViolations(draft, draft.lessons), []);
+    const { doc, feed } = publishTimetable(draft, '2026-10-19T12:00:00.000Z', 'inst-1');
+    assert.equal(doc.status, 'published');
+    assert.ok(feed.calendar.length > 0);
+    assert.ok(feed.calendar.every(item => item.type === 'class' && item.source === 'ai_draft'));
+    assert.ok(feed.planner.every(item => item.kind === 'period' && item.id.startsWith('tt-')));
+    assert.ok(feed.registers.length >= feed.calendar.length);
+    assert.ok(feed.registers.every(row => row.status === 'unmarked'));
+    assert.ok(feed.classrooms.some(room => room.levelName === 'Primary 2' && room.level === 'Primary'));
+    assert.match(feed.ical, /BEGIN:VCALENDAR/);
+    assert.match(feed.ical, /SUMMARY:/);
+    assert.ok(feed.assignmentLinks.length > 0 && feed.examLinks.length > 0);
+    const teacher = visibleLessons(doc, { teacherUserId: 't-adeyemi' });
+    assert.ok(teacher.length > 0);
+    assert.ok(teacher.every(lesson => lesson.teacherId === 'adeyemi'));
+    const parent = visibleLessons(doc, { childIds: ['s-amina'] });
+    assert.ok(parent.every(lesson => lesson.groupId === 'g-oak'));
+    const rolled = rollbackTimetable(doc, doc.versions[0]!.version, '2026-10-19T13:00:00.000Z', 'inst-1');
+    assert.equal(rolled.lessons.length, solved.lessons.length);
+    assert.equal(rolled.status, 'draft');
+    const desk = applyTimetableToDesk(createDemoDesk(), feed);
+    assert.ok(desk.classes.some(item => item.name.includes('Primary 2')));
+    assert.ok(desk.enrolments.some(item => item.status === 'active'));
+    const study = buildSchedule([{ id: 't1', title: 'Maths — Primary 2', summary: '', keyPoints: [], weight: 1, order: 1 }], '2026-11-01');
+    assert.ok(study.length > 0);
+  });
+});

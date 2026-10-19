@@ -248,6 +248,9 @@ export interface AddOn {
   blurb: string;
   /** Base tier required before the add-on can be bought. */
   requiresTier: AccessTier;
+  /** Shown instead of a price when Harry has not set one. */
+  priceNote?: string;
+  requiresLabel?: string;
 }
 
 /**
@@ -268,6 +271,15 @@ export const ADDONS: AddOn[] = [
     name: 'CMS',
     blurb: 'Shared editor, document import, image library, illustrations, and course or book covers.',
     requiresTier: 5,
+  },
+  {
+    id: 'et_ai_timetabler',
+    permission: 'addon:et_ai_timetabler',
+    name: 'ET AI Timetabler',
+    blurb: 'Builds a weekly timetable for a teacher’s private classrooms, or for a whole school on Institution and Enterprise.',
+    requiresTier: 5,
+    priceNote: 'TBC by Harry',
+    requiresLabel: 'Teacher plans get a personal timetable. Institution and Enterprise get the school timetable. Enterprise can use more than one campus.',
   },
 ];
 

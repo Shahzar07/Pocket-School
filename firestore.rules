@@ -1883,6 +1883,80 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ET AI Timetabler. Editors are platform admins, institution admins, and
+    // staff with timetable:edit. Teachers, students, and parents read only
+    // their own published view. Audit entries cannot be edited or deleted.
+    function timetableData() {
+      return get(/databases/$(database)/documents/timetables/$(timetableId)).data;
+    }
+    function timetableEditor() {
+      return isAdmin() || (
+        isSignedIn()
+        && timetableData().get('institutionId', '') == myInstitution()
+        && (
+          isInstitutionAdmin()
+          || (userData().keys().hasAny(['permissions']) && userData().permissions.hasAny(['timetable:edit']))
+        )
+      );
+    }
+    function timetablePersonal() {
+      return isSignedIn()
+        && timetableData().get('kind', '') == 'personal'
+        && timetableData().get('ownerId', '') == request.auth.uid;
+    }
+
+    match /timetables/{timetableId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.get('kind', '') == 'personal' && resource.data.ownerId == request.auth.uid)
+        || (isSignedIn()
+            && resource.data.get('institutionId', '') == myInstitution()
+            && (isInstitutionAdmin()
+                || (userData().keys().hasAny(['permissions']) && userData().permissions.hasAny(['timetable:edit']))));
+      allow create: if isAdmin()
+        || (isSignedIn()
+            && incoming().get('kind', '') == 'personal'
+            && incoming().ownerId == request.auth.uid
+            && hasRole('teacher')
+            && userData().keys().hasAny(['permissions'])
+            && userData().permissions.hasAny(['addon:et_ai_timetabler']))
+        || (isSignedIn()
+            && incoming().get('institutionId', '') == myInstitution()
+            && (isInstitutionAdmin()
+                || (userData().keys().hasAny(['permissions']) && userData().permissions.hasAny(['timetable:edit']))));
+      allow update: if isAdmin()
+        || (isSignedIn()
+            && resource.data.get('kind', '') == 'personal'
+            && resource.data.ownerId == request.auth.uid
+            && incoming().ownerId == request.auth.uid
+            && incoming().get('kind', '') == 'personal')
+        || (isSignedIn()
+            && resource.data.get('institutionId', '') == myInstitution()
+            && incoming().get('institutionId', '') == myInstitution()
+            && (isInstitutionAdmin()
+                || (userData().keys().hasAny(['permissions']) && userData().permissions.hasAny(['timetable:edit']))));
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.get('kind', '') == 'personal' && resource.data.ownerId == request.auth.uid);
+
+      match /people/{personId} {
+        allow read: if isAdmin()
+          || timetableEditor()
+          || timetablePersonal()
+          || (isSignedIn() && request.auth.uid == personId)
+          || (isSignedIn() && userData().get('childIds', []).hasAny([personId]));
+        allow create, update: if timetableEditor() || timetablePersonal();
+        allow delete: if isAdmin() || timetablePersonal();
+      }
+
+      match /audit/{entryId} {
+        allow read: if timetableEditor() || timetablePersonal();
+        allow create: if (timetableEditor() || timetablePersonal())
+          && incoming().actorId == request.auth.uid
+          && incoming().action is string
+          && incoming().detail is string;
+        allow update, delete: if false;
+      }
+    }
+
     match /users/{userId}/exam_preps/{prepId} {
       allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
       allow create: if isUser(userId) && incoming().ownerId == userId;

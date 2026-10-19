@@ -104,3 +104,14 @@ The Expo app should mirror: public school search (do not query institutions befo
 6. Set Stripe and the Malaysian gateway before taking payment.
 7. Smoke `/signup` as student, teacher, and parent, then approve one request.
 8. Open AI Book Creator as admin, generate or write a page, and confirm a missing key does not crash.
+
+## ET AI Timetabler
+
+Added beside the calendar, year planner, school desk, and attendance. It does not replace them. A published week writes class items the calendar and year planner can read, opens attendance registers, and can add classes on the sample school desk.
+
+- Setup for days, periods, terms, holidays, rooms, staff, subjects, classes, sets, and option blocks, including CSV.
+- Students and parents choose inside option blocks. ET AI suggests blocks, and approval creates sets and enrols the students.
+- The week is placed by a deterministic solver. Hard constraints are never written. Quality and unmet soft constraints are stored. Plain language such as “Mr Chen can’t do Friday afternoons” is applied without a model key. `OPENROUTER_API_KEY` only adds a model paragraph on `POST /api/timetable/explain`.
+- The grid rejects an illegal drag or click and offers a legal slot. Cover proposes a qualified free teacher, queues notices for the teachers, students, and parents, and keeps a cover load.
+- Teacher add-on: personal timetable. Institution: one school. Enterprise: more than one campus. The price on the pricing page and the landing feature list is TBC by Harry.
+- Firestore rules for `timetables` are in git and are not deployed from this work.

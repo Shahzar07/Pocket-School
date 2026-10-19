@@ -33,6 +33,7 @@ import {
 } from '@/lib/insights/planner-import';
 import { loadSchoolPlan, saveSchoolPlan, type StoredYearPlan } from '@/lib/planner-store';
 import { nextTermName, parseTermFile, termsToLines } from '@/lib/terms';
+import { readTimetableFeed } from '@/lib/timetable/store';
 
 const KINDS: PlannerKind[] = ['term', 'holiday', 'exam', 'closure', 'assessment', 'report', 'period', 'event', 'ptm', 'revision'];
 
@@ -148,7 +149,12 @@ export function YearPlanner({
     yearGroup: plan.yearGroup || undefined,
   };
   const visible = useMemo(
-    () => eventsForViewer(plan.events, viewerOf(role, scope)),
+    () => {
+      const feed = readTimetableFeed();
+      const lessons = (feed?.planner ?? []).filter(event => event.id.startsWith('tt-'));
+      const own = plan.events.filter(event => !event.id.startsWith('tt-'));
+      return eventsForViewer([...own, ...lessons], viewerOf(role, scope));
+    },
     [plan.events, plan.campusId, plan.classId, plan.yearGroup, role],
   );
   const units = useMemo(() => parseUnits(plan.unitsText), [plan.unitsText]);
