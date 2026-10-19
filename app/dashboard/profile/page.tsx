@@ -271,7 +271,7 @@ export default function ProfilePage() {
           yearGroup: profile.yearGroup ?? '',
           region: profile.region ?? '',
           gender: profile.gender ?? '',
-          demographicConsent: Boolean(profile.demographicConsentAt),
+          demographicConsent: profile.demographicConsent !== false,
           notificationPrefs: profile.notificationPrefs,
           privacy: {
             shareBoard: profile.privacy?.shareBoard ?? profile.shareBoard !== false,
@@ -311,10 +311,6 @@ export default function ProfilePage() {
 
   const saveProfile = async (draft: ProfileDraft) => {
     try {
-      if (draft.gender && !draft.demographicConsent) {
-        toast.error('Confirm the demographic statistics notice.');
-        return;
-      }
       const patch = profilePatch(draft, sectionRole);
       if (sectionRole === 'student') {
         await authedFetch('/api/account/placement', {

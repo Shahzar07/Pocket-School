@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { roleForServerCheck } from '../../admin-access';
-import { adminDb } from '../../firebase-admin';
+import { adminDb, isAdminConfigured } from '../../firebase-admin';
 import type { AccessTier } from '../../entitlements';
 import {
   ActionError,
@@ -1243,7 +1243,7 @@ export async function referralState(
 
 export async function recordReferralClick(code: string) {
   const normalised = normaliseCode(code);
-  if (normalised.length < 4) return { ok: false };
+  if (normalised.length < 4 || !isAdminConfigured()) return { ok: false };
   const ref = db().doc(`coupons/${normalised}`);
   const snap = await ref.get();
   if (!snap.exists || snap.data()?.active === false) return { ok: false };
@@ -1252,6 +1252,7 @@ export async function recordReferralClick(code: string) {
 }
 
 export async function activePromoBanners(today = new Date().toISOString().slice(0, 10)) {
+  if (!isAdminConfigured()) return [];
   const snap = await db().collection('coupons').where('banner', '==', true).limit(12).get();
   const rows: PromoDraft[] = snap.docs.map((doc) => {
     const data = doc.data();

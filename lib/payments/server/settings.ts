@@ -119,6 +119,7 @@ export async function secretValue(slotId: string): Promise<string | undefined> {
   if (!slot) return undefined;
   const fromEnv = process.env[slot.envVar];
   if (!isPlaceholder(fromEnv)) return fromEnv?.trim();
+  if (!isAdminConfigured()) return undefined;
   const snap = await db().doc(`platform_secrets/${slotId}`).get();
   const value = snap.data()?.value;
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;

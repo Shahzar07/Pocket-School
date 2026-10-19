@@ -17,7 +17,11 @@ export function usePublishedStudioBooks(): Book[] {
     };
     load();
     window.addEventListener('storage', load);
-    return () => window.removeEventListener('storage', load);
+    window.addEventListener('poket-studio-books', load);
+    return () => {
+      window.removeEventListener('storage', load);
+      window.removeEventListener('poket-studio-books', load);
+    };
   }, []);
   return books;
 }

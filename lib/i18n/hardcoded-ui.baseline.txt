@@ -1382,6 +1382,7 @@ app/dashboard/studio/page.tsx	Essays you have started on this device.
 app/dashboard/studio/page.tsx	Nothing saved here yet
 app/dashboard/studio/page.tsx	Poket School
 app/dashboard/studio/page.tsx	Recent work
+app/dashboard/studio/page.tsx	What should ET AI make today
 app/dashboard/studio/teachers/[teacherId]/page.tsx	Back to AI Teachers
 app/dashboard/studio/teachers/[teacherId]/page.tsx	That teacher is not in AI Studio.
 app/dashboard/studio/teachers/page.tsx	AI Teachers,

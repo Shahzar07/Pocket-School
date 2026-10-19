@@ -11,6 +11,26 @@ service firebase.storage {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Book covers for AI Book Creator. The public shelf reads them.
+    // Do not deploy from this branch.
+    match /books/{bookId}/{fileName} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType == 'image/webp';
+      allow delete: if request.auth != null;
+    }
+
+    // Journal banners and inline images. The public site reads them.
+    // Do not deploy from this branch.
+    match /blog/{postId}/{fileName} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType == 'image/webp';
+      allow delete: if request.auth != null;
+    }
+
     // Hotline and emergency files. Clients cannot read or write these paths.
     // The server strips location data, scans the bytes, and returns a signed URL.
     // Do not deploy from this branch.

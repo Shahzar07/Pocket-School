@@ -1,0 +1,15 @@
+export const JOIN = {
+  eyebrow: 'Poket School',
+  title: 'Join a classroom',
+  lede: 'Enter with the code or the link from your teacher. A private classroom and a school classroom use the same join.',
+  code: 'Class code',
+  action: 'Join classroom',
+  signingIn: 'Checking your account…',
+  needAccount: 'Sign in, or create a free account, then open this link again.',
+  signIn: 'Sign in',
+  signUp: 'Create an account',
+  pending: 'Your request is waiting for the teacher or the school.',
+  active: 'You are in this classroom. It shows in attendance, assignments, exams, the gradebook, and the planner.',
+  failed: 'That classroom could not be joined.',
+  missing: 'The server account is not available, so the code cannot be checked yet.',
+};

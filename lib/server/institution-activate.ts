@@ -4,7 +4,7 @@
  */
 
 import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb } from '../firebase-admin';
+import { adminDb, isAdminConfigured } from '../firebase-admin';
 import {
   institutionEmail,
   openSubscription,
@@ -46,6 +46,7 @@ export async function callerOwnsInstitution(uid: string, institutionId: string):
 }
 
 export async function loadApprovalSettings(): Promise<ApprovalSettings> {
+  if (!isAdminConfigured()) return defaultApprovalSettings();
   try {
     const snap = await adminDb().doc('settings/institution_signup').get();
     if (!snap.exists) return defaultApprovalSettings();

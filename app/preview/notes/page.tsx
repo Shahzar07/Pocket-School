@@ -85,7 +85,7 @@ export default function PreviewNotesPage() {
       <NotesBoard
         notes={notes}
         now={1_700_000_100_000}
-        groups={[{ id: 'class-1', title: 'Year 10 biology', kind: 'class' }]}
+        groups={[{ id: 'class-1', title: 'IGCSE Biology', kind: 'class' }]}
         onCreate={(input) => {
           setNotes((current) => [{
             id: `new-${current.length}`,

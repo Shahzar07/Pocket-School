@@ -103,7 +103,18 @@ test('a teacher course needs the institution admin, then Poket School, before th
   assert.ok(!('error' in placed));
   if ('error' in placed) return;
   assert.equal(placed.featured, true);
+  assert.equal(placed.priority, 0);
   assert.deepEqual(placed.levels, ['igcse_alevel']);
+  const scheduled = platformPlaces(asked, {
+    marketplace: 'approved', featured: true, core: false, levels: [], institutionIds: [],
+    priority: 10, featuredFrom: '2026-10-01', featuredUntil: '2026-10-31',
+  });
+  assert.ok(!('error' in scheduled) && scheduled.priority === 10 && scheduled.featuredFrom === '2026-10-01');
+  const reversed = platformPlaces(asked, {
+    marketplace: 'approved', featured: true, core: false, levels: [], institutionIds: [],
+    featuredFrom: '2026-12-01', featuredUntil: '2026-10-01',
+  });
+  assert.ok('error' in reversed);
   const core = platformPlaces(blankPublication('platform'), {
     marketplace: 'hidden', featured: false, core: true, levels: ['primary_secondary'], institutionIds: [],
   });

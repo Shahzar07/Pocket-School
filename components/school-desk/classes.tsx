@@ -37,6 +37,8 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
   const [bulk, setBulk] = useState('name,subject,level,programme,term,campus,room,timetable,teacher,capacity\nIGCSE Physics,Physics,IGCSE,Cambridge IGCSE,Term 1,Falim,F-8,Thu 11:00,Siti Aminah,22');
   const [news, setNews] = useState('');
   const [error, setError] = useState('');
+  const [visibility, setVisibility] = useState<'school' | 'private'>(state.institution.kind === 'independent' ? 'private' : 'school');
+  const [autoApprove, setAutoApprove] = useState(false);
   const [inviteName, setInviteName] = useState('Hana Ibrahim');
   const [studentRecord, setStudentRecord] = useState('');
   const [consoleOn, setConsoleOn] = useState(role === 'institution_admin');
@@ -169,6 +171,8 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               ownerTeacherId: state.actorId,
               ownerTeacherName: state.actorName,
               createdByRole: role === 'institution_admin' ? 'institution_admin' : 'teacher',
+              visibility,
+              inviteAutoApprove: autoApprove,
             }, role);
             setError(result.error);
             if (!result.error) {
@@ -183,6 +187,17 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
             <select className={deskStyles.field} value={form.level} onChange={(event) => setField('level', event.target.value)} aria-label={t.filterLevel}>
               {LEVELS.map((item) => <option key={item}>{item}</option>)}
             </select>
+            <label className="text-sm text-[#1E6A83]">{t.visibility}
+              <select className={`${deskStyles.field} mt-1 w-full`} value={visibility} data-class-visibility="1" aria-label={t.visibility} onChange={(event) => setVisibility(event.target.value === 'private' ? 'private' : 'school')}>
+                <option value="school">{t.schoolClass}</option>
+                <option value="private">{t.privateClass}</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-[#1E6A83]">
+              <input type="checkbox" checked={autoApprove} data-class-auto="1" onChange={(event) => setAutoApprove(event.target.checked)} />
+              {t.autoApprove}
+            </label>
+            <p className="text-sm text-[#1E6A83] sm:col-span-2">{t.privateHelp}</p>
             <button type="submit" className={deskStyles.btn} data-action="create-class">{t.create}</button>
             {error ? <p className="text-sm text-[#1E6A83] sm:col-span-2">{error}</p> : null}
           </form>
@@ -225,6 +240,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
                   <p className="text-sm text-[#1E6A83]">{klass.subject} · {klass.level} · {klass.programme} · {klass.term}</p>
                   <p className="text-sm text-[#1E6A83]">{klass.campus} · {klass.room} · {klass.timetable}</p>
                   <p className="text-sm text-[#1E6A83]">{t.coTeachers}: {klass.coTeachers.join(', ') || '—'} · {t.capacity} {klass.capacity}</p>
+                  <p className="text-sm">{klass.visibility === 'private' ? t.privateClass : t.schoolClass}{klass.inviteAutoApprove ? ` · ${t.autoApprove}` : ''}</p>
                   <p className="text-sm">{t.joinCode} {klass.joinCode}</p>
                   <label className="mt-2 block text-sm text-[#1E6A83]">{t.inviteLink}
                     <input className={`${deskStyles.field} mt-1 w-full`} readOnly value={`https://poketschool.ai/join/class/${klass.joinCode}`} aria-label={t.inviteLink} />
@@ -237,6 +253,9 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
                 {(['roster', 'attendance', 'assignments', 'goals', 'gradebook', 'news'] as const).map((item) => (
                   <button key={item} type="button" className={tab === item ? deskStyles.btn : deskStyles.ghost} onClick={() => setTab(item)}>{t.tabs[item]}</button>
                 ))}
+                <a className={deskStyles.ghost} href={deskHref(base, '/dashboard/teacher/exams')}>{t.examsTitle}</a>
+                <a className={deskStyles.ghost} href={deskHref(base, '/dashboard/teacher/report-cards')}>{t.reportTitle}</a>
+                <a className={deskStyles.ghost} href={deskHref(base, '/dashboard/teacher/planner')}>{t.plannerTitle}</a>
               </div>
               {tab === 'roster' && (
                 <div className="mt-4 space-y-2">

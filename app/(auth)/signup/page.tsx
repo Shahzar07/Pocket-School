@@ -33,6 +33,7 @@ import type { JoinRole } from '@/lib/institution-membership';
 import { SIGNUP_SCHOOL } from '@/lib/institutions/signup-copy';
 import { statesForCountry } from '@/lib/institution-states';
 import { amberSignupFields } from '@/lib/amber/public';
+import { CONSENT_UI, detectTimezone, signupConsentFields } from '@/lib/consents';
 
 const ROLES = [
   { id: 'student', titleKey: 'signup.student', icon: <GraduationCap className="w-5 h-5" /> },
@@ -123,7 +124,8 @@ export default function SignupPage() {
   }, []);
   const [dob, setDob] = useState('');
   const [agreed, setAgreed] = useState(false);
-  const [amberOptIn, setAmberOptIn] = useState(false);
+  const [amberOptIn, setAmberOptIn] = useState(true);
+  const [timezoneOn, setTimezoneOn] = useState(true);
   const [referral, setReferral] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -138,7 +140,7 @@ export default function SignupPage() {
   const [schoolName, setSchoolName] = useState('');
   const [childEmail, setChildEmail] = useState('');
   const [gender, setGender] = useState<'' | 'male' | 'female'>('');
-  const [demographicConsent, setDemographicConsent] = useState(false);
+  const [demographicConsent, setDemographicConsent] = useState(true);
   const [childGender, setChildGender] = useState<'' | 'male' | 'female'>('');
   const [childLevel, setChildLevel] = useState('');
   const [childDob, setChildDob] = useState('');
@@ -287,7 +289,6 @@ export default function SignupPage() {
 
   const handleGoogleSignIn = async () => {
     if (!gender) { toast.error('Choose male or female.'); return; }
-    if (!demographicConsent) { toast.error('Confirm the demographic statistics notice.'); return; }
     if (!agreed) { toast.error(t('signup.acceptFirst')); return; }
     try {
       setLoading(true);
@@ -307,7 +308,7 @@ export default function SignupPage() {
           consentAcceptedAt: serverTimestamp(),
           ...(dob ? { dateOfBirth: dob } : {}),
           ...(gender ? { gender } : {}),
-          ...(demographicConsent ? { demographicConsentAt: Date.now() } : {}),
+          ...signupConsentFields({ demographic: demographicConsent, timezone: detectTimezone(), timezoneOn, amber: amberOptIn }),
           ...(country ? { country } : {}),
           ...(joinState ? { region: joinState } : {}),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
@@ -385,10 +386,6 @@ export default function SignupPage() {
       toast.error('Choose male or female.');
       return false;
     }
-    if (!demographicConsent) {
-      toast.error('Confirm the demographic statistics notice.');
-      return false;
-    }
     if (role === 'teacher' && !subject.trim()) {
       toast.error(t('signup.needSubjects'));
       return false;
@@ -397,7 +394,7 @@ export default function SignupPage() {
       toast.error('Choose the level you teach.');
       return false;
     }
-    if (role === 'parent' && childEmail.trim() && (!childGender || !childLevel || !childDob || !demographicConsent)) {
+    if (role === 'parent' && childEmail.trim() && (!childGender || !childLevel || !childDob)) {
       toast.error('Add the child gender, level, date of birth, and the demographic notice.');
       return false;
     }
@@ -436,7 +433,7 @@ export default function SignupPage() {
       emailVerificationRequired: true,
       dateOfBirth: dob,
       ...(gender ? { gender } : {}),
-      ...(demographicConsent ? { demographicConsentAt: Date.now() } : {}),
+      ...signupConsentFields({ demographic: demographicConsent, timezone: detectTimezone(), timezoneOn, amber: amberOptIn }),
       consentAcceptedAt: serverTimestamp(),
       ...(isMinor ? {
         isMinor: true,
@@ -830,6 +827,18 @@ export default function SignupPage() {
               <p className="text-xs text-white/25">{t('signup.passwordHint')}</p>
             </div>
 
+            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={timezoneOn}
+                onChange={e => setTimezoneOn(e.target.checked)}
+                disabled={loading}
+                className="mt-0.5 w-4 h-4 shrink-0 accent-[#3FE0D0]"
+                aria-label={CONSENT_UI.timezone}
+                data-consent="timezone"
+              />
+              <span className="text-xs text-white/70 leading-relaxed">{CONSENT_UI.timezone}</span>
+            </label>
             <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer">
               <input
                 type="checkbox"

@@ -8,6 +8,8 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { resolveStaffRole } from '@/lib/admin-console';
 import { db } from '@/lib/firebase';
 import { BlogLivePreview } from '@/components/blog/live-preview';
+import { CoverEditor } from '@/components/blog/cover-editor';
+import { publishImageError } from '@/lib/blog/images';
 import { BLOG_CATEGORIES, SAMPLE_POSTS, isCoverPath, slugify, type BlogFaq, type BlogPost, type BlogStatus } from '@/lib/blog/posts';
 
 const EMPTY: BlogPost = {
@@ -19,6 +21,8 @@ const EMPTY: BlogPost = {
   tags: [],
   author: 'Poket School',
   coverImage: '',
+  coverAlt: '',
+  thumbnail: '',
   featured: false,
   status: 'draft',
   publishedAt: null,
@@ -87,6 +91,15 @@ export default function BlogDeskPage() {
       return;
     }
     const faq: BlogFaq[] = draft.faq.filter((item) => item.question.trim() && item.answer.trim()).slice(0, 8);
+    const coverImage = isCoverPath(draft.coverImage) ? draft.coverImage : '';
+    const thumbnail = draft.thumbnail && isCoverPath(draft.thumbnail) ? draft.thumbnail : '';
+    if (draft.status === 'published' || draft.status === 'scheduled') {
+      const imageError = publishImageError(coverImage, draft.coverAlt || '');
+      if (imageError) {
+        toast.error(imageError);
+        return;
+      }
+    }
     const payload: BlogPost = {
       ...draft,
       slug,
@@ -94,7 +107,9 @@ export default function BlogDeskPage() {
       excerpt: draft.excerpt.trim(),
       body: draft.body,
       tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 12),
-      coverImage: isCoverPath(draft.coverImage) ? draft.coverImage : '',
+      coverImage,
+      coverAlt: (draft.coverAlt || '').trim(),
+      thumbnail,
       affiliate: draft.category === 'Book Reviews' || draft.affiliate,
       faq,
       sample: false,
@@ -198,9 +213,14 @@ export default function BlogDeskPage() {
           <label className="block text-sm font-semibold">Tags
             <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="ET AI, families" className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
           </label>
-          <label className="block text-sm font-semibold">Cover image URL
-            <input value={draft.coverImage} onChange={(event) => setDraft({ ...draft, coverImage: event.target.value })} placeholder="/blog/essay.webp or https://" className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
-          </label>
+          <CoverEditor
+            postId={slugify(draft.slug || draft.title)}
+            coverImage={draft.coverImage}
+            thumbnail={draft.thumbnail || ''}
+            coverAlt={draft.coverAlt || ''}
+            onCover={(next) => setDraft({ ...draft, ...next })}
+            onInsert={(markdown) => setDraft({ ...draft, body: `${draft.body.trim()}\n\n${markdown}\n` })}
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold">Status
               <select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as BlogStatus })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3">

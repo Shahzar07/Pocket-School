@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { AI_TEACHERS, TEACHER_CATEGORIES } from '@/lib/ai-teachers';
 import { DashHeader, DashPage } from '@/components/dash-ui';
+import { TeacherPortrait } from '@/components/teachers/portrait';
 
 export default function StudioTeachersPage() {
   return (
@@ -23,10 +24,13 @@ export default function StudioTeachersPage() {
               <ul className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {teachers.map(teacher => (
                   <li key={teacher.id}>
-                    <Link href={`/dashboard/studio/teachers/${teacher.id}`} className="block h-full rounded-2xl border border-border bg-card p-4 hover:border-primary">
+                    <Link href={`/dashboard/studio/teachers/${teacher.id}`} className="flex h-full gap-3 rounded-2xl border border-border bg-card p-4 hover:border-primary">
+                      <TeacherPortrait teacher={teacher} size={72} className="h-[72px] w-[72px] shrink-0 rounded-2xl object-cover" />
+                      <span>
                       <p className="font-heading text-xl">{teacher.name}</p>
                       <p className="text-xs text-muted-foreground mt-1">{teacher.title}</p>
                       <p className="text-sm mt-2 line-clamp-3">{teacher.tagline}</p>
+                      </span>
                     </Link>
                   </li>
                 ))}

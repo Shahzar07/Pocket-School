@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { AcademyWelcome } from '@/components/academy-welcome';
 import { useWhiteLabel } from '@/components/white-label-provider';
-import { LandingPage } from '@/components/landing/landing-page';
+import { HomeV3 } from '@/components/landing/home-v3';
 import { signupDecision } from '@/lib/academy-settings';
 import { institutionOrigin } from '@/lib/white-label';
 
@@ -17,7 +17,7 @@ export function SiteHome() {
     return decision.ok ? '' : decision.reason;
   }, [institution]);
 
-  if (!institution || !branding.isWhiteLabel) return <LandingPage />;
+  if (!institution || !branding.isWhiteLabel) return <HomeV3 />;
 
   const slug = institution.subdomain;
   const address = institution.customDomain

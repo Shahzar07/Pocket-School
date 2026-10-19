@@ -17,7 +17,8 @@ Poket School (poketschool.ai) is a Next.js 15 app with Firebase Auth, Firestore 
 | Parent | `/dashboard/parent` | grades, goals, reports |
 | Teacher | `/dashboard/teacher` | classes, gradebook, courses, AI Book Creator when the CMS add-on is on |
 | Institution admin | `/dashboard/institution` | approvals at `/dashboard/institution/approvals` |
-| Platform admin (`role: admin`, including `content_editor` and `super_admin`) | `/dashboard/admin` | queues, platform, pulse, AI Book Creator at `/dashboard/admin/books` |
+| Platform admin (`role: admin`, including `content_editor` and `super_admin`) | `/dashboard/admin` | queues, platform, pulse, AI Book Creator at `/dashboard/admin/books`, journal at `/dashboard/admin/blog` |
+| Public | `/` | Blog at `/blog` and `/blog/[slug]`. Cards and the hero use the post cover. Social images use the cover, or the branded `opengraph-image` when a post has none. |
 
 ## Signup schools
 

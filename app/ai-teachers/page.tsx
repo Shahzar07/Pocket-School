@@ -21,7 +21,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
-import { teacherPortrait } from '@/lib/teacher-portrait';
+import { portraitAlt, teacherPortrait } from '@/lib/teacher-portrait';
+import Image from 'next/image';
 import {
   accentOnLight,
   AI_TEACHERS,
@@ -248,11 +249,12 @@ function TeacherCard({
     >
       {/* Portrait pane — a full-bleed illustration rather than a small tile */}
       <div className="relative h-64 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={teacherPortrait(teacher)}
-          alt={teacher.name}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+          alt={portraitAlt(teacher.name)}
+          fill
+          sizes="(max-width: 768px) 100vw, 360px"
+          className="object-cover group-hover:scale-[1.04] transition-transform duration-500"
         />
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent" />
         {isLive && (

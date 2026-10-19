@@ -18,6 +18,7 @@ import {
 } from '@/lib/account-settings';
 import { CountrySelect, PhoneField } from '@/components/country-select';
 import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
+import { CONSENT_UI } from '@/lib/consents';
 import { statesForCountry } from '@/lib/institution-states';
 import { VerificationBadge } from '@/components/verification/badge';
 import { readGeoCountry, resolveCountryCode } from '@/lib/countries';
@@ -147,7 +148,8 @@ export function blankDraft(partial: Partial<ProfileDraft> = {}): ProfileDraft {
     yearGroup: '',
     region: '',
     gender: '',
-    demographicConsent: false,
+    demographicConsent: true,
+    timezoneConsent: true,
     notificationPrefs: { ...DEFAULT_NOTIFICATIONS, ...partial.notificationPrefs },
     privacy: { ...DEFAULT_PRIVACY, ...partial.privacy },
     twoFactorEnabled: false,
@@ -338,7 +340,18 @@ export function SettingsPanel({
         {view.role === 'teacher' && (
           <LevelNameSelect value={draft.level} onChange={level => setDraft({ ...draft, level })} />
         )}
-        <DemographicConsent checked={draft.demographicConsent === true} onChange={checked => setDraft({ ...draft, demographicConsent: checked })} />
+        <DemographicConsent checked={draft.demographicConsent !== false} onChange={checked => setDraft({ ...draft, demographicConsent: checked })} />
+        <label className="flex items-start gap-3 rounded-xl border border-[#1E6A83]/40 bg-[#E9F7FA]/40 p-3">
+          <input
+            type="checkbox"
+            checked={draft.timezoneConsent !== false}
+            onChange={(event) => setDraft({ ...draft, timezoneConsent: event.target.checked })}
+            className="mt-0.5 h-4 w-4 accent-[#1E6A83]"
+            aria-label={CONSENT_UI.timezone}
+            data-consent="timezone"
+          />
+          <span className="text-xs leading-relaxed text-[#203337]">{CONSENT_UI.timezone}</span>
+        </label>
         <Field label="Timezone">
           <Input value={zoneQuery} onChange={event => setZoneQuery(event.target.value)} placeholder="Search timezones" aria-label="Search timezones" className="mb-2 h-10 rounded-xl" />
           <select

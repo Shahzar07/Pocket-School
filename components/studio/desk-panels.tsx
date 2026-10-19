@@ -8,6 +8,8 @@ import { Loader2 } from 'lucide-react';
 import { EssayDelivery } from '@/components/essays/essay-delivery';
 import { authedFetch, ApiError } from '@/lib/api-client';
 import { createCourse, createLesson, createModule, getChildrenProfiles, getTeacherCourses, type Course } from '@/lib/db';
+import { CopyrightSign } from '@/components/courses/copyright-sign';
+import { SIGN } from '@/lib/courses/sign-copy';
 import { sparksCostLine } from '@/lib/design/system';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { LANGUAGES } from '@/lib/languages';
@@ -133,6 +135,7 @@ export function TeacherToolkitPanel({ sample = false }: { sample?: boolean }) {
   }) : null);
   const [drafts, setDrafts] = useState<Course[]>([]);
   const [courseId, setCourseId] = useState('new');
+  const [signatureId, setSignatureId] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedHref, setSavedHref] = useState('');
 
@@ -173,6 +176,11 @@ export function TeacherToolkitPanel({ sample = false }: { sample?: boolean }) {
     try {
       let id = courseId;
       if (id === 'new') {
+        if (!signatureId) {
+          toast.error(SIGN.need);
+          setSaving(false);
+          return;
+        }
         id = await createCourse({
           title: pack.title,
           description: pack.teacherNotes,
@@ -183,7 +191,9 @@ export function TeacherToolkitPanel({ sample = false }: { sample?: boolean }) {
           level: pack.level,
           isPublic: false,
           enrollmentCount: 0,
+          copyrightSignatureId: signatureId,
         });
+        setSignatureId('');
       }
       const moduleId = await createModule(id, {
         title: pack.title,
@@ -212,6 +222,16 @@ export function TeacherToolkitPanel({ sample = false }: { sample?: boolean }) {
 
   return (
     <div className="space-y-5">
+      {user && !sample && courseId === 'new' ? (
+        <CopyrightSign
+          uid={user.uid}
+          profileName={profile?.name || ''}
+          role={profile?.role || 'teacher'}
+          context="course_create"
+          courseId=""
+          onSigned={setSignatureId}
+        />
+      ) : null}
       <form className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2" onSubmit={event => { event.preventDefault(); void generate(); }}>
         <label className="text-sm font-semibold">Subject
           <input className={`${FIELD} mt-1 font-normal`} value={subject} onChange={event => setSubject(event.target.value)} required />

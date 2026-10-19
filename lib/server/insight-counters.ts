@@ -155,8 +155,10 @@ export async function reconcileUser(uid: string, patch: Record<string, unknown> 
   for (const key of ['gender', 'country', 'region', 'level', 'yearGroup', 'institutionName'] as const) {
     if (typeof patch[key] === 'string' && patch[key]) nextData[key] = patch[key];
   }
-  if (patch.demographicConsent === true && !data.demographicConsentAt) {
+  if (typeof patch.demographicConsent === 'boolean') {
+    nextData.demographicConsent = patch.demographicConsent;
     nextData.demographicConsentAt = Date.now();
+    nextData.demographicConsentVersion = '2026-10-19';
   }
   if (typeof patch.dateOfBirth === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(patch.dateOfBirth)) {
     const ageTier = ageTierFromDob(patch.dateOfBirth, today);

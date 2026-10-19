@@ -1,6 +1,6 @@
 import { StudioFrame } from '@/components/studio/studio-nav';
 
-/** Sits inside the dashboard shell. It does not cover the shell. */
+/** Full width beside the dashboard sidebar. No inner frame. */
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
   return <StudioFrame>{children}</StudioFrame>;
 }

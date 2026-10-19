@@ -22,9 +22,14 @@ import {
   FileText, ClipboardList, Network, BookMarked,
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, ChevronRight, User as UserIcon,
-  RefreshCw, X, Menu,
+  RefreshCw, X, Menu, Mic, Volume2, Camera, Paperclip,
   Video, Headphones, Asterisk,
 } from 'lucide-react';
+import { AI_TEACHERS, ET_AI_TUTOR, type AiTeacher } from '@/lib/ai-teachers';
+import { TeacherPortrait } from '@/components/teachers/portrait';
+import { ET_COPY } from '@/lib/studio/et-copy';
+import { RECOGNITION_LANG } from '@/lib/languages';
+import type { Speaker } from '@/lib/speech';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
@@ -90,9 +95,42 @@ const SUGGESTIONS = [
 ];
 
 type Turn =
-  | { kind: 'user'; text: string; skill?: FormatId }
+  | { kind: 'user'; text: string; skill?: FormatId; image?: string }
   | { kind: 'chat'; text: string }
   | { kind: 'gen'; format: FormatId; data: any; prompt: string; saved?: boolean };
+
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: { resultIndex: number; results: { length: number; [index: number]: { isFinal: boolean; 0: { transcript: string } } } }) => void) | null;
+  onend: (() => void) | null;
+}
+
+function browserRecognition(): SpeechRecognitionLike | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  };
+  const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+  return Ctor ? new Ctor() : null;
+}
+
+function fileToDataUrl(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Could not read that file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+const TEACHERS: AiTeacher[] = [ET_AI_TUTOR, ...AI_TEACHERS];
+const CHAT_STORE = 'poket-et-studio-chats';
 
 interface Chat { id: number; title: string; turns: Turn[] }
 
@@ -194,6 +232,10 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   // Conversations (session-scoped, like Claude's recents)
   const [chats, setChats] = useState<Chat[]>([{ id: 1, title: 'New chat', turns: [] }]);
   const [activeChatId, setActiveChatId] = useState(1);
+  const chatsRef = useRef(chats);
+  chatsRef.current = chats;
+  const activeRef = useRef(activeChatId);
+  activeRef.current = activeChatId;
   const chat = chats.find(c => c.id === activeChatId) ?? chats[0];
 
   // Composer
@@ -206,6 +248,14 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   const subjectOptions = subjectsForProgramme(level);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
+  const [streamText, setStreamText] = useState('');
+  const [pendingImage, setPendingImage] = useState('');
+  const [recording, setRecording] = useState(false);
+  const [noteStatus, setNoteStatus] = useState('');
+  const [teacherId, setTeacherId] = useState(ET_AI_TUTOR.id);
+  const [storeReady, setStoreReady] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const teacher = TEACHERS.find(item => item.id === teacherId) ?? ET_AI_TUTOR;
 
   // Library
   const [library, setLibrary] = useState<AiGeneration[]>([]);
@@ -213,27 +263,42 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const seeded = useRef(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const browserTranscript = useRef('');
+  const speakerRef = useRef<Speaker | null>(null);
+  const sentQuery = useRef(false);
   const { resolvedTheme } = useTheme();
 
   useEffect(() => onAuthStateChanged(auth, u => { setUser(u); setAuthReady(true); }), []);
   useEffect(() => {
-    if (seeded.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode');
-    if (mode === 'teacher-toolkit' || mode === 'parent-explainer' || mode === 'research-helper') {
-      setView(mode);
-    }
-    const q = params.get('q');
-    if (!q) {
-      seeded.current = true;
-      return;
-    }
-    seeded.current = true;
-    setInput(q);
+    try {
+      const raw = localStorage.getItem(CHAT_STORE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { chats?: Chat[]; active?: number };
+        if (parsed.chats?.length) {
+          setChats(parsed.chats);
+          if (parsed.active) setActiveChatId(parsed.active);
+        }
+      }
+    } catch { /* private mode */ }
+    setStoreReady(true);
   }, []);
+  useEffect(() => {
+    if (!storeReady) return;
+    try {
+      const slim = chats.map(item => ({
+        ...item,
+        turns: item.turns.map(turn => turn.kind === 'user' ? { kind: 'user' as const, text: turn.text, skill: turn.skill } : turn),
+      })).slice(-20);
+      localStorage.setItem(CHAT_STORE, JSON.stringify({ chats: slim, active: activeChatId }));
+    } catch { /* full */ }
+  }, [activeChatId, chats, storeReady]);
   useEffect(() => { if (view === 'library' && user) loadLibrary(); }, [view, user]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat.turns.length, busy]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat.turns.length, busy, streamText]);
 
   const loadLibrary = async () => {
     if (!user) return;
@@ -268,9 +333,12 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   const runGeneration = async (chatId: number, format: FormatId, topic: string) => {
     const lang = readLanguage();
     const prompt = `Topic: ${topic}\nSubject: ${subject || 'general'}\nLevel: ${level}`;
+    const token = await auth.currentUser?.getIdToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch('/api/ai/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ content: prompt, format, language: lang !== 'en' ? lang : undefined }),
     });
     if (!res.ok) {
@@ -281,38 +349,59 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
     pushTurns(chatId, { kind: 'gen', format, data: data.result, prompt });
   };
 
-  /* ── Tutor turn ── */
-  const runTutor = async (chatId: number, message: string, history: Turn[], bookContext?: string) => {
+  /* ── Tutor turn. Streams when the model key is present. ── */
+  const runTutor = async (chatId: number, message: string, history: Turn[], bookContext?: string, image?: string) => {
     const chatTurns = history
       .filter((t): t is Extract<Turn, { kind: 'user' | 'chat' }> => t.kind === 'user' || t.kind === 'chat')
       .map(t => ({ role: t.kind === 'user' ? 'user' : 'model', text: t.text }));
+    const token = await auth.currentUser?.getIdToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch('/api/ai/tutor', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
-        message, mode: chatMode, history: chatTurns,
+        message,
+        mode: chatMode,
+        history: chatTurns,
         language: readLanguage(),
         bookContext,
+        stream: true,
+        image,
+        persona: `${teacher.name}, ${teacher.title}. You teach for Poket School. Call yourself ${teacher.name}.`,
       }),
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+    const contentType = res.headers.get('content-type') ?? '';
+    if (!res.ok || contentType.includes('application/json') || !res.body) {
+      const err = await res.json().catch(() => ({} as { error?: string }));
       throw new Error(err.error || `ET AI hit an error (${res.status})`);
     }
-    const data = await res.json();
-    pushTurns(chatId, { kind: 'chat', text: data.reply || '…' });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let full = '';
+    setStreamText('');
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      full += decoder.decode(value, { stream: true });
+      setStreamText(full);
+    }
+    setStreamText('');
+    pushTurns(chatId, { kind: 'chat', text: full.trim() || ET_COPY.emptyReply });
   };
 
-  const submit = async (overrideText?: string, overrideSkill?: FormatId | null) => {
+  const submit = async (overrideText?: string, overrideSkill?: FormatId | null, imageOverride?: string) => {
     const text = (overrideText ?? input).trim();
     const useSkill = overrideSkill !== undefined ? overrideSkill : skill;
-    if (!text || busy) return;
-    const chatId = activeChatId;
-    const historySnapshot = chat.turns;
+    const image = imageOverride ?? pendingImage;
+    if ((!text && !image) || busy) return;
+    const chatId = activeRef.current;
+    const historySnapshot = chatsRef.current.find(item => item.id === chatId)?.turns ?? [];
     setInput('');
+    setPendingImage('');
     setBusy(true);
     setView('chat');
-    pushTurns(chatId, { kind: 'user', text, skill: useSkill ?? undefined });
+    pushTurns(chatId, { kind: 'user', text: text || 'Please look at this photo.', skill: useSkill ?? undefined, image: image || undefined });
     const command = parseBookCommand(text, BOOKS);
     const attached = command?.matched ? bookById(command.bookId) : undefined;
     if (command && !attached) {
@@ -320,14 +409,171 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
       setBusy(false);
       return;
     }
-    const prompt = attached ? bookSourcePrompt(attached, command?.rest ?? '') : text;
+    const prompt = attached ? bookSourcePrompt(attached, command?.rest ?? '') : (text || 'Please look at this photo and help me with it. Read any homework question in the photo.');
     try {
-      if (useSkill) await runGeneration(chatId, useSkill, prompt);
-      else await runTutor(chatId, attached ? (command?.rest || `Teach ${attached.title}`) : text, historySnapshot, attached ? prompt : undefined);
+      if (useSkill && !image) await runGeneration(chatId, useSkill, prompt);
+      else await runTutor(
+        chatId,
+        attached ? (command?.rest || `Teach ${attached.title}`) : prompt,
+        historySnapshot,
+        attached ? prompt : undefined,
+        image || undefined,
+      );
     } catch (e: any) {
       pushTurns(chatId, { kind: 'chat', text: `Sorry — ${e?.message || 'something went wrong'}. Try again.` });
     } finally {
       setBusy(false);
+      setStreamText('');
+    }
+  };
+
+  const submitRef = useRef(submit);
+  submitRef.current = submit;
+
+  useEffect(() => {
+    if (!storeReady || !authReady || !user || sentQuery.current) return;
+    sentQuery.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (mode === 'teacher-toolkit' || mode === 'parent-explainer' || mode === 'research-helper') setView(mode);
+    const q = params.get('q')?.trim();
+    if (!q) return;
+    const id = Math.max(...chatsRef.current.map(item => item.id)) + 1;
+    setChats(prev => [...prev, { id, title: q.slice(0, 42), turns: [] }]);
+    setActiveChatId(id);
+    activeRef.current = id;
+    void submitRef.current(q, null);
+  }, [authReady, storeReady, user]);
+
+  const readAloud = async (text: string) => {
+    const { Speaker: SpeakerCtor, SentenceStream } = await import('@/lib/speech');
+    if (!speakerRef.current) speakerRef.current = new SpeakerCtor({});
+    const lang = readLanguage();
+    speakerRef.current.setOptions({
+      voice: teacher.voice,
+      style: teacher.voiceStyle,
+      lang: RECOGNITION_LANG[lang] ?? 'en-GB',
+    });
+    const turn = speakerRef.current.begin();
+    const sentences = new SentenceStream(sentence => speakerRef.current?.enqueue(sentence, turn));
+    sentences.push(text);
+    sentences.flush();
+  };
+
+  const onPhoto = (file: File | undefined) => {
+    if (!file) return;
+    if (file.type.startsWith('image/')) {
+      if (file.size > 1_500_000) {
+        setNoteStatus('That photo is too large. Use one under 1.5 MB.');
+        return;
+      }
+      void fileToDataUrl(file).then(setPendingImage).catch(() => setNoteStatus('Could not read that photo.'));
+      setNoteStatus('');
+      return;
+    }
+    if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+      void file.text().then(body => {
+        const clip = body.slice(0, 8000);
+        setInput(current => current.trim() ? `${current.trim()}\n${clip}` : clip);
+      });
+      return;
+    }
+    setNoteStatus('Choose a photo, or a text file.');
+  };
+
+  const transcribeNote = async (blob: Blob, heard: string) => {
+    setNoteStatus(ET_COPY.listening);
+    let transcript = '';
+    try {
+      const dataUrl = await fileToDataUrl(blob);
+      const audio = dataUrl.split(',')[1] ?? '';
+      const token = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch('/api/ai/transcribe', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ audio, mime: blob.type || 'audio/webm', language: readLanguage() }),
+      });
+      const data = await res.json().catch(() => ({} as { transcript?: string; reason?: string; error?: string }));
+      if (typeof data.transcript === 'string' && data.transcript.trim()) transcript = data.transcript.trim();
+      else if (heard) transcript = heard;
+    } catch {
+      if (heard) transcript = heard;
+    }
+    if (!transcript) {
+      setNoteStatus(heard ? '' : ET_COPY.voiceMissing);
+      if (heard) submitRef.current(heard, null, '');
+      return;
+    }
+    setNoteStatus('');
+    submitRef.current(transcript, null, '');
+  };
+
+  const stopRecording = () => {
+    recognitionRef.current?.stop();
+    recorderRef.current?.stop();
+    setRecording(false);
+  };
+
+  const startRecording = async () => {
+    if (recording) {
+      stopRecording();
+      return;
+    }
+    const recognition = browserRecognition();
+    if (!recognition && !navigator.mediaDevices?.getUserMedia) {
+      setNoteStatus(ET_COPY.voiceMissing);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      browserTranscript.current = '';
+      if (recognition) {
+        recognition.lang = RECOGNITION_LANG[readLanguage()] ?? 'en-GB';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.onresult = (event) => {
+          for (let index = event.resultIndex; index < event.results.length; index += 1) {
+            if (event.results[index].isFinal) browserTranscript.current += ` ${event.results[index][0].transcript}`;
+          }
+        };
+        try { recognition.start(); } catch { /* server transcript can still run */ }
+        recognitionRef.current = recognition;
+      }
+      recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+      recorder.onstop = () => {
+        stream.getTracks().forEach(track => track.stop());
+        const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        const heard = browserTranscript.current.trim();
+        void transcribeNote(blob, heard);
+      };
+      recorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      setNoteStatus(ET_COPY.listening);
+    } catch {
+      if (recognition) {
+        setNoteStatus(ET_COPY.listening);
+        recognition.onresult = (event) => {
+          let heard = '';
+          for (let index = event.resultIndex; index < event.results.length; index += 1) {
+            if (event.results[index].isFinal) heard += ` ${event.results[index][0].transcript}`;
+          }
+          const text = heard.trim();
+          if (text) {
+            setNoteStatus('');
+            setRecording(false);
+            submitRef.current(text, null, '');
+          }
+        };
+        recognition.onend = () => setRecording(false);
+        try { recognition.start(); setRecording(true); } catch { setNoteStatus(ET_COPY.voiceMissing); }
+        return;
+      }
+      setNoteStatus(ET_COPY.voiceMissing);
     }
   };
 
@@ -462,7 +708,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
     <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden`} >
 
       {/* ── Sidebar ── */}
-      <aside aria-label="ET AI Studio" className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-[min(264px,86vw)] shrink-0 flex-col border-e ${C.borderSoft} bg-sidebar absolute lg:static inset-y-0 start-0 z-40 shadow-xl lg:shadow-none`}>
+      <aside aria-label="ET AI Studio" className={`${sidebarOpen ? 'flex' : 'hidden'} ${embedded ? '' : 'lg:flex'} w-[min(264px,86vw)] shrink-0 flex-col border-e ${C.borderSoft} bg-sidebar absolute ${embedded ? '' : 'lg:static'} inset-y-0 start-0 z-40 shadow-xl ${embedded ? '' : 'lg:shadow-none'}`}>
         <div className="p-3">
           <Link href={embedded ? '/dashboard/studio' : '/'} className="flex items-center gap-2.5 px-2 py-2 mb-1">
             <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: FILL }}>
@@ -600,17 +846,20 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
       </aside>
 
       {/* Mobile overlay */}
-      {sidebarOpen && <button type="button" className="fixed inset-0 bg-black/50 z-30 lg:hidden" aria-label="Close menu" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <button type="button" className={`fixed inset-0 bg-black/50 z-30 ${embedded ? '' : 'lg:hidden'}`} aria-label="Close menu" onClick={() => setSidebarOpen(false)} />}
 
       {/* ── Main ── */}
       <main className="flex-1 flex flex-col min-w-0">
         {/* Mobile top bar */}
-        <div className={`lg:hidden flex items-center gap-3 px-4 py-3 border-b ${C.borderSoft}`}>
+        <div className={`${embedded ? 'flex' : 'flex lg:hidden'} items-center gap-2 overflow-x-auto px-3 py-2 border-b ${C.borderSoft}`} data-studio-tools="row">
           <button type="button" onClick={() => setSidebarOpen(true)} className={C.dim} aria-label="Open ET AI menu" aria-expanded={sidebarOpen}><Menu className="w-5 h-5" /></button>
-          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: FILL }}>
-            <Asterisk className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-sm font-bold">ET AI</span>
+          <TeacherPortrait teacher={teacher} size={32} className="h-8 w-8 rounded-full object-cover" />
+          <span className="text-sm font-bold shrink-0">{teacher.name}</span>
+          <button type="button" onClick={newChat} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.newChat}</button>
+          <button type="button" onClick={() => { setView('library'); setSidebarOpen(false); }} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.library}</button>
+          <button type="button" onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); }} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.maths}</button>
+          <button type="button" onClick={() => setView('essays')} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.essays}</button>
+          <button type="button" onClick={() => setSidebarOpen(true)} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.recents}</button>
         </div>
 
         {view === 'teacher-toolkit' ? (
@@ -636,8 +885,25 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           />
         ) : (
           <>
+            <header className="flex items-center gap-3 border-b border-border px-4 py-2" data-et-teacher={teacher.id}>
+              <TeacherPortrait teacher={teacher} size={40} className="h-10 w-10 rounded-full object-cover" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{teacher.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{teacher.title}</p>
+              </div>
+              <label className="sr-only" htmlFor="et-teacher">{ET_COPY.teacher}</label>
+              <select
+                id="et-teacher"
+                aria-label={ET_COPY.teacher}
+                value={teacher.id}
+                onChange={(event) => setTeacherId(event.target.value)}
+                className="ms-auto max-w-[12rem] rounded-full border border-border bg-card px-2 py-1 text-xs"
+              >
+                {TEACHERS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </header>
             {/* Thread */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto" data-et-chat="1">
               <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8 pb-4">
                 {empty ? (
                   <div className="pt-4" data-testid="studio-greeting">
@@ -680,6 +946,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                                   {FORMATS.find(f => f.id === t.skill)?.label}
                                 </span>
                               )}
+                              {t.image && t.image.startsWith('data:image/') ? <img src={t.image} alt={ET_COPY.photo} className="mb-2 max-h-40 rounded-lg" /> : null}
                               <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{t.text}</p>
                             </div>
                           </div>
@@ -692,8 +959,11 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                           </div>
                           <div className="flex-1 min-w-0">
                             {t.kind === 'chat' ? (
-                              <div className={PROSE_CLASSES}>
+                              <div className={PROSE_CLASSES} data-assistant="1">
                                 <MathMarkdown>{t.text}</MathMarkdown>
+                                <button type="button" onClick={() => void readAloud(t.text)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#1E6A83]" aria-label={ET_COPY.readAloud}>
+                                  <Volume2 className="h-3.5 w-3.5" aria-hidden /> {ET_COPY.readAloud}
+                                </button>
                               </div>
                             ) : (
                               <div>
@@ -730,7 +1000,15 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                         </div>
                       );
                     })}
-                    {busy && <PocoWorking creating={!!skill} />}
+                    {streamText ? (
+                      <div className="flex gap-3" data-assistant="1" data-streaming="1">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: FILL }}>
+                          <Asterisk className="w-4 h-4 text-white" />
+                        </div>
+                        <div className={PROSE_CLASSES}><MathMarkdown>{streamText}</MathMarkdown></div>
+                      </div>
+                    ) : null}
+                    {busy && !streamText && <PocoWorking creating={!!skill} />}
                     <div ref={endRef} />
                   </div>
                 )}
@@ -740,7 +1018,16 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             {/* ── Composer ── */}
             <div className="shrink-0 px-4 sm:px-6 pb-5 pt-2">
               <div className="max-w-3xl mx-auto">
-                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_30px_rgba(30,106,131,0.12)] focus-within:border-[#1E6A83] dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)] transition-colors`}>
+                <div
+                  className={`rounded-3xl border ${dragOver ? 'border-[#3FE0D0]' : C.border} ${C.surface} shadow-[0_8px_30px_rgba(30,106,131,0.12)] focus-within:border-[#1E6A83] dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)] transition-colors`}
+                  onDragOver={(event) => { event.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setDragOver(false);
+                    onPhoto(event.dataTransfer.files?.[0]);
+                  }}
+                >
                   {/* Selected skill chip */}
                   {activeFormat && (
                     <div className="px-4 pt-3 -mb-1">
@@ -763,8 +1050,30 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     disabled={busy}
                     className={`w-full bg-transparent outline-none resize-none px-4 pt-3 pb-1 text-[15px] ${C.text} placeholder:text-muted-foreground`}
                   />
+                  {pendingImage ? (
+                    <div className="flex items-center gap-2 px-4 pt-3" data-photo-pending="1">
+                      <img src={pendingImage} alt={ET_COPY.photo} className="h-12 w-12 rounded-lg object-cover" />
+                      <span className="text-xs text-muted-foreground">{ET_COPY.attached}</span>
+                      <button type="button" onClick={() => setPendingImage('')} aria-label={ET_COPY.removePhoto} className="text-xs font-semibold text-[#1E6A83]">{ET_COPY.removePhoto}</button>
+                    </div>
+                  ) : null}
                   <div className="flex items-center gap-1.5 px-3 pb-3 flex-wrap">
                     <HandwritingCapture disabled={busy} onText={text => setInput(current => current.trim() ? `${current.trim()}\n${text}` : text)} />
+                    <button type="button" onClick={() => void startRecording()} aria-pressed={recording} aria-label={ET_COPY.mic} data-mic="1" className={`flex h-9 w-9 items-center justify-center rounded-full border ${recording ? 'border-[#3FE0D0] bg-[#3FE0D0] text-[#203337]' : 'border-border text-[#1E6A83]'}`}>
+                      <Mic className="h-4 w-4" aria-hidden />
+                    </button>
+                    <button type="button" onClick={() => fileRef.current?.click()} aria-label={ET_COPY.photo} data-attach="1" className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-[#1E6A83]">
+                      <Paperclip className="h-4 w-4" aria-hidden />
+                    </button>
+                    <button type="button" onClick={() => cameraRef.current?.click()} aria-label={ET_COPY.camera} data-camera="1" className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-[#1E6A83]">
+                      <Camera className="h-4 w-4" aria-hidden />
+                    </button>
+                    <button type="button" onClick={() => docRef.current?.click()} aria-label={ET_COPY.file} data-file="1" className="rounded-full border border-border px-2.5 py-1.5 text-xs font-semibold text-[#1E6A83]">
+                      {ET_COPY.file}
+                    </button>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label={ET_COPY.photo} data-photo-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
+                    <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" aria-label={ET_COPY.camera} data-camera-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
+                    <input ref={docRef} type="file" accept="image/*,.txt,.md,text/plain" className="hidden" aria-label={ET_COPY.file} onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
                     {/* Skills picker */}
                     <div className="relative">
                       <button
@@ -843,7 +1152,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     <span className="flex-1" />
                     <button
                       onClick={() => submit()}
-                      disabled={busy || !input.trim()}
+                      disabled={busy || (!input.trim() && !pendingImage)}
                       type="button"
                       className="w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all hover:scale-105 active:scale-95 motion-reduce:transform-none"
                       style={{ background: FILL }}
@@ -853,6 +1162,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     </button>
                   </div>
                 </div>
+                {noteStatus ? <p className="mt-2 text-center text-xs text-[#1E6A83]" role="status" data-voice-status="1">{noteStatus}</p> : null}
+                {dragOver ? <p className="mt-1 text-center text-xs text-[#1E6A83]">{ET_COPY.drop}</p> : null}
                 <p className={`text-center text-[10px] ${C.faint} mt-2`}>
                   ET AI can make mistakes. Check important answers.
                 </p>
