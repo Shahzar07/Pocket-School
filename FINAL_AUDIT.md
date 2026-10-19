@@ -105,44 +105,25 @@ The Expo app should mirror: public school search (do not query institutions befo
 7. Smoke `/signup` as student, teacher, and parent, then approve one request.
 8. Open AI Book Creator as admin, generate or write a page, and confirm a missing key does not crash.
 
+## ET AI Timetabler
+
+Added beside the calendar, year planner, school desk, and attendance. It does not replace them. A published week writes class items the calendar and year planner can read, opens attendance registers, and can add classes on the sample school desk.
+
+- Setup for days, periods, terms, holidays, rooms, staff, subjects, classes, sets, and option blocks, including CSV.
+- Students and parents choose inside option blocks. ET AI suggests blocks, and approval creates sets and enrols the students.
+- The week is placed by a deterministic solver. Hard constraints are never written. Quality and unmet soft constraints are stored. Plain language such as “Mr Chen can’t do Friday afternoons” is applied without a model key. `OPENROUTER_API_KEY` only adds a model paragraph on `POST /api/timetable/explain`.
+- The grid rejects an illegal drag or click and offers a legal slot. Cover proposes a qualified free teacher, queues notices for the teachers, students, and parents, and keeps a cover load.
+- Teacher add-on: personal timetable. Institution: one school. Enterprise: more than one campus. The price on the pricing page and the landing feature list is TBC by Harry.
+- Firestore rules for `timetables` are in git and are not deployed from this work.
+- The teacher sidebar opens `/dashboard/teacher/timetable`. The institution and enterprise admin sidebar opens `/dashboard/institution/timetable`. AI Studio keeps the ET AI chat from the handover. Teachers and institution or enterprise admins also get a Timetabler link on that chat and in the studio header, opening `/dashboard/studio/timetable`. Students do not see that entry. Without the add-on the grid is an upsell and the price stays TBC by Harry. ET AI can draft a week, cover, a room fix, or extra periods from a sentence or a photo, and nothing is saved until confirm. The full grid has the main sidebar and no nested studio frame.
+- Google Calendar is additive. Missing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, or `GOOGLE_OAUTH_REDIRECT_URI` leaves the iCal download and the signed subscription working, and the screen says Connect Google Calendar (not configured yet).
+
 ## 10. Regression audit
 
-Compared with `main` at `018d413` (merge-base of this branch; `origin/main` has no newer commits). Nothing that `main` still ships was removed from the route table or the sidebar. No files were restored, because the only deletions are the old teacher portraits.
+Compared with `main` at `6a041278bf02fc27e62c1f0647581b5351ce3cbe` after this branch was updated onto it. No `app/**/page.tsx` file from that commit is missing. No sidebar `href` from `app/dashboard/layout.tsx` on that commit was removed. `git diff --diff-filter=D origin/main` is empty.
 
-### Pages
+Pages added: `/dashboard/admin/timetable`, `/dashboard/institution/timetable`, `/dashboard/parent/timetable`, `/dashboard/student/timetable`, `/dashboard/studio/timetable`, `/dashboard/teacher/timetable`, `/preview/studio`, `/preview/timetable`.
 
-`main` has 306 `app/**/page.tsx` files. This branch has 326. None of the old pages are missing. Pages added:
+Sidebar links added: the same six dashboard timetable routes. The studio home stays the ET AI chat (`data-studio-home="chat"`). Teachers and institution or enterprise admins also get a Timetabler control on that chat and in the studio header. Students do not.
 
-`/about`, `/alevel`, `/dashboard/admin/signatures`, `/dashboard/parent/planner`, `/dashboard/student/planner`, `/dashboard/teacher/planner`, `/demo`, `/id`, `/igcse`, `/independent`, `/institutions`, `/join/class/[code]`, `/llb`, `/mbbs`, `/primary`, `/privacy`, `/rochfords`, `/safeline`, `/studio`, `/terms`.
-
-### Files deleted or reduced
-
-Deleted, and not restored: 36 `public/teachers/et-*.svg` silhouettes and 6 `public/teachers/portrait-*.jpg` files (`arts`, `coach`, `english`, `humanities`, `maths`, `science`). Each SVG stem has a matching `public/teachers/et-*.webp` (36 files). `lib/teacher-portrait.ts` maps every teacher id to `/teachers/et-<subject>.webp`. The six JPGs are not referenced in source. This is the portrait replacement, not a missing asset.
-
-The only source file that shrank by more than a few lines is `app/dashboard/studio/page.tsx` (113 lines to 15). The old page was a gold-tinted hero (`rgba(226,175,77)`), prompt chips, the tool grid, and a recent-essays strip. The new page is the ET AI chat under “What should ET AI make today”. The gold hero is not restored. The tool grid remains on `/preview/studio-desk`. Essays remain on `/dashboard/studio/essays`. Header tabs are `StudioNav` in `app/dashboard/studio/layout.tsx`.
-
-### Sidebar links by role
-
-`app/dashboard/layout.tsx` against `018d413`: no href removed. Added `/dashboard/admin/signatures` and `/dashboard/student/tasks`. Home tiles in `lib/dashboard/home.ts`: no href removed. Added `/dashboard/student/planner`, `/dashboard/parent/planner`, and `/dashboard/teacher/planner`. Those three planner pages are opened from the home tiles and by URL. They are not in the persistent sidebar. They were not on `main` either.
-
-Alumni and recruiter are home tiles, not a `Role` in the sidebar map.
-
-Student (47): `/dashboard/student`, `/dashboard/student/perks`, `/dashboard/notes`, `/dashboard/studio`, `/ai-teachers`, `/dashboard/student/learning`, `/courses`, `/reads`, `/dashboard/student/courses`, `/dashboard/student/live`, `/dashboard/messages`, `/dashboard/student/achievements`, `/dashboard/student/assignments`, `/dashboard/student/exams`, `/dashboard/student/transcript`, `/dashboard/student/attendance`, `/dashboard/student/certificates`, `/dashboard/student/tasks`, `/dashboard/student/goals`, `/dashboard/student/analytics`, `/dashboard/student/progress`, `/dashboard/behaviour`, `/dashboard/student/integrity`, `/dashboard/reports`, `/dashboard/student/billing`, `/dashboard/student/academy`, `/dashboard/student/network`, `/dashboard/student/yearbook`, `/dashboard/student/career`, `/dashboard/wallet`, `/dashboard/referrals`, `/dashboard/community`, `/dashboard/network`, `/dashboard/tutors`, `/dashboard/exam-centre`, `/dashboard/studio/et`, `/dashboard/studio/teachers`, `/dashboard/studio/maths`, `/dashboard/studio/exam-prep`, `/dashboard/studio/essays`, `/dashboard/store`, `/dashboard/announcements`, `/dashboard/calendar`, `/dashboard/resources`, `/dashboard/helpdesk`, `/dashboard/card`, `/dashboard/profile`.
-
-Teacher (43): `/dashboard/teacher`, `/dashboard/studio`, `/dashboard/teacher/classes`, `/dashboard/teacher/courses`, `/courses`, `/reads`, `/dashboard/teacher/earnings`, `/dashboard/wallet`, `/dashboard/referrals`, `/dashboard/messages`, `/dashboard/teacher/hotline`, `/dashboard/teacher/analytics`, `/dashboard/teacher/insights`, `/dashboard/teacher/progress`, `/dashboard/teacher/goals`, `/dashboard/teacher/references`, `/dashboard/teacher/gradebook`, `/dashboard/teacher/assignments`, `/dashboard/teacher/exams`, `/dashboard/teacher/report-cards`, `/dashboard/teacher/report-studio`, `/dashboard/teacher/attendance`, `/dashboard/teacher/live`, `/dashboard/teacher/integrity`, `/dashboard/teacher/integrity/cases`, `/dashboard/reports`, `/dashboard/behaviour`, `/dashboard/teacher/behaviour`, `/dashboard/community`, `/dashboard/network`, `/dashboard/tutors`, `/dashboard/exam-centre`, `/dashboard/studio/et`, `/dashboard/studio/teachers`, `/dashboard/studio/maths`, `/dashboard/studio/exam-prep`, `/dashboard/studio/essays`, `/dashboard/store`, `/dashboard/announcements`, `/dashboard/calendar`, `/dashboard/resources`, `/dashboard/card`, `/dashboard/profile`.
-
-Parent (24): `/dashboard/parent`, `/dashboard/parent#certificates`, `/dashboard/messages`, `/dashboard/studio`, `/courses`, `/reads`, `/dashboard/parent/hotline`, `/dashboard/parent/communications`, `/dashboard/parent/duedates`, `/dashboard/wallet`, `/dashboard/referrals`, `/dashboard/parent/goals`, `/dashboard/parent/analytics`, `/dashboard/parent/progress`, `/dashboard/behaviour`, `/dashboard/parent/integrity`, `/dashboard/parent/reports`, `/dashboard/reports`, `/dashboard/parent/controls`, `/dashboard/announcements`, `/dashboard/calendar`, `/dashboard/helpdesk`, `/dashboard/card`, `/dashboard/profile`.
-
-Admin (51 entries, 50 unique; Insights is listed twice): `/dashboard/admin`, `/dashboard/admin/books`, `/dashboard/admin/queues`, `/dashboard/admin/platform`, `/dashboard/admin/pulse`, `/dashboard/admin/safety-desk`, `/dashboard/admin/blog`, `/dashboard/studio`, `/dashboard/admin/courses`, `/dashboard/admin/placement`, `/dashboard/admin/help`, `/dashboard/admin/curriculum`, `/dashboard/admin/planner`, `/dashboard/admin/signatures`, `/courses`, `/reads`, `/dashboard/admin/users`, `/dashboard/admin/institutions`, `/dashboard/admin/schools`, `/dashboard/admin/insights`, `/dashboard/admin/automation`, `/dashboard/admin/access`, `/dashboard/admin/allocations`, `/dashboard/messages`, `/dashboard/admin/settings`, `/dashboard/admin/verifications`, `/dashboard/admin/partners`, `/dashboard/admin/activity`, `/dashboard/admin/certificates`, `/dashboard/admin/badges`, `/dashboard/reports`, `/dashboard/admin/hotline`, `/dashboard/admin/emergency`, `/dashboard/admin/moderation`, `/dashboard/community`, `/dashboard/network`, `/dashboard/tutors`, `/dashboard/store`, `/dashboard/admin/payments`, `/dashboard/admin/integrations`, `/dashboard/admin/finance`, `/dashboard/wallet`, `/dashboard/referrals`, `/dashboard/announcements`, `/dashboard/calendar`, `/dashboard/resources`, `/dashboard/teacher/billing`, `/dashboard/helpdesk`, `/dashboard/card`, `/dashboard/profile`.
-
-Institution admin (30): `/dashboard/institution`, `/dashboard/institution/insights`, `/dashboard/institution/approvals`, `/dashboard/institution/join`, `/dashboard/institution/alumni`, `/dashboard/institution/career`, `/dashboard/institution/verify`, `/dashboard/institution/publishing`, `/dashboard/institution/sparks`, `/dashboard/institution/billing`, `/dashboard/institution/usage`, `/dashboard/institution/onboarding`, `/dashboard/admin/institutions`, `/dashboard/studio`, `/courses`, `/reads`, `/dashboard/messages`, `/dashboard/reports`, `/dashboard/behaviour`, `/dashboard/institution/templates`, `/dashboard/institution/activity`, `/dashboard/institution/progress`, `/dashboard/institution/goals`, `/dashboard/institution/certificates`, `/dashboard/institution/hotline`, `/dashboard/institution/emergency`, `/dashboard/announcements`, `/dashboard/calendar`, `/dashboard/card`, `/dashboard/profile`.
-
-Partner merchant (4): `/dashboard/partner`, `/partner`, `/dashboard/card`, `/dashboard/profile`.
-
-Public marketing links in `lib/marketing/nav.ts`: `/ai-teachers`, `/studio`, `/reads`, `/safeline`, `/id`, `/primary`, `/igcse`, `/alevel`, `/llb`, `/mbbs`, `/independent`, `/institutions`, `/institutions/register`, `/demo`, `/about`, `/rochfords`, `/privacy`, `/terms`.
-
-### Relation to main and to PR 148
-
-No rebase or merge was required. `origin/main` is still `018d413`. PR 148 (`cursor/et-ai-timetabler-336c`) is based on that same commit and does not contain these handover commits. It stays a separate draft. It does not depend on this branch.
-
-`/preview/scope-c` stays closed on a production server unless `SCOPE_PREVIEW=1`. `/preview/institution-console` stays closed unless `INSTITUTION_PREVIEW=1`. The route smoke set both flags on the preview server. A normal production start still returns 404 for those two galleries.
+`/preview/scope-c` stays closed on a production server unless `SCOPE_PREVIEW=1`. `/preview/institution-console` stays closed unless `INSTITUTION_PREVIEW=1`.

@@ -3,6 +3,7 @@ export const STUDIO_HUB = '/dashboard/studio';
 export const STUDIO_ET = '/dashboard/studio/et';
 export const STUDIO_MATHS = '/dashboard/studio/maths';
 export const STUDIO_EXAM_PREP = '/dashboard/studio/exam-prep';
+export const STUDIO_TIMETABLE = '/dashboard/studio/timetable';
 
 /**
  * Old addresses keep working. Next applies these before the app routes,

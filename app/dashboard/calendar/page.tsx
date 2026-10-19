@@ -17,6 +17,9 @@ import type { CalendarItem } from '@/lib/insights/calendar';
 import { Timestamp } from 'firebase/firestore';
 import { YearPlanner, type PlannerRole } from '@/components/planner/year-planner';
 import { isoDateKey } from '@/lib/insights/dates';
+import { readTimetableFeed } from '@/lib/timetable/store';
+import { GoogleCalendarSync } from '@/components/calendar/google-sync';
+import { eventsFromDated, subscriptionIcs, type SyncKind } from '@/lib/google-calendar/events';
 import { AllocationPicker } from '@/components/allocation-picker';
 import { describeTargets, recordVisible } from '@/lib/allocation-targets';
 
@@ -67,7 +70,17 @@ export default function CalendarPage() {
 
   const load = async () => {
     const data = await getCalendarEvents({});
-    setEvents(data);
+    const feed = readTimetableFeed();
+    const lessons = (feed?.calendar ?? []).map((item, index) => ({
+      id: `tt-${index}-${item.date}`,
+      title: item.title,
+      description: item.description,
+      startDate: Timestamp.fromDate(new Date(`${item.date}T00:00:00`)),
+      type: 'class' as const,
+      audience: 'all' as const,
+      createdBy: 'timetable',
+    }));
+    setEvents([...data, ...lessons]);
     setLoading(false);
   };
 
@@ -131,6 +144,15 @@ export default function CalendarPage() {
     .sort((a, b) => (a.startDate?.toDate?.()?.getTime() ?? 0) - (b.startDate?.toDate?.()?.getTime() ?? 0))
     .slice(0, 8);
 
+  const calendarSyncEvents = eventsFromDated(visibleEvents.flatMap(event => {
+    const date = event.startDate?.toDate?.();
+    if (!date) return [];
+    const kind: SyncKind = event.type === 'exam' ? 'exam' : event.type === 'assignment' ? 'assignment' : event.type === 'class' ? 'timetable' : 'planner';
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return [{ id: event.id, title: event.title, date: `${date.getFullYear()}-${month}-${day}`, kind, description: event.description }];
+  }));
+
   if (loading) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 py-2 space-y-5">
       <div className="h-24 bg-muted animate-pulse rounded-3xl" />
@@ -166,6 +188,15 @@ export default function CalendarPage() {
           </Button>
         )}
       </motion.header>
+
+      <GoogleCalendarSync
+        source="calendar"
+        audience={mode === 'parent' ? 'parent' : teaching ? 'teacher' : profile?.role === 'admin' || profile?.role === 'institution_admin' ? 'admin' : 'student'}
+        manageWorkspace={profile?.role === 'admin' || profile?.role === 'institution_admin'}
+        institutionId={profile?.institutionId || ''}
+        events={calendarSyncEvents}
+        ics={subscriptionIcs(calendarSyncEvents)}
+      />
 
       {view === 'terms' && user && profile ? (
         <YearPlanner

@@ -25,10 +25,39 @@ export class AuthError extends Error {
   status = 401;
 }
 
+function decodeJwtPart(part: string): unknown {
+  const padded = part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '=');
+  return JSON.parse(atob(padded));
+}
+
+/**
+ * The Auth emulator issues unsigned tokens. Accept those only while this
+ * process is explicitly pointed at the emulator. Production tokens stay on
+ * Google's signed-token check below.
+ */
+function emulatorUser(token: string): AuthedUser | null {
+  if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const header = decodeJwtPart(parts[0]) as { alg?: string };
+    if (header.alg !== 'none') return null;
+    const payload = decodeJwtPart(parts[1]) as { sub?: string; aud?: string; iss?: string; email?: string };
+    if (payload.iss !== `https://securetoken.google.com/${PROJECT_ID}`) return null;
+    if (payload.aud !== PROJECT_ID) return null;
+    if (!payload.sub) return null;
+    return { uid: payload.sub, email: typeof payload.email === 'string' ? payload.email : undefined };
+  } catch {
+    return null;
+  }
+}
+
 export async function requireUser(req: Request): Promise<AuthedUser> {
   const header = req.headers.get('authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) throw new AuthError('Sign in to use this feature.');
+  const emulator = emulatorUser(token);
+  if (emulator) return emulator;
   try {
     const { payload } = await jwtVerify(token, JWKS, {
       issuer: `https://securetoken.google.com/${PROJECT_ID}`,

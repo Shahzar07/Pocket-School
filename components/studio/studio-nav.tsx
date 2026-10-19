@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuthSTORE } from '@/hooks/use-auth';
+import { STUDIO_TIMETABLE } from '@/lib/studio-paths';
+import { studioTimetableGate } from '@/lib/timetable/access';
+import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 
 const LINKS = [
   { href: '/dashboard/studio', label: 'AI Studio' },
@@ -17,9 +21,18 @@ const LINKS = [
 /** Horizontal section links. This is not a second sidebar. */
 export function StudioNav() {
   const pathname = usePathname() ?? '';
+  const profile = useAuthSTORE(state => state.profile);
+  const showTimetable = studioTimetableGate({
+    role: profile?.role,
+    roles: profile?.roles,
+    permissions: profile?.permissions,
+  }) !== 'hidden';
+  const links = showTimetable
+    ? [...LINKS, { href: STUDIO_TIMETABLE, label: TIMETABLE_COPY.studioTab }]
+    : [...LINKS];
   return (
     <nav className="flex gap-1 overflow-x-auto border-b border-border bg-background px-3 py-2" aria-label="AI Studio" data-studio-nav="header">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const active = link.href === '/dashboard/studio'
           ? pathname === '/dashboard/studio'
           : pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -39,6 +52,10 @@ export function StudioNav() {
 }
 
 export function StudioFrame({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname() ?? '';
+  if (pathname.startsWith('/dashboard/studio/timetable')) {
+    return <div className="min-h-[calc(100vh-4rem)] bg-background" data-nested-frame="0">{children}</div>;
+  }
   return (
     <div className="flex min-h-0 flex-col bg-background" data-studio-shell="standalone">
       <StudioNav />

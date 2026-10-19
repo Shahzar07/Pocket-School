@@ -1,5 +1,3 @@
-# QA / QC
-
 Sign-off for PR 147. A row is Yes only when a named test passed or a screenshot from this preview shows the surface. A row is No when this pass did not see the feature work. Keys are named only when a live provider needs them. Screenshot files sit in the preview artifact folder.
 
 | Feature | Yes or no | Evidence | Needs key |
@@ -44,3 +42,20 @@ Counts: 24 yes, 1 no, 7 rows that name a key (`FIREBASE_SERVICE_ACCOUNT` on sign
 - Every-route smoke on its own, same production server: 5 passed, 4.6m.
 - Lighthouse on `http://127.0.0.1:3465/` (Next dev, not a production build), fetch `2026-10-19T07:19:18.064Z`. Performance 45, accessibility 93, best-practices 96, SEO 92. FCP 1.1s, LCP 39.6s, TBT 6300ms, CLS 0, speed index 2.6s. The LCP element is the cookie-consent paragraph. After warmup the homepage responded in under a second, so this LCP is dev-server work, not the earlier credential hang. JSON `/tmp/qa-logs/lighthouse.json`.
 - `next build` on Next 15.5.15 flakes when Google Fonts returns an extension-less `/l/font?kit=` URL (`TypeError: Cannot read properties of null (reading '1')`). A rebuild that receives `.woff2` URLs succeeds. CI Playwright uses `next dev`, which falls back instead of failing the job. Firestore rules were not deployed.
+
+## ET AI Timetabler and Google Calendar
+
+These rows are for this add-on on top of the handover table above. A row is key-blocked when a live Google client or a Firestore rules deploy is required before the check can pass. The price stays TBC by Harry.
+
+| Feature | Yes, no, or key-blocked | Evidence | Needs key |
+| --- | --- | --- | --- |
+| Auto-built timetable | Yes | Emulator, institution admin, 2026-10-19. Generate built a week of lessons. Screenshot `timetable-built.png`. | None |
+| Clash fix | Yes | Same session. Two lessons for one teacher in one slot showed the blocked panel, then Fix cleared it. Screenshot `timetable-clash.png`. | None |
+| Cover suggestion | Yes | Absent on 2026-10-19. Mrs Lim's lesson proposed Mr Rahman. Screenshot `timetable-cover.png`. | None |
+| Teacher dashboard | Yes | Teacher sidebar button ET AI Timetabler opens `/dashboard/teacher/timetable`. | None |
+| Institution and Enterprise admin | Yes | Institution admin with `package:enterprise` opens `/dashboard/institution/timetable` and shows `data-edition="enterprise"`. | None |
+| AI Studio entry | Yes | Studio home stays the ET AI chat and shows the Timetabler link for a teacher. A student does not see it. Screenshot `timetable-studio-entry.png`. | None |
+| Price stays TBC | Yes | `TIMETABLER_PRICE_NOTE` is `TBC by Harry`. `/pricing` shows that line. | None |
+| Calendar without Google keys | Yes | No Google env. The desk stays `data-google-state="unconfigured"`, the iCal file downloads, and the signed subscription feed returns `BEGIN:VCALENDAR` with no page errors. | None for the iCal path. Live OAuth needs the Google keys. |
+| Google Calendar OAuth sync | key-blocked | Connect and sync need a Google client. Not run. | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` |
+| Timetable Firestore rules | key-blocked | Rules are in git and were not deployed. | Firestore rules deploy |

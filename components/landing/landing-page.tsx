@@ -8,6 +8,7 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { AI_TEACHERS, CEFR_LEVELS, TEACHER_CATEGORIES } from '@/lib/ai-teachers';
 import { TeacherPortrait } from '@/components/teachers/portrait';
 import { ADDONS, tierDefinition } from '@/lib/entitlements';
+import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { LANGUAGES } from '@/lib/languages';
 import { PROGRAMMES } from '@/lib/programmes';
 import { discountLabel, formatMoney, quoteAddon, quotePlan } from '@/lib/pricing';
@@ -553,6 +554,10 @@ export function LandingPage() {
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t(`landing.schools.${id}Body`)}</p>
             </li>
           ))}
+          <li className="rounded-2xl border border-border bg-card p-5">
+            <h3 className="font-semibold">{TIMETABLE_COPY.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{TIMETABLE_COPY.landingFeature} {TIMETABLE_COPY.priceNote}</p>
+          </li>
         </ul>
         <div className="mt-8 rounded-3xl border border-border bg-card p-6 md:p-8">
           <h3 className="text-2xl font-medium">{t('landing.schools.ctaTitle')}</h3>
@@ -590,9 +595,10 @@ export function LandingPage() {
               return (
                 <li key={addon.id} className="rounded-2xl border border-border bg-background p-6 shadow-[var(--shadow-card)]">
                   <h3 className="text-2xl font-medium">{addon.name}</h3>
-                  <p className="mt-3 leading-relaxed text-muted-foreground">{t(`landing.addons.${addon.id}`)}</p>
-                  <p className="mt-4 text-sm">{t('landing.addons.requires', { plan })}</p>
-                  {quote && quote.amount > 0 ? (
+                  <p className="mt-3 leading-relaxed text-muted-foreground">{t(`landing.addons.${addon.id}`, { defaultValue: addon.blurb })}</p>
+                  <p className="mt-4 text-sm">{addon.requiresLabel ?? t('landing.addons.requires', { plan })}</p>
+                  {addon.priceNote ? <p className="mt-2 text-lg font-semibold">{addon.priceNote}</p> : null}
+                  {quote && quote.amount > 0 && !addon.priceNote ? (
                     <p className="mt-2 text-lg font-semibold">
                       {formatMoney(quote.amount, quote.currency)}
                       <span className="text-sm font-medium text-muted-foreground">{t('landing.pricing.perMonth')}</span>

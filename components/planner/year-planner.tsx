@@ -5,7 +5,9 @@ import { CalendarRange, Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { bearerHeaders } from '@/lib/api-client';
 import { Input } from '@/components/ui/input';
+import { GoogleCalendarSync } from '@/components/calendar/google-sync';
 import { DashHeader, DashPage, Panel, PanelHeader } from '@/components/dash-ui';
+import { eventsFromDated, subscriptionIcs } from '@/lib/google-calendar/events';
 import { buildXlsx } from '@/lib/insights/xlsx';
 import {
   composeTemplate,
@@ -33,6 +35,7 @@ import {
 } from '@/lib/insights/planner-import';
 import { loadSchoolPlan, saveSchoolPlan, type StoredYearPlan } from '@/lib/planner-store';
 import { nextTermName, parseTermFile, termsToLines } from '@/lib/terms';
+import { readTimetableFeed } from '@/lib/timetable/store';
 
 const KINDS: PlannerKind[] = ['term', 'holiday', 'exam', 'closure', 'assessment', 'report', 'period', 'event', 'ptm', 'revision'];
 
@@ -148,7 +151,12 @@ export function YearPlanner({
     yearGroup: plan.yearGroup || undefined,
   };
   const visible = useMemo(
-    () => eventsForViewer(plan.events, viewerOf(role, scope)),
+    () => {
+      const feed = readTimetableFeed();
+      const lessons = (feed?.planner ?? []).filter(event => event.id.startsWith('tt-'));
+      const own = plan.events.filter(event => !event.id.startsWith('tt-'));
+      return eventsForViewer([...own, ...lessons], viewerOf(role, scope));
+    },
     [plan.events, plan.campusId, plan.classId, plan.yearGroup, role],
   );
   const units = useMemo(() => parseUnits(plan.unitsText), [plan.unitsText]);
@@ -160,6 +168,13 @@ export function YearPlanner({
   const selected = visible.find(event => event.id === selectedId) ?? null;
   const cells = monthCells(cursor.year, cursor.month);
   const monthLabel = new Date(cursor.year, cursor.month, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const plannerSyncEvents = eventsFromDated(visible.map(event => ({
+    id: event.id,
+    title: event.title,
+    date: event.date,
+    endDate: event.endDate,
+    kind: event.kind === 'exam' ? 'exam' : event.kind === 'period' ? 'timetable' : 'planner',
+  })));
 
   const replaceEvents = (events: PlannerEvent[], status: StoredYearPlan['status'] = 'draft') => {
     setPlan(current => ({ ...current, events, status }));
@@ -298,6 +313,15 @@ export function YearPlanner({
             {plan.status === 'published' ? 'Publish updates' : 'Publish this plan'}
           </Button>
         ) : undefined}
+      />
+
+      <GoogleCalendarSync
+        source="planner"
+        audience={role === 'parent' ? 'parent' : role === 'student' ? 'student' : role === 'teacher' ? 'teacher' : 'admin'}
+        manageWorkspace={role === 'admin' || role === 'institution_admin'}
+        institutionId={institutionId}
+        events={plannerSyncEvents}
+        ics={subscriptionIcs(plannerSyncEvents)}
       />
 
       <Panel>
