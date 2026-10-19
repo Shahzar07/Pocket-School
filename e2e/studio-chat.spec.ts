@@ -101,6 +101,50 @@ async function chatOn(page: Page, path: string, shot: string) {
   await page.screenshot({ path: `/opt/cursor/artifacts/screenshots/${shot}-reply.png`, fullPage: false });
 }
 
+test('signed-out studio leaves the spinner and opens login', async ({ page }) => {
+  const started = Date.now();
+  await page.goto('/dashboard/studio', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/\/login(?:\?|#|$)/, { timeout: 20_000 });
+  const elapsed = Date.now() - started;
+  expect(elapsed).toBeLessThan(20_000);
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.locator('.animate-spin')).toHaveCount(0);
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-signed-out-login.png', fullPage: false });
+  console.log(`signed-out studio reached login in ${elapsed}ms`);
+});
+
+async function proveStudio(page: Page, email: string, shot: string) {
+  await signIn(page, email);
+  await page.goto('/dashboard/studio', { waitUntil: 'domcontentloaded' });
+  await dismissCookies(page);
+  const box = page.getByRole('textbox', { name: 'Message ET AI' });
+  await expect(box).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('[data-studio-home="chat"]')).toBeVisible();
+  const mic = page.locator('[data-mic="1"]');
+  const attach = page.locator('[data-attach="1"]');
+  await expect(mic).toBeVisible();
+  await expect(attach).toBeVisible();
+  await dismissCookies(page);
+  const chooserPromise = page.waitForEvent('filechooser');
+  await attach.click({ force: true });
+  const chooser = await chooserPromise;
+  expect(chooser.isMultiple()).toBe(false);
+  await chooser.setFiles('public/blog/thumbs/igcse-revision-with-et-ai.webp');
+  await expect(page.locator('[data-photo-pending="1"]')).toBeVisible();
+  await expect(page.getByText('Photo attached')).toBeVisible();
+  await box.fill('What is two plus two?');
+  await page.locator('[data-studio-home="chat"]').screenshot({ path: `/opt/cursor/artifacts/screenshots/${shot}-attach.png` });
+  await dismissCookies(page);
+  await page.getByRole('button', { name: 'Send' }).click();
+  const reply = page.locator('[data-assistant="1"]').last();
+  await expect(reply).toBeVisible({ timeout: 60_000 });
+  await expect(reply).toContainText(/OPENROUTER_API_KEY|model key|cannot reply|two|4|four/i);
+  await expect(page.getByRole('paragraph').filter({ hasText: 'What is two plus two?' })).toBeVisible();
+  await expect(mic).toBeVisible();
+  await expect(attach).toBeVisible();
+  await page.locator('[data-studio-home="chat"]').screenshot({ path: `/opt/cursor/artifacts/screenshots/${shot}-chat.png` });
+}
+
 test.describe('ET AI studio chat', () => {
   test.skip(!LIVE, 'Set E2E_EMULATOR=1 and E2E_PREVIEW_PASSWORD to run studio chat against the preview.');
   test.setTimeout(180_000);
@@ -140,5 +184,13 @@ test.describe('ET AI studio chat', () => {
   test('teacher composer sends on the ET page', async ({ page }) => {
     await signIn(page, 'teacher.e2e@poketschool.ai');
     await chatOn(page, '/dashboard/studio/et', 'studio-teacher');
+  });
+
+  test('student studio home shows chat, mic, and attach', async ({ page }) => {
+    await proveStudio(page, 'student.e2e@poketschool.ai', 'studio-student-proof');
+  });
+
+  test('teacher studio home shows chat, mic, and attach', async ({ page }) => {
+    await proveStudio(page, 'teacher.e2e@poketschool.ai', 'studio-teacher-proof');
   });
 });
