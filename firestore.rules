@@ -1957,6 +1957,18 @@ service cloud.firestore {
       }
     }
 
+    match /google_calendar_connections/{uid} {
+      allow read, write: if false;
+    }
+
+    match /google_calendar_feeds/{uid} {
+      allow read, write: if false;
+    }
+
+    match /google_workspace_calendars/{institutionId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/exam_preps/{prepId} {
       allow read: if isUser(userId) || isParentOf(userId) || isAdmin();
       allow create: if isUser(userId) && incoming().ownerId == userId;

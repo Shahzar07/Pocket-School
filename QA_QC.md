@@ -16,4 +16,10 @@ This file records the ET AI Timetabler check on `cursor/et-ai-timetabler-336c`. 
 | Studio chat | “Build the IGCSE timetable”, cover, Tuesday room clashes, and “add 2 more maths periods for Primary 5” produce a preview. Confirm writes the draft. Cancel leaves the week. |
 | Photo | A photographed timetable is read from the image. The solver still runs with no model key. OpenRouter is only used when `OPENROUTER_API_KEY` is set. |
 | Studio page | `/dashboard/studio/timetable` is the grid editor. The studio nav is not nested on that route. |
-| Not claimed | Live OpenRouter wording, production Firestore deploy, and the rest of the handover sign-off. |
+| Google Calendar | OAuth uses `calendar.events` and `calendar.readonly`. Refresh tokens stay encrypted in Firestore. Missing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, or `GOOGLE_OAUTH_REDIRECT_URI` shows “Connect Google Calendar (not configured yet)” and leaves the iCal feed working. |
+| Google Cloud Console | Enable the Calendar API. Consent screen scopes are `https://www.googleapis.com/auth/calendar.events` and `https://www.googleapis.com/auth/calendar.readonly`. Redirect URIs are `https://poketschool.ai/api/google-calendar/callback` and the same path on the production domain. JavaScript origins are `https://poketschool.ai` and the production origin. No client secret is stored in git. |
+| Google sync | The published week, approved cover, exams, assignment due dates, and planner events upsert by a stable id. A removed lesson is deleted. A second sync does not create a second copy. |
+| Free/busy and leave | Free/busy is opt-in and becomes solver unavailability. A keyword or a chosen calendar flags leave for cover approval. It is not auto-applied. |
+| School calendars | An admin imports the rooms calendar and the school events calendar as holidays, terms, and room holds. |
+| Signed iCal | Each person can regenerate a subscription URL for Google, Apple, and Outlook without OAuth. |
+| Not claimed | Live OpenRouter wording, production Firestore deploy, a live Google account, and the rest of the handover sign-off. |

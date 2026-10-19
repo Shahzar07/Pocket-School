@@ -1,3 +1,4 @@
+import { roomHeld } from './holds';
 import { isAfternoon, sizeOf, teaches, works } from './solver';
 import type { Clash, Lesson, TimetableDoc, Weekday } from './types';
 
@@ -41,6 +42,9 @@ export function hardViolations(doc: TimetableDoc, lessons: Lesson[]): Clash[] {
     if (seenRoom.has(roomKey)) {
       clashes.push({ code: 'room', lessonId: lesson.id, message: `${roomName(doc, lesson.roomId)} is already in use at ${when}.` });
     } else seenRoom.set(roomKey, lesson.id);
+    if (roomHeld(doc, lesson.roomId, lesson.day, lesson.periodId)) {
+      clashes.push({ code: 'room', lessonId: lesson.id, message: `${roomName(doc, lesson.roomId)} is booked on the school calendar at ${when}.` });
+    }
 
     for (const studentId of students(doc, lesson.groupId)) {
       const key = `${studentId}|${slot}`;

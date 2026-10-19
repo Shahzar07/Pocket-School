@@ -16,6 +16,11 @@ import { loadBundle, readTimetableFeed, saveDoc, writeTimetableFeed } from '@/li
 import type { Lesson, RoomType, TimetableDoc, Weekday } from '@/lib/timetable/types';
 import { ROOM_TYPES, WEEKDAYS } from '@/lib/timetable/types';
 import { TimetableGrid } from './grid';
+import { GoogleCalendarSync } from '@/components/calendar/google-sync';
+import { GOOGLE_CALENDAR_COPY } from '@/lib/google-calendar/copy';
+import { eventsFromTimetable } from '@/lib/google-calendar/events';
+import { applyAvailability } from '@/lib/google-calendar/freebusy';
+import { applyWorkspace } from '@/lib/google-calendar/workspace';
 
 type Surface = 'institution' | 'personal' | 'teacher' | 'student' | 'parent';
 type Tab = 'setup' | 'options' | 'generate' | 'grid' | 'cover' | 'publish';
@@ -180,6 +185,31 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         </p>
         <p className="mt-1 text-xs text-[#1E6A83]">{TIMETABLE_COPY.sampleNote}</p>
       </header>
+
+      <GoogleCalendarSync
+        source="timetable"
+        audience={surface === 'parent' ? 'parent' : surface === 'student' ? 'student' : surface === 'institution' ? 'admin' : 'teacher'}
+        events={eventsFromTimetable(doc, surface === 'institution' || privateMode ? doc.lessons : lessons, { covers: doc.covers, planner: feed?.planner })}
+        ics={(feed ?? buildFeed(doc)).ical}
+        manageWorkspace={surface === 'institution'}
+        institutionId={doc.institutionId}
+        periods={doc.periods}
+        rooms={doc.rooms.map(room => ({ id: room.id, name: room.name }))}
+        anchorMonday={doc.anchorMonday}
+        onConstraints={slots => {
+          const teacherId = doc.staff.find(person => person.userId === actor.uid)?.id ?? doc.staff[0]?.id;
+          if (!teacherId || slots.length === 0) return;
+          commit(applyAvailability(doc, teacherId, slots), 'constraint');
+        }}
+        onAbsences={items => {
+          const first = items[0];
+          if (!first) return;
+          setNotice(GOOGLE_CALENDAR_COPY.absenceQueued);
+          setCoverDate(first.date);
+          setCoverReason(first.reason);
+        }}
+        onWorkspace={imported => commit(applyWorkspace(doc, imported), 'constraint')}
+      />
 
       {surface === 'teacher' && personalEditor ? (
         <div className="tt-no-print flex gap-2">

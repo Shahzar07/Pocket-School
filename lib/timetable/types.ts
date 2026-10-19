@@ -122,6 +122,15 @@ export interface CoverAssignment {
   status: 'proposed' | 'approved';
 }
 
+/** A room booked from the school Google calendar for one period of the anchor week. */
+export interface RoomHold {
+  id: string;
+  roomId: string;
+  day: Weekday;
+  periodId: string;
+  date: string;
+}
+
 export interface AuditEntry {
   id: string;
   at: string;
@@ -172,6 +181,8 @@ export interface TimetableDoc {
   choices: StudentChoice[];
   lessons: Lesson[];
   covers: CoverAssignment[];
+  /** Present after a school Google calendar import. Older drafts omit it. */
+  roomHolds?: RoomHold[];
   versions: TimetableVersion[];
   audit: AuditEntry[];
   people: PersonRef[];

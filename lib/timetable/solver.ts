@@ -8,6 +8,7 @@ import type {
   TimetableDoc,
   Weekday,
 } from './types';
+import { roomHeld } from './holds';
 
 export interface SolveResult {
   lessons: Lesson[];
@@ -97,6 +98,7 @@ function load(lessons: Lesson[], teacherId: string, day?: Weekday): number {
 }
 
 function occupied(lessons: Lesson[], doc: TimetableDoc, request: Request, day: Weekday, periodId: string, teacherId: string, roomId: string): boolean {
+  if (roomHeld(doc, roomId, day, periodId)) return true;
   const mine = new Set(students(doc, request.subject.groupId));
   for (const lesson of lessons) {
     if (lesson.day !== day || lesson.periodId !== periodId) continue;
