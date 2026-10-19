@@ -85,7 +85,7 @@ Admin actions still open: publish the six blog drafts, mark featured courses, me
 
 ## Dark AI Studio layout
 
-The signed-in home at `/dashboard/studio` and `/ai-studio` (redirect) is the dark ET AI chat again. Cyan `#3FE0D0` with `#203337` ink. The light card list stays behind All tools. Nothing from the previous studio was removed.
+The signed-in home at `/dashboard/studio` and `/ai-studio` (redirect) is the dark ET AI chat at full viewport height. The light dashboard sidebar and top bar stay off this page. Cyan `#3FE0D0` with `#203337` ink. Dashboard sits above New chat and returns students to `/dashboard`, and teachers, parents, and institutions to their own home. Back to Poket School stays at the bottom. The light card list stays behind All tools. Nothing from the previous studio was removed.
 
 | Feature | Yes, no, or key-blocked | Evidence | Needs key |
 | --- | --- | --- | --- |

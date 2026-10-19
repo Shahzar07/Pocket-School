@@ -9,21 +9,33 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
 import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationsBell } from '@/components/notifications-bell';
+import { PipGuide } from '@/components/pip-guide';
+import { SparksChip } from '@/components/sparks-chip';
+import { CurrencySwitcher } from '@/components/currency-switcher';
+import { DashboardSearch } from '@/components/dashboard-search';
+import { AccountMenu } from '@/components/account/account-menu';
+import { useAccountMode } from '@/hooks/use-account-mode';
+import { homeForMode, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
+import { resolveStaffRole } from '@/lib/admin-console';
+import type { TourRole } from '@/lib/tour-steps';
 import { DeskFrame } from '@/components/studio/desk-frame';
 import { ToolLoading } from '@/components/studio/boot';
 import {
-  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare, PenLine,
+  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare, Home,
   FileText, ClipboardList, Network, BookMarked,
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, ChevronRight, User as UserIcon,
   RefreshCw, X, Menu, Mic, Volume2, Camera, Paperclip,
-  Video, Headphones, Asterisk,
+  Video, Headphones, Asterisk, Phone, HelpCircle, Search,
 } from 'lucide-react';
 import { AI_TEACHERS, ET_AI_TUTOR, type AiTeacher } from '@/lib/ai-teachers';
 import { TeacherPortrait } from '@/components/teachers/portrait';
@@ -216,7 +228,89 @@ function studioToolLinks(embedded: boolean, role: string | undefined, showTimeta
 }
 
 const SIDE_LINK = `flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm ${C.dim} ${C.surfaceHover} hover:text-[#EDEAE4] transition-colors`;
-const CHIP = 'rounded-full border border-[#3A3733] bg-[#242220] px-3 py-1.5 text-xs font-semibold text-[#EDEAE4] hover:border-[#3FE0D0]';
+const CHIP = 'rounded-full border border-[#3A3733] bg-[#242220] px-2.5 py-1 text-[11px] font-semibold leading-none text-[#EDEAE4] hover:border-[#3FE0D0]';
+
+/** Students land on /dashboard. Other roles open their own home. */
+function dashboardHomeHref(role: string | undefined): string {
+  if (role === 'teacher') return '/dashboard/teacher';
+  if (role === 'parent') return '/dashboard/parent';
+  if (role === 'institution_admin') return '/dashboard/institution';
+  if (role === 'admin' || role === 'super_admin' || role === 'content_editor') return '/dashboard/admin';
+  if (role === 'partner_merchant') return '/dashboard/partner';
+  return '/dashboard';
+}
+
+function safelineHref(role: string | undefined): string {
+  if (role === 'teacher') return '/dashboard/teacher/hotline';
+  if (role === 'parent') return '/dashboard/parent/hotline';
+  if (role === 'admin' || role === 'super_admin' || role === 'content_editor') return '/dashboard/admin/hotline';
+  if (role === 'institution_admin') return '/dashboard/institution/hotline';
+  return '/dashboard/student/safety';
+}
+
+const TOUR_ROLES = new Set<string>(['student', 'teacher', 'parent', 'admin', 'institution_admin']);
+
+/** Pip, theme, language, notifications, sparks, currency, and search. The account chip stays in the sidebar. */
+function StudioEssentials() {
+  const profile = useAuthSTORE(state => state.profile);
+  const tourRole = (TOUR_ROLES.has(profile?.role ?? '') ? profile?.role : 'student') as TourRole;
+  return (
+    <div className="flex min-w-0 items-center justify-end gap-1 overflow-x-auto" data-studio-essentials="1">
+      <div className="[&_[data-tour=pip-trigger]_span]:sr-only">
+        <PipGuide role={tourRole} />
+      </div>
+      <ThemeToggle onDark />
+      <LanguageSwitcher tone="onDark" />
+      <NotificationsBell tone="onDark" />
+      <SparksChip />
+      <CurrencySwitcher tone="onDark" />
+      <div className="relative">
+        <button
+          type="button"
+          aria-label="Search"
+          className="grid h-9 w-9 place-items-center rounded-xl text-[#EDEAE4] hover:bg-white/10"
+          onClick={() => document.getElementById('dashboard-search')?.focus()}
+        >
+          <Search className="h-4 w-4" aria-hidden />
+        </button>
+        <div className="absolute end-0 top-11 z-30 w-[min(22rem,80vw)] opacity-0 pointer-events-none focus-within:opacity-100 focus-within:pointer-events-auto">
+          <DashboardSearch />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StudioAccountChip({ email }: { email: string }) {
+  const router = useRouter();
+  const profile = useAuthSTORE(state => state.profile);
+  const account = useAccountMode();
+  const showModes = account.modes.length > 1 || account.canBecome;
+  const roleLabel = account.mode ? MODE_NAMES[account.mode] : (profile?.role ?? 'Student');
+  const chooseMode = (next: AccountMode) => {
+    account.setMode(next);
+    router.push(homeForMode(next));
+  };
+  return (
+    <AccountMenu
+      name={profile?.displayName || profile?.name || email || 'User'}
+      email={email || profile?.email || ''}
+      roleLabel={roleLabel}
+      staffHome={Boolean(resolveStaffRole(profile))}
+      modes={account.modes}
+      activeMode={account.mode}
+      onSwitchMode={showModes ? chooseMode : undefined}
+      onBecomeInstructor={account.canBecome ? () => router.push('/dashboard/student/become-instructor') : undefined}
+    >
+      <span className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 ${C.surface}`}>
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-[#203337]" style={{ background: FILL }}>
+          {(email || 'U').slice(0, 2).toUpperCase()}
+        </span>
+        <span className={`truncate text-xs ${C.dim}`}>{email}</span>
+      </span>
+    </AccountMenu>
+  );
+}
 
 /* Rotating status lines ET shows while working. */
 const THINKING_PHRASES = [
@@ -278,7 +372,7 @@ function PocoWorking({ creating }: { creating: boolean }) {
 }
 
 export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
-  const frame = embedded ? 'h-full min-h-0' : 'h-screen';
+  const frame = embedded ? 'min-h-0 flex-1' : 'h-dvh';
   const [user, setUser] = useState<User | null>(null);
   /** Undefined until Firebase reports the first auth state — prevents a
    * sign-in flash for users who are already logged in. */
@@ -801,6 +895,13 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">
           <nav className="mt-1 space-y-0.5" aria-label="AI Studio">
+            <Link
+              href={dashboardHomeHref(profile?.role)}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm font-semibold ${C.text} ${C.surfaceHover}`}
+            >
+              <Home className="w-4 h-4" style={{ color: C.accent }} aria-hidden /> Dashboard
+            </Link>
             <button
               onClick={newChat}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold border ${C.border} ${C.surfaceHover} transition-colors`}
@@ -823,19 +924,20 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               <span className="h-2 w-2 rounded-full" style={{ background: FILL }} aria-hidden />
               <Library className="w-4 h-4" aria-hidden /> Library
             </button>
-            <button
-              onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); setSidebarOpen(false); }}
-              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'chat' && skill === 'problems' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
-            >
-              <Calculator className="w-4 h-4" style={{ color: C.accent }} /> ET Maths
-            </button>
-            <button
-              onClick={() => { setView('essays'); setSidebarOpen(false); }}
-              aria-current={view === 'essays' ? 'page' : undefined}
-              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'essays' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
-            >
-              <PenLine className="w-4 h-4" style={{ color: C.accent }} /> ET Essays
-            </button>
+            <p className={`px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>Tools</p>
+            <Link href="/dashboard/studio/maths" onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>ET Maths</Link>
+            <Link href="/dashboard/studio/exam-prep" onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>ET Exams</Link>
+            <Link href="/dashboard/studio/essays" onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>ET Essays</Link>
+            <Link href="/reads/studio" onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>Book Studio</Link>
+            {canUseDeskTool(profile, 'research-helper') && (
+              <button
+                onClick={() => { setView('research-helper'); setSidebarOpen(false); }}
+                aria-current={view === 'research-helper' ? 'page' : undefined}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'research-helper' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
+              >
+                <BookMarked className="w-4 h-4" style={{ color: C.accent }} aria-hidden /> Research Helper
+              </button>
+            )}
             {canUseDeskTool(profile, 'teacher-toolkit') && (
               <button
                 onClick={() => { setView('teacher-toolkit'); setSidebarOpen(false); }}
@@ -854,15 +956,13 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                 <UserIcon className="w-4 h-4" style={{ color: C.accent }} aria-hidden /> Parent Explainer
               </button>
             )}
-            {canUseDeskTool(profile, 'research-helper') && (
-              <button
-                onClick={() => { setView('research-helper'); setSidebarOpen(false); }}
-                aria-current={view === 'research-helper' ? 'page' : undefined}
-                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-colors ${view === 'research-helper' ? `${C.raised} ${C.text}` : `${C.dim} ${C.surfaceHover}`}`}
-              >
-                <BookMarked className="w-4 h-4" style={{ color: C.accent }} aria-hidden /> Research Helper
-              </button>
+            <Link href={embedded ? '/dashboard/studio/teachers' : '/ai-teachers'} onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>AI Teachers</Link>
+            <Link href={embedded ? '/ai-teachers' : '/dashboard/studio/teachers'} onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>ET + Subject</Link>
+            {timetableGate !== 'hidden' && (
+              <Link href={STUDIO_TIMETABLE} onClick={() => setSidebarOpen(false)} className={SIDE_LINK} data-studio-entry="timetable">{TIMETABLE_COPY.studioTab}</Link>
             )}
+            <Link href={plannerHref(profile?.role)} onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>Planner</Link>
+            <Link href="/dashboard/calendar" onClick={() => setSidebarOpen(false)} className={SIDE_LINK}>Calendar</Link>
             <button
               type="button"
               onClick={() => { setView('tools'); setSidebarOpen(false); }}
@@ -871,18 +971,6 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             >
               <Sparkles className="w-4 h-4" style={{ color: C.accent }} aria-hidden /> All tools
             </button>
-            <p className={`px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>Tools</p>
-            {studioToolLinks(embedded, profile?.role, timetableGate !== 'hidden').map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                onClick={() => setSidebarOpen(false)}
-                className={SIDE_LINK}
-                {...(link.entry ? { 'data-studio-entry': link.entry } : {})}
-              >
-                {link.label}
-              </Link>
-            ))}
           </nav>
 
           <p className={`px-3 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${C.faint}`}>Recents</p>
@@ -902,17 +990,18 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
         {/* Footer */}
         <div className={`shrink-0 space-y-1 border-t p-3 ${C.borderSoft}`}>
           {user ? (
-            <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl ${C.surface}`}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-[#203337] shrink-0" style={{ background: FILL }}>
-                {(user.email ?? 'U').slice(0, 2).toUpperCase()}
-              </div>
-              <span className={`text-xs ${C.dim} truncate`}>{user.email}</span>
-            </div>
+            <StudioAccountChip email={user.email ?? ''} />
           ) : (
             <Link href="/login" className={`flex items-center gap-2 text-xs ${C.dim} hover:text-foreground px-2.5 py-2`}>
               <UserIcon className="w-3.5 h-3.5" /> Sign in to save
             </Link>
           )}
+          <Link href={safelineHref(profile?.role)} className={`flex items-center gap-2 px-2.5 py-1.5 text-xs ${C.dim} hover:text-foreground transition-colors`}>
+            <Phone className="h-3.5 w-3.5" aria-hidden /> Poket SafeLine
+          </Link>
+          <Link href="/dashboard/helpdesk" className={`flex items-center gap-2 px-2.5 py-1.5 text-xs ${C.dim} hover:text-foreground transition-colors`}>
+            <HelpCircle className="h-3.5 w-3.5" aria-hidden /> Help Center
+          </Link>
           <Link href="/" className={`flex items-center gap-2 text-xs ${C.faint} hover:text-foreground px-2.5 py-1.5 transition-colors`}>
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Poket School
           </Link>
@@ -923,10 +1012,18 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
       {sidebarOpen && <button type="button" className="fixed inset-0 bg-black/50 z-30 lg:hidden" aria-label="Close menu" onClick={() => setSidebarOpen(false)} />}
 
       {/* ── Main ── */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {embedded && view !== 'chat' ? (
+          <div className={`flex shrink-0 items-center justify-end border-b px-2 py-1 ${C.borderSoft}`}>
+            <StudioEssentials />
+          </div>
+        ) : null}
         {/* Mobile top bar */}
         <div className={`flex lg:hidden items-center gap-2 overflow-x-auto px-3 py-2 border-b ${C.borderSoft}`} data-studio-tools="row">
           <button type="button" onClick={() => setSidebarOpen(true)} className={C.dim} aria-label="Open ET AI menu" aria-expanded={sidebarOpen}><Menu className="w-5 h-5" /></button>
+          <Link href={dashboardHomeHref(profile?.role)} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">
+            <Home className="h-3.5 w-3.5" aria-hidden /> Dashboard
+          </Link>
           <TeacherPortrait teacher={teacher} size={32} className="h-8 w-8 rounded-full object-cover" />
           <span className="text-sm font-bold shrink-0">{teacher.name}</span>
           <button type="button" onClick={newChat} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.newChat}</button>
@@ -970,8 +1067,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           />
         ) : (
           <>
-            <header className="flex items-center gap-3 border-b border-border px-4 py-2" data-et-teacher={teacher.id}>
-              <TeacherPortrait teacher={teacher} size={40} className="h-10 w-10 rounded-full object-cover" />
+            <header className="flex items-center gap-3 border-b border-border px-3 py-1.5" data-et-teacher={teacher.id}>
+              <TeacherPortrait teacher={teacher} size={32} className="h-8 w-8 rounded-full object-cover" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{teacher.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{teacher.title}</p>
@@ -982,32 +1079,33 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                 aria-label={ET_COPY.teacher}
                 value={teacher.id}
                 onChange={(event) => setTeacherId(event.target.value)}
-                className="ms-auto max-w-[12rem] rounded-full border border-border bg-card px-2 py-1 text-xs"
+                className="max-w-[9rem] rounded-full border border-border bg-card px-2 py-1 text-xs"
               >
                 {TEACHERS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
+              {embedded ? <div className="ms-auto min-w-0 max-w-[58%]"><StudioEssentials /></div> : null}
             </header>
             {/* Thread */}
-            <div className="flex-1 overflow-y-auto" data-et-chat="1">
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8 pb-4">
+            <div className="min-h-0 flex-1 overflow-y-auto" data-et-chat="1">
+              <div className="max-w-3xl mx-auto px-4 pb-2 pt-3 sm:px-6">
                 {empty ? (
-                  <div className="relative pt-6 text-center" data-testid="studio-greeting">
+                  <div className="relative text-center" data-testid="studio-greeting">
                     <div className="pointer-events-none absolute inset-x-6 top-0 h-36 rounded-full opacity-50 blur-3xl" style={{ background: HERO }} aria-hidden />
-                    <div className="relative mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full" style={{ background: FILL, boxShadow: '0 0 48px rgba(63,224,208,0.35)' }}>
-                      <Asterisk className="h-8 w-8 text-[#203337]" />
+                    <div className="relative mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full" style={{ background: FILL, boxShadow: '0 0 48px rgba(63,224,208,0.35)' }}>
+                      <Asterisk className="h-6 w-6 text-[#203337]" />
                     </div>
-                    <h1 className="relative font-heading text-3xl leading-tight tracking-tight sm:text-[2.6rem]">
+                    <h1 className="relative font-heading text-2xl leading-tight tracking-tight sm:text-3xl">
                       Hi, I&apos;m <span style={{ color: C.accent }}>ET AI</span>.
                     </h1>
-                    <p className={`relative mx-auto mt-2 max-w-md text-base ${C.dim} sm:text-lg`}>
+                    <p className={`relative mx-auto mt-1 max-w-md text-sm ${C.dim} sm:text-base`}>
                       Ask anything, or pick a skill. ET AI turns a topic into a lesson, quiz, video, audio and more.
                     </p>
-                    <div className="relative mt-6 grid w-full gap-2.5 text-left sm:grid-cols-2">
+                    <div className="relative mt-3 grid w-full gap-2 text-left sm:grid-cols-2">
                       {SUGGESTIONS.map(s => (
                         <button
                           key={s.label}
                           onClick={() => { setSkill(s.format); submit(s.text, s.format); }}
-                          className={`flex items-center gap-2.5 rounded-2xl border ${C.border} ${C.surface} px-4 py-3 text-left text-sm ${C.text} transition hover:-translate-y-0.5 hover:border-[#3FE0D0] motion-reduce:transform-none`}
+                          className={`flex items-center gap-2.5 rounded-2xl border ${C.border} ${C.surface} px-3 py-2 text-left text-sm ${C.text} transition hover:-translate-y-0.5 hover:border-[#3FE0D0] motion-reduce:transform-none`}
                         >
                           {s.format
                             ? <span style={{ color: C.accent }}>{FORMATS.find(f => f.id === s.format)?.icon}</span>
@@ -1016,7 +1114,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                         </button>
                       ))}
                     </div>
-                    <div className="relative mt-4 flex flex-wrap justify-center gap-2" data-studio-tools="chips">
+                    <div className="relative mt-3 flex flex-wrap justify-center gap-2" data-studio-tools="chips">
                       {studioToolLinks(embedded, profile?.role, timetableGate !== 'hidden').map((link) => (
                         <Link key={link.label} href={link.href} className={CHIP}>{link.label}</Link>
                       ))}
@@ -1115,7 +1213,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             </div>
 
             {/* ── Composer ── */}
-            <div className="shrink-0 px-4 sm:px-6 pb-5 pt-2">
+            <div className="shrink-0 px-4 pb-3 pt-1 sm:px-6" data-studio-composer="1">
               <div className="max-w-3xl mx-auto">
                 <div
                   className={`rounded-3xl border ${dragOver ? 'border-[#3FE0D0]' : C.border} ${C.surface} shadow-[0_8px_30px_rgba(63,224,208,0.12)] focus-within:border-[#3FE0D0] transition-colors`}

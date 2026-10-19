@@ -646,14 +646,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const accent = ROLE_ACCENT[role];
   const dashRole: DashRole = role === 'institution_admin' ? 'institution' : role === 'partner_merchant' ? 'student' : role;
   const compactNav = !sidebarOpen;
+  const immersive = pathname === '/dashboard/studio' || pathname === '/dashboard/studio/et';
 
   return (
-    <div className="flex h-screen overflow-hidden" data-dashboard-role={role} style={{ background: accent.wash }}>
+    <div className={`flex h-dvh overflow-hidden ${immersive ? 'bg-[#1A1918]' : ''}`} data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} style={immersive ? undefined : { background: accent.wash }}>
       <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
       </a>
-      {/* ── Sidebar — light, profile-led, grouped ── */}
+      {/* The signed-in Studio chat is the whole viewport. Other pages keep this sidebar. */}
+      {immersive ? null : (
       <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none shrink-0 max-lg:fixed max-lg:inset-y-0 max-lg:z-50 ${sidebarOpen ? 'w-[264px]' : 'lg:w-[76px] w-0 max-lg:overflow-hidden'}`}>
 
         {/* Who you are, at the top — the reference design leads with identity
@@ -736,11 +738,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
       </aside>
+      )}
 
       {/* ── Main Content ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <AdminViewAsBanner />
-        {/* Header */}
+        {immersive ? null : (
         <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t('nav.toggleSidebar')} aria-expanded={sidebarOpen}>
@@ -792,6 +795,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </span>
           </div>
         </header>
+        )}
 
         {/* New device warning banner */}
         {newDevice && (
@@ -812,11 +816,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Breadcrumbs />
         </div>
         )}
-        <main id="dashboard-main" className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
-          {/* A faint teal wash at the top, echoing the homepage sky. */}
+        <main id="dashboard-main" className={immersive ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative flex-1 overflow-y-auto pb-20 lg:pb-0'}>
+          {immersive ? null : (
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
+          )}
           <OfflineBanner />
-          <div className={pathname.startsWith('/dashboard/studio') ? 'relative h-full' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
+          <div className={pathname.startsWith('/dashboard/studio') ? 'relative flex min-h-0 flex-1 flex-col' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
             {pathname.startsWith('/dashboard/studio') ? children : (
               <>
             {accessDenied && (
@@ -836,10 +841,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      <MobileNav role={role} onMore={() => setSidebarOpen(true)} />
-      <DashFab role={role} />
+      {immersive ? null : <MobileNav role={role} onMore={() => setSidebarOpen(true)} />}
+      {immersive ? null : <DashFab role={role} />}
       <CommandPalette role={dashRole} />
-      {viewAs ? null : <AITutor />}
+      {viewAs || immersive ? null : <AITutor />}
     </div>
   );
 }

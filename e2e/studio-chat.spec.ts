@@ -73,22 +73,37 @@ async function signIn(page: Page, email: string) {
 
 async function expectDarkStudio(page: Page, role: 'student' | 'teacher') {
   await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible();
+  await expect(page.locator('[data-studio-immersive="1"]')).toBeVisible();
+  await expect(page.locator('[data-tour="sidebar"]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Toggle sidebar' })).toHaveCount(0);
   const nav = page.getByRole('navigation', { name: 'AI Studio' });
   await expect(nav).toHaveCount(1);
+  const dashboard = nav.getByRole('link', { name: 'Dashboard', exact: true });
+  await expect(dashboard).toBeVisible();
+  await expect(dashboard).toHaveAttribute('href', role === 'teacher' ? '/dashboard/teacher' : '/dashboard');
   for (const name of ['New chat', 'Chats', 'Library', 'All tools']) {
     await expect(nav.getByRole('button', { name, exact: true })).toBeVisible();
   }
-  for (const name of ['AI Teachers', 'ET + Subject', 'ET Maths', 'ET Exams', 'ET Essays', 'ET AI', 'Book Studio', 'PoketReads', 'AI Book Creator', 'Creator Store', 'Planner', 'Calendar']) {
+  for (const name of ['AI Teachers', 'ET + Subject', 'ET Maths', 'ET Exams', 'ET Essays', 'Book Studio', 'Planner', 'Calendar']) {
     await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
   }
+  const chips = page.locator('[data-studio-tools="chips"]');
+  await expect(chips).toBeVisible();
+  for (const name of ['ET AI', 'PoketReads', 'AI Book Creator', 'Creator Store']) {
+    await expect(chips.getByRole('link', { name, exact: true })).toBeVisible();
+  }
   await expect(page.getByRole('link', { name: 'Back to Poket School' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Poket SafeLine' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Help Center' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Account menu' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Notifications' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change language' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Upload photo' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Skills' })).toBeVisible();
   await expect(page.getByLabel('Subject')).toBeVisible();
   await expect(page.getByLabel('Level')).toBeVisible();
   await expect(page.getByLabel('Mode', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /Switch to (dark|light) mode/ })).toBeVisible();
-  await expect(page.locator('[data-studio-tools="chips"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open the guided tour' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Research Helper', exact: true })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Parent Explainer', exact: true })).toHaveCount(0);
@@ -136,9 +151,17 @@ async function chatOn(page: Page, path: string, shot: string) {
   await dismissCookies(page);
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.locator('[data-assistant="1"]').last()).toBeVisible({ timeout: 60_000 });
-  for (const tab of ['AI Teachers', 'ET Maths', 'ET Exams', 'ET Essays', 'ET AI']) {
+  const hops: { name: string; url: RegExp }[] = [
+    { name: 'AI Teachers', url: /\/dashboard\/studio\/teachers|\/ai-teachers/ },
+    { name: 'ET Maths', url: /\/dashboard\/studio\/maths/ },
+    { name: 'ET Exams', url: /\/dashboard\/studio\/exam-prep/ },
+    { name: 'ET Essays', url: /\/dashboard\/studio\/essays/ },
+    { name: 'ET AI', url: /\/dashboard\/studio\/et/ },
+  ];
+  for (const hop of hops) {
     await dismissCookies(page);
-    await page.getByRole('navigation', { name: 'AI Studio' }).getByRole('link', { name: tab }).click();
+    await page.getByRole('navigation', { name: 'AI Studio' }).getByRole('link', { name: hop.name, exact: true }).click();
+    await expect(page).toHaveURL(hop.url, { timeout: 30_000 });
     await expect(page.getByText('This page could not be found')).toHaveCount(0);
     await expect(page.locator('body')).not.toHaveText('');
   }
@@ -244,11 +267,23 @@ test.describe('ET AI studio chat', () => {
 
   test('dark layout keeps the tools for a student and opens on a phone', async ({ page }) => {
     await signIn(page, 'student.e2e@poketschool.ai');
-    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/dashboard/studio', { waitUntil: 'domcontentloaded' });
     await dismissCookies(page);
     await expect(page.getByRole('textbox', { name: 'Message ET AI' })).toBeVisible({ timeout: 60_000 });
     await expectDarkStudio(page, 'student');
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-desktop-1440.png', fullPage: false });
+    await page.setViewportSize({ width: 1024, height: 640 });
+    const fit = await page.evaluate(() => {
+      const chips = document.querySelector('[data-studio-tools="chips"]')?.getBoundingClientRect();
+      const composer = document.querySelector('[data-studio-composer="1"]')?.getBoundingClientRect();
+      if (!chips || !composer) return { ok: false, reason: 'missing' };
+      const overlaps = chips.bottom > composer.top + 1;
+      const within = chips.top >= 0 && chips.bottom <= window.innerHeight + 1 && composer.bottom <= window.innerHeight + 1;
+      return { ok: !overlaps && within, overlaps, within, chipsBottom: chips.bottom, composerTop: composer.top, height: window.innerHeight };
+    });
+    expect(fit.ok, JSON.stringify(fit)).toBe(true);
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-student-empty.png', fullPage: false });
     await page.locator('[data-photo-file="1"]').setInputFiles('public/blog/thumbs/igcse-revision-with-et-ai.webp');
     await expect(page.getByText('Photo attached')).toBeVisible();
@@ -259,11 +294,7 @@ test.describe('ET AI studio chat', () => {
     await expect(page.getByRole('button', { name: 'Read aloud' }).last()).toBeVisible();
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-student-reply.png', fullPage: false });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.evaluate(() => {
-      document.querySelector<HTMLButtonElement>('[aria-label="Toggle sidebar"]')?.click();
-    });
-    await expect(page.getByRole('button', { name: 'Toggle sidebar' })).toHaveAttribute('aria-expanded', 'false');
-    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-studio-tools="row"]').getByRole('link', { name: 'Dashboard', exact: true })).toBeVisible();
     await page.evaluate(() => {
       document.querySelector<HTMLButtonElement>('[aria-label="Open ET AI menu"]')?.click();
     });
