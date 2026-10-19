@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Plus_Jakarta_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew, DM_Sans, DM_Serif_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/components/auth-provider';
 import { I18nProvider } from '@/components/i18n-provider';
@@ -35,6 +35,19 @@ const notoHebrew = Noto_Sans_Hebrew({
   display: 'swap',
 });
 
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
+
+const dmSerif = DM_Serif_Display({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-dm-serif',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://poketschool.ai'),
   title: {
@@ -64,7 +77,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, notoArabic.variable, notoHebrew.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, notoArabic.variable, notoHebrew.variable, dmSans.variable, dmSerif.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
         <ThemeProvider>
         <AuthProvider>

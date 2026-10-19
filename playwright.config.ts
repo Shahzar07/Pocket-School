@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const port = 3465;
-const baseURL = `http://127.0.0.1:${port}`;
+const emulator = process.env.E2E_EMULATOR === '1';
+const port = Number(process.env.E2E_PORT || (emulator ? 3466 : 3465));
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -11,7 +12,7 @@ export default defineConfig({
   retries: 0,
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
+  webServer: emulator ? undefined : {
     command: `DISABLE_HMR=true NEXT_DIST_DIR=.next-e2e npx next dev -p ${port} -H 127.0.0.1`,
     url: baseURL,
     reuseExistingServer: true,

@@ -348,6 +348,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** This is the merged goals page. /dashboard/student/tasks redirects here.
 - **Owner keys:** None.
 
+### Planner
+
+- **Route:** `/dashboard/student/planner`
+- **Audience:** student
+- **Purpose:** Month, week, and day calendar of classes, assignment due dates, exams, attendance, and personal goals.
+- **Overlaps:** Daily goals and the year calendar.
+- **Decision:** Keep beside daily goals. Desk events mirror into the same calendar.
+- **Owner keys:** None.
+
 ### Learning insights
 
 - **Route:** `/dashboard/student/analytics`
@@ -397,7 +406,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/classes`
 - **Audience:** teacher
-- **Purpose:** The classes this teacher runs and the students in them.
+- **Purpose:** Create and run a class: roster, join code, attendance, assignments, goals, and the gradebook.
 - **Overlaps:** Institution home.
 - **Decision:** Keep.
 - **Owner keys:** None.
@@ -442,7 +451,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/earnings`
 - **Audience:** teacher
-- **Purpose:** What this teacher has earned from courses and tutoring.
+- **Purpose:** Course sales, live sessions, school payments, and revenue share. Sample figures until the payout keys exist.
 - **Overlaps:** Wallet and admin finance.
 - **Decision:** Keep as the teacher’s own earnings. Payouts still settle in the wallet.
 - **Owner keys:** None.
@@ -471,14 +480,23 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Audience:** teacher
 - **Purpose:** Every goal for students in the teacher’s class, with status, due time, active focus, reschedules, and completion.
 - **Overlaps:** Student daily goals.
-- **Decision:** Keep as the teacher view. Do not add a second goal model.
+- **Decision:** Assigned goals live on the student record. Daily goals students set stay on the daily goals list.
+- **Owner keys:** None.
+
+### Planner
+
+- **Route:** `/dashboard/teacher/planner`
+- **Audience:** teacher
+- **Purpose:** The teacher’s month, week, and day view of class sessions, assignments, exams, and attendance.
+- **Overlaps:** The student planner and the year calendar.
+- **Decision:** Keep. Classroom changes mirror onto this calendar.
 - **Owner keys:** None.
 
 ### Gradebook
 
 - **Route:** `/dashboard/teacher/gradebook`
 - **Audience:** teacher
-- **Purpose:** Marks for the teacher’s classes.
+- **Purpose:** Enter marks for a class on the assessment scale, then publish them to the student and parent.
 - **Overlaps:** Transcript and report cards.
 - **Decision:** Keep. The gradebook is where marks are entered.
 - **Owner keys:** None.
@@ -487,7 +505,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/assignments`
 - **Audience:** teacher
-- **Purpose:** Set work for a class, one student, or the whole institution, then mark it.
+- **Purpose:** Set work for a class or a student, mark the inbox, and return it to the gradebook.
 - **Overlaps:** Student assignments.
 - **Decision:** Keep. This is the sending side.
 - **Owner keys:** None.
@@ -505,7 +523,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/report-cards`
 - **Audience:** teacher
-- **Purpose:** Term reports for families.
+- **Purpose:** Term report cards pulled from the gradebook, attendance, merits, and goals.
 - **Overlaps:** Report studio and parent reports.
 - **Decision:** Keep. Studio designs them; this page issues them.
 - **Owner keys:** None.
@@ -514,7 +532,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/report-studio`
 - **Audience:** teacher
-- **Purpose:** Lay out a report before it is issued.
+- **Purpose:** Build and run reports: pick a template, a scope, and dates, then export or schedule them.
 - **Overlaps:** Institution templates.
 - **Decision:** Keep.
 - **Owner keys:** None.
@@ -523,7 +541,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/teacher/attendance`
 - **Audience:** teacher
-- **Purpose:** Mark who is present and record login time for the institution.
+- **Purpose:** Mark a class register and send absent or late notices to parents.
 - **Overlaps:** Student attendance.
 - **Decision:** Keep as the register.
 - **Owner keys:** None.
@@ -636,6 +654,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep as the read-only family view of the merged goals.
 - **Owner keys:** None.
 
+### Family planner
+
+- **Route:** `/dashboard/parent/planner`
+- **Audience:** parent
+- **Purpose:** A parent reads the linked child’s classes, due dates, exams, attendance, and goals.
+- **Overlaps:** Family daily goals.
+- **Decision:** Keep as the read view. Parents do not create school events.
+- **Owner keys:** None.
+
 ### Family insights
 
 - **Route:** `/dashboard/parent/analytics`
@@ -676,7 +703,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/admin/institutions`
 - **Audience:** admin
-- **Purpose:** Schools and organisations on the platform.
+- **Purpose:** Schools and organisations on the platform. A super admin adds one through the server. Without the Firebase Admin key the form says the tool is coming soon.
 - **Overlaps:** Access institution-admin assignment.
 - **Decision:** Keep. Assigning an institution admin is reachable from Access and from an institution.
 - **Owner keys:** None.
@@ -703,7 +730,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/admin/allocations`
 - **Audience:** admin
-- **Purpose:** Grant a tier, a course, or a coupon to a person.
+- **Purpose:** Seat allocations for a course or plan, plus a tier, course, or coupon for one person.
 - **Overlaps:** Access and Users.
 - **Decision:** Keep. This is the grants half of Access. Coupons are created only here.
 - **Owner keys:** None.
@@ -757,10 +784,46 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/admin/planner`
 - **Audience:** admin
-- **Purpose:** Age caps and reschedule limits for ET AI assigned goals.
+- **Purpose:** Age caps and reschedule limits for ET AI assigned goals, plus the month, week, and day calendar.
 - **Overlaps:** Student daily goals.
-- **Decision:** Keep. The planner writes the same daily goals. It does not add a second list.
+- **Decision:** Keep the limits form and the calendar. The planner writes the same daily goals.
 - **Owner keys:** None. Without an ET AI key the planner is rule-based.
+
+### Platform
+
+- **Route:** `/dashboard/admin/platform`
+- **Audience:** admin
+- **Purpose:** Platform settings for the super admin.
+- **Overlaps:** Admin settings.
+- **Decision:** Keep as the platform desk.
+- **Owner keys:** FIREBASE_SERVICE_ACCOUNT.
+
+### Pulse
+
+- **Route:** `/dashboard/admin/pulse`
+- **Audience:** admin
+- **Purpose:** Live platform pulse for the super admin.
+- **Overlaps:** Insights.
+- **Decision:** Keep.
+- **Owner keys:** None.
+
+### Queues
+
+- **Route:** `/dashboard/admin/queues`
+- **Audience:** admin
+- **Purpose:** Work queues the admin desk still has to clear.
+- **Overlaps:** The admin desk.
+- **Decision:** Keep.
+- **Owner keys:** FIREBASE_SERVICE_ACCOUNT.
+
+### Copyright signatures
+
+- **Route:** `/dashboard/admin/signatures`
+- **Audience:** admin
+- **Purpose:** Search, view, and export the copyright declarations teachers sign.
+- **Overlaps:** Course publishing.
+- **Decision:** Keep. Records are immutable.
+- **Owner keys:** None.
 
 ### Curriculum course
 
@@ -780,11 +843,11 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. Reviewers use this page. Students never see the review link.
 - **Owner keys:** None.
 
-### Book Studio
+### AI Book Creator
 
 - **Route:** `/dashboard/admin/books`
 - **Audience:** admin
-- **Purpose:** The same Book Studio as Poket Reads, opened from the CMS, including children's stories.
+- **Purpose:** Create a PoketReads book with ET AI, a cover, pages, and pictures, then preview, publish, and export.
 - **Overlaps:** Poket Reads studio.
 - **Decision:** Keep. Books are written here and read in Poket Reads.
 - **Owner keys:** None for the shelf. Picture generation uses the existing AI key.
@@ -1000,7 +1063,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/admin/partners`
 - **Audience:** admin
-- **Purpose:** Approve merchant applications and offers. Blocked categories are refused for under-18s.
+- **Purpose:** Add and update merchants, then approve, suspend, or archive them. A partner edits only their own record.
 - **Overlaps:** Partner portal.
 - **Decision:** Keep. Offers stay in review until an admin approves them.
 - **Owner keys:** None.
@@ -1072,7 +1135,7 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/admin/certificates`
 - **Audience:** admin
-- **Purpose:** Design the Open Badge and issue it to a school list. Each badge is a signed credential with a public verify page.
+- **Purpose:** Design certificate templates with a live preview and PDF export. A super admin sets the default. An institution admin saves their override.
 - **Overlaps:** Module certificates and the school issuance desk.
 - **Decision:** Keep as the platform badge template and bulk issue desk.
 - **Owner keys:** Credential signing keys stay on the server.
@@ -1383,11 +1446,11 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. Publishing stays with super admins.
 - **Owner keys:** None.
 
-### Help articles
+### Admin help
 
 - **Route:** `/dashboard/admin/help`
 - **Audience:** admin
-- **Purpose:** Published help articles are what the help centre and ET AI answer from.
+- **Purpose:** Where each admin tool lives, what each role can do, which keys still say coming soon, and the help articles ET AI answers from.
 - **Overlaps:** Help centre.
 - **Decision:** Keep as the only editor for help articles.
 - **Owner keys:** OPENROUTER_API_KEY

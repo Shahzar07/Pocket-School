@@ -8,6 +8,8 @@ import { db } from '@/lib/firebase';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { resolveStaffRole } from '@/lib/admin-console';
 import { limitsForAge, mergeLimits, type PlannerLimits } from '@/lib/study/planner';
+import { CalendarBoard } from '@/components/planner/calendar-board';
+import { PLANNER_COPY } from '@/lib/planner/copy';
 
 const EMPTY: PlannerLimits = limitsForAge('adult');
 
@@ -41,7 +43,7 @@ export default function PlannerDefaultsPage() {
     <DashPage>
       <DashHeader
         eyebrow="Admin"
-        title="Study planner"
+        title={PLANNER_COPY.pageTitle}
         description="These caps tighten the age limits. A younger learner never goes above their own cap."
       />
       <form className="max-w-lg space-y-4 rounded-[28px] border border-[#E7EDED] bg-white p-5" onSubmit={(event) => { event.preventDefault(); void save(); }}>
@@ -67,6 +69,7 @@ export default function PlannerDefaultsPage() {
           {saving ? 'Saving…' : 'Save defaults'}
         </button>
       </form>
+      <CalendarBoard />
     </DashPage>
   );
 }

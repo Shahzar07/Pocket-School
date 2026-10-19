@@ -27,6 +27,8 @@ import { hasCmsAddon } from '@/lib/entitlements';
 import type { LessonMediaAsset } from '@/lib/db';
 
 import { LevelSelect } from '@/components/level-select';
+import { CopyrightSign } from '@/components/courses/copyright-sign';
+import { SIGN } from '@/lib/courses/sign-copy';
 import { useCoursePlaceholders } from '@/hooks/use-example-course';
 
 const FORMATS = [
@@ -65,6 +67,7 @@ export default function UploadPage() {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState('new');
+  const [signatureId, setSignatureId] = useState('');
   const [courseTitle, setCourseTitle] = useState('');
   const [courseSubject, setCourseSubject] = useState('');
   const [modules, setModules] = useState<Module[]>([]);
@@ -184,6 +187,7 @@ export default function UploadPage() {
     let courseId = selectedCourseId;
     if (selectedCourseId === 'new') {
       if (!courseTitle.trim()) { toast.error('Enter a course title.'); return null; }
+      if (!signatureId) { toast.error(SIGN.need); return null; }
       courseId = await createCourse({
         title: courseTitle.trim(),
         description: `${courseSubject || 'General'} course`,
@@ -192,7 +196,9 @@ export default function UploadPage() {
         ownerName: profile?.name,
         status: status === 'published' ? 'published' : 'draft',
         thumbnailUrl: '',
+        copyrightSignatureId: signatureId,
       });
+      setSignatureId('');
       setCourses(await getTeacherCourses(user.uid));
       setSelectedCourseId(courseId);
       setCourseTitle('');
@@ -253,6 +259,7 @@ export default function UploadPage() {
 
       if (selectedCourseId === 'new') {
         if (!courseTitle.trim()) { toast.error('Enter a course title.'); setPublishing(false); return; }
+        if (!signatureId) { toast.error(SIGN.need); setPublishing(false); return; }
         courseId = await createCourse({
           title: courseTitle.trim(),
           description: `${courseSubject || 'General'} course`,
@@ -261,7 +268,9 @@ export default function UploadPage() {
           ownerName: profile?.name,
           status: 'published',
           thumbnailUrl: '',
+          copyrightSignatureId: signatureId,
         });
+        setSignatureId('');
         resolvedCourseTitle = courseTitle.trim();
         const updated = await getTeacherCourses(user.uid);
         setCourses(updated);
@@ -340,6 +349,7 @@ export default function UploadPage() {
 
     setSowSubmitting(true);
     try {
+      if (!signatureId) { toast.error(SIGN.need); setSowSubmitting(false); return; }
       const courseId = await createCourse({
         title: sowTitle.trim(),
         description: `${sowSubject || 'General'} subject — ${sowYearGroup}`,
@@ -351,7 +361,9 @@ export default function UploadPage() {
         yearGroup: sowYearGroup,
         isPublic: false,
         thumbnailUrl: '',
+        copyrightSignatureId: signatureId,
       });
+      setSignatureId('');
 
       const path = `curriculum_docs/${user.uid}/${Date.now()}_${sowFile.name}`;
       const sRef = storageRef(storage, path);
@@ -443,6 +455,16 @@ export default function UploadPage() {
           Four steps: choose where the lesson lives, write your content, let the AI build {totalFormats} study formats, publish. Add as many lessons as you want in one session.
         </p>
       </motion.div>
+      {user ? (
+        <CopyrightSign
+          uid={user.uid}
+          profileName={profile?.name || ''}
+          role={profile?.role || 'teacher'}
+          context="course_create"
+          courseId=""
+          onSigned={setSignatureId}
+        />
+      ) : null}
 
       {/* ── How it works guide ── */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}

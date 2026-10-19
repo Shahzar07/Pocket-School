@@ -1,11 +1,12 @@
 'use client';
 
-import { EtCanvas } from '@/components/studio/et-canvas';
-import { useAuthSTORE } from '@/hooks/use-auth';
+import { AiStudio } from '@/components/studio/ai-studio';
 
-/** ET AI, inside the dashboard shell. The sidebar stays. There is no nested frame. */
+/** ET AI chat inside the dashboard shell. One sidebar, header tabs above. */
 export default function StudioEt() {
-  const { profile, user } = useAuthSTORE();
-  const name = profile?.displayName || profile?.name || user?.displayName || '';
-  return <EtCanvas name={name} />;
+  return (
+    <div className="h-[calc(100dvh-8.5rem)] min-h-[32rem]">
+      <AiStudio embedded />
+    </div>
+  );
 }

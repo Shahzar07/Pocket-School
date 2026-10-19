@@ -8,6 +8,7 @@ import {
   emptyDesk, canDeleteGoal, canEditGoal,
   type Assessment, type AssignedGoal, type DeskRole, type DeskState, type Enrolment, type GradeBand, type Mark, type ReportCard, type ScaleId, type SchoolClass, type SchoolInstitution,
 } from '@/lib/school-desk/model';
+import { plannerOps } from '@/lib/school-desk/planner-mirror';
 
 export interface DeskActor {
   uid: string;
@@ -74,6 +75,9 @@ function classFrom(id: string, data: DocumentData): SchoolClass | null {
     ownerTeacherName: text(data.ownerTeacherName),
     createdByRole: data.createdByRole === 'institution_admin' ? 'institution_admin' : 'teacher',
     announcements: Array.isArray(data.announcements) ? data.announcements.filter((item): item is string => typeof item === 'string') : [],
+    visibility: data.visibility === 'private' ? 'private' : 'school',
+    inviteAutoApprove: data.inviteAutoApprove === true,
+    institutionKind: data.institutionKind === 'independent' ? 'independent' : 'school',
   };
 }
 
@@ -402,6 +406,7 @@ export async function persistDeskDiff(prev: DeskState, next: DeskState, role: De
   const goalPrev = prev.goals.filter((goal) => writableGoal(goal, next.actorId, role));
   const goalNext = next.goals.filter((goal) => writableGoal(goal, next.actorId, role));
   const goals = changed(goalPrev, goalNext);
+  const attendance = changed(prev.attendance, next.attendance);
   const ops: Array<(batch: ReturnType<typeof writeBatch>) => void> = [];
   const scale = { defaultScale: next.institution.defaultScale, customBands: next.institution.customBands };
   ops.push((batch) => batch.set(doc(db, 'school_settings', next.actorId), plain({
@@ -477,6 +482,22 @@ export async function persistDeskDiff(prev: DeskState, next: DeskState, role: De
   for (const item of goals.remove) {
     if (!canDeleteGoal(item, next.actorId, role)) continue;
     ops.push((batch) => batch.delete(doc(db, 'users', item.studentId, 'goals', item.id)));
+  }
+  for (const item of attendance.upsert) {
+    const meta = scope(next, item.classId);
+    ops.push((batch) => batch.set(doc(db, 'school_attendance', item.id), plain({
+      ...item,
+      ownerTeacherId: meta.ownerTeacherId,
+      institutionId: meta.institutionId,
+      className: meta.className,
+    })));
+  }
+  for (const item of plannerOps(prev, next, next.actorId)) {
+    if (item.op === 'delete') {
+      ops.push((batch) => batch.delete(doc(db, 'planner_events', item.id)));
+      continue;
+    }
+    if (item.data) ops.push((batch) => batch.set(doc(db, 'planner_events', item.id), plain(item.data)));
   }
   for (let index = 0; index < ops.length; index += 400) {
     const batch = writeBatch(db);

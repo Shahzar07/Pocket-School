@@ -15,10 +15,16 @@ import type { ContentRevision, ImportResult } from '@/components/editor';
 import {
   CoverArtPicker, IllustrationPrompt, ImageLibrary, optimiseImage, storeMedia,
 } from '@/components/media';
+import { fileToDataUrl, storeBookWebp } from '@/components/reads/cover-store';
+import { BookReaderPreview, CoverLibraryCard, LibraryDetailPreview, PublishGate } from '@/components/reads/book-previews';
+import { Reader } from '@/components/reads/reader-view';
+import { PREVIEW } from '@/lib/reads/preview-copy';
+import { previewPublishIssues } from '@/lib/reads/preview';
+import { writeAutosave } from '@/components/editor/use-autosave';
 import { composeCoverSizes } from '@/components/reads/cover-compose';
 import { generateIllustration } from '@/components/media/generate';
 import { BOOKS } from '@/lib/reads/seed';
-import { publishIssues, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
+import { screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
 import { bookEpub, bookPdf, chapterPlain } from '@/lib/reads/book-export';
 import { blankCraftBook } from '@/lib/reads/creator';
 import { storedBookPriceRM } from '@/lib/platform/pricing';
@@ -54,7 +60,8 @@ export function StudioView() {
   const placeholders = useCoursePlaceholders();
   const [books, setBooks] = useState<Book[]>(cloneBooks);
   const [id, setId] = useState('monsoon-market');
-  const [tab, setTab] = useState<'details' | 'create' | 'write' | 'import' | 'pictures' | 'cover'>('details');
+  const [tab, setTab] = useState<'details' | 'create' | 'write' | 'import' | 'pictures' | 'cover' | 'preview'>('details');
+  const [studentPreview, setStudentPreview] = useState(false);
   const [chapterId, setChapterId] = useState('mm-1');
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [replaceImport, setReplaceImport] = useState(false);
@@ -135,17 +142,21 @@ export function StudioView() {
   };
 
   const setStatus = (status: BookStatus) => {
-    if (book.status === 'draft' && status === 'published') return;
     if (book.status === 'published' && status === 'draft') return;
     if (status === 'published') {
-      const issue = [...publishIssues(book), ...storyPublishIssues(book)][0];
+      const issue = [...previewPublishIssues(book), ...storyPublishIssues(book)][0];
       if (issue) {
         toast.error(issue);
         return;
       }
     }
     const previous = book.status;
-    update({ status, version: status === 'published' ? book.version + 1 : book.version });
+    const next = books.map(item => item.id === book.id
+      ? { ...item, status, version: status === 'published' ? item.version + 1 : item.version }
+      : item);
+    setBooks(next);
+    writeAutosave(AUTOSAVE_KEY, next);
+    window.dispatchEvent(new Event('poket-studio-books'));
     reportContentChange({
       action: status === 'published' ? 'content.publish' : 'content.edit',
       targetType: 'book',
@@ -155,6 +166,12 @@ export function StudioView() {
       after: { status },
     });
     toast.success(t('reads.studio.savedLocal'));
+  };
+
+  const openStudent = () => {
+    writeAutosave(AUTOSAVE_KEY, booksRef.current);
+    window.dispatchEvent(new Event('poket-studio-books'));
+    setStudentPreview(true);
   };
 
   const generate = async () => {
@@ -342,10 +359,18 @@ export function StudioView() {
         font,
         brand,
       });
+      const [image, hero, thumb, art] = await Promise.all([
+        storeBookWebp(book.id, sizes.tile, 'cover'),
+        storeBookWebp(book.id, sizes.hero, 'hero'),
+        storeBookWebp(book.id, sizes.thumb, 'thumb'),
+        storeBookWebp(book.id, artSrc, 'art'),
+      ]);
+      const stored = image.startsWith('http') || image.includes('/books/');
       update({
-        cover: { ...book.cover, image: sizes.tile, hero: sizes.hero, thumb: sizes.thumb },
-        coverBrief: { styleId, artSrc, prompt, placement, font, brand },
+        cover: { ...book.cover, image, hero, thumb },
+        coverBrief: { styleId, artSrc: art, prompt, placement, font, brand, alt: book.coverBrief?.alt ?? '' },
       });
+      toast.success(stored ? PREVIEW.stored : PREVIEW.storeFailed);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'The cover could not be drawn.');
     }
@@ -422,6 +447,7 @@ export function StudioView() {
             <Tab on={tab === 'import'} label={t('reads.studio.tabImport')} onClick={() => setTab('import')} />
             <Tab on={tab === 'pictures'} label={t('reads.studio.tabPictures')} onClick={() => setTab('pictures')} />
             <Tab on={tab === 'cover'} label={t('reads.studio.tabCover')} onClick={() => setTab('cover')} />
+            <Tab on={tab === 'preview'} label={PREVIEW.tab} onClick={() => setTab('preview')} />
           </div>
 
           {tab === 'details' && (
@@ -511,6 +537,7 @@ export function StudioView() {
                 onChange={targets => update({ targets, ...bookFlagsFromTargets(targets) })}
               />
               <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => openStudent()} className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold">{PREVIEW.student}</button>
                 <Link href={`/reads/read/${book.id}?preview=1`} className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold">Preview as a reader</Link>
                 <button type="button" onClick={() => downloadBook(book, 'pdf')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download PDF</button>
                 <button type="button" onClick={() => downloadBook(book, 'epub')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">Download EPUB</button>
@@ -524,6 +551,7 @@ export function StudioView() {
                 {book.status === 'review' && <button type="button" onClick={() => setStatus('draft')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">{t('reads.studio.back')}</button>}
                 {book.status === 'published' && <button type="button" onClick={() => setStatus('review')} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">{t('reads.studio.unpublish')}</button>}
               </div>
+              <PublishGate book={book} onPublish={() => setStatus('published')} />
               <div>
                 <h2 className="font-heading text-[22px]">{t('reads.studio.languages')}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">{t('reads.studio.languagesLead')}</p>
@@ -558,7 +586,8 @@ export function StudioView() {
           )}
 
           {tab === 'write' && chapter && (
-            <>
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,440px)]">
+            <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-heading text-[22px]">{t('reads.studio.chapters')}</h2>
                 <button
@@ -628,7 +657,9 @@ export function StudioView() {
                   />
                 </div>
               </div>
-            </>
+            </div>
+            <BookReaderPreview book={book} />
+            </div>
           )}
 
           {tab === 'import' && (
@@ -680,18 +711,35 @@ export function StudioView() {
                 <input
                   type="file"
                   accept="image/*"
+                  data-cover-file="1"
                   className="text-xs font-normal"
                   onChange={event => {
                     const file = event.target.files?.[0];
                     event.target.value = '';
                     if (!file) return;
-                    void optimiseImage(file).then(async fitted => {
-                      const stored = await storeMedia(book.id, fitted.blob, `cover-${Date.now()}.jpg`);
-                      await paintCover(stored.src, book.coverBrief?.styleId ?? lockedStyle ?? 'novel', 'Uploaded cover');
-                    }).catch(err => toast.error(err instanceof Error ? err.message : 'That picture could not be used.'));
+                    void fileToDataUrl(file).then(src => paintCover(src, book.coverBrief?.styleId ?? lockedStyle ?? 'novel', 'Uploaded cover'))
+                      .catch(err => toast.error(err instanceof Error ? err.message : 'That picture could not be used.'));
                   }}
                 />
               </label>
+              <label className="block text-sm font-semibold">{PREVIEW.coverAlt}
+                <input
+                  data-cover-alt="1"
+                  value={book.coverBrief?.alt ?? ''}
+                  onChange={event => update({
+                    coverBrief: {
+                      placement: book.coverBrief?.placement ?? 'bottom',
+                      font: book.coverBrief?.font ?? 'serif',
+                      brand: book.coverBrief?.brand ?? true,
+                      ...book.coverBrief,
+                      alt: event.target.value,
+                    },
+                  })}
+                  className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                />
+                <span className="mt-1 block font-normal text-muted-foreground">{PREVIEW.coverAltHelp}</span>
+              </label>
+              <CoverLibraryCard book={book} />
               <div className="grid gap-3 sm:grid-cols-3">
                 <label className="text-sm font-semibold">Title placement
                   <select
@@ -784,8 +832,25 @@ export function StudioView() {
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>
             </div>
           )}
+
+          {tab === 'preview' && (
+            <div className="space-y-6" data-book-preview="1">
+              <PublishGate book={book} onPublish={() => setStatus('published')} />
+              <LibraryDetailPreview book={book} />
+              <BookReaderPreview book={book} />
+              <button type="button" onClick={openStudent} className="h-10 rounded-full border border-border px-4 text-sm font-semibold">{PREVIEW.student}</button>
+            </div>
+          )}
         </section>
       </div>
+      {studentPreview && (
+        <div className="fixed inset-0 z-50 overflow-auto bg-[#F7F6F3]" data-student-preview="1">
+          <div className="sticky top-0 z-10 flex justify-end p-3">
+            <button type="button" onClick={() => setStudentPreview(false)} className="h-10 rounded-full bg-[#1E6A83] px-4 text-sm font-bold text-white">{PREVIEW.closeStudent}</button>
+          </div>
+          <Reader key={book.id} bookId={book.id} preview />
+        </div>
+      )}
     </div>
   );
 }

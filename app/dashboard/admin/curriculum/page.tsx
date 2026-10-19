@@ -11,6 +11,8 @@ import {
   Programme, Course,
 } from '@/lib/db';
 import { seedY7ScienceUnit1 } from '@/lib/curriculum-seed';
+import { CopyrightSign } from '@/components/courses/copyright-sign';
+import { SIGN } from '@/lib/courses/sign-copy';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +53,7 @@ export default function AdminCurriculumPage() {
   const [modules, setModules] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
+  const [signatureId, setSignatureId] = useState('');
 
   // New programme form
   const [showProgrammeForm, setShowProgrammeForm] = useState(false);
@@ -270,6 +273,7 @@ export default function AdminCurriculumPage() {
     setArchStep(3);
     setArchProgress({ done: 0, total, step: 'Creating subject…' });
     try {
+      if (!signatureId) { toast.error(SIGN.need); setArchCreating(false); return; }
       const courseId = await createCurriculumModule({
         title,
         description: `${archSubject.trim()} — ${archYear.trim() || 'all levels'} · designed with ET AI`,
@@ -279,7 +283,9 @@ export default function AdminCurriculumPage() {
         isPublic: false,
         yearGroup: archYear.trim() || undefined,
         programmeId: modProgrammeId || undefined,
+        copyrightSignatureId: signatureId,
       });
+      setSignatureId('');
       tick('Subject created');
 
       for (const [mi, m] of archOutline.entries()) {
@@ -391,6 +397,7 @@ export default function AdminCurriculumPage() {
     if (!modProgrammeId) { toast.error('Choose the programme this subject belongs to.'); return; }
     setCreatingModule(true);
     try {
+      if (!signatureId) { toast.error(SIGN.need); setCreatingModule(false); return; }
       const courseId = await createCurriculumModule({
         title: modTitle.trim(),
         description: `${modSubject.trim()} subject — ${modYearGroup}`,
@@ -400,7 +407,9 @@ export default function AdminCurriculumPage() {
         isPublic: false,
         yearGroup: modYearGroup,
         programmeId: modProgrammeId || undefined,
+        copyrightSignatureId: signatureId,
       });
+      setSignatureId('');
       toast.success('Subject created.');
       setModTitle('');
       setModSubject('');
@@ -469,6 +478,16 @@ export default function AdminCurriculumPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      {user ? (
+        <CopyrightSign
+          uid={user.uid}
+          profileName={profile?.name || ''}
+          role={profile?.role || 'admin'}
+          context="course_create"
+          courseId=""
+          onSigned={setSignatureId}
+        />
+      ) : null}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">

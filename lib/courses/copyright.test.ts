@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { COPYRIGHT_DECLARATION, copyrightReady, copyrightRecord } from './copyright';
+import { COPYRIGHT_DECLARATION, copyrightReady, copyrightRecord, namesMatch } from './copyright';
 
 test('a publish declaration records who accepted it', () => {
   const record = copyrightRecord('teacher-1', 50);
@@ -11,4 +11,6 @@ test('a publish declaration records who accepted it', () => {
   assert.equal(COPYRIGHT_DECLARATION.includes('Poket School'), true);
   assert.equal(copyrightReady(record), true);
   assert.equal(copyrightReady(null), false);
+  assert.equal(namesMatch('  Aisha   Rahman ', 'aisha rahman'), true);
+  assert.equal(namesMatch('Aisha', 'Aisha Rahman'), false);
 });

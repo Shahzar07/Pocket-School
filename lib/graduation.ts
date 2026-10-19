@@ -276,8 +276,9 @@ export function individualPlanSku(level: string): 'primary_secondary' | 'igcse_a
         ? 'professional'
         : 'igcse_alevel';
   const plan = seedPricing().plans.find((item) => item.id === wanted);
-  if (plan && typeof plan.monthlyUsd === 'number' && plan.monthlyUsd > 0) return wanted;
-  return 'professional';
+  if (!plan) return 'professional';
+  if (wanted === 'llb' && !(typeof plan.monthlyUsd === 'number' && plan.monthlyUsd > 0)) return 'professional';
+  return wanted;
 }
 
 export function individualOffer(level: string, discount: number): {
@@ -288,7 +289,9 @@ export function individualOffer(level: string, discount: number): {
   href: string;
 } {
   const sku = individualPlanSku(level);
-  const listMonthly = seedPricing().plans.find((item) => item.id === sku)?.monthlyUsd ?? 0;
+  const stored = seedPricing().plans.find((item) => item.id === sku)?.monthlyUsd;
+  const published = sku === 'primary_secondary' ? 49 : sku === 'professional' || sku === 'llb' ? 99 : 0;
+  const listMonthly = typeof stored === 'number' && stored > 0 ? stored : published;
   const priced = alumniPrice(listMonthly, discount);
   return {
     sku,

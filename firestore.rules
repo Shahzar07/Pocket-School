@@ -980,6 +980,42 @@ service cloud.firestore {
              int(incoming().expiresOn[8:10])) + duration.value(1, 'd');
     }
 
+    // Featured carousel counters. A visitor may add exactly one impression
+    // or one click. Admins read the totals on course placement.
+    match /featured_stats/{itemId} {
+      allow read: if isAdmin();
+      allow create: if featuredStatCreate();
+      allow update: if featuredStatBump();
+      allow delete: if false;
+    }
+
+    function featuredStatCreate() {
+      return incoming().keys().hasOnly(['impressions', 'clicks', 'kind', 'title'])
+        && incoming().impressions is number
+        && incoming().clicks is number
+        && incoming().impressions >= 0
+        && incoming().impressions <= 1
+        && incoming().clicks >= 0
+        && incoming().clicks <= 1
+        && incoming().impressions + incoming().clicks == 1
+        && incoming().kind in ['course', 'bundle', 'book']
+        && incoming().title is string
+        && incoming().title.size() > 0
+        && incoming().title.size() < 200;
+    }
+
+    function featuredStatBump() {
+      return (
+        incoming().diff(resource.data).affectedKeys().hasOnly(['impressions'])
+        && incoming().impressions is number
+        && incoming().impressions == resource.data.get('impressions', 0) + 1
+      ) || (
+        incoming().diff(resource.data).affectedKeys().hasOnly(['clicks'])
+        && incoming().clicks is number
+        && incoming().clicks == resource.data.get('clicks', 0) + 1
+      );
+    }
+
     // ── Courses ───────────────────────────────────────────────
     match /courses/{courseId} {
       // Published marketplace courses are browsable without an account —
@@ -2176,6 +2212,48 @@ service cloud.firestore {
     match /planner_defaults/{docId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
+    }
+
+    // Study planner. Teachers and admins write their own rows. A linked
+    // parent can read an event that names their child. Desk sync uses the
+    // same collection. Do not deploy from this branch.
+    match /planner_events/{eventId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || callerIsSuper()
+        || resource.data.ownerId == request.auth.uid
+        || resource.data.get('studentIds', []).hasAny([request.auth.uid])
+        || resource.data.get('studentIds', []).hasAny(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('childIds', []))
+      );
+      allow create, update: if isSignedIn()
+        && incoming().ownerId == request.auth.uid
+        && incoming().title is string
+        && incoming().title.size() > 0
+        && incoming().title.size() < 200
+        && incoming().kind in ['class', 'assignment', 'exam', 'attendance', 'goal', 'personal'];
+      allow delete: if isSignedIn() && (isAdmin() || resource.data.ownerId == request.auth.uid);
+    }
+
+    // Copyright signatures. The signer creates one row. Nobody updates or
+    // deletes it. Admins and support can read the register.
+    match /copyright_signatures/{signatureId} {
+      allow get: if isSignedIn() && (
+        resource.data.uid == request.auth.uid
+        || callerIsSuper()
+        || isAdmin()
+        || request.auth.token.adminRole == 'support'
+      );
+      allow list: if callerIsSuper() || isAdmin() || request.auth.token.adminRole == 'support';
+      allow create: if isSignedIn()
+        && incoming().uid == request.auth.uid
+        && incoming().typedFullName is string
+        && incoming().typedFullName.size() >= 2
+        && incoming().typedFullName.size() <= 120
+        && incoming().context in ['instructor_application', 'course_create']
+        && incoming().text is string
+        && incoming().declarationVersion == '2026-10-19'
+        && incoming().signedAt == request.time;
+      allow update, delete: if false;
     }
 
     // ── Grades ────────────────────────────────────────────────

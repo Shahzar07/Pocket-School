@@ -35,6 +35,7 @@ import { useEnsureStudentNumber } from '@/components/use-student-number';
 import { learnerLevelLabel } from '@/lib/student-number';
 import { DashboardHome } from '@/components/dashboard';
 import { ParentClassRecord } from '@/components/school-desk/parent-record';
+import { FeaturedShowcase, ProgrammeTiles } from '@/components/courses/featured-showcase';
 
 interface CourseWithEnrollment { course: Course; enrollment: Enrollment }
 
@@ -237,6 +238,8 @@ export default function StudentDashboard() {
       </div>
 
       <StudyLaunchpad />
+      <FeaturedShowcase variant="row" />
+      <ProgrammeTiles level={learnerLevelLabel(profile)} />
 
       <Panel>
         <PanelHeader

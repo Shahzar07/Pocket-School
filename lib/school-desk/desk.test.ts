@@ -5,7 +5,7 @@ import { auditMarkdown, AUDIT } from './catalog';
 import { flowForPath } from './flows';
 import {
   addEnrolment, addFlow, applyLatePenalty, approveEnrolment, bulkCreateClasses, canDeleteGoal, createClass, createDemoDesk,
-  deleteGoal, earningNet, emptyDesk, goalRecord, goalSourceGroup, goalsForRoster, gradeOnScale, gradeSetLabel, refundEarning, returnSubmission, setMark, setTeachingMode, submitWork, termResult, upsertGoal,
+  deleteGoal, earningNet, emptyDesk, goalRecord, goalSourceGroup, goalsForRoster, gradeOnScale, gradeSetLabel, refundEarning, returnSubmission, setMark, setTeachingMode, submitWork, termResult, updateClass, upsertGoal,
 } from './model';
 
 test('scales cover IGCSE, A star to G, percent, points, and pass or fail', () => {
@@ -92,6 +92,50 @@ test('a class roster shows every goal source and edit stays with the assigner', 
   assert.equal(edited.goals.find((item) => item.id === 'goal-7')?.title, 'New school target');
   assert.equal(goalSourceGroup('ai'), 'et_ai');
   assert.equal(goalSourceGroup('student'), 'self');
+});
+
+test('a code join auto-approves only when the class allows it and the under-18 rule is clear', () => {
+  let state = setTeachingMode(createDemoDesk(), 'independent');
+  const made = createClass(state, {
+    name: 'Private Biology',
+    subject: 'Biology',
+    level: 'IGCSE',
+    programme: 'Cambridge IGCSE',
+    term: 'Term 1',
+    campus: 'Online',
+    room: 'Live',
+    timetable: 'Wed 16:00',
+    coTeachers: [],
+    capacity: 12,
+    ownerTeacherId: state.actorId,
+    ownerTeacherName: state.actorName,
+    createdByRole: 'teacher',
+    visibility: 'private',
+    inviteAutoApprove: true,
+  }, 'teacher');
+  assert.equal(made.error, '');
+  state = made.state;
+  const classId = state.classes[state.classes.length - 1]?.id ?? '';
+  assert.equal(state.classes.find((item) => item.id === classId)?.visibility, 'private');
+  state = addEnrolment(state, {
+    classId,
+    studentName: 'Independent learner',
+    under18: true,
+    institutionMember: false,
+    joinMethod: 'code',
+  }, state.actorName);
+  assert.equal(state.enrolments.find((item) => item.studentName === 'Independent learner')?.status, 'active');
+
+  let school = createDemoDesk();
+  school = updateClass(school, 'class-maths', { inviteAutoApprove: true }, 'Aisha Rahman');
+  school = addEnrolment(school, {
+    classId: 'class-maths',
+    studentName: 'Outside child',
+    under18: true,
+    institutionMember: false,
+    joinMethod: 'code',
+  }, 'Aisha Rahman');
+  assert.equal(school.enrolments.find((item) => item.studentName === 'Outside child')?.status, 'pending');
 });
 
 test('an under-18 without school membership cannot be approved', () => {

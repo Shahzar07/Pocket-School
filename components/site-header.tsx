@@ -14,6 +14,7 @@ import styles from "./home-chrome.module.css";
 import { PromoBanner } from "@/components/promo-banner";
 import { isBrandedLoginPath } from "@/lib/institution-login";
 import { isInstitutionJourneyPath } from "@/lib/institution-journey";
+import { MARKET_LINKS, MARKET_MENU } from "@/lib/marketing/nav";
 
 const NAV_LINKS = [
   { label: "Marketplace", href: "/courses" },
@@ -35,7 +36,7 @@ const HIDDEN_PREFIXES = [
   "/payments-preview",
   "/account-preview",
   "/teacher-studio",
-  "/studio",
+  "/studio/essays",
   "/a/",
 ];
 
@@ -137,6 +138,14 @@ export function SiteHeader() {
             <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
             <Link href="/institutions/register">For Schools & Organisations</Link>
+            <details className="relative">
+              <summary className="cursor-pointer list-none">{MARKET_MENU}</summary>
+              <div className="absolute left-0 z-20 mt-2 max-h-80 w-64 overflow-auto rounded-2xl bg-white p-3 text-[#203337] shadow-lg">
+                {MARKET_LINKS.map((item) => (
+                  <Link key={item.href} className="block py-1 text-sm" href={item.href}>{item.label}</Link>
+                ))}
+              </div>
+            </details>
             {!user && <Link href="/login">{t("header.signIn")}</Link>}
           </nav>
           <div className={styles.headerTools}>
@@ -175,6 +184,9 @@ export function SiteHeader() {
             <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href="/blog">{t("header.blog")}</Link>
             <Link href="/institutions/register">For Schools & Organisations</Link>
+            {MARKET_LINKS.map((item) => (
+              <Link key={item.href} href={item.href}>{item.label}</Link>
+            ))}
             <Link href={user ? dashPath : "/login"}>
               {user ? t("header.dashboard") : t("header.signIn")}
             </Link>

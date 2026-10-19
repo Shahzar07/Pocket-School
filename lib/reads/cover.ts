@@ -30,6 +30,8 @@ export interface CoverBrief {
   placement: CoverPlacement;
   font: CoverFont;
   brand: boolean;
+  /** Required before publish. Describes the cover for someone who cannot see it. */
+  alt?: string;
   ageOk?: boolean;
   ageNote?: string;
 }

@@ -6,6 +6,8 @@ import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { CoverArtPicker, storeMedia } from '@/components/media';
+import { CopyrightSign } from '@/components/courses/copyright-sign';
+import { SIGN } from '@/lib/courses/sign-copy';
 import { AllocationPanel } from '@/components/allocation-panel';
 import { CourseStudentPreview } from '@/components/course-student-preview';
 import { Button } from '@/components/ui/button';
@@ -162,6 +164,7 @@ export function TeacherCourseStudio({
   const [step, setStep] = useState<StudioStep>(initialStep);
   const [preview, setPreview] = useState(initialPreview);
   const [savedId, setSavedId] = useState(courseId);
+  const [signatureId, setSignatureId] = useState('');
   const [title, setTitle] = useState(initial?.title ?? '');
   const [subtitle, setSubtitle] = useState(initial?.subtitle ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
@@ -321,9 +324,15 @@ export function TeacherCourseStudio({
     setBusy(true);
     try {
       const previous = sections;
+      if (!savedId && !signatureId) {
+        toast.error(SIGN.need);
+        setBusy(false);
+        return;
+      }
       const id = savedId
         ? savedId
-        : await createCourse(payload as unknown as Omit<Course, 'id'>);
+        : await createCourse({ ...(payload as unknown as Omit<Course, 'id'>), copyrightSignatureId: signatureId });
+      if (!savedId) setSignatureId('');
       if (savedId) await updateCourse(savedId, payload as Partial<Course>);
       setSavedId(id);
       await persistCurriculum(id, previous);
@@ -394,6 +403,16 @@ export function TeacherCourseStudio({
             {savedId ? '' : demo ? ' · preview' : ''}
           </p>
         </div>
+        {!savedId && !demo ? (
+          <CopyrightSign
+            uid={ownerId}
+            profileName={ownerName || ''}
+            role={role}
+            context="course_create"
+            courseId=""
+            onSigned={setSignatureId}
+          />
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" className="rounded-full" onClick={() => setPreview(value => !value)}>
             {preview ? 'Back to editor' : 'Preview as student'}

@@ -881,6 +881,20 @@
       ]
     },
     {
+      "collectionGroup": "books",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "allocateMarketplace",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "coursePreviews",
       "queryScope": "COLLECTION",
       "fields": [

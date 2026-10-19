@@ -9,6 +9,7 @@ import { AccessBadge } from '@/components/institutions/commerce-panels';
 import { approveInstitutionCourse, listInstitutionCourses, type InstitutionCourseRow } from '@/lib/institution-membership-store';
 import { institutionLibraryIncludes, normalizeCatalogue, seedInstitutionCatalogue, type InstitutionCatalogue } from '@/lib/institution-catalogue';
 import { authedFetch } from '@/lib/api-client';
+import { AllocatedLibrary } from '@/components/courses/featured-showcase';
 
 export default function PublishingPage() {
   const { user, profile } = useAuthSTORE();
@@ -52,6 +53,7 @@ export default function PublishingPage() {
   return (
     <DashPage className="max-w-3xl">
       <DashHeader eyebrow="Institution" title="Course library" description="A teacher course that passes the content check goes into this library on its own. This page is the override when that rule is off, or when you want to return a course. The public marketplace still needs a super admin unless that rule is turned on." />
+      <AllocatedLibrary institutionId={institutionId} />
       {visible.length === 0 && <Panel><p className="text-sm text-muted-foreground">No institution courses yet for the programmes this academy has selected.</p></Panel>}
       <ul className="space-y-3">
         {visible.map((row) => (
