@@ -1,4 +1,4 @@
-Sign-off for PR 147. A row is Yes only when a named test passed or a screenshot from this preview shows the surface. A row is No when this pass did not see the feature work. Keys are named only when a live provider needs them. Screenshot files sit in the preview artifact folder.
+Sign-off for Shahzar as of `main` `de07f29b121001e80714bc839a914158a0e6d780` (#147 and #148). A row is Yes only when a named test passed or a screenshot shows the surface. A row is No when the feature was not seen working. Keys are names only. The #147 and #148 tables below are the earlier preview evidence. The production table is the 19 Oct 2026 smoke of the live alias.
 
 | Feature | Yes or no | Evidence | Needs key |
 | --- | --- | --- | --- |
@@ -58,4 +58,27 @@ These rows are for this add-on on top of the handover table above. A row is key-
 | Price stays TBC | Yes | `TIMETABLER_PRICE_NOTE` is `TBC by Harry`. `/pricing` shows that line. | None |
 | Calendar without Google keys | Yes | No Google env. The desk stays `data-google-state="unconfigured"`, the iCal file downloads, and the signed subscription feed returns `BEGIN:VCALENDAR` with no page errors. | None for the iCal path. Live OAuth needs the Google keys. |
 | Google Calendar OAuth sync | key-blocked | Connect and sync need a Google client. Not run. | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` |
-| Timetable Firestore rules | key-blocked | Rules are in git and were not deployed. | Firestore rules deploy |
+| Timetable Firestore rules | key-blocked | Rules are in git and were not deployed. The edited week is in `localStorage` (`poket-timetable-v1`). | Firestore rules deploy |
+
+## Production smoke, 19 Oct 2026
+
+Alias https://pocket-school-ochre.vercel.app. Deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL`, state READY, commit `de07f29`.
+
+| Feature | Yes, no, or key-blocked | Evidence | Needs key |
+| --- | --- | --- | --- |
+| Marketing walk on production | Yes | `e2e/roles.spec.ts` “marketing pages from the landing footer answer”, 1 passed. `data-landing="v3"`. | None |
+| Home, about, studio, login | Yes | 200 and a visible heading. Screenshot `prod-home.png`. | None |
+| Blog | Yes for the page. Content pending | 200, “The journal”, six drafts unpublished. Cover WebP files 200. Screenshot `prod-blog.png`. | None for the empty page. Publishing is an admin action. |
+| Marketplace listings | Yes | `/courses` rendered 9 public items. | None |
+| Featured carousel on production | No | `#featured` was empty. The preview fixture still passes. No live course is marked featured. | None. Admin marks Featured spot. |
+| Signed-out timetable routes | Yes | Teacher, institution, student, and parent: 307 then `/login`. Admin timetable: `/admin/login`. Studio timetable: shell then `/login`. No 500. | None |
+| Calendar feed with no token | Yes | `GET /api/calendar/ics` is 404. A bad token is 404 with “This calendar link is not active.” | None |
+| Timetabler price | Yes | Still `TBC by Harry`. Do not invent a number. | None |
+
+## Keys on the Vercel project
+
+Configured (name present, value not read): `OTP_SECRET`, `DASHBOARD_SESSION_SECRET`, `CARD_TOKEN_SECRET`, `CRON_SECRET`, `SUPER_ADMIN_EMAILS`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `API_KEY`, `VITE_GEMINI_API_KEY`, `VITE_GOOGLE_API_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`.
+
+Not configured: `FIREBASE_SERVICE_ACCOUNT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`, `RESEND_API_KEY`, `MAIL_FROM`, `RESEND_WEBHOOK_SECRET`, `IPAY88_DUITNOW_PAYMENT_ID`, `PAYMENTS_SANDBOX`. Firestore rules are not deployed. Firebase Blaze was not verified. `poketschool.ai` is not a project domain.
+
+Admin actions still open: publish the six blog drafts, mark featured courses, merge duplicate course titles and duplicate institution records. The go-live order is `FINAL_AUDIT.md` section 9.
