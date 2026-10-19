@@ -4,6 +4,18 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { authedFetch } from '@/lib/api-client';
 import { ET_COPY } from '@/lib/studio/et-copy';
+import { AI_TEACHERS } from '@/lib/ai-teachers';
+import { TeacherPortrait } from '@/components/teachers/portrait';
+
+const SUBJECT_FACE: Record<string, string> = {
+  Mathematics: 'et-maths',
+  Biology: 'et-biology',
+  Science: 'et-science',
+  Law: 'et-law',
+  Medicine: 'et-medicine',
+  Mandarin: 'et-mandarin',
+  English: 'et-english',
+};
 
 type Tab = 'ask' | 'exams' | 'apps' | 'more';
 
@@ -15,6 +27,7 @@ export function EtCanvas({ name }: { name: string }) {
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
   const first = name.trim().split(' ')[0] || 'there';
+  const face = AI_TEACHERS.find((teacher) => teacher.id === (SUBJECT_FACE[subject] || 'et-ai')) ?? AI_TEACHERS[AI_TEACHERS.length - 1];
 
   const ask = async () => {
     const message = text.trim();
@@ -50,6 +63,10 @@ export function EtCanvas({ name }: { name: string }) {
           </button>
         ))}
       </div>
+      <header className="flex items-center gap-3 px-4 pt-3" data-et-teacher={face?.id}>
+        {face ? <TeacherPortrait teacher={face} size={48} className="h-12 w-12 rounded-full object-cover" /> : null}
+        <p className="text-sm font-semibold">{face?.name}</p>
+      </header>
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         {tab === 'ask' ? (
           <>

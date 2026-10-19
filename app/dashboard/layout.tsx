@@ -29,7 +29,6 @@ import { deletionClosed, formatDeletionDate, sessionRevoked } from '@/lib/accoun
 import { AccountMenu } from '@/components/account/account-menu';
 import { ModeSwitch } from '@/components/account/mode-switch';
 import { Breadcrumbs } from '@/components/shell/breadcrumbs';
-import { ModuleHeader } from '@/components/module-header';
 import { DashFab, MobileNav } from '@/components/shell/mobile-nav';
 import { CommandPalette } from '@/components/dashboard/command-palette';
 import type { DashRole } from '@/lib/dashboard/home';
@@ -730,7 +729,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main Content ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AdminViewAsBanner />
-        {pathname.startsWith('/dashboard/studio') && <ModuleHeader force />}
         {/* Header */}
         <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
@@ -798,14 +796,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Scrollable Main with ambient gradient wash */}
+        {pathname.startsWith('/dashboard/studio') ? null : (
         <div className="px-4 lg:px-6 pb-2">
           <Breadcrumbs />
         </div>
+        )}
         <main id="dashboard-main" className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
           {/* A faint teal wash at the top, echoing the homepage sky. */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           <OfflineBanner />
-          <div className="relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10">
+          <div className={pathname.startsWith('/dashboard/studio') ? 'relative h-full' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
+            {pathname.startsWith('/dashboard/studio') ? children : (
+              <>
             {accessDenied && (
               <div role="alert" className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {ACCESS_DENIED_MESSAGE}
@@ -817,6 +819,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
             <ActiveTimeTracker />
             {children}
+              </>
+            )}
           </div>
         </main>
       </div>

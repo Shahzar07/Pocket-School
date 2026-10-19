@@ -158,7 +158,9 @@ service cloud.firestore {
               'email', 'updatedAt', 'onboardedAt', 'studyDates',
               'lastActiveAt', 'region', 'parentContacts',
               'emergencyOptIn', 'currentCountry', 'homeCountry',
-              'dashboardTileOrder', 'dashboardCoachSeen'];
+              'dashboardTileOrder', 'dashboardCoachSeen',
+              'demographicConsent', 'demographicConsentAt', 'demographicConsentVersion',
+              'timezoneAuto', 'timezoneSetAt', 'timezoneVersion'];
     }
 
     function verificationUntouched() {

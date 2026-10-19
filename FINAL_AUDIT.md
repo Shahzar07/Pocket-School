@@ -7,8 +7,9 @@ For Shahzar. No secret values. See also `HANDOVER.md` and `E2E_REPORT.md`.
 - **Sign-up schools.** `/signup`. Public directory `GET /api/institutions/directory`. Membership `POST /api/institutions/membership`. Approvals `/dashboard/institution/approvals`. Pending badge in the dashboard sidebar.
 - **AI Book Creator.** `/dashboard/admin/books` (`StudioView`, `lib/reads/creator.ts`). Nav key `nav.aiBookCreator`. Visible to `super_admin`, `admin`, and `content_editor` (platform `role: admin`). Teachers and institution admins with the CMS add-on get the same link at the top of their first nav group. Studio nav and the admin desk tools tile use the same name. AI generation already returns 503 when `OPENROUTER_API_KEY` is missing; the studio toasts that error.
 - **Admin desk.** `GET/POST /api/admin/desk` checks the caller before any payload. Missing `FIREBASE_SERVICE_ACCOUNT` returns `setupNeeded` and the exact setup sentence, with no fake KPI zeros. Actions no-op in that state.
-- **ET AI Studio.** `/dashboard/studio/et` is a full-page canvas in the dashboard shell (no nested frame). A missing model key shows the empty-reply line from `lib/studio/et-copy.ts`.
-- **Teacher portraits.** `lib/teacher-portrait.ts` points each teacher id at `/teachers/{id}.svg`.
+- **ET AI Studio.** `/dashboard/studio` and its sub-pages sit in the dashboard shell only. Section links are a horizontal header (`data-studio-nav="header"`), not a second sidebar. The home is a centred greeting, prompt, chips, and recent work. A missing model key shows the empty-reply line from `lib/studio/et-copy.ts`.
+- **Teacher portraits.** `lib/teacher-portrait.ts` maps each teacher id to a distinct `/teachers/et-<subject>.webp` headshot. Alt text is `ET <Subject>`. The public teachers page, studio teacher list, ET chat header, and the student dashboard picker all use that file. There is no SVG silhouette fallback.
+- **Blog images.** Each post stores `coverImage` (1600×900 banner), `coverAlt`, and an optional `thumbnail` (the card uses the thumbnail, or a crop of the banner). Uploads go to Storage `blog/<postId>/` from `/dashboard/admin/blog`: drag-and-drop or picker, live preview, replace, remove, client resize to WebP. Alt text is required before publish. `/blog` cards show the thumbnail, title, excerpt, date, and reading time. `/blog/[slug]` is a full-width hero with the title on a blue gradient (`#1E6A83`, `#203337`, `#3FE0D0`). Open Graph and Twitter use the cover. A post with no cover omits `images` so `app/blog/[slug]/opengraph-image.tsx` draws the branded fallback. Seed covers in `public/blog/` are generated graphics, not photographs.
 - **School wall.** Permission errors show a short unavailable message. Cause: wall rules are not deployed until the Firestore deploy in `HANDOVER.md`.
 
 ## 2. Fixed in this pass
@@ -29,18 +30,18 @@ For Shahzar. No secret values. See also `HANDOVER.md` and `E2E_REPORT.md`.
 | Landing v3 homepage and the linked marketing pages | Not replaced in this pass. |
 | Copyright e-sign on instructor apply, course create, and course publish, plus `/dashboard/admin/declarations` | Declaration copy exists in `lib/courses/copyright.ts`. The immutable `copyright_declarations` record, admin retrieval, and every create path are not wired. |
 | Admin planner month/week/day with drag and goal sync | Calendar helpers exist in `lib/planner/calendar.ts`. The page is still the limits form. |
-| Consent defaults on at sign-up | `lib/consents.ts` exists. Sign-up still starts demographic consent off and still blocks when it is off. |
+| Consent defaults on at sign-up | Done in this pass. Statistics, timezone, and Amber start checked. Clearing a box still allows sign-up. The value, time, and version are stored. |
 | Private classrooms (`visibility`, `class_invites`, student self-enrol) | Not wired. |
-| Blog cover and inline images | Helpers in `lib/blog/images.ts`. The admin blog form is still a URL field. |
+| Blog cover and inline images | Done in this pass. Admin upload, public cards, hero, and social images were checked on the local emulator. See `E2E_REPORT.md`. |
 | Full role Playwright journeys | See `E2E_REPORT.md`. |
-| Sidebar account menu clipping | `lib/ui/menu-position.ts` exists. The menu is still positioned inside the sidebar. |
+| Sidebar account menu clipping | The menu now portals to `document.body` with `menuPosition`, so the sidebar no longer clips it. |
 
 ## 4. Connectors
 
 | Connector | Status | Env |
 | --- | --- | --- |
 | Firebase Auth / Firestore | Code-ready. Production rules not deployed from this branch. | Client config in `firebase-applet-config.json`. Server: `FIREBASE_SERVICE_ACCOUNT` |
-| Storage | Code-ready. Needs Blaze and deployed `storage.rules`. | Same Firebase project |
+| Storage | Code-ready. Journal files are `blog/<postId>/*.webp` (public read, signed-in WebP write under 5 MB). Needs Blaze and deployed `storage.rules`. | Same Firebase project |
 | Rules and indexes | In git. Not deployed by this change. | Deploy command in `HANDOVER.md` |
 | Stripe | Code-ready, keys missing on the server | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
 | Malaysian gateway | Code-ready, keys missing | `IPAY88_DUITNOW_PAYMENT_ID`, `PAYMENTS_SANDBOX` |
@@ -62,8 +63,6 @@ For Shahzar. No secret values. See also `HANDOVER.md` and `E2E_REPORT.md`.
 | --- | --- |
 | High | Production Firestore rules are undeployed, so some client listeners still cannot read (wall, some desks) until the deploy command runs. |
 | Medium | Copyright is not enforced on course create or publish. |
-| Medium | Sign-up still requires demographic consent before continue. |
-| Low | Account menu can clip on a narrow sidebar. The position helper is not wired. |
 
 ## 6. Wireframes
 
@@ -85,7 +84,7 @@ Admin home: setup banner when the server account is missing; otherwise KPI cards
 
 ## 7. Mobile parity
 
-The Expo app should mirror: public school search (do not query institutions before auth), pending-approval badge, approve/reject for institution admins, and the AI Book Creator entry for staff who have it on the web. Portraits are `/teachers/{id}.svg`.
+The Expo app should mirror: public school search (do not query institutions before auth), pending-approval badge, approve/reject for institution admins, and the AI Book Creator entry for staff who have it on the web. Teacher portraits are `/teachers/et-<subject>.webp`.
 
 ## 8. Security
 

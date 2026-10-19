@@ -63,6 +63,7 @@ interface UserProfile {
   phone?: string;
   country?: string;
   gender?: 'male' | 'female';
+  demographicConsent?: boolean;
   demographicConsentAt?: number;
   timezone?: string;
   currency?: string;

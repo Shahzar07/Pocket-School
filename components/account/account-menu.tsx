@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { LogOut, UserCircle } from 'lucide-react';
@@ -10,6 +11,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { clearViewAs } from '@/components/admin-session';
 import { ModeSwitch } from '@/components/account/mode-switch';
 import type { AccountMode } from '@/lib/account-modes';
+import { menuPosition } from '@/lib/ui/menu-position';
 
 export function AccountMenu({
   name,
@@ -34,15 +36,34 @@ export function AccountMenu({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [box, setBox] = useState({ left: 12, top: 12 });
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const place = () => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setBox(menuPosition(
+      { left: rect.left, top: rect.top, bottom: rect.bottom },
+      { width: window.innerWidth, height: window.innerHeight },
+    ));
+  };
 
   useEffect(() => {
     if (!open) return;
+    place();
     const close = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+      const node = event.target as Node;
+      if (ref.current?.contains(node) || panelRef.current?.contains(node)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    window.addEventListener('resize', place);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('resize', place);
+    };
   }, [open]);
 
   const goSettings = () => {
@@ -64,6 +85,7 @@ export function AccountMenu({
   return (
     <div ref={ref} className="relative" data-account-menu>
       <button
+        ref={buttonRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -73,8 +95,14 @@ export function AccountMenu({
       >
         {children}
       </button>
-      {open && (
-        <div role="menu" className="absolute end-0 z-50 mt-2 w-72 rounded-2xl border border-border bg-card p-2 shadow-lg">
+      {open && typeof document !== 'undefined' ? createPortal(
+        <div
+          ref={panelRef}
+          role="menu"
+          data-account-menu-panel
+          style={{ position: 'fixed', left: box.left, top: box.top, zIndex: 80 }}
+          className="w-72 rounded-2xl border border-border bg-card p-2 shadow-lg"
+        >
           <div className="px-2 py-2">
             <p className="truncate text-sm font-semibold">{name}</p>
             <p className="truncate text-xs text-muted-foreground">{email}</p>
@@ -105,8 +133,9 @@ export function AccountMenu({
           >
             <LogOut className="h-4 w-4" /> Sign out
           </button>
-        </div>
-      )}
+        </div>,
+        document.body,
+      ) : null}
     </div>
   );
 }

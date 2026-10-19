@@ -8,6 +8,8 @@ import { createDailyGoal, getEnrolledCourses, getUserBadges, goalDateKey, subscr
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowUpRight, BookOpen, Zap, Target, TrendingUp, Sparkles, Users, GraduationCap, Play } from 'lucide-react';
 import { SafetyShieldLink } from '@/components/safety/surfaces';
+import { TeacherPortrait } from '@/components/teachers/portrait';
+import { AI_TEACHERS } from '@/lib/ai-teachers';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { StudyLaunchpad } from '@/components/study/study-launchpad';
@@ -224,6 +226,15 @@ export default function StudentDashboard() {
         level={learnerLevelLabel(profile)}
         code={profile?.studentNumber ?? ''}
       />
+
+      <div className="flex gap-3 overflow-x-auto pb-1" data-teacher-picker>
+        {AI_TEACHERS.slice(0, 12).map((teacher) => (
+          <Link key={teacher.id} href={`/dashboard/studio/teachers/${teacher.id}`} className="w-20 shrink-0 text-center">
+            <TeacherPortrait teacher={teacher} size={72} className="mx-auto h-[72px] w-[72px] rounded-full object-cover" />
+            <span className="mt-1 block truncate text-[11px] font-semibold text-[#1E6A83]">{teacher.name}</span>
+          </Link>
+        ))}
+      </div>
 
       <StudyLaunchpad />
 

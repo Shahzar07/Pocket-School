@@ -234,6 +234,7 @@ export interface ProfileDraft {
   region?: string;
   gender?: '' | 'male' | 'female';
   demographicConsent?: boolean;
+  timezoneConsent?: boolean;
   notificationPrefs: NotificationPrefs;
   privacy: PrivacySettings;
   twoFactorEnabled: boolean;
@@ -247,10 +248,16 @@ export function profilePatch(draft: ProfileDraft, role: string): Record<string, 
     displayName: draft.displayName.trim(),
     bio: draft.bio.trim(),
     country,
-    timezone: draft.timezone.trim(),
     phone: draft.phone.trim(),
     language: draft.language,
     currency: draft.currency.trim().toUpperCase(),
+    demographicConsent: draft.demographicConsent !== false,
+    demographicConsentAt: Date.now(),
+    demographicConsentVersion: '2026-10-19',
+    timezone: draft.timezoneConsent === false ? '' : draft.timezone.trim(),
+    timezoneAuto: draft.timezoneConsent !== false,
+    timezoneSetAt: Date.now(),
+    timezoneVersion: '2026-10-19',
     level: draft.level,
     learningStyle: draft.learningStyle,
     notificationPrefs: draft.notificationPrefs,

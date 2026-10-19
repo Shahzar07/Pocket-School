@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { AffiliateNote, ArticleBody, ArticleCta, Cover } from '@/components/blog/article';
+import { AffiliateNote, ArticleBody, ArticleCta, PostHero } from '@/components/blog/article';
 import { publishedPost, publishedPosts } from '@/lib/blog/load';
-import { absoluteCover, articleJsonLd, faqJsonLd, isCoverPath, jsonLdScript } from '@/lib/blog/posts';
+import { BLOG_PUBLIC } from '@/lib/blog/public-copy';
+import { absoluteCover, articleJsonLd, coverAltOf, faqJsonLd, isCoverPath, jsonLdScript, readingMinutes } from '@/lib/blog/posts';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -21,6 +22,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await publishedPost(slug);
   if (!post) return { title: 'Essay not found', robots: { index: false, follow: false } };
+  const image = isCoverPath(post.coverImage)
+    ? [{ url: absoluteCover(post.coverImage), width: 1600, height: 900, alt: coverAltOf(post) }]
+    : undefined;
   return {
     title: post.title,
     description: post.excerpt,
@@ -36,7 +40,13 @@ export async function generateMetadata({
       modifiedTime: new Date(post.updatedAt).toISOString(),
       authors: [post.author],
       tags: post.tags,
-      images: isCoverPath(post.coverImage) ? [{ url: absoluteCover(post.coverImage) }] : undefined,
+      ...(image ? { images: image } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      ...(image ? { images: image.map((item) => item.url) } : {}),
     },
   };
 }
@@ -52,18 +62,18 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     <main id="content" className="min-h-screen bg-[#F8F4EE] text-[#203337]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(articleJsonLd(post)) }} />
       {faq ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(faq) }} /> : null}
-      <article className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:px-6">
-        <p className="text-xs font-bold tracking-[0.18em] text-primary">
+      <PostHero post={post} />
+      <article className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6">
+        <p className="text-xs font-bold tracking-[0.18em] text-[#1E6A83]">
           <Link href="/blog">Blog</Link>
           <span> · {post.category}</span>
         </p>
-        <h1 className="mt-3 font-heading text-4xl tracking-tight sm:text-5xl">{post.title}</h1>
         <p className="mt-4 text-sm text-[#203337]/65">
           {post.author}
           {when ? ` · ${when}` : ''}
+          {` · ${readingMinutes(post.body)} ${BLOG_PUBLIC.minRead}`}
         </p>
         <AffiliateNote post={post} />
-        <Cover post={post} className="mt-6 h-64 rounded-[2rem] sm:h-80" />
         <p className="mt-8 text-lg leading-8 text-[#203337]/80">{post.excerpt}</p>
         <div className="mt-6">
           <ArticleBody post={post} />

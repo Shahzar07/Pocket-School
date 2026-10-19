@@ -35,6 +35,7 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { subscribeTeacherNotification } from '@/lib/db';
 import { toast } from 'sonner';
 import { accentOnFill, accentOnLight, type AiTeacher, type TeacherIconKey } from '@/lib/ai-teachers';
+import { TeacherPortrait } from '@/components/teachers/portrait';
 
 const ICONS: Record<TeacherIconKey, typeof Atom> = {
   atom: Atom,
@@ -142,12 +143,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                       }}
                     />
                     <div className="relative">
-                      <div
-                        className="w-32 h-32 lg:w-40 lg:h-40 rounded-3xl mx-auto mb-5 flex items-center justify-center shadow-2xl"
-                        style={{ background: `linear-gradient(135deg, ${teacher.accentColor}, ${teacher.accentColor}cc)` }}
-                      >
-                        <Icon className="w-14 h-14 lg:w-16 lg:h-16 text-white" strokeWidth={1.6} />
-                      </div>
+                      <TeacherPortrait teacher={teacher} size={160} className="mx-auto mb-5 h-32 w-32 rounded-3xl object-cover shadow-2xl lg:h-40 lg:w-40" />
                       {isLive && (
                         <button
                           onClick={handleStart}
