@@ -2,9 +2,31 @@
 
 For Shahzar. No secret values. Playwright: `npm run test:e2e` (`.github/workflows/e2e.yml`). Local specs do not call production Firebase.
 
-## Production, `main` `de07f29` (19 Oct 2026)
+## Production, `main` `f9d395c` (19 Oct 2026)
 
-Deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL` is READY and aliased to https://pocket-school-ochre.vercel.app.
+Deployment `dpl_14rQsk7dNuwsVEwsrWhBCVnP1VE6` is READY and aliased to https://pocket-school-ochre.vercel.app. Commit `f9d395cb84d904c123b77abb599eea441e934bd8` (squash of #151).
+
+`e2e/roles.spec.ts` “marketing pages from the landing footer answer” with `PLAYWRIGHT_BASE_URL` set to that origin and `E2E_EMULATOR=1` (so Playwright does not start a local server): **1 passed**. The walk covers `/`, `/ai-teachers`, `/studio`, `/reads`, `/safeline`, `/id`, `/primary`, `/igcse`, `/alevel`, `/llb`, `/mbbs`, `/independent`, `/institutions`, `/institutions/register`, `/demo`, `/about`, `/rochfords`, `/privacy`, `/terms`, and `/signup?plan=primary`. Each response is below 400 and the first `h1` is visible. The homepage has `data-landing="v3"`, and that block does not contain `#c8820a` or “Years 1”.
+
+| Route | Signed out | Result |
+| --- | --- | --- |
+| `/`, `/about`, `/studio`, `/login` | Public | 200, heading visible, no page error |
+| `/blog` | Public | 200. “The journal”. The six drafts are still unpublished |
+| `/courses` | Public | 200. Nine listings. `#featured` is empty |
+| `/dashboard/studio` | Shell, then login | First response 200. Lands on `/login`. No page error |
+| `/ai-studio` | Redirect, then login | 307 to `/dashboard/studio`, then `/login`. No page error |
+| `/dashboard/admin/books` | Gated | 307 to session, then `/admin/login` |
+| `/dashboard/admin/placement` | Gated | 307 to session, then `/admin/login` |
+| Teacher, institution, student, parent timetable | Gated | 307 to `/dashboard/session?next=…`, then `/login` |
+| `/dashboard/admin/timetable` | Gated | 307, then `/admin/login` |
+| `/dashboard/studio/timetable` | Gated in the shell | First response 200. Lands on `/login`. No page error |
+| `GET /api/calendar/ics` (no token) | Public | 404, not 500. A trailing slash 308s first. A bad token is 404 with “This calendar link is not active.” |
+
+Screenshots from this pass: `prod-home.png`, `prod-blog.png`, `prod-courses.png`.
+
+## Earlier production, `main` `de07f29` (19 Oct 2026)
+
+At the time of that smoke, deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL` was READY and aliased to https://pocket-school-ochre.vercel.app. The alias now serves `f9d395c`.
 
 `e2e/roles.spec.ts` “marketing pages from the landing footer answer” with `PLAYWRIGHT_BASE_URL` set to that origin and `E2E_EMULATOR=1` (so Playwright does not start a local server): **1 passed**. The walk covers `/`, `/ai-teachers`, `/studio`, `/reads`, `/safeline`, `/id`, `/primary`, `/igcse`, `/alevel`, `/llb`, `/mbbs`, `/independent`, `/institutions`, `/institutions/register`, `/demo`, `/about`, `/rochfords`, `/privacy`, `/terms`, and `/signup?plan=primary`. Each response is below 400 and the first `h1` is visible. The homepage has `data-landing="v3"`, and that block does not contain `#c8820a` or “Years 1”.
 
@@ -44,14 +66,16 @@ Latest local run: **4 passed** (student school choice and blue panel, teacher an
 
 Do not treat an open row as a pass.
 
-## Portraits and standalone studio (local emulator, 19 Oct 2026)
+## Portraits and standalone studio (local emulator, 19 Oct 2026, before #151)
+
+This table is a local run from before the dark full-screen studio. It is not the current signed-in home. #151 replaced the header tabs with the dark sidebar. See `QA_QC.md`, “Dark AI Studio layout”, for the current local evidence.
 
 Signed in on `http://127.0.0.1:3466` with the Auth and Firestore emulators. Student `student.preview@poketschool.ai` (Amina Yusuf) and teacher `teacher.preview@poketschool.ai` (Ms Lee). Password was a local emulator password and is not a production credential.
 
 | Check | Student | Teacher |
 | --- | --- | --- |
 | `/ai-teachers` photographic portraits | Pass (public page, distinct faces, no SVG) | Same public page |
-| `/dashboard/studio` one sidebar, header tabs, centred prompt | Pass. `aside` count 1. Nested studio `aside` count 0. | Pass |
+| `/dashboard/studio` one sidebar and header tabs | Historical pass, before #151. The current home is the dark full-screen chat. | Historical pass |
 | `/dashboard/studio/teachers` a face on every card | Pass. 35 `ET ` images. No `/teachers/` 404. | Pass. 35 faces. |
 | `/dashboard/studio/et` portrait in the chat header | Pass. 1 header face. | Pass |
 | Student dashboard teacher picker | Pass. 12 faces. | Not the student home |

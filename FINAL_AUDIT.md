@@ -2,16 +2,16 @@
 
 For Shahzar. No secret values. See also `HANDOVER.md`, `E2E_REPORT.md`, and `QA_QC.md`.
 
-As of `main` `de07f29b121001e80714bc839a914158a0e6d780` (squash of #148, which includes #147 at `6a041278bf02fc27e62c1f0647581b5351ce3cbe`). Production deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL` is READY and aliased to https://pocket-school-ochre.vercel.app. Key names below are from the Vercel project `pocket-school` on 19 Oct 2026. Values were not read.
+As of `main` `f9d395cb84d904c123b77abb599eea441e934bd8` (squash of #151, the dark full-screen ET AI Studio). That commit includes #148 at `de07f29b121001e80714bc839a914158a0e6d780` and #147 at `6a041278bf02fc27e62c1f0647581b5351ce3cbe`. Production deployment `dpl_14rQsk7dNuwsVEwsrWhBCVnP1VE6` is READY and aliased to https://pocket-school-ochre.vercel.app. Key names below are from the Vercel project `pocket-school` on 19 Oct 2026. Values were not read. Set and missing, per environment, is the table in `HANDOVER.md` (Start here).
 
 ## 1. Implemented features by area
 
-#147 (on `main` since `6a04127`) and #148 (on `main` since `de07f29`) are both in this tree.
+#147 (on `main` since `6a04127`), #148 (on `main` since `de07f29`), and #151 (on `main` since `f9d395c`) are in this tree.
 
 - **Sign-up schools.** `/signup`. Public directory `GET /api/institutions/directory`. Membership `POST /api/institutions/membership`. Approvals `/dashboard/institution/approvals`. Pending badge in the dashboard sidebar.
 - **AI Book Creator.** `/dashboard/admin/books` (`StudioView`, `lib/reads/creator.ts`). Nav key `nav.aiBookCreator`. Visible to `super_admin`, `admin`, and `content_editor` (platform `role: admin`). Teachers and institution admins with the CMS add-on get the same link at the top of their first nav group. Studio nav and the admin desk tools tile use the same name. AI generation already returns 503 when `OPENROUTER_API_KEY` is missing; the studio toasts that error.
 - **Admin desk.** `GET/POST /api/admin/desk` checks the caller before any payload. Missing `FIREBASE_SERVICE_ACCOUNT` returns `setupNeeded` and the exact setup sentence, with no fake KPI zeros. Actions no-op in that state.
-- **ET AI Studio.** `/dashboard/studio` and its sub-pages sit in the dashboard shell only. Section links are a horizontal header (`data-studio-nav="header"`), not a second sidebar. The home is the ET AI chat (`data-studio-home="chat"`). Header tabs open AI Studio, ET AI, AI Teachers, ET Maths, ET Exams, ET Essays, Creator Store, and AI Book Creator. A missing model key shows the empty-reply line from `lib/studio/et-copy.ts`. Recent essays stay on `/dashboard/studio/essays`.
+- **ET AI Studio (#151).** The signed-in home at `/dashboard/studio`, and at `/ai-studio` (307 to that path), is the dark ET AI chat at full viewport (`data-studio-home="chat"`, `data-studio-layout="dark"`, `data-studio-immersive="1"`). The light dashboard sidebar, top bar, mobile nav, and floating tutor stay off this page and off `/dashboard/studio/et`. Dashboard is the first item in the dark sidebar, above New chat, and links to the role home (`/dashboard` for a student, then teacher, parent, institution, admin, or partner). Cyan `#3FE0D0` with ink `#203337`. The canvas stays dark when the site theme is light. The light card hub is one click away under All tools. Sidebar Tools lists AI Teachers, ET + Subject, ET Maths, ET Exams, ET Essays, Book Studio, the role desk, Planner, and Calendar once each. ET AI, PoketReads, AI Book Creator, and Creator Store stay on the empty-state chips and inside All tools. Timetabler is in that Tools list for teachers and institution admins only. Students do not see it. Maths, essays, exam prep, teachers, and the timetable grid still use the dashboard shell. A missing model key shows the empty-reply line from `lib/studio/et-copy.ts`. Recent essays stay on `/dashboard/studio/essays`.
 - **Teacher portraits.** `lib/teacher-portrait.ts` maps each teacher id to a distinct `/teachers/et-<subject>.webp` headshot. Alt text is `ET <Subject>`. The public teachers page, studio teacher list, ET chat header, and the student dashboard picker all use that file. There is no SVG silhouette fallback.
 - **Blog images.** Each post stores `coverImage` (1600×900 banner), `coverAlt`, and an optional `thumbnail` (the card uses the thumbnail, or a crop of the banner). Uploads go to Storage `blog/<postId>/` from `/dashboard/admin/blog`: drag-and-drop or picker, live preview, replace, remove, client resize to WebP. Alt text is required before publish. `/blog` cards show the thumbnail, title, excerpt, date, and reading time. `/blog/[slug]` is a full-width hero with the title on a blue gradient (`#1E6A83`, `#203337`, `#3FE0D0`). Open Graph and Twitter use the cover. A post with no cover omits `images` so `app/blog/[slug]/opengraph-image.tsx` draws the branded fallback. Seed covers in `public/blog/` are generated graphics, not photographs.
 - **School wall.** Permission errors show a short unavailable message. Cause: wall rules are not deployed until the Firestore deploy in `HANDOVER.md`.
@@ -27,7 +27,7 @@ As of `main` `de07f29b121001e80714bc839a914158a0e6d780` (squash of #148, which i
 | Book Studio looked like “Books” | Label `AI Book Creator` via `nav.aiBookCreator`, placed at the top of the admin nav. |
 | Wall printed raw permission errors | `wallNotice` in `lib/wall/live.ts`. |
 | Public pages hung Playwright | Promo banners, payment settings, and institution signup no longer call the Admin SDK when no server account is configured. |
-| #148 would have dropped the #147 studio chat, portraits, and signatures | Squash `de07f29` keeps both. Studio home stays the ET AI chat. Timetabler is an extra link for teachers and institution or enterprise admins. |
+| #148 would have dropped the #147 studio chat, portraits, and signatures | Squash `de07f29` keeps both. Studio home stays the ET AI chat. #151 makes that chat the full-screen dark home. Timetabler is an extra dark-sidebar link for teachers and institution or enterprise admins. |
 | Calendar with no Google client | The desk stays unconfigured. iCal download and the signed feed still work. No page error. |
 | Signed-out timetable URLs | Role routes 307 to `/dashboard/session`, then the client opens `/login` or `/admin/login`. `/dashboard/studio/timetable` is not in the middleware role list; the dashboard shell sends a signed-out visitor to `/login`. None of these returned 500 on production. |
 | `/api/calendar/ics` with no token | 404. A trailing slash 308s to that path. A bad token returns 404 and the text “This calendar link is not active.” |
@@ -64,7 +64,7 @@ As of `main` `de07f29b121001e80714bc839a914158a0e6d780` (squash of #148, which i
 | MyInvois | Code-ready. Names absent. | `MYINVOIS_CLIENT_ID`, `MYINVOIS_SECRET`, `MYINVOIS_TIN` or `TIN`, `MYINVOIS_ENV` |
 | SMTP | Code-ready. Names absent. Invites record and do not send. | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
 | Resend | Code-ready. Names absent. | `RESEND_API_KEY`, `MAIL_FROM`, `RESEND_WEBHOOK_SECRET` |
-| OTP and session | Configured on production. | `OTP_SECRET` (also signs the iCal link), `DASHBOARD_SESSION_SECRET`, `CARD_TOKEN_SECRET`, `CRON_SECRET`, `SUPER_ADMIN_EMAILS` |
+| OTP and session | `OTP_SECRET`, `DASHBOARD_SESSION_SECRET`, and `SUPER_ADMIN_EMAILS` are production only. `CARD_TOKEN_SECRET` and `CRON_SECRET` are also on preview. Development has none of these. | `OTP_SECRET` (also signs the iCal link), `DASHBOARD_SESSION_SECRET`, `CARD_TOKEN_SECRET`, `CRON_SECRET`, `SUPER_ADMIN_EMAILS` |
 | ET AI | Names configured on production and preview. Solver does not need them. | `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`. Also present: `API_KEY`, `VITE_GEMINI_API_KEY`, `VITE_GOOGLE_API_KEY` |
 | Google Calendar OAuth | Not configured. iCal path works without them. | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` |
 | Twilio | Names configured on production and preview. Live send was not smoked. | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` |
@@ -79,7 +79,7 @@ As of `main` `de07f29b121001e80714bc839a914158a0e6d780` (squash of #148, which i
 | High | Production Firestore rules are undeployed, and `FIREBASE_SERVICE_ACCOUNT` is absent, so admin desks and the school directory degrade and some client listeners (the wall, some desks) cannot read until both are done. |
 | Medium | The timetable week a person edits lives in `localStorage` (`poket-timetable-v1`). It is not a production Firestore write yet. |
 | Medium | A drag onto the planner board, a completed copyright signature write, and a live school-wall post were not exercised. |
-| Low | `next build` on Next 15.5.15 flakes when Google Fonts returns an extension-less font URL. CI Playwright uses `next dev`. The production Vercel build of `de07f29` still reached READY. |
+| Low | `next build` on Next 15.5.15 flakes when Google Fonts returns an extension-less font URL. CI Playwright uses `next dev`. The production Vercel build of `f9d395c` still reached READY. |
 | Data, not a code bug | `/blog` is an empty journal until the six drafts are published. Cover files under `/blog/*.webp` return 200. `/courses` lists 9 public items and `#featured` is empty until a course is marked featured. |
 
 ## 6. Wireframes
@@ -149,20 +149,40 @@ Added beside the calendar, year planner, school desk, and attendance. It does no
 - The grid rejects an illegal drag or click and offers a legal slot. Cover proposes a qualified free teacher, queues notices for the teachers, students, and parents, and keeps a cover load.
 - Teacher add-on: personal timetable. Institution: one school. Enterprise: more than one campus. The price on the pricing page and the landing feature list is TBC by Harry.
 - The week the desk edits is stored in the browser (`poket-timetable-v1` in `lib/timetable/store.ts`). Firestore rules for `timetables` are in git and are not deployed. Attendance registers stay unmarked until a real register is taken. Cover notices use the in-app notification path. Print is the browser print dialog.
-- The teacher sidebar opens `/dashboard/teacher/timetable`. The institution and enterprise admin sidebar opens `/dashboard/institution/timetable`. AI Studio keeps the ET AI chat from the handover. Teachers and institution or enterprise admins also get a Timetabler link on that chat and in the studio header, opening `/dashboard/studio/timetable`. Students do not see that entry. Without the add-on the grid is an upsell and the price stays TBC by Harry. ET AI can draft a week, cover, a room fix, or extra periods from a sentence or a photo, and nothing is saved until confirm. The full grid has the main sidebar and no nested studio frame.
+- The teacher sidebar opens `/dashboard/teacher/timetable`. The institution and enterprise admin sidebar opens `/dashboard/institution/timetable`. AI Studio keeps the dark ET AI chat from #151. Teachers and institution or enterprise admins also get Timetabler in the dark sidebar Tools list, opening `/dashboard/studio/timetable`. Students do not see that entry. Without the add-on the grid is an upsell and the price stays TBC by Harry. ET AI can draft a week, cover, a room fix, or extra periods from a sentence or a photo, and nothing is saved until confirm. The full grid still uses the dashboard shell. The edited week is still `localStorage` (`poket-timetable-v1`). Persisting it to Firestore is a TODO.
 - Google Calendar is additive. Missing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, or `GOOGLE_OAUTH_REDIRECT_URI` leaves the iCal download and the signed subscription working, and the screen says Connect Google Calendar (not configured yet).
 
 ## 10. Regression audit
 
-Compared with `main` at `6a041278bf02fc27e62c1f0647581b5351ce3cbe` after this branch was updated onto it. No `app/**/page.tsx` file from that commit is missing. No sidebar `href` from `app/dashboard/layout.tsx` on that commit was removed. `git diff --diff-filter=D origin/main` is empty.
+#148, compared with `main` at `6a041278bf02fc27e62c1f0647581b5351ce3cbe`: no `app/**/page.tsx` file from that commit was missing, and no sidebar `href` from `app/dashboard/layout.tsx` on that commit was removed. Pages added then: `/dashboard/admin/timetable`, `/dashboard/institution/timetable`, `/dashboard/parent/timetable`, `/dashboard/student/timetable`, `/dashboard/studio/timetable`, `/dashboard/teacher/timetable`, `/preview/studio`, `/preview/timetable`.
 
-Pages added: `/dashboard/admin/timetable`, `/dashboard/institution/timetable`, `/dashboard/parent/timetable`, `/dashboard/student/timetable`, `/dashboard/studio/timetable`, `/dashboard/teacher/timetable`, `/preview/studio`, `/preview/timetable`.
-
-Sidebar links added: the same six dashboard timetable routes. The studio home stays the ET AI chat (`data-studio-home="chat"`). Teachers and institution or enterprise admins also get a Timetabler control on that chat and in the studio header. Students do not.
+#151 keeps those pages. It changes the signed-in studio home. `/dashboard/studio` and `/ai-studio` are a full-viewport dark chat. The light dashboard chrome is not on that home. Dashboard is the first dark-sidebar item. The light card hub is behind All tools. Timetabler sits in the dark sidebar Tools list for teachers and institution admins, not in a studio header, and students do not see it. Product work stays additive: do not delete a page or a sidebar link to land a new tool.
 
 `/preview/scope-c` stays closed on a production server unless `SCOPE_PREVIEW=1`. `/preview/institution-console` stays closed unless `INSTITUTION_PREVIEW=1`.
 
-## 11. Production smoke of `de07f29`
+## 11. Production smoke of `f9d395c`
+
+Deployment `dpl_14rQsk7dNuwsVEwsrWhBCVnP1VE6`, state READY, target production, commit `f9d395cb84d904c123b77abb599eea441e934bd8`. Alias https://pocket-school-ochre.vercel.app.
+
+Playwright `e2e/roles.spec.ts` “marketing pages from the landing footer answer” against that origin, with `E2E_EMULATOR=1`: 1 passed. Homepage `data-landing="v3"`, no `#c8820a`, no “Years 1”.
+
+| Check | Result |
+| --- | --- |
+| `/`, `/about`, `/studio`, `/login` | 200, heading visible, no page error |
+| `/blog` | 200. Heading “The journal”. Copy still says the drafts stay unpublished |
+| `/courses` | 200. Nine public listings. `#featured` is present and empty |
+| `/dashboard/studio` | First response 200. The shell then sends the signed-out visitor to `/login`. No page error |
+| `/ai-studio` | 307 to `/dashboard/studio`, then the same clean redirect to `/login` |
+| `/dashboard/admin/books` | 307 to `/dashboard/session`, then `/admin/login` |
+| `/dashboard/admin/placement` | 307 to `/dashboard/session`, then `/admin/login` |
+| Teacher, institution, student, and parent timetable | 307 to `/dashboard/session?next=…`, then `/login`. No page error |
+| `/dashboard/admin/timetable` | 307, then `/admin/login` |
+| `/dashboard/studio/timetable` | 200 shell, then the dashboard sends the signed-out visitor to `/login` |
+| `GET /api/calendar/ics` | 404, not 500. A trailing slash 308s to that path. A bad token is 404 with “This calendar link is not active.” |
+
+Screenshots from this pass: `prod-home.png`, `prod-blog.png`, `prod-courses.png`.
+
+## Earlier production smoke of `de07f29`
 
 Deployment `dpl_3oPXzYfPsmmboz57ZWERLteTDhHL`, state READY, target production, commit `de07f29b121001e80714bc839a914158a0e6d780`. Aliases include https://pocket-school-ochre.vercel.app.
 
