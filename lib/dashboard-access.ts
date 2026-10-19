@@ -125,6 +125,11 @@ export function decideDashboardAccess(
     const staffCms = (hasAccountRole(actor, 'teacher') || isInstitutionAdmin(actor)) && canOpenCms(actor);
     return isSuperAdmin(actor) || staffCms ? { allowed: true } : deny(actor, mode);
   }
+  if (matches(path, '/dashboard/admin/books')) {
+    const teaching = hasAccountRole(actor, 'teacher') || isInstitutionAdmin(actor);
+    const staff = actor.role === 'admin' || isSuperAdmin(actor);
+    return staff || (teaching && canOpenCms(actor)) ? { allowed: true } : deny(actor, mode);
+  }
   if (matches(path, '/dashboard/admin')) {
     return isSuperAdmin(actor) ? { allowed: true } : deny(actor, mode);
   }

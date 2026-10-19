@@ -8,10 +8,6 @@ import { onboardingChecklist } from '@/lib/institution-membership';
 import { accessBadge, usageRoi, type CourseAccessMode } from '@/lib/institution-commerce';
 import { Award, GraduationCap, Sparkles } from 'lucide-react';
 
-const SAMPLE = [
-  { id: 'north', name: 'North Academy', country: 'MY', state: 'Selangor', status: 'active', listedForSelfJoin: true },
-];
-
 export default function InstitutionFlowPreview() {
   const [path, setPath] = useState<'independent' | 'institution'>('institution');
   const [mode, setMode] = useState<CourseAccessMode>('both');
@@ -30,7 +26,6 @@ export default function InstitutionFlowPreview() {
           country="MY"
           state="Selangor"
           institutionId="north"
-          institutions={SAMPLE}
           inviteCode=""
           childEmails=""
           showChildren={false}

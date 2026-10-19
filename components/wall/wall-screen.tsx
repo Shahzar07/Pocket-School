@@ -10,6 +10,7 @@ import {
   setWallReaction,
   uploadWallPhoto,
   watchHandle,
+  wallNotice,
   watchWall,
   type WallActor,
 } from '@/lib/wall/live';
@@ -253,7 +254,7 @@ export function WallScreen({
               const next = previous === reaction ? '' : reaction;
               patch(post.id, (item) => toggleReaction(item, reaction));
               if (actor && !post.id.startsWith('local-') && !post.id.startsWith('share-')) {
-                void setWallReaction(post.id, actor.uid, previous, next).catch((error: Error) => setNotice(error.message));
+                void setWallReaction(post.id, actor.uid, previous, next).catch((error: Error) => setNotice(wallNotice(error)));
               }
             }}
             onToggleComments={() => setThread(thread === post.id ? '' : post.id)}
@@ -266,7 +267,7 @@ export function WallScreen({
               }
               void reportWallPost(actor, post.id, 'Reported from the school wall')
                 .then(() => setNotice('Report sent to the Safety Desk.'))
-                .catch((error: Error) => setNotice(error.message));
+                .catch((error: Error) => setNotice(wallNotice(error)));
             }}
             onDelete={() => setPosts((current) => current.filter((item) => item.id !== post.id))}
             viewerHandle={viewer.handle}
@@ -277,7 +278,7 @@ export function WallScreen({
               setPosts((current) => [copy, ...current]);
               patch(post.id, (item) => ({ ...item, shares: item.shares + 1 }));
               if (actor) {
-                void publishWallPost(actor, { body: copy.body, audience: 'school', feed: 'school', images: [], tags: [], locationOn: false }).catch((error: Error) => setNotice(error.message));
+                void publishWallPost(actor, { body: copy.body, audience: 'school', feed: 'school', images: [], tags: [], locationOn: false }).catch((error: Error) => setNotice(wallNotice(error)));
               }
             }}
             onComment={(body, image) => {
@@ -285,7 +286,7 @@ export function WallScreen({
                 ...item,
                 comments: [...item.comments, { id: `local-${item.comments.length}`, authorHandle: viewer.handle, body, createdAt: Date.now(), image, replies: [] }],
               }));
-              if (actor && !post.id.startsWith('local-')) void addWallComment(actor, post.id, body).catch((error: Error) => setNotice(error.message));
+              if (actor && !post.id.startsWith('local-')) void addWallComment(actor, post.id, body).catch((error: Error) => setNotice(wallNotice(error)));
             }}
             onReply={(commentId, body) => {
               patch(post.id, (item) => ({
@@ -295,7 +296,7 @@ export function WallScreen({
                   replies: [...comment.replies, { id: `reply-${comment.replies.length}`, authorHandle: viewer.handle, body, createdAt: Date.now(), replies: [] }],
                 } : comment),
               }));
-              if (actor && !post.id.startsWith('local-')) void addWallComment(actor, post.id, body, commentId).catch((error: Error) => setNotice(error.message));
+              if (actor && !post.id.startsWith('local-')) void addWallComment(actor, post.id, body, commentId).catch((error: Error) => setNotice(wallNotice(error)));
             }}
             onVote={(optionId) => patch(post.id, (item) => item.poll ? {
               ...item,

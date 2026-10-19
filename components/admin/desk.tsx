@@ -11,6 +11,8 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 
 type Row = { id: string; title: string; detail: string };
 type Snapshot = {
+  setupNeeded?: boolean;
+  message?: string;
   comingSoon?: boolean;
   staffRole?: string | null;
   scope?: string;
@@ -27,6 +29,7 @@ type Snapshot = {
 };
 
 const TILES: { id: string; label: string; href: string; hint: string; category: 'people' | 'learning' | 'payments' | 'safety' | 'insights' | 'settings' | 'community' | 'careers' }[] = [
+  { id: 'books', label: 'AI Book Creator', href: '/dashboard/admin/books', hint: 'Write, cover, and publish to PoketReads', category: 'learning' },
   { id: 'queues', label: 'Queues', href: '/dashboard/admin/queues', hint: 'What needs a decision', category: 'safety' },
   { id: 'users', label: 'People', href: '/dashboard/admin/users', hint: 'Roles, tiers, suspension', category: 'people' },
   { id: 'institutions', label: 'Institutions', href: '/dashboard/admin/institutions', hint: 'Schools and approvals', category: 'people' },
@@ -65,9 +68,10 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
   useEffect(() => { load(); }, []);
 
   const act = (body: Record<string, unknown>) => {
+    if (desk?.setupNeeded) return;
     authedFetch('/api/admin/desk', { method: 'POST', body: JSON.stringify(body) })
       .then(data => {
-        setNote(data.comingSoon ? 'This admin tool is coming soon.' : 'Saved. Nothing was granted beyond this decision.');
+        setNote(data.setupNeeded ? String(data.message || '') : data.comingSoon ? 'This admin tool is coming soon.' : 'Saved. Nothing was granted beyond this decision.');
         load();
       })
       .catch(error => setNote(error instanceof Error ? error.message : 'That action did not save.'));
@@ -84,7 +88,8 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
   };
 
   const name = profile?.name?.split(' ')[0] || 'Admin';
-  const kpis = desk?.kpis;
+  const setup = desk?.setupNeeded === true;
+  const kpis = setup ? undefined : desk?.kpis;
 
   return (
     <div className="space-y-5 pb-24">
@@ -99,6 +104,9 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
 
       {view === 'home' ? <SafeLineBanner /> : null}
 
+      {setup ? (
+        <p className="rounded-[18px] bg-card px-4 py-3 text-sm" data-admin-setup="1">{desk?.message}</p>
+      ) : null}
       {desk?.comingSoon || note === 'This admin tool is coming soon.' ? (
         <p className="rounded-[18px] bg-card px-4 py-3 text-sm">This admin tool is coming soon.</p>
       ) : null}
@@ -109,7 +117,7 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
           <form className="flex flex-col gap-2 sm:flex-row" onSubmit={event => { event.preventDefault(); search(); }}>
             <label className="sr-only" htmlFor="desk-search">Search users, institutions, and tickets</label>
             <input id="desk-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search users, institutions, tickets" className={fieldClass} />
-            <button type="submit" className={buttonClass}>Search</button>
+            <button type="submit" className={buttonClass} disabled={setup}>Search</button>
           </form>
           {hits ? <SearchHits hits={hits} reason={reason} onReason={setReason} onAct={act} /> : null}
           <section aria-label="Top tasks" className="grid gap-3 sm:grid-cols-3">
@@ -118,9 +126,9 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
             <TileLink href="/dashboard/admin/users" label="Review accounts" hint="Role and tier" category="people" />
           </section>
           <section aria-label="At a glance" className="grid gap-3 sm:grid-cols-3">
-            <StatCard label="Signups" value={String(kpis?.signups ?? 0)} hint="Last 30 days" series={desk?.series?.signups} />
-            <StatCard label="Active users" value={String(kpis?.active ?? 0)} hint="Last 7 days" />
-            <StatCard label="SLA breaches" value={String(kpis?.slaBreaches ?? 0)} hint="Open safety tickets" />
+            <StatCard label="Signups" value={setup ? '—' : String(kpis?.signups ?? 0)} hint="Last 30 days" series={desk?.series?.signups} />
+            <StatCard label="Active users" value={setup ? '—' : String(kpis?.active ?? 0)} hint="Last 7 days" />
+            <StatCard label="SLA breaches" value={setup ? '—' : String(kpis?.slaBreaches ?? 0)} hint="Open safety tickets" />
           </section>
           <section aria-label="Tools">
             <h2 className="mb-3 font-heading text-xl">Tools</h2>

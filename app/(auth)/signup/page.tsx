@@ -29,8 +29,8 @@ import { useWhiteLabel } from '@/components/white-label-provider';
 import { passwordAccepts, signupDecision } from '@/lib/academy-settings';
 import { DemographicConsent, GenderSelect, LevelNameSelect } from '@/components/account/demographic-fields';
 import { SelfJoinPicker } from '@/components/institutions/self-join-picker';
-import { listSelfJoinInstitutions, redeemInviteCode, submitSelfJoin } from '@/lib/institution-membership-store';
-import type { JoinDirectoryRow, JoinRole } from '@/lib/institution-membership';
+import type { JoinRole } from '@/lib/institution-membership';
+import { SIGNUP_SCHOOL } from '@/lib/institutions/signup-copy';
 import { statesForCountry } from '@/lib/institution-states';
 import { amberSignupFields } from '@/lib/amber/public';
 
@@ -76,7 +76,6 @@ export default function SignupPage() {
   const [joinPath, setJoinPath] = useState<'independent' | 'institution'>('independent');
   const [joinState, setJoinState] = useState('');
   const [joinInstitution, setJoinInstitution] = useState('');
-  const [listed, setListed] = useState<JoinDirectoryRow[]>([]);
   const [inviteCode, setInviteCode] = useState('');
   const [joinSlug, setJoinSlug] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
@@ -94,14 +93,6 @@ export default function SignupPage() {
     const states = statesForCountry(country);
     setJoinState((current) => (states as readonly string[]).includes(current) ? current : '');
   }, [country]);
-  useEffect(() => {
-    const wantsList = role === 'student' || joinPath === 'institution';
-    if (!wantsList || !country || !joinState) {
-      setListed([]);
-      return;
-    }
-    listSelfJoinInstitutions(country, joinState).then(setListed).catch(() => setListed([]));
-  }, [role, joinPath, country, joinState]);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('role');
@@ -175,12 +166,11 @@ export default function SignupPage() {
     setYearGroup(suggestedPlacement.year);
   }, [role, placementEdited, suggestedPlacement]);
 
-  const finishJoin = async (uid: string, account?: { email?: string | null; name?: string | null }) => {
+  const finishJoin = async (_uid: string, account?: { email?: string | null; name?: string | null }) => {
     if (joinPath !== 'institution') return;
     const joinRole: JoinRole = role === 'teacher' || role === 'parent' ? role : 'student';
     const address = (account?.email || email).trim();
     const person = (account?.name || name).trim();
-    const childEmails = childEmail.trim() ? [childEmail.trim().toLowerCase()] : [];
     try {
       if (joinSlug) {
         const result = await authedFetch('/api/institutions/join', {
@@ -199,26 +189,27 @@ export default function SignupPage() {
             takeCredit: true,
           }),
         });
-        toast.message(typeof result.message === 'string' ? result.message : 'The academy has this account.');
+        toast.message(typeof result.message === 'string' ? result.message : SIGNUP_SCHOOL.requestSent);
         return;
       }
-      if (inviteCode.trim()) {
-        const result = await redeemInviteCode({
-          userId: uid, email: address, code: inviteCode, role: joinRole, name: person, childEmails,
-        });
-        toast.message(result === 'joined' ? 'Joined with the invite code.' : 'Request sent to the institution.');
+      if (!joinInstitution && !inviteCode.trim()) {
+        toast.message(SIGNUP_SCHOOL.independentNote);
         return;
       }
-      if (!joinInstitution) {
-        toast.message('No listed institution was selected, so this account stays independent.');
-        return;
-      }
-      await submitSelfJoin({
-        userId: uid, institutionId: joinInstitution, role: joinRole, name: person, email: address, childEmails,
+      const result = await authedFetch('/api/institutions/membership', {
+        method: 'POST',
+        body: JSON.stringify({
+          institutionId: joinInstitution,
+          role: joinRole,
+          name: person,
+          email: address,
+          inviteCode,
+        }),
       });
-      toast.message('Request sent. The institution admin assigns the level, classes, and courses.');
+      const status = typeof result.status === 'string' ? result.status : 'pending';
+      toast.message(status === 'approved' ? SIGNUP_SCHOOL.joinedCode : status === 'independent' ? SIGNUP_SCHOOL.independentNote : SIGNUP_SCHOOL.requestSent);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not send the join request.');
+      toast.error(error instanceof Error ? error.message : SIGNUP_SCHOOL.requestSent);
     }
   };
 
@@ -661,12 +652,10 @@ export default function SignupPage() {
               country={country}
               state={joinState}
               institutionId={joinInstitution}
-              institutions={listed}
               inviteCode={inviteCode}
               childEmails={childEmail}
               showChildren={false}
-              student={role === 'student'}
-              place={role !== 'student'}
+              role={role}
               onPath={setJoinPath}
               onCountry={setCountry}
               onState={setJoinState}

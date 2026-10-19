@@ -18,6 +18,16 @@ import {
   type Query,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { friendlyError } from '@/lib/design/system';
+
+/** Permission errors here mean the wall rules are not deployed yet. */
+export function wallNotice(error: unknown): string {
+  const raw = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  if (/permission-denied|PERMISSION_DENIED|insufficient permissions|Missing or insufficient/i.test(raw)) {
+    return 'The school wall is not available yet. Saved posts appear after the school turns on its records.';
+  }
+  return friendlyError(error);
+}
 import { uploadPreparedMedia } from '@/lib/media/upload';
 import { screenWallDraft, type Audience, type Reaction, type WallPost } from './model';
 import { checkWallImage, postFromStored, wallHandle, type StoredComment } from './live-shape';
@@ -75,8 +85,8 @@ export function watchWall(
         buckets.set(key, posts);
         emit();
       })
-      .catch((error: Error) => onError(error.message));
-  }, (error) => onError(error.message));
+      .catch((error: unknown) => onError(wallNotice(error)));
+  }, (error) => onError(wallNotice(error)));
 
   const stops = [
     listen('mine', query(collection(db, 'wall_posts'), where('authorId', '==', actor.uid), orderBy('createdAt', 'desc'), limit(40))),
@@ -124,8 +134,8 @@ export function watchHandle(
   return onSnapshot(view, (snap) => {
     Promise.all(snap.docs.map((row) => hydrate(row.id, row.data() as Record<string, unknown>, actor.uid)))
       .then(onPosts)
-      .catch((error: Error) => onError(error.message));
-  }, (error) => onError(error.message));
+      .catch((error: unknown) => onError(wallNotice(error)));
+  }, (error) => onError(wallNotice(error)));
 }
 
 export async function uploadWallPhoto(uid: string, file: File): Promise<string> {

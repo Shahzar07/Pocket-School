@@ -85,6 +85,9 @@ interface UserProfile {
   homeCountry?: string;
   /** Server-written verification tier. Clients cannot change it. */
   verification?: { tier: number; method: string; verifiedAt: number; verifiedBy: string };
+  membershipStatus?: 'pending' | 'approved' | 'rejected';
+  pendingInstitutionId?: string;
+  pendingInstitutionName?: string;
 }
 
 interface AuthState {

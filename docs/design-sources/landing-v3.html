@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Poket School — Learn Your Way. Go Further with AI. | IGCSE · A-Level · LLB · MBBS</title>
+<meta name="description" content="ET AI teaches to your learning style across IGCSE, A-Level, LLB Law, MBBS Medicine and Professional programmes. For independent learners in 20+ countries."/>
+<meta property="og:title" content="Poket School — Learn Your Way. Go Further with AI."/>
+<meta property="og:description" content="AI-powered independent learning for IGCSE, A-Level, LLB Law, MBBS Medicine and Professional programmes. ET AI adapts to how your brain works. Anywhere. Any time."/>
+<meta property="og:locale" content="en"/>
+<meta name="keywords" content="IGCSE, A-Level, Cambridge, Edexcel, Oxford AQA, LLB Law, University of London, MBBS Medicine, AI tutor, Multiple Intelligence, CEFR, Rochford's International School, Poket School, ET AI, Mandarin, French, German, Korean, Japanese"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0A0C14;
+  --white:#FFFFFF;
+  --surface:#F7F6F2;
+  --muted:#F0EEE9;
+  --border:#E4E0D6;
+  --soft:#8C8577;
+  --violet:#4B1FA8;
+  --violet-mid:#6B3FC8;
+  --violet-light:#EDE8FF;
+  --gold:#C8820A;
+  --gold-light:#FEF3DC;
+  --green:#0B6B3D;
+  --green-light:#E6F7EE;
+  --red:#C41C1C;
+  --teal:#0A7A70;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --serif:'DM Serif Display',Georgia,serif;
+  color-scheme:light;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#F0EEE9;
+    --white:#141620;
+    --surface:#1A1C28;
+    --muted:#232538;
+    --border:#2E3048;
+    --soft:#7A7A8C;
+    --violet-light:#2A1A4E;
+    --gold-light:#2A200A;
+    --green-light:#0A1F14;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#F0EEE9;
+  --white:#141620;
+  --surface:#1A1C28;
+  --muted:#232538;
+  --border:#2E3048;
+  --soft:#7A7A8C;
+  --violet-light:#2A1A4E;
+  --gold-light:#2A200A;
+  --green-light:#0A1F14;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{font-family:var(--sans);background:var(--white);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%;display:block}
+a{color:var(--violet);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+.wrap-narrow{max-width:720px;margin:0 auto;padding:0 24px}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:var(--white);border-bottom:1px solid var(--border);padding:0 24px}
+nav::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--white);z-index:101}
+.nav-inner{max-width:1100px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo{font-family:var(--serif);font-size:20px;color:var(--ink);font-weight:400}
+.nav-logo span{color:var(--violet)}
+.nav-links{display:flex;align-items:center;gap:24px;font-size:14px}
+.nav-links a{color:var(--soft);font-weight:500}
+.nav-links a:hover{color:var(--ink);text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:14px;font-weight:600;border-radius:10px;border:none;cursor:pointer;transition:opacity .15s,transform .1s;text-decoration:none;white-space:nowrap}
+.btn:hover{opacity:.88;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--violet);color:#fff;padding:10px 20px}
+.btn-outline{background:transparent;color:var(--ink);padding:9px 19px;border:1.5px solid var(--border)}
+.btn-lg{font-size:16px;padding:14px 28px;border-radius:12px}
+.btn-xl{font-size:17px;padding:16px 36px;border-radius:14px}
+.btn-white{background:#fff;color:var(--violet);padding:14px 28px;border-radius:12px;font-size:16px;font-weight:700}
+.btn-ghost-white{background:transparent;color:#fff;padding:13px 27px;border-radius:12px;font-size:16px;font-weight:600;border:1.5px solid rgba(255,255,255,.4)}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(160deg,#0D0824 0%,#1A0D42 45%,#0D1A3A 100%);padding:100px 24px 80px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(107,63,200,.35) 0%,transparent 70%);pointer-events:none}
+.hero-eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;color:rgba(255,255,255,.55);text-transform:uppercase;margin-bottom:20px}
+.hero h1{font-family:var(--serif);font-size:clamp(42px,7vw,80px);line-height:1.08;color:#fff;margin-bottom:20px;font-weight:400}
+.hero h1 em{font-style:italic;color:#C8A8FF}
+.hero-sub{font-size:clamp(16px,2.2vw,20px);color:rgba(255,255,255,.72);max-width:580px;margin:0 auto 12px;line-height:1.5}
+.hero-cred{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:40px}
+.hero-cred strong{color:rgba(255,255,255,.65)}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:60px}
+.hero-stats{display:flex;gap:0;justify-content:center;flex-wrap:wrap;border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;max-width:780px;margin:0 auto}
+.stat{flex:1;min-width:130px;padding:20px 16px;text-align:center;border-right:1px solid rgba(255,255,255,.1)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:var(--serif);font-size:28px;color:#fff;line-height:1}
+.stat-l{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;line-height:1.3}
+
+/* ── EXAM STRIP ── */
+.exam-strip{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px}
+.exam-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center}
+.exam-label{font-size:11px;font-weight:600;color:var(--soft);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.exam-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.chip{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--white);color:var(--ink)}
+.chip-cefr{background:var(--violet-light);border-color:transparent;color:var(--violet);font-weight:700}
+
+/* ── SECTION TITLES ── */
+.section{padding:90px 24px}
+.section-alt{background:var(--surface)}
+.section-dark{background:var(--ink);color:#fff}
+.s-tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--violet);background:var(--violet-light);padding:4px 12px;border-radius:20px;margin-bottom:16px}
+.s-tag-white{color:#C8A8FF;background:rgba(255,255,255,.08)}
+.s-title{font-family:var(--serif);font-size:clamp(28px,4.5vw,46px);line-height:1.1;margin-bottom:16px;font-weight:400}
+.s-body{font-size:17px;color:var(--soft);max-width:560px;line-height:1.65}
+.s-body-white{color:rgba(255,255,255,.65)}
+.text-center{text-align:center}
+.text-center .s-body{margin:0 auto}
+.s-divider{width:40px;height:3px;background:var(--violet);border-radius:2px;margin:20px 0}
+
+/* ── PROBLEM SECTION ── */
+.problem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:48px}
+.problem-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px 24px;display:flex;gap:16px;align-items:flex-start}
+.p-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--muted)}
+.p-problem{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.p-answer{font-size:13px;color:var(--soft);line-height:1.5}
+.p-answer strong{color:var(--violet);font-weight:600}
+
+/* ── COMPETENCY SECTION ── */
+.competency-path{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0;margin-top:40px}
+.cp-step{text-align:center;padding:20px 24px;background:var(--white);border:1px solid var(--border);border-radius:14px;min-width:160px;flex:1}
+.cp-icon{font-size:26px;margin-bottom:8px}
+.cp-label{font-size:13px;font-weight:600;color:var(--ink)}
+.cp-sub{font-size:12px;color:var(--soft);margin-top:4px}
+.cp-arrow{font-size:22px;color:var(--border);padding:0 8px;flex-shrink:0}
+
+/* ── TEACHER SECTION ── */
+.teacher-row{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-top:48px}
+.teacher-card{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:28px 24px;text-align:center;width:220px;flex-shrink:0}
+.teacher-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff}
+.teacher-name{font-size:15px;font-weight:700;color:var(--ink)}
+.teacher-levels{font-size:12px;color:var(--soft);margin-top:4px}
+.teacher-group{display:inline-block;margin-top:8px;font-size:11px;font-weight:600;padding:2px 10px;border-radius:10px}
+.meet-all{display:inline-flex;align-items:center;gap:6px;margin-top:32px;font-size:15px;font-weight:600;color:var(--violet)}
+
+/* ── AI STUDIO ── */
+.studio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:40px}
+.studio-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px}
+.studio-icon{font-size:28px;margin-bottom:12px}
+.studio-name{font-size:15px;font-weight:700;color:var(--ink)}
+.studio-desc{font-size:13px;color:var(--soft);margin-top:6px;line-height:1.5}
+
+/* ── MI SECTION ── */
+.mi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
+.mi-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
+.mi-icon{font-size:30px;margin-bottom:10px}
+.mi-name{font-size:13px;font-weight:700;color:var(--ink)}
+.mi-desc{font-size:12px;color:var(--soft);margin-top:4px;line-height:1.4}
+
+/* ── ACCOUNTABILITY ── */
+.accountability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.acc-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:28px}
+.acc-icon{font-size:32px;margin-bottom:14px}
+.acc-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.acc-desc{font-size:14px;color:var(--soft);line-height:1.6}
+
+/* ── DEGREE PROGRAMMES ── */
+.degree-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px}
+.degree-card{border-radius:18px;padding:36px;position:relative;overflow:hidden}
+.degree-card-llb{background:linear-gradient(135deg,#1A0D42 0%,#2D1875 100%);color:#fff}
+.degree-card-mbbs{background:linear-gradient(135deg,#0A1F14 0%,#0B4A2A 100%);color:#fff}
+.degree-badge{display:inline-block;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:16px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9)}
+.degree-title{font-family:var(--serif);font-size:28px;line-height:1.1;margin-bottom:12px}
+.degree-desc{font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:20px}
+.degree-modules{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:24px}
+.degree-module{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8)}
+.degree-price{font-size:13px;color:rgba(255,255,255,.5)}
+.degree-price strong{color:#fff;font-size:20px;font-weight:700}
+
+/* ── ID CARD ── */
+.id-section{background:linear-gradient(135deg,#0A0C14 0%,#1A1030 100%);padding:90px 24px;text-align:center}
+.id-card-demo{background:linear-gradient(135deg,#4B1FA8,#7C3AED);border-radius:20px;max-width:340px;margin:40px auto;padding:30px 28px;text-align:left;box-shadow:0 24px 80px rgba(75,31,168,.5)}
+.id-card-logo{font-family:var(--serif);font-size:16px;color:rgba(255,255,255,.6);margin-bottom:20px}
+.id-card-name{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.id-card-prog{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:20px}
+.id-card-row{display:flex;justify-content:space-between;align-items:flex-end}
+.id-card-id{font-size:12px;color:rgba(255,255,255,.5);font-family:monospace}
+.id-card-qr{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px}
+
+/* ── SAFELINE ── */
+.safeline-section{background:#C41C1C;padding:70px 24px;text-align:center;color:#fff}
+.safeline-number{font-family:var(--serif);font-size:clamp(36px,7vw,72px);color:#fff;margin:16px 0}
+.safeline-desc{font-size:17px;color:rgba(255,255,255,.8);max-width:540px;margin:0 auto 28px}
+
+/* ── POKETREADS ── */
+.reads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:40px}
+.reads-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px}
+.reads-icon{font-size:26px;margin-bottom:10px}
+.reads-title{font-size:14px;font-weight:700;color:var(--ink)}
+.reads-desc{font-size:13px;color:var(--soft);margin-top:5px;line-height:1.5}
+
+/* ── LANGUAGE SECTION ── */
+.lang-chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:32px}
+.lang-chip{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:30px;background:var(--white);border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--ink)}
+.lang-flag{font-size:20px}
+
+/* ── IDEAL FOR ── */
+.ideal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin-top:40px}
+.ideal-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px}
+.ideal-icon{font-size:28px;margin-bottom:12px}
+.ideal-title{font-size:15px;font-weight:700;color:var(--ink)}
+.ideal-desc{font-size:13px;color:var(--soft);margin-top:6px;line-height:1.5}
+
+/* ── LIFELONG STRIP ── */
+.lifelong-strip{background:var(--violet);padding:50px 24px;text-align:center}
+.lifelong-path{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0;margin-top:24px}
+.lp-step{color:#fff;font-size:14px;font-weight:500;padding:10px 16px;text-align:center}
+.lp-arrow{color:rgba(255,255,255,.4);font-size:18px;padding:0 4px}
+
+/* ── INSTITUTIONS ── */
+.inst-section{background:#0A0C14;padding:90px 24px}
+.inst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:40px}
+.inst-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:24px}
+.inst-icon{font-size:26px;margin-bottom:12px}
+.inst-title{font-size:14px;font-weight:700;color:#fff}
+.inst-desc{font-size:13px;color:rgba(255,255,255,.55);margin-top:5px;line-height:1.5}
+
+/* ── ROCHFORDS ── */
+.rochfords-section{background:var(--surface);padding:80px 24px;text-align:center}
+.rochfords-badge{display:inline-block;font-size:12px;font-weight:600;padding:6px 16px;border-radius:20px;background:var(--gold-light);color:var(--gold);border:1px solid rgba(200,130,10,.2);margin-bottom:20px}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:48px}
+.price-card{background:var(--white);border:2px solid var(--border);border-radius:18px;padding:28px 22px;position:relative}
+.price-card-featured{border-color:var(--violet);box-shadow:0 0 0 4px var(--violet-light)}
+.price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--violet);color:#fff;font-size:11px;font-weight:700;padding:3px 14px;border-radius:20px;white-space:nowrap}
+.price-name{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.price-amount{font-family:var(--serif);font-size:36px;color:var(--ink);line-height:1}
+.price-period{font-size:13px;color:var(--soft)}
+.price-annual{font-size:12px;color:var(--green);font-weight:600;margin-top:4px}
+.price-desc{font-size:12px;color:var(--soft);margin-top:14px;line-height:1.5;border-top:1px solid var(--border);padding-top:14px}
+
+/* ── FAQ ── */
+.faq-list{margin-top:40px;max-width:720px;margin-left:auto;margin-right:auto}
+.faq-item{border-bottom:1px solid var(--border);padding:20px 0}
+.faq-q{font-size:16px;font-weight:600;color:var(--ink);cursor:pointer}
+.faq-a{font-size:15px;color:var(--soft);margin-top:10px;line-height:1.65}
+
+/* ── CTA FINAL ── */
+.cta-final{background:linear-gradient(160deg,#0D0824 0%,#1A0D42 100%);padding:100px 24px;text-align:center}
+
+/* ── FOOTER ── */
+footer{background:var(--ink);color:rgba(255,255,255,.5);font-size:13px;padding:48px 24px 40px}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;gap:40px;flex-wrap:wrap;justify-content:space-between}
+.footer-brand{font-family:var(--serif);font-size:20px;color:#fff;margin-bottom:8px}
+.footer-tagline{font-size:13px;color:rgba(255,255,255,.4);max-width:300px;line-height:1.5}
+.footer-col h4{color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-bottom:12px}
+.footer-col a{display:block;color:rgba(255,255,255,.45);font-size:13px;margin-bottom:8px}
+.footer-col a:hover{color:rgba(255,255,255,.8);text-decoration:none}
+.footer-bottom{max-width:1100px;margin:40px auto 0;padding-top:24px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.3)}
+
+/* ── UTIL ── */
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}.mt32{margin-top:32px}.mt48{margin-top:48px}
+.coming-soon{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--gold-light);color:var(--gold);vertical-align:middle;margin-left:6px}
+
+@media(max-width:768px){
+  .hero{padding:80px 20px 60px}
+  .hero-stats{flex-direction:column;gap:0}
+  .stat{border-right:none;border-bottom:1px solid rgba(255,255,255,.1)}
+  .stat:last-child{border-bottom:none}
+  .mi-grid{grid-template-columns:repeat(2,1fr)}
+  .accountability-grid{grid-template-columns:1fr}
+  .degree-grid{grid-template-columns:1fr}
+  .teacher-row{gap:14px}
+  .teacher-card{width:160px;padding:20px 16px}
+  .competency-path{flex-direction:column;align-items:stretch}
+  .cp-arrow{transform:rotate(90deg);align-self:center}
+  .footer-inner{flex-direction:column;gap:32px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">Poket<span>School</span></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#institutions">Institutions</a>
+      <a href="/ai-teachers">ET AI Teachers</a>
+      <a class="btn btn-primary" href="/signup">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-eyebrow">The lifelong learning platform</div>
+    <h1>Learn your way.<br><em>Go further with AI.</em></h1>
+    <p class="hero-sub">Named ET AI teachers, AI Studio, and the records a school keeps — goals, attendance, and report cards — on one login.</p>
+    <p class="hero-cred">Built with <strong>Rochford's International School, Ipoh.</strong></p>
+    <div class="hero-btns">
+      <a class="btn btn-white btn-lg" href="/signup">Start free</a>
+      <a class="btn btn-ghost-white btn-lg" href="/institutions/register">For Schools &amp; Organisations</a>
+      <a class="btn btn-ghost-white btn-lg" href="/demo">Book a demo</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-n">20+</div><div class="stat-l">Countries</div></div>
+      <div class="stat"><div class="stat-n">Primary → Degree</div><div class="stat-l">Every level covered</div></div>
+      <div class="stat"><div class="stat-n">30+</div><div class="stat-l">ET AI teachers · 24/7</div></div>
+      <div class="stat"><div class="stat-n">11</div><div class="stat-l">Learning formats</div></div>
+      <div class="stat"><div class="stat-n">8</div><div class="stat-l">Intelligence types</div></div>
+      <div class="stat"><div class="stat-n">53</div><div class="stat-l">Languages</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- EXAM BODY STRIP -->
+<div class="exam-strip">
+  <div class="exam-inner">
+    <span class="exam-label">Aligned with</span>
+    <div class="exam-chips">
+      <span class="chip">Cambridge International (CAIE)</span>
+      <span class="chip">Pearson Edexcel</span>
+      <span class="chip">Oxford AQA</span>
+      <span class="chip">University of London · LLB</span>
+      <span class="chip chip-cefr">CEFR A1–C2 · Languages</span>
+      <span class="chip">And many more worldwide</span>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEMS WE SOLVE -->
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">We solve this</span>
+      <h2 class="s-title">The problems every student, parent<br>and school faces. Solved.</h2>
+      <p class="s-body">No invented statistics. No empty promises. Real tools for real problems — from exam prep to parent accountability to keeping students safe.</p>
+    </div>
+    <div class="problem-grid mt48">
+      <div class="problem-card"><div class="p-icon">📚</div><div><div class="p-problem">Expensive tuition with no help after school</div><div class="p-answer"><strong>ET AI teachers</strong> — 24/7. No tuition centre required.</div></div></div>
+      <div class="problem-card"><div class="p-icon">👀</div><div><div class="p-problem">Parents in the dark about progress</div><div class="p-answer"><strong>Live goals, attendance and report cards</strong> — parent dashboard, always updated.</div></div></div>
+      <div class="problem-card"><div class="p-icon">⏰</div><div><div class="p-problem">Procrastination and last-minute cramming</div><div class="p-answer"><strong>Active-time tracking, focus timer</strong> and the ET AI planner.</div></div></div>
+      <div class="problem-card"><div class="p-icon">📉</div><div><div class="p-problem">Learning gaps that snowball</div><div class="p-answer"><strong>Automatic catch-up goals</strong> set when a student falls behind.</div></div></div>
+      <div class="problem-card"><div class="p-icon">🛡️</div><div><div class="p-problem">Bullying with no safe way to report</div><div class="p-answer"><strong>Poket SafeLine</strong> — anonymous reporting. Alerts go to the right people.</div></div></div>
+      <div class="problem-card"><div class="p-icon">📱</div><div><div class="p-problem">Too many apps and too many logins</div><div class="p-answer"><strong>One login</strong> for student, parent and teacher.</div></div></div>
+      <div class="problem-card"><div class="p-icon">🔥</div><div><div class="p-problem">No motivation to keep going</div><div class="p-answer"><strong>Sparks rewards and daily streaks</strong> keep students coming back.</div></div></div>
+      <div class="problem-card"><div class="p-icon">🏅</div><div><div class="p-problem">No proof of skills or achievement</div><div class="p-answer"><strong>Verified certificates</strong> and a free digital student ID card.</div></div></div>
+      <div class="problem-card"><div class="p-icon">📖</div><div><div class="p-problem">No reading habit or reading culture</div><div class="p-answer"><strong>PoketReads</strong> — daily reading goals, matched books, ET AI book chats.</div></div></div>
+      <div class="problem-card"><div class="p-icon">🌍</div><div><div class="p-problem">Learning in a language that is not yours</div><div class="p-answer"><strong>53 languages</strong> — ET AI explains and gives feedback in the student's own language.</div></div></div>
+      <div class="problem-card"><div class="p-icon">👩‍🏫</div><div><div class="p-problem">Teacher turnover disrupting students</div><div class="p-answer"><strong>Gradebook, courses and ET AI teachers stay</strong> when staff leave.</div></div></div>
+      <div class="problem-card"><div class="p-icon">🔬</div><div><div class="p-problem">Missing subject specialists at your school</div><div class="p-answer"><strong>ET AI subject teachers</strong> fill every specialist gap, every subject.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PERSONALISED BY COMPETENCY -->
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">Self-paced mastery</span>
+      <h2 class="s-title">Personalised by competency,<br>not by age.</h2>
+      <p class="s-body">Students move on when they have mastered a topic — not when the calendar says so. Race ahead or take extra time. Your pace. Your next chapter.</p>
+    </div>
+    <div class="competency-path mt48">
+      <div class="cp-step"><div class="cp-icon">🎯</div><div class="cp-label">Placement test</div><div class="cp-sub">Sets your starting point</div></div>
+      <div class="cp-arrow">→</div>
+      <div class="cp-step"><div class="cp-icon">📘</div><div class="cp-label">Learn at your pace</div><div class="cp-sub">Race ahead or take more time</div></div>
+      <div class="cp-arrow">→</div>
+      <div class="cp-step"><div class="cp-icon">✅</div><div class="cp-label">Mastery check</div><div class="cp-sub">Pass before moving on</div></div>
+      <div class="cp-arrow">→</div>
+      <div class="cp-step"><div class="cp-icon">🚀</div><div class="cp-label">Next unit unlocks</div><div class="cp-sub">Build on what you know</div></div>
+      <div class="cp-arrow">→</div>
+      <div class="cp-step"><div class="cp-icon">🏆</div><div class="cp-label">Verified certificate</div><div class="cp-sub">Proof you mastered it</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ET AI TEACHERS -->
+<section class="section">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">ET AI Teachers</span>
+      <h2 class="s-title">Your personal subject specialist.<br>Available always.</h2>
+      <p class="s-body">Not a generic chatbot. Every ET AI teacher is a named specialist — built for one subject, trained to explain it the way your brain works.</p>
+    </div>
+    <div class="teacher-row">
+      <div class="teacher-card">
+        <div class="teacher-avatar" style="background:linear-gradient(135deg,#4B1FA8,#7C3AED)">🔬</div>
+        <div class="teacher-name">ET Biology</div>
+        <div class="teacher-levels">IGCSE · A-Level · MBBS</div>
+        <span class="teacher-group" style="background:#E6F7EE;color:#0B6B3D">Sciences</span>
+      </div>
+      <div class="teacher-card">
+        <div class="teacher-avatar" style="background:linear-gradient(135deg,#1D4ED8,#3B82F6)">📐</div>
+        <div class="teacher-name">ET Maths</div>
+        <div class="teacher-levels">Primary → A-Level · Independent</div>
+        <span class="teacher-group" style="background:#EFF6FF;color:#1D4ED8">Maths &amp; Computing</span>
+      </div>
+      <div class="teacher-card">
+        <div class="teacher-avatar" style="background:linear-gradient(135deg,#B45309,#D97706)">🌍</div>
+        <div class="teacher-name">ET Mandarin</div>
+        <div class="teacher-levels">All levels · CEFR A1–C2</div>
+        <span class="teacher-group" style="background:#FEF3C7;color:#B45309">Languages</span>
+      </div>
+      <div class="teacher-card">
+        <div class="teacher-avatar" style="background:linear-gradient(135deg,#4C1D95,#6D28D9)">⚖️</div>
+        <div class="teacher-name">ET Law</div>
+        <div class="teacher-levels">A-Level · LLB Degree</div>
+        <span class="teacher-group" style="background:#FAF5FF;color:#4C1D95">Law</span>
+      </div>
+      <div class="teacher-card">
+        <div class="teacher-avatar" style="background:linear-gradient(135deg,#9F1239,#DC2626)">🏥</div>
+        <div class="teacher-name">ET Medicine</div>
+        <div class="teacher-levels">MBBS · Pre-Med · Degree</div>
+        <span class="teacher-group" style="background:#FFF1F2;color:#9F1239">Medicine</span>
+      </div>
+    </div>
+    <div class="text-center mt32">
+      <a class="meet-all" href="/ai-teachers">Meet all 30+ ET AI teachers →</a>
+    </div>
+  </div>
+</section>
+
+<!-- AI STUDIO -->
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">ET AI Studio</span>
+      <h2 class="s-title">Your AI workspace.<br>One place for everything.</h2>
+      <p class="s-body">ET Maths. ET Essays. ET Exams. Creator Store. Book Studio. PoketReads. Everything a student needs to learn, create, and prepare — in one place.</p>
+    </div>
+    <div class="studio-grid">
+      <div class="studio-card"><div class="studio-icon">🔢</div><div class="studio-name">ET Maths</div><div class="studio-desc">Stuck on a problem? Snap it. ET solves it step-by-step and explains every line.</div></div>
+      <div class="studio-card"><div class="studio-icon">✍️</div><div class="studio-name">ET Essays</div><div class="studio-desc">Plan, draft, and refine essays with ET AI. Get feedback that actually teaches.</div></div>
+      <div class="studio-card"><div class="studio-icon">📝</div><div class="studio-name">ET Exams</div><div class="studio-desc">Past-paper style questions with instant marking and step-by-step model answers.</div></div>
+      <div class="studio-card"><div class="studio-icon">🏪</div><div class="studio-name">Creator Store</div><div class="studio-desc">Build and sell your own study resources. Notes, flashcards, revision packs.</div></div>
+      <div class="studio-card"><div class="studio-icon">📚</div><div class="studio-name">PoketReads</div><div class="studio-desc">Daily reading goals, books matched to your level, ET AI book chats and reading logs.</div></div>
+      <div class="studio-card"><div class="studio-icon">📖</div><div class="studio-name">Book Studio</div><div class="studio-desc">Students write and publish their own books. Reading culture starts here.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW STUDENTS LEARN — MI + BLOOMS -->
+<section class="section">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">How students learn</span>
+      <h2 class="s-title">8 intelligence types.<br>11 learning formats. One platform.</h2>
+      <p class="s-body">Built on Howard Gardner's Multiple Intelligence framework. ET AI identifies how your brain works best and teaches you that way.</p>
+    </div>
+    <div class="mi-grid mt48">
+      <div class="mi-card"><div class="mi-icon">📖</div><div class="mi-name">Linguistic</div><div class="mi-desc">Words, reading, writing, storytelling</div></div>
+      <div class="mi-card"><div class="mi-icon">🔢</div><div class="mi-name">Logical</div><div class="mi-desc">Numbers, reasoning, problem solving</div></div>
+      <div class="mi-card"><div class="mi-icon">🎵</div><div class="mi-name">Musical</div><div class="mi-desc">Rhythm, tone, patterns in sound</div></div>
+      <div class="mi-card"><div class="mi-icon">🤸</div><div class="mi-name">Kinaesthetic</div><div class="mi-desc">Movement, hands-on, doing</div></div>
+      <div class="mi-card"><div class="mi-icon">🗺️</div><div class="mi-name">Spatial</div><div class="mi-desc">Visuals, maps, diagrams, design</div></div>
+      <div class="mi-card"><div class="mi-icon">🌿</div><div class="mi-name">Naturalist</div><div class="mi-desc">Nature, patterns, classification</div></div>
+      <div class="mi-card"><div class="mi-icon">🤝</div><div class="mi-name">Interpersonal</div><div class="mi-desc">People, empathy, collaboration</div></div>
+      <div class="mi-card"><div class="mi-icon">🧘</div><div class="mi-name">Intrapersonal</div><div class="mi-desc">Self-awareness, reflection, goals</div></div>
+    </div>
+    <div class="text-center mt32">
+      <p style="font-size:14px;color:var(--soft)">Bloom's Taxonomy mastery levels track progress from recall through to creation. Learning behaviour reports show how each student learns best.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ACCOUNTABILITY -->
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">Parents and teachers</span>
+      <h2 class="s-title">Full accountability.<br>Everyone on the same page.</h2>
+      <p class="s-body">Parents and teachers see goals, attendance and report cards in real time. Alerts when a student falls behind. Encouragement when they do well.</p>
+    </div>
+    <div class="accountability-grid mt48">
+      <div class="acc-card"><div class="acc-icon">📊</div><div class="acc-title">Live parent dashboard</div><div class="acc-desc">Daily activity, goals, attendance and report cards. Always up to date. No waiting for the end of term.</div></div>
+      <div class="acc-card"><div class="acc-icon">🔔</div><div class="acc-title">Goal alerts</div><div class="acc-desc">When a student misses a goal or falls behind, parents and teachers get an alert automatically. No manual chasing.</div></div>
+      <div class="acc-card"><div class="acc-icon">⭐</div><div class="acc-title">Encouragement Sparks</div><div class="acc-desc">Parents can send Sparks — reward points — directly to a student's account to recognise effort and progress.</div></div>
+      <div class="acc-card"><div class="acc-icon">📋</div><div class="acc-title">Teacher gradebook</div><div class="acc-desc">Gradebook, classes, and report cards stay in the system — even when a teacher leaves. No loss of records.</div></div>
+      <div class="acc-card"><div class="acc-icon">📅</div><div class="acc-title">Attendance tracking</div><div class="acc-desc">Automatic attendance records per subject and per session. One less thing for teachers to do manually.</div></div>
+      <div class="acc-card"><div class="acc-icon">📑</div><div class="acc-title">Bulk report cards</div><div class="acc-desc">Generate report cards for the whole class in one action. AI-assisted marking reduces marking load significantly.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEGREE PROGRAMMES -->
+<section class="section">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">Degree programmes</span>
+      <h2 class="s-title">LLB Law and MBBS Medicine.<br>Degree-level AI support.</h2>
+      <p class="s-body">The only AI learning platform that covers IGCSE, A-Level, and full degree programmes on a single account.</p>
+    </div>
+    <div class="degree-grid mt48">
+      <div class="degree-card degree-card-llb">
+        <div class="degree-badge">University of London · External LLB</div>
+        <div class="degree-title">LLB Law</div>
+        <p class="degree-desc">All 12 LLB Law modules. Real decided case law. ET Law explains doctrine, ratio decidendi, and exam application — the way a law tutor would.</p>
+        <div class="degree-modules">
+          <span class="degree-module">Contract Law</span><span class="degree-module">Tort Law</span><span class="degree-module">Criminal Law</span><span class="degree-module">Public Law</span><span class="degree-module">Land Law</span><span class="degree-module">Equity &amp; Trusts</span><span class="degree-module">Company Law</span><span class="degree-module">Jurisprudence</span><span class="degree-module">Evidence</span><span class="degree-module">Family Law</span><span class="degree-module">Commercial Law</span><span class="degree-module">International Law</span>
+        </div>
+        <div class="degree-price">From <strong>$99</strong>/month</div>
+      </div>
+      <div class="degree-card degree-card-mbbs">
+        <div class="degree-badge">MBBS · Pre-Clinical and Clinical</div>
+        <div class="degree-title">MBBS Medicine</div>
+        <p class="degree-desc">Phase 1 pre-clinical sciences and Phase 2 clinical rotations. ET Medicine explains anatomy, pharmacology, clinical reasoning and more — the way a medical tutor would.</p>
+        <div class="degree-modules">
+          <span class="degree-module">Anatomy</span><span class="degree-module">Physiology</span><span class="degree-module">Biochemistry</span><span class="degree-module">Pharmacology</span><span class="degree-module">Pathology</span><span class="degree-module">Clinical Reasoning</span><span class="degree-module">Internal Medicine</span><span class="degree-module">Surgery</span><span class="degree-module">O&amp;G</span><span class="degree-module">Paediatrics</span><span class="degree-module">Psychiatry</span><span class="degree-module">Community Medicine</span>
+        </div>
+        <div class="degree-price">From <strong>$99</strong>/month</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STUDENT ID CARD -->
+<section class="id-section">
+  <div class="wrap">
+    <span class="s-tag s-tag-white">Free with every account</span>
+    <h2 class="s-title" style="color:#fff;margin-top:12px">Your student digital ID card.<br>No application needed.</h2>
+    <p class="s-body s-body-white text-center" style="margin:0 auto">Every student on Poket School gets a free digital ID card. Shows your name, programme, and level. Verified QR code. Works at libraries and partner institutions.</p>
+    <div class="id-card-demo">
+      <div class="id-card-logo">Poket School</div>
+      <div class="id-card-name">Student Name</div>
+      <div class="id-card-prog">IGCSE · Year 10 · Rochford's International School</div>
+      <div class="id-card-row">
+        <div class="id-card-id">PS-2026-XXXX</div>
+        <div class="id-card-qr">◼</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAFELINE — EXPANDED -->
+<section style="background:#0D0F1A;padding:100px 24px 0;color:#fff">
+  <div class="wrap text-center">
+    <span class="s-tag" style="background:rgba(196,28,28,.25);color:#FF8080;border:1px solid rgba(196,28,28,.3)">🛡️ Poket SafeLine</span>
+    <h2 style="font-family:var(--serif);font-size:clamp(32px,5vw,54px);line-height:1.08;margin:16px 0;color:#fff;font-weight:400">Every student deserves<br>to feel safe at school.</h2>
+    <p style="font-size:18px;color:rgba(255,255,255,.6);max-width:580px;margin:0 auto 60px;line-height:1.6">Schools have duty-of-care obligations. Parents want to know their child is safe. Students need somewhere to turn. Poket SafeLine closes the gap — built directly into the platform, always on, always anonymous.</p>
+  </div>
+</section>
+
+<section style="background:#0D0F1A;padding:0 24px 30px">
+  <div class="wrap">
+    <!-- WHO NEEDS IT -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:60px">
+      <!-- STUDENTS -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px">
+        <div style="font-size:32px;margin-bottom:14px">🧒</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:10px">For students</div>
+        <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:16px">Many students are afraid to speak up — afraid of being labelled a troublemaker, afraid of retaliation, or simply not knowing who to tell. SafeLine removes every barrier.</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Report anonymously — no name required</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Available 24/7 — not just during school hours</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Report bullying, harassment, threats, unsafe situations</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Report a concern about another student</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>No judgement. No consequence for reporting.</li>
+        </ul>
+      </div>
+
+      <!-- PARENTS -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px">
+        <div style="font-size:32px;margin-bottom:14px">👨‍👩‍👧</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:10px">For parents</div>
+        <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:16px">Parents often find out about bullying weeks or months after it started — or never at all. SafeLine gives parents a direct line into the institution when their child feels unable to speak.</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Parents can raise a concern on behalf of their child</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Receive alerts when a report involves your child</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Know that there is a system in place — not just a suggestion box</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>See that the school takes welfare seriously</li>
+        </ul>
+      </div>
+
+      <!-- TEACHERS -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px">
+        <div style="font-size:32px;margin-bottom:14px">👩‍🏫</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:10px">For teachers</div>
+        <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:16px">Teachers cannot be everywhere. Many incidents happen outside school hours, online, or in spaces teachers cannot see. SafeLine extends the teacher's reach without adding to their workload.</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Alerts delivered to the right staff member automatically</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Clear audit trail — every report is logged and timestamped</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>No guesswork — teachers know what was reported and when</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Supports duty-of-care documentation</li>
+        </ul>
+      </div>
+
+      <!-- SCHOOLS -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px">
+        <div style="font-size:32px;margin-bottom:14px">🏫</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:10px">For schools</div>
+        <p style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:16px">Schools have a legal and moral duty of care. When an incident goes unreported and something happens, the institution is exposed. SafeLine gives schools a system they can point to — and a record to rely on.</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Built-in duty-of-care infrastructure</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Full audit log — who reported, when, what action was taken</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Designate which staff receive which alert types</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>Demonstrate to parents and regulators that welfare is taken seriously</li>
+          <li style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;align-items:flex-start"><span style="color:#FF8080;flex-shrink:0">✓</span>No additional software or integration required</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- WHAT CAN BE REPORTED -->
+    <div style="background:rgba(196,28,28,.1);border:1px solid rgba(196,28,28,.25);border-radius:18px;padding:40px 36px;margin-bottom:60px">
+      <div style="font-size:14px;font-weight:700;color:#FF8080;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px">What can be reported</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">Bullying — verbal, physical, or online</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">Cyberbullying and online harassment</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">Threats or intimidation</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">Discrimination or exclusion</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">A student who seems distressed or at risk</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">An unsafe situation on or off campus</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">Concern about a peer's wellbeing</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#FF8080;font-size:16px;flex-shrink:0">•</span><span style="font-size:13px;color:rgba(255,255,255,.7)">Anything that does not feel right</span></div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div style="text-align:center;margin-bottom:48px">
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.07em;text-transform:uppercase;margin-bottom:24px">How it works</div>
+      <div style="display:flex;align-items:flex-start;justify-content:center;flex-wrap:wrap;gap:0;max-width:800px;margin:0 auto">
+        <div style="flex:1;min-width:150px;text-align:center;padding:16px">
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(196,28,28,.3);border:1px solid rgba(196,28,28,.4);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 12px">1</div>
+          <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:6px">Student or parent reports</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5">Anonymously inside the platform. No login required to report.</div>
+        </div>
+        <div style="color:rgba(255,255,255,.2);font-size:22px;padding:28px 4px 0">→</div>
+        <div style="flex:1;min-width:150px;text-align:center;padding:16px">
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(196,28,28,.3);border:1px solid rgba(196,28,28,.4);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 12px">2</div>
+          <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:6px">Alert sent immediately</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5">The right staff member is notified instantly. Every report is logged and timestamped.</div>
+        </div>
+        <div style="color:rgba(255,255,255,.2);font-size:22px;padding:28px 4px 0">→</div>
+        <div style="flex:1;min-width:150px;text-align:center;padding:16px">
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(196,28,28,.3);border:1px solid rgba(196,28,28,.4);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 12px">3</div>
+          <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:6px">School acts and records</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5">Staff respond, document action taken, and maintain a full audit trail.</div>
+        </div>
+        <div style="color:rgba(255,255,255,.2);font-size:22px;padding:28px 4px 0">→</div>
+        <div style="flex:1;min-width:150px;text-align:center;padding:16px">
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(196,28,28,.3);border:1px solid rgba(196,28,28,.4);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 12px">4</div>
+          <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:6px">Student stays safe</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5">The reporter remains anonymous throughout. No retaliation risk.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;padding-bottom:90px">
+      <a class="btn btn-white btn-xl" href="/safeline" style="margin-right:12px">Learn about SafeLine</a>
+      <a class="btn btn-ghost-white btn-xl" href="/institutions/register">Add SafeLine to your school</a>
+    </div>
+  </div>
+</section>
+
+<!-- POKETREADS -->
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">PoketReads</span>
+      <h2 class="s-title">Build a reading habit.<br>Build a reading culture.</h2>
+      <p class="s-body">PoketReads is not just a library. It is a daily reading routine, a community, and a place where students become writers too.</p>
+    </div>
+    <div class="reads-grid mt48">
+      <div class="reads-card"><div class="reads-icon">📅</div><div class="reads-title">Daily reading goals and streaks</div><div class="reads-desc">Students set a daily reading goal and track it. Streaks motivate consistency.</div></div>
+      <div class="reads-card"><div class="reads-icon">📗</div><div class="reads-title">Books matched to your level</div><div class="reads-desc">ET AI recommends books based on reading level and interests.</div></div>
+      <div class="reads-card"><div class="reads-icon">💬</div><div class="reads-title">ET AI book chats</div><div class="reads-desc">Chat with ET about any book — summarise, analyse, discuss themes.</div></div>
+      <div class="reads-card"><div class="reads-icon">👨‍👩‍👧</div><div class="reads-title">Parent and teacher reading logs</div><div class="reads-desc">Parents and teachers see what students are reading, how long, and how far they have got.</div></div>
+      <div class="reads-card"><div class="reads-icon">🏆</div><div class="reads-title">Class reading challenges</div><div class="reads-desc">Schools set class-wide reading goals and celebrate when students hit them together.</div></div>
+      <div class="reads-card"><div class="reads-icon">✏️</div><div class="reads-title">Book Studio</div><div class="reads-desc">Students write and publish their own books. Reading culture starts with student authors.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- LEARN IN YOUR LANGUAGE -->
+<section class="section" style="text-align:center">
+  <div class="wrap">
+    <span class="s-tag">Learn in your language</span>
+    <h2 class="s-title">53 languages.<br>No student left behind.</h2>
+    <p class="s-body" style="margin:0 auto">ET AI explains, gives feedback, and answers questions in the student's own language. Parents read reports and alerts in theirs. Right-to-left languages fully supported.</p>
+    <div class="lang-chips mt48">
+      <span class="lang-chip"><span class="lang-flag">🇲🇾</span>Malay</span>
+      <span class="lang-chip"><span class="lang-flag">🇨🇳</span>Mandarin</span>
+      <span class="lang-chip"><span class="lang-flag">🇫🇷</span>French</span>
+      <span class="lang-chip"><span class="lang-flag">🇩🇪</span>German</span>
+      <span class="lang-chip"><span class="lang-flag">🇯🇵</span>Japanese</span>
+      <span class="lang-chip"><span class="lang-flag">🇰🇷</span>Korean</span>
+      <span class="lang-chip"><span class="lang-flag">🇷🇺</span>Russian</span>
+      <span class="lang-chip"><span class="lang-flag">🇸🇦</span>Arabic ·  RTL</span>
+      <span class="lang-chip"><span class="lang-flag">🇮🇷</span>Persian · RTL</span>
+      <span class="lang-chip"><span class="lang-flag">🌍</span>+44 more</span>
+    </div>
+    <p class="mt24" style="font-size:13px;color:var(--soft)">Read-aloud in every language <span class="coming-soon">Coming soon</span></p>
+  </div>
+</section>
+
+<!-- LIFELONG STRIP -->
+<div class="lifelong-strip">
+  <div class="wrap text-center">
+    <p style="font-size:12px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.6);text-transform:uppercase;margin-bottom:10px">One account. One record. One ID. For life.</p>
+    <div class="lifelong-path">
+      <div class="lp-step">Primary</div><div class="lp-arrow">→</div>
+      <div class="lp-step">IGCSE &amp; A-Level</div><div class="lp-arrow">→</div>
+      <div class="lp-step">College &amp; University</div><div class="lp-arrow">→</div>
+      <div class="lp-step">Careers &amp; Alumni</div><div class="lp-arrow">→</div>
+      <div class="lp-step">Workplace training</div>
+    </div>
+  </div>
+</div>
+
+<!-- IDEAL FOR -->
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">Who it is for</span>
+      <h2 class="s-title">Built for every kind<br>of learner and institution.</h2>
+    </div>
+    <div class="ideal-grid mt48">
+      <div class="ideal-card"><div class="ideal-icon">🏫</div><div class="ideal-title">International schools</div><div class="ideal-desc">IGCSE and A-Level delivery with ET AI subject specialists, parent dashboards and school records.</div></div>
+      <div class="ideal-card"><div class="ideal-icon">🎓</div><div class="ideal-title">Private academies</div><div class="ideal-desc">Supplement classroom teaching with 30+ ET AI teachers available 24/7.</div></div>
+      <div class="ideal-card"><div class="ideal-icon">🏠</div><div class="ideal-title">Homeschoolers</div><div class="ideal-desc">Full curriculum with goals, attendance and report cards. Structure without a physical school.</div></div>
+      <div class="ideal-card"><div class="ideal-icon">🧑‍💻</div><div class="ideal-title">Independent learners</div><div class="ideal-desc">Learn any subject at any level at your own pace. From Primary to degree.</div></div>
+      <div class="ideal-card"><div class="ideal-icon">🏛️</div><div class="ideal-title">Colleges and universities</div><div class="ideal-desc">Degree-level ET AI tutors, early-warning system, career hub, verified CV, white-label branding.</div></div>
+      <div class="ideal-card"><div class="ideal-icon">🏢</div><div class="ideal-title">Corporations</div><div class="ideal-desc">Staff training, upskilling, CPD certificates and your own branded learning environment.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROCHFORDS -->
+<section class="rochfords-section">
+  <div class="wrap-narrow">
+    <div class="rochfords-badge">Trusted by a real school</div>
+    <h2 class="s-title mt16">Built with Rochford's<br>International School, Ipoh.</h2>
+    <p class="s-body" style="margin:16px auto 0;text-align:center">Rochford's Education Group is a MOE Malaysia licensed private education provider offering IGCSE qualifications through a mastery-based, modular model across campuses in Ipoh, Cameron Highlands, and Kuala Lumpur. Poket School was built alongside real students and teachers — not in a lab.</p>
+  </div>
+</section>
+
+<!-- INSTITUTIONS AND OEM -->
+<section class="inst-section" id="institutions">
+  <div class="wrap">
+    <span class="s-tag s-tag-white">Institutions and OEM</span>
+    <h2 class="s-title mt16" style="color:#fff">Your platform.<br>Your brand.<br>Powered by Poket School.</h2>
+    <p class="s-body s-body-white mt16">White-label the entire platform with your institution's name, logo, and colours. Your students never see Poket School — they see you.</p>
+    <div class="inst-grid">
+      <div class="inst-card"><div class="inst-icon">🏷️</div><div class="inst-title">White-label branding</div><div class="inst-desc">Your name, logo and colours across every screen students and parents see.</div></div>
+      <div class="inst-card"><div class="inst-icon">📊</div><div class="inst-title">Institution analytics</div><div class="inst-desc">Whole-school dashboards. Attendance, progress, and goal completion across all students.</div></div>
+      <div class="inst-card"><div class="inst-icon">📚</div><div class="inst-title">Custom curriculum mapping</div><div class="inst-desc">Map Poket School content to your specific programme, schedule and assessment calendar.</div></div>
+      <div class="inst-card"><div class="inst-icon">🤝</div><div class="inst-title">Dedicated onboarding</div><div class="inst-desc">A dedicated team helps your staff, students and parents get started and stay supported.</div></div>
+    </div>
+    <div class="mt48 text-center">
+      <p style="font-size:14px;color:rgba(255,255,255,.5);margin-bottom:16px">Custom pricing for institutions · Bulk licensing available</p>
+      <a class="btn btn-white btn-xl" href="mailto:institutions@poketschool.ai">Contact institutions@poketschool.ai</a>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">Pricing</span>
+      <h2 class="s-title">One flat price.<br>Same everywhere in the world.</h2>
+      <p class="s-body">No regional pricing. No hidden fees. Save 25% when you pay annually.</p>
+    </div>
+    <div class="pricing-grid mt48">
+      <div class="price-card">
+        <div class="price-name">Free Preview</div>
+        <div class="price-amount">$0</div>
+        <div class="price-period">forever</div>
+        <div class="price-desc">Browse the full course catalogue. First lesson of any course. Verify any certificate.</div>
+        <a class="btn btn-outline btn-lg" href="/signup" style="width:100%;margin-top:20px">Start free</a>
+      </div>
+      <div class="price-card">
+        <div class="price-name">Primary</div>
+        <div class="price-amount">$49</div>
+        <div class="price-period">/month</div>
+        <div class="price-annual">$36.75/month billed annually</div>
+        <div class="price-desc">Years 1–5. Primary programme. ET AI teachers. ET AI Studio. Parent dashboard.</div>
+        <a class="btn btn-outline btn-lg" href="/signup?plan=primary" style="width:100%;margin-top:20px">Get started</a>
+      </div>
+      <div class="price-card price-card-featured">
+        <div class="price-badge">Most popular</div>
+        <div class="price-name">IGCSE &amp; A-Level</div>
+        <div class="price-amount">$79</div>
+        <div class="price-period">/month</div>
+        <div class="price-annual">$59.25/month billed annually</div>
+        <div class="price-desc">Lower Secondary + IGCSE + A-Level. 30+ ET AI teachers. ET Maths. Exam Prep. Parent dashboard. Primary included.</div>
+        <a class="btn btn-primary btn-lg" href="/signup?plan=igcse" style="width:100%;margin-top:20px">Get started</a>
+      </div>
+      <div class="price-card">
+        <div class="price-name">LLB Law &amp; MBBS Medicine</div>
+        <div class="price-amount">$99</div>
+        <div class="price-period">/month</div>
+        <div class="price-annual">$74.25/month billed annually</div>
+        <div class="price-desc">LLB Law all 12 modules. MBBS Medicine. ET Law. ET Medicine. IGCSE plan included.</div>
+        <a class="btn btn-outline btn-lg" href="/signup?plan=degree" style="width:100%;margin-top:20px">Get started</a>
+      </div>
+      <div class="price-card">
+        <div class="price-name">Micro Degree &amp; Professional</div>
+        <div class="price-amount">$19</div>
+        <div class="price-period">/month</div>
+        <div class="price-annual">$14.25/month billed annually</div>
+        <div class="price-desc">Micro Degree. Professional Certification. Independent Learning. Self-paced. No formal enrolment required.</div>
+        <a class="btn btn-outline btn-lg" href="/signup?plan=micro" style="width:100%;margin-top:20px">Get started</a>
+      </div>
+      <div class="price-card" style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:var(--muted)">
+        <div class="price-name">Institutions</div>
+        <div class="price-amount mt16" style="font-size:22px">Custom</div>
+        <div class="price-desc" style="border-top:none;padding-top:8px">Bulk licensing. White-label. Custom curriculum. Dedicated onboarding.</div>
+        <a class="btn btn-primary btn-lg" href="mailto:institutions@poketschool.ai" style="width:100%;margin-top:20px">Contact us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="text-center">
+      <span class="s-tag">FAQ</span>
+      <h2 class="s-title">Common questions.</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item"><div class="faq-q">Is this a replacement for school?</div><div class="faq-a">No. Poket School is an AI intelligence layer that sits alongside schools, universities and institutions. We supplement — we do not replace. Students still attend their school or university. ET AI is their personal subject specialist available after hours, on weekends, and whenever they need help.</div></div>
+      <div class="faq-item"><div class="faq-q">Which exam boards does it cover?</div><div class="faq-a">Poket School is exam-board neutral. Content is aligned with Cambridge International (CAIE), Pearson Edexcel, Oxford AQA, and the University of London LLB. We do not name exam boards inside the platform — we teach the subject at the level, so students are prepared for any board sitting.</div></div>
+      <div class="faq-item"><div class="faq-q">Can a student switch programmes or subjects?</div><div class="faq-a">Yes. Students can change their enrolled programme or add subjects at any time from their settings. An IGCSE student who decides to add a language at CEFR level can do so on the same account.</div></div>
+      <div class="faq-item"><div class="faq-q">What languages does the platform support?</div><div class="faq-a">The platform is available in 53 languages. ET AI teachers can explain and give feedback in the student's own language. Five right-to-left languages are fully supported including Arabic, which flips the entire page layout. Read-aloud in every language is coming soon.</div></div>
+      <div class="faq-item"><div class="faq-q">How does the free student ID card work?</div><div class="faq-a">Every registered student receives a free digital ID card showing their name, programme, level, and a verified QR code. It is issued automatically on account creation — no application needed. It can be shown at libraries and partner institutions.</div></div>
+      <div class="faq-item"><div class="faq-q">Is there a free trial?</div><div class="faq-a">Yes. The Free Preview tier lets any student browse the full course catalogue, take the first lesson of any course, and verify any Poket School certificate — all without a credit card. Upgrade to a paid plan when you are ready.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-final">
+  <div class="wrap text-center">
+    <h2 class="s-title" style="color:#fff">Start learning your way.<br>Your first lesson is free.</h2>
+    <p class="s-body s-body-white mt16" style="margin:16px auto 0">No credit card. No commitment. Cancel any time. One account from Primary to Degree.</p>
+    <div class="hero-btns mt32">
+      <a class="btn btn-white btn-xl" href="/signup">Start free today</a>
+      <a class="btn btn-ghost-white btn-xl" href="/institutions/register">For Schools &amp; Organisations</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">PoketSchool</div>
+      <div class="footer-tagline">The lifelong learning platform. Primary → Degree. 20+ countries. 53 languages.</div>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <a href="/ai-teachers">ET AI Teachers</a>
+      <a href="/studio">ET AI Studio</a>
+      <a href="/reads">PoketReads</a>
+      <a href="/safeline">Poket SafeLine</a>
+      <a href="/id">Student ID Card</a>
+    </div>
+    <div class="footer-col">
+      <h4>Programmes</h4>
+      <a href="/primary">Primary</a>
+      <a href="/igcse">IGCSE</a>
+      <a href="/alevel">A-Level</a>
+      <a href="/llb">LLB Law</a>
+      <a href="/mbbs">MBBS Medicine</a>
+      <a href="/independent">Independent Learning</a>
+    </div>
+    <div class="footer-col">
+      <h4>Institutions</h4>
+      <a href="/institutions">For Schools</a>
+      <a href="/institutions">For Universities</a>
+      <a href="/institutions">White-label / OEM</a>
+      <a href="mailto:institutions@poketschool.ai">institutions@poketschool.ai</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="/about">About</a>
+      <a href="/rochfords">Rochford's International School</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    Poket School and poketschool.ai are trademarks of Poket Media Sdn Bhd (1332289-X). All rights reserved. &nbsp;·&nbsp; Built with Rochford's International School, Ipoh, Malaysia.
+  </div>
+</footer>
+
+</body>
+</html>

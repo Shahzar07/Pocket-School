@@ -122,6 +122,10 @@ export interface UserProfile {
   region?: string;
   /** When the person agreed to grouped demographic statistics. */
   demographicConsentAt?: number;
+  /** pending until the school approves a join request. Absent means no request. */
+  membershipStatus?: 'pending' | 'approved' | 'rejected';
+  pendingInstitutionId?: string;
+  pendingInstitutionName?: string;
   /** Form teacher notified by "I'm in danger now". Server reads it. */
   formTeacherUid?: string;
   /** Class used to find a form teacher when formTeacherUid is empty. */
