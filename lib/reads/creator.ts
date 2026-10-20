@@ -379,6 +379,7 @@ export function blankCraftBook(kindId = 'fiction', now = Date.now()): Book {
     programme: kind.category === 'academic' ? 'Academic' : 'General',
     allocateLibrary: false,
     allocateMarketplace: false,
+    showcase: { featured: false, priority: 0, from: '', until: '' },
     targets: ['students'],
     chapters: [{ id: `c-${now}`, order: 0, title: 'Chapter 1', markdown: '', preview: true, origin: 'human' }],
     weeklyReads: 0,

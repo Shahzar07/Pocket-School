@@ -64,7 +64,7 @@ export function CoverArtPicker({
           <li key={option.id}>
             <button type="button" onClick={() => onSelect(option)} className="block w-full overflow-hidden rounded-xl border border-border text-left">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={option.artSrc} alt="" className="aspect-[2/3] w-full object-cover" />
+              <img src={option.artSrc} alt={option.alt} className="aspect-[2/3] w-full object-cover" />
               <span className="block px-2 py-1 text-[11px] font-semibold">{option.fallback ? 'Stand-in' : 'Model'}</span>
             </button>
           </li>

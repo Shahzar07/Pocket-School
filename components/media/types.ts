@@ -20,6 +20,8 @@ export interface CoverArtOption {
   styleId: string;
   artSrc: string;
   prompt: string;
+  /** What the picture shows. Book Studio stores this as the cover alt text. */
+  alt: string;
   /** True when the model did not return a picture and a drawn stand-in is shown. */
   fallback: boolean;
 }

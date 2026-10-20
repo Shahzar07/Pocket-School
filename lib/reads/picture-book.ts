@@ -199,6 +199,7 @@ export function blankChildrensStory(now = Date.now()): Book {
     programme: 'Primary',
     allocateLibrary: true,
     allocateMarketplace: false,
+    showcase: { featured: false, priority: 0, from: '', until: '' },
     targets: ['students'],
     chapters: [{ id: `p-${now}`, order: 0, title: 'Page 1', markdown: '', preview: true, origin: 'human' }],
     weeklyReads: 0,

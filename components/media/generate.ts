@@ -1,4 +1,5 @@
 import { bearerHeaders } from '@/lib/api-client';
+import { coverAltText } from '@/lib/reads/cover';
 import { proceduralArt } from './fallback-art';
 import type { CoverArtOption } from './types';
 
@@ -22,11 +23,13 @@ export async function generateIllustration(prompt: string, style?: string): Prom
 
 export async function generateCoverArt(brief: string, styleId: string, refine?: string): Promise<CoverArtOption[]> {
   const prompt = [brief, refine].filter(Boolean).join('. ');
+  const alt = coverAltText({ prompt: prompt || styleId });
   const drawn = [0, 1, 2, 3].map(variant => ({
     id: `${styleId}-${variant}-${Math.abs(hash(prompt + variant))}`,
     styleId,
     artSrc: proceduralArt(styleId, prompt || styleId, variant),
     prompt,
+    alt,
     fallback: true,
   }));
   try {

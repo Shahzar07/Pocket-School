@@ -24,7 +24,7 @@ import { writeAutosave } from '@/components/editor/use-autosave';
 import { composeCoverSizes } from '@/components/reads/cover-compose';
 import { generateIllustration } from '@/components/media/generate';
 import { BOOKS } from '@/lib/reads/seed';
-import { screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
+import { coverAltText, screenCoverAge, type CoverBrief, type CoverFont, type CoverPlacement } from '@/lib/reads/cover';
 import { bookEpub, bookPdf, chapterPlain } from '@/lib/reads/book-export';
 import { blankCraftBook } from '@/lib/reads/creator';
 import { storedBookPriceRM } from '@/lib/platform/pricing';
@@ -51,7 +51,13 @@ const ContentEditor = dynamic(
 const AUTOSAVE_KEY = 'poket-studio-books';
 
 function cloneBooks(): Book[] {
-  return BOOKS.map(book => ({ ...book, chapters: book.chapters.map(chapter => ({ ...chapter })), cover: { ...book.cover } }));
+  return BOOKS.map(book => ({
+    ...book,
+    chapters: book.chapters.map(chapter => ({ ...chapter })),
+    cover: { ...book.cover },
+    coverBrief: book.coverBrief ? { ...book.coverBrief } : undefined,
+    showcase: book.showcase ? { ...book.showcase } : { featured: false, priority: 0, from: '', until: '' },
+  }));
 }
 
 export function StudioView() {
@@ -370,9 +376,22 @@ export function StudioView() {
         storeBookWebp(book.id, artSrc, 'art'),
       ]);
       const stored = image.startsWith('http') || image.includes('/books/');
+      const alt = patch?.alt?.trim()
+        || book.coverBrief?.alt?.trim()
+        || coverAltText({ title: book.title, prompt });
       update({
         cover: { ...book.cover, image, hero, thumb },
-        coverBrief: { styleId, artSrc: art, prompt, placement, font, brand, alt: book.coverBrief?.alt ?? '' },
+        coverBrief: {
+          styleId,
+          artSrc: art,
+          prompt,
+          placement,
+          font,
+          brand,
+          alt,
+          ageOk: book.coverBrief?.ageOk,
+          ageNote: book.coverBrief?.ageNote,
+        },
       });
       toast.success(stored ? PREVIEW.stored : PREVIEW.storeFailed);
     } catch (err) {
@@ -540,6 +559,75 @@ export function StudioView() {
                 })}
                 onChange={targets => update({ targets, ...bookFlagsFromTargets(targets) })}
               />
+              <fieldset className="space-y-3 rounded-2xl border border-border p-3">
+                <label className="flex items-start gap-2 text-sm font-semibold">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={book.showcase?.featured === true}
+                    onChange={event => update({
+                      showcase: {
+                        featured: event.target.checked,
+                        priority: book.showcase?.priority ?? 0,
+                        from: book.showcase?.from ?? '',
+                        until: book.showcase?.until ?? '',
+                      },
+                    })}
+                  />
+                  <span>
+                    {PREVIEW.featured}
+                    <span className="mt-1 block font-normal text-muted-foreground">{PREVIEW.featuredHelp}</span>
+                  </span>
+                </label>
+                <label className="block text-sm font-semibold">{PREVIEW.priority}
+                  <input
+                    type="number"
+                    value={book.showcase?.priority ?? 0}
+                    onChange={event => update({
+                      showcase: {
+                        featured: book.showcase?.featured === true,
+                        priority: Number(event.target.value) || 0,
+                        from: book.showcase?.from ?? '',
+                        until: book.showcase?.until ?? '',
+                      },
+                    })}
+                    className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                  />
+                  <span className="mt-1 block font-normal text-muted-foreground">{PREVIEW.priorityHelp}</span>
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="text-sm font-semibold">{PREVIEW.from}
+                    <input
+                      type="date"
+                      value={book.showcase?.from ?? ''}
+                      onChange={event => update({
+                        showcase: {
+                          featured: book.showcase?.featured === true,
+                          priority: book.showcase?.priority ?? 0,
+                          from: event.target.value,
+                          until: book.showcase?.until ?? '',
+                        },
+                      })}
+                      className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                    />
+                  </label>
+                  <label className="text-sm font-semibold">{PREVIEW.until}
+                    <input
+                      type="date"
+                      value={book.showcase?.until ?? ''}
+                      onChange={event => update({
+                        showcase: {
+                          featured: book.showcase?.featured === true,
+                          priority: book.showcase?.priority ?? 0,
+                          from: book.showcase?.from ?? '',
+                          until: event.target.value,
+                        },
+                      })}
+                      className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                    />
+                  </label>
+                </div>
+              </fieldset>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => openStudent()} className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold">{PREVIEW.student}</button>
                 <Link href={`/reads/read/${book.id}?preview=1`} className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold">Preview as a reader</Link>
@@ -708,7 +796,10 @@ export function StudioView() {
               <CoverArtPicker
                 brief={brief}
                 lockedStyleId={lockedStyle}
-                onSelect={option => { void paintCover(option.artSrc, option.styleId, option.prompt); }}
+                onSelect={option => {
+                  const kept = book.coverBrief?.alt?.trim();
+                  void paintCover(option.artSrc, option.styleId, option.prompt, { alt: kept || option.alt });
+                }}
               />
               <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
                 {t('reads.studio.uploadCover')}
