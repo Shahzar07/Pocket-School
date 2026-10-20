@@ -58,6 +58,7 @@ async function signIn(page: Page, email: string) {
     });
   }, { storageKey, user });
   await page.evaluate(() => {
+    localStorage.setItem('theme', 'dark');
     localStorage.setItem('poket-pip-onboarded', '1');
     localStorage.setItem('poket-cookie-consent', JSON.stringify({
       essential: true,
@@ -105,6 +106,8 @@ async function expectDarkStudio(page: Page, role: 'student' | 'teacher') {
   await expect(page.getByLabel('Mode', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /Switch to (dark|light) mode/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open the guided tour' })).toBeVisible();
+  const overflow = await page.locator('[data-studio-essentials="1"]').evaluate((node) => node.scrollWidth <= node.clientWidth + 1);
+  expect(overflow).toBe(true);
   await expect(nav.getByRole('button', { name: 'Research Helper', exact: true })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Parent Explainer', exact: true })).toHaveCount(0);
   if (role === 'teacher') {
@@ -229,6 +232,9 @@ test.describe('ET AI studio chat', () => {
     for (const person of [
       { email: 'student.e2e@poketschool.ai', role: 'student', name: 'E2E Learner' },
       { email: 'teacher.e2e@poketschool.ai', role: 'teacher', name: 'E2E Teacher' },
+      { email: 'parent.e2e@poketschool.ai', role: 'parent', name: 'E2E Parent' },
+      { email: 'institution.e2e@poketschool.ai', role: 'institution_admin', name: 'E2E Institution' },
+      { email: 'admin.e2e@poketschool.ai', role: 'admin', name: 'E2E Admin' },
     ]) {
       let user;
       try {
@@ -312,5 +318,123 @@ test.describe('ET AI studio chat', () => {
     await expect(page.getByRole('textbox', { name: 'Message ET AI' })).toBeVisible({ timeout: 60_000 });
     await expectDarkStudio(page, 'teacher');
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-teacher.png', fullPage: false });
+    const cluster = page.locator('[data-studio-essentials="1"]');
+    await cluster.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-top-right-no-scrollbar.png' });
+    await page.goto('/dashboard/studio/teachers', { waitUntil: 'domcontentloaded' });
+    await dismissCookies(page);
+    await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('link', { name: 'ET Science' }).first()).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/ai-teachers-grid-dark-desktop.png', fullPage: false });
+    await page.goto('/dashboard/studio/teachers/et-science', { waitUntil: 'domcontentloaded' });
+    await dismissCookies(page);
+    await expect(page.getByRole('button', { name: 'Upload photo' })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole('button', { name: 'Skills' })).toBeVisible();
+    await expect(page.getByLabel('Subject')).toBeVisible();
+    await expect(page.getByLabel('Level')).toBeVisible();
+    await expect(page.getByLabel('Mode', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Read aloud' })).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/ai-teacher-chat-dark-desktop.png', fullPage: false });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/ai-teachers-chat-dark-mobile.png', fullPage: false });
   });
+
+  test('theme toggle switches the shell and keeps the choice', async ({ page }) => {
+    await signIn(page, 'student.e2e@poketschool.ai');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/dashboard/studio', { waitUntil: 'domcontentloaded' });
+    await dismissCookies(page);
+    await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible({ timeout: 60_000 });
+    await page.getByRole('button', { name: /Switch to light mode/ }).click();
+    await expect(page.locator('[data-studio-layout="light"]')).toBeVisible();
+    await expect(page.locator('[data-tour="sidebar"]')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Back to Poket School' })).toBeVisible();
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-light-desktop.png', fullPage: false });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await dismissCookies(page);
+    await expect(page.locator('[data-studio-layout="light"]')).toBeVisible({ timeout: 60_000 });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-light-mobile.png', fullPage: false });
+  });
+
+  test('each role opens one tool in the shell in both themes', async ({ page }) => {
+    test.setTimeout(180_000);
+    const visits = [
+      { email: 'student.e2e@poketschool.ai', path: '/dashboard/studio/maths', shot: 'tool-student-maths' },
+      { email: 'teacher.e2e@poketschool.ai', path: '/dashboard/teacher/upload', shot: 'tool-teacher-upload' },
+      { email: 'parent.e2e@poketschool.ai', path: '/dashboard/parent/planner', shot: 'tool-parent-planner' },
+      { email: 'institution.e2e@poketschool.ai', path: '/dashboard/institution/timetable', shot: 'tool-institution-timetable' },
+      { email: 'admin.e2e@poketschool.ai', path: '/dashboard/admin/books', shot: 'tool-admin-books' },
+    ];
+    for (const visit of visits) {
+      await signIn(page, visit.email);
+      await page.setViewportSize({ width: 1280, height: 800 });
+      let opened = false;
+      for (let attempt = 0; attempt < 3 && !opened; attempt += 1) {
+        try {
+          await page.goto(visit.path, { waitUntil: 'domcontentloaded', timeout: 45_000 });
+          opened = true;
+        } catch (error) {
+          if (attempt === 2) throw error;
+          await page.waitForTimeout(1_500);
+        }
+      }
+      await dismissCookies(page);
+      await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator('[data-studio-immersive="1"]')).toBeVisible();
+      await expect(page.locator('[data-tour="sidebar"]')).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'Dashboard', exact: true }).first()).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Back to Poket School' })).toBeVisible();
+      const nav = page.getByRole('navigation', { name: 'AI Studio' });
+      await expect(nav.locator('[aria-current="page"]').first()).toBeVisible();
+      await page.screenshot({ path: `/opt/cursor/artifacts/screenshots/${visit.shot}-dark.png`, fullPage: false });
+      await page.evaluate(() => localStorage.setItem('theme', 'light'));
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await dismissCookies(page);
+      await expect(page.locator('[data-studio-layout="light"]')).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator('[data-tour="sidebar"]')).toHaveCount(0);
+      await page.screenshot({ path: `/opt/cursor/artifacts/screenshots/${visit.shot}-light.png`, fullPage: false });
+    }
+  });
+});
+
+test('public AI teachers and Book Studio use the shell in both themes', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => {
+    localStorage.setItem('theme', 'dark');
+    localStorage.setItem('poket-pip-onboarded', '1');
+    localStorage.setItem('poket-cookie-consent', JSON.stringify({
+      essential: true, functional: true, analytics: false, aiPerformance: false, decidedAt: '2026-10-19T00:00:00.000Z',
+    }));
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/ai-teachers', { waitUntil: 'domcontentloaded' });
+  await dismissCookies(page);
+  await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to Poket School' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'AI Studio' })).toBeVisible();
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/ai-teachers-dark-desktop.png', fullPage: false });
+  await page.getByRole('button', { name: /Switch to light mode/ }).click();
+  await expect(page.locator('[data-studio-layout="light"]')).toBeVisible();
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/ai-teachers-light-desktop.png', fullPage: false });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/ai-teachers-light-mobile.png', fullPage: false });
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/reads/studio', { waitUntil: 'domcontentloaded' });
+  await dismissCookies(page);
+  await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'New book', exact: true })).toBeVisible();
+  const previewTab = page.locator('[data-book-tab="preview"]');
+  await expect(previewTab).toBeVisible();
+  await expect(async () => {
+    await previewTab.click();
+    await expect(page.locator('[data-book-preview="1"]')).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 20_000 });
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/book-studio-dark-desktop.png', fullPage: false });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/book-studio-dark-mobile.png', fullPage: false });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.getByRole('button', { name: /Switch to light mode/ }).click();
+  await expect(page.locator('[data-studio-layout="light"]')).toBeVisible();
+  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/book-studio-light-desktop.png', fullPage: false });
 });

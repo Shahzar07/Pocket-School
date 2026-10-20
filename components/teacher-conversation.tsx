@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ComponentType } from 're
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowLeft, BookOpen, Camera, ClipboardList, Globe, Lightbulb, Loader2, Lock, MessageSquare,
@@ -111,6 +112,12 @@ export function TeacherConversation({
   const [score, setScore] = useState({ right: 0, total: 0 });
   const [unseenBoard, setUnseenBoard] = useState(0);
   const [notices, setNotices] = useState<string[]>([]);
+  const [skill, setSkill] = useState('');
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const [subject, setSubject] = useState('');
+  const [level, setLevel] = useState('');
+  const [modeChoice, setModeChoice] = useState('');
+  const { resolvedTheme } = useTheme();
 
   const endRef = useRef<HTMLDivElement>(null);
   const speakerRef = useRef<Speaker | null>(null);
@@ -129,6 +136,7 @@ export function TeacherConversation({
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const browserTranscript = useRef('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const transcriptKey = `ps-session-${teacher.id}`;
   const mode = tutorMode || tutorModeFor(profile?.level);
 
@@ -310,14 +318,21 @@ export function TeacherConversation({
     const value = (text ?? input).trim();
     const image = extra?.image ?? pendingImage;
     if ((!value && !image) || busyRef.current) return;
+    const context = [
+      skill ? `Skill: ${skill}` : '',
+      subject ? `Subject: ${subject}` : '',
+      level ? `Level: ${level}` : '',
+      modeChoice ? `Mode: ${modeChoice}` : '',
+    ].filter(Boolean).join('. ');
     const next = [...messagesRef.current, { role: 'user' as const, text: value || 'Please look at this photo.', image: image || undefined, voice: extra?.voice }];
     setMessages(next);
     messagesRef.current = next;
     setInput('');
     setPendingImage('');
     setTab('chat');
-    void askRef.current(value || 'Please look at this photo and help me with it.', next, { image: image || undefined });
-  }, [input, pendingImage]);
+    const asked = value || 'Please look at this photo and help me with it.';
+    void askRef.current(context ? `${asked}\n\n${context}` : asked, next, { image: image || undefined });
+  }, [input, level, modeChoice, pendingImage, skill, subject]);
   const sendRef = useRef(send);
   sendRef.current = send;
 
@@ -498,8 +513,9 @@ export function TeacherConversation({
     );
   }
 
-  const accent = teacher.accentColor;
-  const frame = variant === 'session' ? 'fixed inset-0' : 'relative h-full min-h-0';
+  const accent = '#3FE0D0';
+  const lightChat = variant !== 'dock' && resolvedTheme === 'light';
+  const frame = 'relative h-full min-h-0';
   const quickIcons = {
     quiz: <ClipboardList className="w-3.5 h-3.5" />,
     problem: <PenSquare className="w-3.5 h-3.5" />,
@@ -508,7 +524,7 @@ export function TeacherConversation({
   };
 
   return (
-    <div className={`${frame} bg-[#07070E] text-white overflow-hidden flex flex-col`} dir={textDirection(lang)}>
+    <div className={`${frame} overflow-hidden flex flex-col ${lightChat ? 'bg-[#F7FBFC] text-[#203337]' : 'bg-[#07070E] text-white'}`} data-teacher-theme={lightChat ? 'light' : 'dark'} dir={textDirection(lang)}>
       <AnimatePresence>
         {livePrompt && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/70 grid place-items-center p-4" onClick={() => setLivePrompt(false)}>
@@ -647,11 +663,44 @@ export function TeacherConversation({
                 </button>
               ))}
             </div>
-            {pendingImage && <img src={pendingImage} alt="Ready to send" className="h-16 rounded-lg mb-2" />}
+            {pendingImage && <img src={pendingImage} alt="Ready to send" className="h-16 rounded-lg mb-2" data-photo-pending="1" />}
+            <div className="mb-2 flex flex-wrap items-center gap-1">
+              <button type="button" onClick={() => fileRef.current?.click()} className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold" aria-label="Upload photo">Upload photo</button>
+              <button type="button" data-attach="1" onClick={() => fileRef.current?.click()} className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold" aria-label="Attach">Attach</button>
+              <button type="button" data-camera="1" onClick={() => cameraRef.current?.click()} className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold" aria-label="Camera">Camera</button>
+              <button type="button" data-file="1" onClick={() => fileRef.current?.click()} className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold">File</button>
+              <button type="button" onClick={() => setSkillsOpen(open => !open)} className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold" aria-expanded={skillsOpen}>Skills</button>
+              <button type="button" aria-label="Read aloud" className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold" onClick={() => { const last = [...messages].reverse().find(message => message.role === 'model'); if (last) playReply(last.text); }}>Read aloud</button>
+              <input value={subject} onChange={event => setSubject(event.target.value)} aria-label="Subject" placeholder="Subject" className="w-28 rounded-full border border-current/20 bg-transparent px-2.5 py-1.5 text-xs" />
+              <select value={level} onChange={event => setLevel(event.target.value)} aria-label="Level" className="rounded-full border border-current/20 bg-transparent px-2 py-1.5 text-xs">
+                <option value="">Level</option>
+                <option value="Primary">Primary</option>
+                <option value="Lower Secondary">Lower Secondary</option>
+                <option value="IGCSE">IGCSE</option>
+                <option value="A-Level">A-Level</option>
+              </select>
+              <select value={modeChoice} onChange={event => setModeChoice(event.target.value)} aria-label="Mode" className="rounded-full border border-current/20 bg-transparent px-2 py-1.5 text-xs">
+                <option value="">Mode</option>
+                <option value="k12">School</option>
+                <option value="college">College</option>
+                <option value="professional">Professional</option>
+                <option value="legal">Law</option>
+              </select>
+            </div>
+            {skillsOpen ? (
+              <div className="mb-2 flex flex-wrap gap-1">
+                {['Tutor chat', 'Flashcards', 'Quiz', 'Lesson', 'Worksheet'].map(name => (
+                  <button key={name} type="button" onClick={() => { setSkill(name === 'Tutor chat' ? '' : name); setSkillsOpen(false); }} className="rounded-full border border-current/20 px-2.5 py-1 text-[11px] font-semibold">
+                    {name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <div className="flex items-end gap-2">
               <button type="button" onClick={() => fileRef.current?.click()} className="w-11 h-11 rounded-full border border-white/15 grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Attach a photo"><Camera className="w-4 h-4" /></button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label="Photo upload" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
-              <button type="button" onClick={() => void startRecording()} aria-pressed={recording} className={`w-11 h-11 rounded-full grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${recording ? 'bg-red-500' : 'border border-white/15'}`} aria-label={recording ? 'Stop and send voice note' : 'Record a voice note'}>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label="Photo upload" data-photo-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
+              <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" aria-label="Camera photo" data-camera-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
+              <button type="button" data-mic="1" onClick={() => void startRecording()} aria-pressed={recording} className={`w-11 h-11 rounded-full grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${recording ? 'bg-red-500' : 'border border-white/15'}`} aria-label={recording ? 'Stop and send voice note' : 'Record a voice note'}>
                 {recording ? <PhoneOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
               <label htmlFor={`teacher-reply-${teacher.id}`} className="text-[11px] text-white/60 self-center shrink-0">

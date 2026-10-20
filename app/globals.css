@@ -671,3 +671,17 @@ html[dir='rtl'] .pr-4 { padding-right: 0; padding-left: 1rem; }
   mask-composite: exclude;
   pointer-events: none;
 }
+
+/* AI teacher chat follows the shell. Cyan text is never used on the light surface. */
+[data-teacher-theme='light'] [class*='text-white'] {
+  color: #203337 !important;
+}
+[data-teacher-theme='light'] [class*='bg-white'] {
+  background-color: #E7F6F8 !important;
+}
+[data-teacher-theme='light'] [class*='border-white'] {
+  border-color: #C5E4EA !important;
+}
+[data-teacher-theme='light'] header {
+  background-color: #ffffff !important;
+}

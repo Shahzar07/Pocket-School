@@ -107,8 +107,47 @@ Admin actions still open: publish the six blog drafts, mark featured courses, me
 | Dark studio chat, student and teacher | Yes | `e2e/studio-chat.spec.ts` checks `data-studio-layout="dark"`, `data-studio-immersive="1"`, the message box, a reply, and Read aloud. Screenshots `studio-dark-desktop-1440.png`, `studio-dark-student-empty.png`, `studio-dark-student-reply.png`, `studio-dark-teacher.png`. | `OPENROUTER_API_KEY` for a model answer. The empty-reply line still shows without it. |
 | Dashboard home | Yes | Same spec. Dashboard is the first sidebar link. Student href `/dashboard`. Teacher href `/dashboard/teacher`. | None |
 | Mic, attach, photo, Upload photo | Yes | Same spec. Mic sets `data-voice-status`. Attach and Upload photo use the photo input. Photo attached and Remove photo. Screenshot `studio-dark-photo.png`. | None for the controls. |
-| Sidebar tools | Yes | Same spec, one navigation named AI Studio: Dashboard, New chat, Chats, Library, then AI Teachers, ET + Subject, ET Maths, ET Exams, ET Essays, Book Studio, Planner, Calendar, All tools. ET AI, PoketReads, AI Book Creator, and Creator Store are the empty-state chips and the All tools cards, not a second copy in that list. | None |
-| Timetabler entry | Yes | Teacher sees Timetabler in the dark sidebar and `data-studio-entry="timetable"`. A student does not. | None |
-| Role desks | Yes | Teacher Toolkit for the teacher. Research Helper for student and teacher. Parent Explainer for neither of those roles. | None |
-| Mobile sidebar | Yes | 390px width. Dashboard is in the tools row. Open ET AI menu opens the dark sidebar. Screenshot `studio-dark-mobile-sidebar.png`. | None |
-| Pip and theme | Yes | Pip is inside the dark studio essentials (`Open the guided tour`). The studio canvas stays dark when the site theme is light (`data-studio-theme="dark-default"`). | None |
+| Sidebar tools | Yes | One navigation named AI Studio. Tools lists every AI tool the role may open, with the open tool on a cyan fill. Chips still include ET AI, PoketReads, AI Book Creator, and Creator Store. | None |
+| Timetabler entry | Yes | Teacher sees Timetabler in the sidebar and `data-studio-entry="timetable"`. A student does not. The student and parent timetable pages still use the shell if opened. | None |
+| Role desks | Yes | Teacher Toolkit for the teacher. Research Helper for student and teacher. Parent Explainer for a parent. | None |
+| Mobile sidebar | Yes | 390px width. Dashboard is in the tools row. Open ET AI menu opens the sidebar. Screenshot `studio-dark-mobile-sidebar.png`. | None |
+| Theme toggle | Yes | The top-right toggle switches `data-studio-layout` between `dark` and `light` and the choice survives a reload. Saved choice wins. With nothing saved, the system theme is used. Light text is `#1E6A83` or `#203337`. Fills stay `#3FE0D0` with `#203337` ink. | None |
+| No top-right scrollbar | Yes | The essentials cluster uses `overflow-hidden` and a compact language control. The spec checks `scrollWidth` against `clientWidth`. | None |
+
+## Full-page shell on every AI tool
+
+The same shell wraps each AI tool: dark and light, theme toggle, light dashboard menu hidden, Dashboard at the top, Back to Poket School at the bottom. Nested pages under a wrapped prefix use that shell too (maths packs and the puzzle, exam plans, mocks, oral, topics, essay review, teacher chats, curriculum courses). Role gates are unchanged. Nothing was removed from the light dashboard menu; it is only hidden while a tool is open.
+
+| Path | Wrapped | Why |
+| --- | --- | --- |
+| /dashboard/studio | wrapped | Signed-in ET AI chat home. The page draws the shell itself. |
+| /dashboard/studio/et | wrapped | Same chat. The page draws the shell itself. |
+| /dashboard/studio/et?mode=teacher-toolkit | wrapped | Lesson plans and worksheets inside ET AI. Teachers and admins. |
+| /dashboard/studio/et?mode=parent-explainer | wrapped | Plain-language week inside ET AI. Parents only. |
+| /dashboard/studio/et?mode=research-helper | wrapped | Sources and citations inside ET AI. Students and teachers. |
+| /dashboard/studio/maths | wrapped | Maths solver, exam packs, and the daily puzzle. |
+| /dashboard/studio/exam-prep | wrapped | Exam plans, mocks, oral practice, topics, and shared plans. |
+| /dashboard/studio/essays and /studio/essays | wrapped | Essay planner and teacher review, including the public pages. |
+| /dashboard/studio/essay and /dashboard/student/essay | wrapped | ET AI grades an essay the learner writes. |
+| /reads/studio | wrapped | PoketReads book creator: idea, cast, chapters, cover, preview, export. |
+| /dashboard/admin/books | wrapped | The same Book Studio from the CMS. Teachers need the CMS add-on. |
+| /dashboard/studio/timetable and each role timetable | wrapped | ET AI Timetabler. The sidebar link stays hidden for students and parents. |
+| /dashboard/studio/teachers and /ai-teachers | wrapped | Portrait grid, each teacher chat, and the public session. |
+| /dashboard/teacher/upload | wrapped | Lesson, quiz, and flashcard draft. Teachers and school admins. |
+| /dashboard/teacher/exams | wrapped | Exam builder. |
+| /dashboard/teacher/report-studio | wrapped | Report comments drafted with ET AI. |
+| /dashboard/admin/curriculum | wrapped | ET AI course architect. CMS add-on for teachers. |
+| /dashboard/admin/exam-packs | wrapped | Admin desk for ET Maths syllabus packs. |
+| /dashboard/store | wrapped | Creator notes, worksheets, and templates. |
+| /dashboard/planner and each role planner | wrapped | Study planner and the role planners. |
+| /dashboard/calendar | wrapped | Calendar beside the studio tools. |
+| /reads and /reads/[slug] | not wrapped | Public catalog. The Tools link stays. The creator is /reads/studio. |
+| /studio, /pricing, and other marketing pages | not wrapped | Public marketing, not a tool canvas. |
+| /preview/studio and /preview/timetable | not wrapped | Design galleries. The live tools are the dashboard routes. |
+| /api/ai/*, translate APIs | not wrapped | No page to wrap. |
+| Flashcards | not wrapped | An ET AI skill, and a format on the lesson generator. No standalone page. |
+| Translation | not wrapped | The language switcher and translate APIs. No standalone page. |
+| Homework help | not wrapped | The ET AI photo prompt. No standalone page. |
+| /dashboard/admin/blog | not wrapped | Journal CMS. Not an AI writer. |
+| Gradebook, attendance, billing, SafeLine, helpdesk, messages | not wrapped | School desk pages, not AI tool canvases. |
+| Floating ET tutor | not wrapped | The dock stays on non-tool pages. Tool routes hide it and use the shell. |

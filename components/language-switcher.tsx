@@ -64,7 +64,7 @@ function readDismissed(): string | null {
   }
 }
 
-export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onDark' }) {
+export function LanguageSwitcher({ tone = 'default', compact = false }: { tone?: 'default' | 'onDark'; compact?: boolean }) {
   const { t } = useTranslation();
   const { user, profile, setProfile } = useAuthSTORE();
   const [open, setOpen] = useState(false);
@@ -169,7 +169,7 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
 
   return (
     <div ref={ref} className="relative flex items-center gap-1">
-      {shortcut && (
+      {!compact && shortcut && (
         <button
           type="button"
           data-lang-shortcut={shortcut.code}
@@ -196,8 +196,12 @@ export function LanguageSwitcher({ tone = 'default' }: { tone?: 'default' | 'onD
         aria-expanded={open}
       >
         <Globe className="w-4 h-4" />
-        <span className="hidden sm:inline">{current.flag} {current.label}</span>
-        <span className="sm:hidden">{current.flag}</span>
+        {compact ? <span className="sr-only">{current.label}</span> : (
+          <>
+            <span className="hidden sm:inline">{current.flag} {current.label}</span>
+            <span className="sm:hidden">{current.flag}</span>
+          </>
+        )}
       </button>
 
       {open && (

@@ -165,7 +165,7 @@ function waitForTarget(selector: string, timeout = 3000): Promise<Rect | null> {
 
 /* ── The guide ─────────────────────────────────────────────────── */
 
-export function PipGuide({ role }: { role: TourRole }) {
+export function PipGuide({ role, compact = false }: { role: TourRole; compact?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -350,7 +350,7 @@ export function PipGuide({ role }: { role: TourRole }) {
         className="relative flex items-center gap-2 h-9 pl-1 pr-3 rounded-full border border-border bg-card hover:bg-muted transition-colors group"
       >
         <PipCharacter size={28} mood="waving" />
-        <span className="text-xs font-bold text-foreground hidden sm:inline">Show me around</span>
+        <span className={compact ? 'sr-only' : 'text-xs font-bold text-foreground hidden sm:inline'}>Show me around</span>
         <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
 

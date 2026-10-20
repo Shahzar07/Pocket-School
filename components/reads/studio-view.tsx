@@ -434,7 +434,8 @@ export function StudioView() {
           </button>
           <button
             type="button"
-            className="h-10 w-full rounded-full bg-foreground text-sm font-semibold text-background"
+            data-new-book="1"
+            className="h-10 w-full rounded-full bg-[#3FE0D0] text-sm font-semibold text-[#203337]"
             onClick={() => {
               const created = blankCraftBook();
               setBooks(list => [created, ...list]);
@@ -464,13 +465,13 @@ export function StudioView() {
             <Step active={book.status === 'published'} label={t('reads.studio.published')} />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Tab on={tab === 'details'} label={t('reads.studio.tabDetails')} onClick={() => setTab('details')} />
-            <Tab on={tab === 'create'} label="Create" onClick={() => setTab('create')} />
-            <Tab on={tab === 'write'} label={t('reads.studio.tabWrite')} onClick={() => setTab('write')} />
-            <Tab on={tab === 'import'} label={t('reads.studio.tabImport')} onClick={() => setTab('import')} />
-            <Tab on={tab === 'pictures'} label={t('reads.studio.tabPictures')} onClick={() => setTab('pictures')} />
-            <Tab on={tab === 'cover'} label={t('reads.studio.tabCover')} onClick={() => setTab('cover')} />
-            <Tab on={tab === 'preview'} label={PREVIEW.tab} onClick={() => setTab('preview')} />
+            <Tab tabId="details" on={tab === 'details'} label={t('reads.studio.tabDetails')} onClick={() => setTab('details')} />
+            <Tab tabId="create" on={tab === 'create'} label="Create" onClick={() => setTab('create')} />
+            <Tab tabId="write" on={tab === 'write'} label={t('reads.studio.tabWrite')} onClick={() => setTab('write')} />
+            <Tab tabId="import" on={tab === 'import'} label={t('reads.studio.tabImport')} onClick={() => setTab('import')} />
+            <Tab tabId="pictures" on={tab === 'pictures'} label={t('reads.studio.tabPictures')} onClick={() => setTab('pictures')} />
+            <Tab tabId="cover" on={tab === 'cover'} label={t('reads.studio.tabCover')} onClick={() => setTab('cover')} />
+            <Tab tabId="preview" on={tab === 'preview'} label={PREVIEW.tab} onClick={() => setTab('preview')} />
           </div>
 
           {tab === 'details' && (
@@ -1023,9 +1024,9 @@ function Step({ active, label }: { active: boolean; label: string }) {
   return <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>{label}</span>;
 }
 
-function Tab({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
+function Tab({ on, label, onClick, tabId }: { on: boolean; label: string; onClick: () => void; tabId: string }) {
   return (
-    <button type="button" onClick={onClick} className={`h-9 rounded-full px-3 text-sm font-semibold ${on ? 'bg-foreground text-background' : 'border border-border'}`}>
+    <button type="button" data-book-tab={tabId} onClick={onClick} className={`h-9 rounded-full px-3 text-sm font-semibold ${on ? 'bg-foreground text-background' : 'border border-border'}`}>
       {label}
     </button>
   );
