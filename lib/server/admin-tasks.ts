@@ -309,16 +309,7 @@ export async function saveAdminPushPrefs(uid: string, raw: unknown): Promise<Adm
 export async function runAdminTaskCron(now = Date.now()): Promise<{ unsnoozed: number; digests: number; opened: number; closed: number }> {
   if (!isAdminConfigured()) return { unsnoozed: 0, digests: 0, opened: 0, closed: 0 };
   const { syncPendingAdminTasks } = await import('./admin-task-sync');
-  const synced = await syncPendingAdminTasks(true).catch(() => ({ opened: 0, closed: 0 }));
-  const snoozed = await db().collection(ADMIN_TASKS).where('status', '==', 'snoozed').limit(200).get();
-  let unsnoozed = 0;
-  for (const doc of snoozed.docs) {
-    const until = doc.get('snoozedUntil');
-    if (typeof until !== 'number' || until > now) continue;
-    const claimedBy = typeof doc.get('claimedBy') === 'string' ? doc.get('claimedBy') : '';
-    await doc.ref.set({ status: claimedBy ? 'claimed' : 'open', snoozedUntil: null }, { merge: true });
-    unsnoozed += 1;
-  }
+  const synced = await syncPendingAdminTasks(true).catch(() => ({ opened: 0, closed: 0, unsnoozed: 0 }));
 
   const admins = await db().collection('users').where('role', '==', 'admin').limit(200).get();
   let digests = 0;
@@ -326,7 +317,7 @@ export async function runAdminTaskCron(now = Date.now()): Promise<{ unsnoozed: n
     const ref = db().doc(adminPushPrefsPath(admin.id));
     const snap = await ref.get();
     const prefs = readAdminPushPrefs(snap.exists ? snap.data() : null);
-    if (!digestDue(prefs, now) || inQuietHours(prefs, now)) continue;
+    if (!digestDue(prefs, now, 20 * 60 * 60 * 1000) || inQuietHours(prefs, now)) continue;
     const data = admin.data();
     const actor: DeskActor = {
       uid: admin.id,
@@ -354,5 +345,5 @@ export async function runAdminTaskCron(now = Date.now()): Promise<{ unsnoozed: n
     }
     await ref.set({ lastDigestAt: now }, { merge: true });
   }
-  return { unsnoozed, digests, opened: synced.opened, closed: synced.closed };
+  return { unsnoozed: synced.unsnoozed, digests, opened: synced.opened, closed: synced.closed };
 }

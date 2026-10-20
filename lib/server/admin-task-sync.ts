@@ -37,6 +37,19 @@ async function scan(
   }
 }
 
+async function wakeSnoozed(now: number): Promise<number> {
+  const snoozed = await db().collection(ADMIN_TASKS).where('status', '==', 'snoozed').limit(200).get();
+  let woken = 0;
+  for (const doc of snoozed.docs) {
+    const until = doc.get('snoozedUntil');
+    if (typeof until !== 'number' || until > now) continue;
+    const claimedBy = typeof doc.get('claimedBy') === 'string' ? doc.get('claimedBy') : '';
+    await doc.ref.set({ status: claimedBy ? 'claimed' : 'open', snoozedUntil: null }, { merge: true });
+    woken += 1;
+  }
+  return woken;
+}
+
 async function closeResolved(): Promise<number> {
   const snap = await db().collection(ADMIN_TASKS).where('status', 'in', ['open', 'claimed', 'snoozed']).limit(100).get();
   let closed = 0;
@@ -55,10 +68,10 @@ async function closeResolved(): Promise<number> {
   return closed;
 }
 
-export async function syncPendingAdminTasks(force = false): Promise<{ opened: number; closed: number; skipped?: boolean }> {
-  if (!isAdminConfigured()) return { opened: 0, closed: 0, skipped: true };
+export async function syncPendingAdminTasks(force = false): Promise<{ opened: number; closed: number; unsnoozed: number; skipped?: boolean }> {
+  if (!isAdminConfigured()) return { opened: 0, closed: 0, unsnoozed: 0, skipped: true };
   const now = Date.now();
-  if (!force && now - syncedAt < 60_000) return { opened: 0, closed: 0, skipped: true };
+  if (!force && now - syncedAt < 60_000) return { opened: 0, closed: 0, unsnoozed: 0, skipped: true };
   syncedAt = now;
   const database = db();
   const opened = (await Promise.all([
@@ -83,5 +96,9 @@ export async function syncPendingAdminTasks(force = false): Promise<{ opened: nu
     console.error('admin task close failed', error instanceof Error ? error.message : error);
     return 0;
   });
-  return { opened, closed };
+  const unsnoozed = await wakeSnoozed(now).catch(error => {
+    console.error('admin task unsnooze failed', error instanceof Error ? error.message : error);
+    return 0;
+  });
+  return { opened, closed, unsnoozed };
 }

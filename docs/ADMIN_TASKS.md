@@ -147,7 +147,7 @@ users/{uid}/notificationPrefs/admin
 
 `categories.emergency` is forced on. Rules reject a write that sets it to false. Quiet hours never mute the `emergency` channel. A muted `admin` category does not mute `emergency` either.
 
-`instant` sends the admin channel immediately, unless quiet hours are active. `digest` holds the admin channel until a `digestTimes` entry. The cron at `/api/cron/admin-tasks` runs every 15 minutes. A digest time fires once inside that window, and it does not fire during quiet hours. If the whole window sits inside quiet hours, that digest is skipped until the next time. Emergency SafeLine pushes are not held for digest or quiet hours.
+`instant` sends the admin channel immediately, unless quiet hours are active. `digest` holds the admin channel for the daily cron. Vercel Hobby rejects a cron that runs more than once a day, so `/api/cron/admin-tasks` is `20 3 * * *` (03:20 UTC, 11:20 in Kuala Lumpur, outside the default quiet hours). That run sends a digest when the last one is more than 20 hours old, and it skips the send during quiet hours without stamping `lastDigestAt`. Emergency SafeLine pushes are not held for digest or quiet hours. Opening the Action Centre syncs queues and wakes expired snoozes, at most once a minute, so those do not wait for the daily cron.
 
 The signed-in user can read and write their own `notificationPrefs/admin` document. The web screen saves through `POST /api/admin/tasks/prefs`, which also forces `emergency: true` and ignores a client `lastDigestAt`.
 
