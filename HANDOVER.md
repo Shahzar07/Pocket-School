@@ -2,7 +2,7 @@
 
 Poket School (poketschool.ai) is a Next.js 15 app with Firebase Auth, Firestore (named database from `firebase-applet-config.json`), and Firebase Storage. This note is for Shahzar. It does not contain secret values.
 
-Current `main` is `f9d395cb84d904c123b77abb599eea441e934bd8` (squash of #151, the dark full-screen ET AI Studio). That commit includes #148 at `de07f29b121001e80714bc839a914158a0e6d780` and #147 at `6a041278bf02fc27e62c1f0647581b5351ce3cbe`. Production deployment `dpl_14rQsk7dNuwsVEwsrWhBCVnP1VE6` is READY and aliased to https://pocket-school-ochre.vercel.app. The exact go-live list is section 9 of `FINAL_AUDIT.md`.
+`main` at the production alias is still `f9d395cb84d904c123b77abb599eea441e934bd8` (squash of #151, the dark full-screen ET AI Studio) until this pull request merges. That commit includes #148 at `de07f29b121001e80714bc839a914158a0e6d780` and #147 at `6a041278bf02fc27e62c1f0647581b5351ce3cbe`. Production deployment `dpl_14rQsk7dNuwsVEwsrWhBCVnP1VE6` is READY and aliased to https://pocket-school-ochre.vercel.app. This tree adds the full-page AI shell (dark and light) on every AI tool. The exact go-live list is section 9 of `FINAL_AUDIT.md`.
 
 ## Start here
 
@@ -112,11 +112,37 @@ Branch names are `cursor/<descriptive-name>-336c`, lowercase. Open the pull requ
 
 ### Additive only
 
-Product work adds. It does not delete a page, a sidebar `href`, or a studio tool to make a new one fit. Before a product pull request, compare `app/**/page.tsx` and the sidebar links with the base. `git diff --diff-filter=D` against that base should stay empty unless Harry has asked for a removal. A new studio entry goes in the dark sidebar or behind All tools. It does not replace Dashboard, New chat, or Back to Poket School.
+Product work adds. It does not delete a page, a sidebar `href`, or a studio tool to make a new one fit. Before a product pull request, compare `app/**/page.tsx` and the sidebar links with the base. `git diff --diff-filter=D` against that base should stay empty unless Harry has asked for a removal. A new tool is a row in `TOOL_ROUTES`. It appears in the shell Tools list for roles that pass its gate. Dashboard, New chat, and Back to Poket School stay where they are.
 
 ### Brand
 
-Say Poket School. Never “Pocket”. The product names are ET AI and Poket SafeLine. The accent is cyan `#3FE0D0` with ink `#203337`. Do not introduce gold. The marketing walk fails if the homepage block contains `#c8820a`.
+Say Poket School. Never “Pocket”. The product names are ET AI and Poket SafeLine. The accent is cyan `#3FE0D0` with ink `#203337`. On a light surface, text is `#1E6A83` or `#203337`. Fills stay cyan with ink text. Do not introduce gold. The marketing walk fails if the homepage block contains `#c8820a`.
+
+### Full-page AI shell
+
+Every AI tool uses one full-viewport shell, in dark and in light. On those routes the light dashboard sidebar, top bar, mobile nav, and floating tutor stay hidden (`data-studio-immersive="1"`). Dashboard is the first sidebar item and links to the role home. Back to Poket School is the last item. Between them, Tools lists the tools that role may open and highlights the open one with a cyan fill and ink text.
+
+| Piece | Where |
+| --- | --- |
+| Sidebar, essentials, dashboard wrap, public wrap | `components/studio/tool-shell.tsx` (`ShellSidebar`, `ShellEssentials`, `ToolShell`, `PublicToolShell`) |
+| Which routes are tools, who may see them | `lib/studio/tool-inventory.ts` (`TOOL_ROUTES`, `isAiToolPath`, `ownsStudioShell`, `sidebarTools`) |
+| Dark and light colours | `lib/studio/shell-theme.ts` (`studioCssVars`) |
+| Chat homes that draw the shell themselves | `components/studio/ai-studio.tsx` on `/dashboard/studio` and `/dashboard/studio/et` |
+| Hide the light chrome and wrap the other dashboard tools | `app/dashboard/layout.tsx` |
+| Theme | `components/theme-provider.tsx` and `components/theme-toggle.tsx` |
+
+The wrapped and unwrapped list, with the reason for each row, is the table in `QA_QC.md` under “Full-page shell on every AI tool”. `npx tsx --test lib/studio/tool-inventory.test.ts` checks the wrap rules and the role gates.
+
+To wrap a new tool:
+
+1. Add a `TOOL_ROUTES` entry with `id`, `label`, `href`, `sidebar: true`, `wrapped: true`, `covers` (that path and its children), `why`, and a `gate` when a role or add-on already limits it.
+2. A page under `app/dashboard` is wrapped by the dashboard layout. Leave the page body as it is.
+3. A page outside the dashboard wraps its existing view in `PublicToolShell`. The public pages that do this today are `/ai-teachers`, `/ai-teachers/[teacherId]/session`, `/reads/studio`, and `/studio/essays` (including review).
+4. Set `ownsShell: true` and `exact: true` only when the page renders the sidebar itself. Today that is the two chat homes. The layout must not wrap those again.
+5. Keep the role check in `lib/dashboard-access.ts` and on the route gate. The shell hides a link. It does not grant access.
+6. The highlighted tool is the longest matching `covers` prefix (`aria-current="page"`).
+
+Theme handling: `next-themes` sets `class` on `html`, `defaultTheme` is `system`, and the saved choice is the `localStorage` key `theme`. A saved choice wins. With nothing saved, the system theme is used. `studioCssVars` reads the resolved theme. Dark keeps the approved studio palette (background `#1A1918`, accent text `#3FE0D0`). Light uses a white and very light blue surface, the same cyan fills, and `#1E6A83` or `#203337` for text. Do not add a `dark` class on the shell while the theme is light, because child `dark:` styles would stay dark. A headless test that needs the approved dark look sets `localStorage.theme` to `dark` before navigation.
 
 ### Open pull requests
 
@@ -190,12 +216,12 @@ The price stays `TBC by Harry` (`TIMETABLER_PRICE_NOTE`, the pricing page, and t
 | Platform admin (`role: admin`, including `content_editor` and `super_admin`) | `/dashboard/admin` | queues, platform, pulse, AI Book Creator at `/dashboard/admin/books`, journal at `/dashboard/admin/blog`, ET AI Timetabler at `/dashboard/admin/timetable` |
 | Institution admin with the timetabler add-on | `/dashboard/institution/timetable` | School week. Enterprise (`plan` or `package:enterprise`) can use more than one campus. |
 | Teacher | `/dashboard/teacher/timetable` | Published lessons. The add-on unlocks a personal timetable for private classrooms. |
-| AI Studio | `/dashboard/studio` and `/ai-studio` | #151. The signed-in home is the dark ET AI chat at full viewport. The light dashboard sidebar and top bar stay off this page. Dashboard is the first sidebar item and links to `/dashboard` for a student, `/dashboard/teacher`, `/dashboard/parent`, `/dashboard/institution`, `/dashboard/admin`, or `/dashboard/partner` by role. The light card hub is behind All tools. Teachers and institution admins also get Timetabler in the dark sidebar Tools list. Students do not. |
+| AI tools | `/dashboard/studio`, `/ai-studio`, and the routes in `TOOL_ROUTES` | Full-page shell, dark and light. `/ai-studio` redirects to `/dashboard/studio`. Dashboard is the first sidebar item and links to `/dashboard` for a student, `/dashboard/teacher`, `/dashboard/parent`, `/dashboard/institution`, `/dashboard/admin`, or `/dashboard/partner` by role. All tools still opens the card list. Teachers and institution admins see Timetabler. Students and parents do not. |
 | Student | `/dashboard/student/timetable` | Own lessons and option choices. |
 | Parent | `/dashboard/parent/timetable` | Child’s lessons and option choices. |
 | Public | `/` | Blog at `/blog` and `/blog/[slug]`. Cards and the hero use the post cover. Social images use the cover, or the branded `opengraph-image` when a post has none. |
 
-`/ai-studio` redirects to `/dashboard/studio` (307). Signed out, both then land on `/login` with no page error. Other studio routes (maths, essays, exam prep, teachers, timetable) still use the dashboard shell.
+`/ai-studio` redirects to `/dashboard/studio` (307). Signed out, both then land on `/login` with no page error. Maths, essays, exam prep, teachers, the timetable, and the other rows in `TOOL_ROUTES` use the same full-page shell. The light dashboard menu returns on every page that is not an AI tool.
 
 ## Signup schools
 
