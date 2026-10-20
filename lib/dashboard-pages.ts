@@ -936,6 +936,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'None.',
   },
   {
+    path: '/dashboard/admin/tasks',
+    title: 'Action Centre',
+    purpose: 'The queued admin to-do list. SafeLine names stay on the source document.',
+    audience: ['admin'],
+    overlaps: 'Queues and the Safety Desk.',
+    decision: 'Keep. Clients cannot create tasks.',
+    ownerKeys: 'FIREBASE_SERVICE_ACCOUNT.',
+  },
+  {
     path: '/dashboard/admin/queues',
     title: 'Queues',
     purpose: 'Work queues the admin desk still has to clear.',

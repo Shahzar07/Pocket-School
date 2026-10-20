@@ -59,6 +59,7 @@ import {
 } from '../hotline/policy';
 import { isSafetySource, safetyView, trackerFor, type SafetyView } from '../safety/policy';
 import { parentAlertAllowed, readVerification, staffCaseAllowed } from '../verification/policy';
+import { finishAdminTask, rememberAdminTask, reopenAdminTask } from './admin-tasks';
 
 function db(): Firestore {
   return adminDb();
@@ -237,6 +238,18 @@ export async function createTicket(uid: string, input: Record<string, unknown>) 
     updatedAt: now,
   };
   await ref.set(ticket);
+  const urgent = sensitive && priority === 'high';
+  await rememberAdminTask({
+    type: 'safeline_case',
+    entityType: 'hotline_tickets',
+    entityPath: `hotline_tickets/${ref.id}`,
+    title: 'SafeLine case',
+    summary: `SafeLine ${category.replace(/_/g, ' ')} ticket`,
+    priority: urgent ? 'critical' : priority,
+    slaTier: urgent ? 'critical' : priority,
+    scope: { institutionId },
+    now,
+  });
   await logEvent(ref.id, actor, 'created', {
     before: {},
     after: { category, priority, status: 'pending', addressedTo, body },
@@ -498,6 +511,7 @@ export async function setTicketStatus(uid: string, id: string, input: Record<str
     patch.reopenUntil = reopenUntil(now);
   }
   await db().doc(`hotline_tickets/${id}`).set(patch, { merge: true });
+  if (closing) await finishAdminTask(`hotline_tickets/${id}`, actor.id, 'done');
   await logEvent(id, actor, 'status_change', {
     before: { status: str(ticket.data.status) },
     after: { status, kivReason: patch.kivReason ?? '', kivFollowUpAt: patch.kivFollowUpAt ?? 0 },
@@ -518,6 +532,7 @@ export async function reopenTicket(uid: string, id: string, device: ChainDevice 
   }
   const now = Date.now();
   await db().doc(`hotline_tickets/${id}`).set({ status: 'pending', updatedAt: now }, { merge: true });
+  await reopenAdminTask(`hotline_tickets/${id}`);
   await logEvent(id, actor, 'reopened', {
     before: { status: str(ticket.data.status) },
     after: { status: 'pending' },

@@ -7,6 +7,7 @@ import { BROADCAST_CATEGORIES, DESK_QUEUES } from '@/lib/admin/desk';
 import { DEFAULT_FLAGS, FEATURE_FLAG_LABELS, FEATURE_FLAGS, type FeatureFlag } from '@/lib/feature-flags';
 import { Sparkline, StatCard, TileLink } from '@/components/dashboard';
 import { SafeLineBanner } from '@/components/safety/safeline-banner';
+import { ActionCentreWidget } from '@/components/admin/action-centre/action-centre-widget';
 import { useAuthSTORE } from '@/hooks/use-auth';
 
 type Row = { id: string; title: string; detail: string };
@@ -30,6 +31,7 @@ type Snapshot = {
 
 const TILES: { id: string; label: string; href: string; hint: string; category: 'people' | 'learning' | 'payments' | 'safety' | 'insights' | 'settings' | 'community' | 'careers' }[] = [
   { id: 'books', label: 'AI Book Creator', href: '/dashboard/admin/books', hint: 'Write, cover, and publish to PoketReads', category: 'learning' },
+  { id: 'tasks', label: 'Action Centre', href: '/dashboard/admin/tasks', hint: 'Waiting tasks and SLA clocks', category: 'safety' },
   { id: 'queues', label: 'Queues', href: '/dashboard/admin/queues', hint: 'What needs a decision', category: 'safety' },
   { id: 'users', label: 'People', href: '/dashboard/admin/users', hint: 'Roles, tiers, suspension', category: 'people' },
   { id: 'institutions', label: 'Institutions', href: '/dashboard/admin/institutions', hint: 'Schools and approvals', category: 'people' },
@@ -120,7 +122,9 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
             <button type="submit" className={buttonClass} disabled={setup}>Search</button>
           </form>
           {hits ? <SearchHits hits={hits} reason={reason} onReason={setReason} onAct={act} /> : null}
-          <section aria-label="Top tasks" className="grid gap-3 sm:grid-cols-3">
+          <ActionCentreWidget />
+          <section aria-label="Top tasks" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <TileLink href="/dashboard/admin/tasks" label="Action Centre" hint="Waiting tasks" category="safety" />
             <TileLink href="/dashboard/admin/queues" label="Open queues" hint="Decisions waiting" category="safety" badge={queueTotal(desk?.counts)} />
             <TileLink href="/dashboard/admin/safety-desk" label="Safety Desk" hint="SLA timers" category="safety" badge={desk?.counts?.safety} />
             <TileLink href="/dashboard/admin/users" label="Review accounts" hint="Role and tier" category="people" />

@@ -3,6 +3,7 @@
     { "path": "/api/cron/insights", "schedule": "15 16 * * *" },
     { "path": "/api/cron/insights", "schedule": "0 0 * * 1" },
     { "path": "/api/cron/member-cards", "schedule": "30 2 * * *" },
-    { "path": "/api/cron/notes", "schedule": "45 2 * * *" }
+    { "path": "/api/cron/notes", "schedule": "45 2 * * *" },
+    { "path": "/api/cron/admin-tasks", "schedule": "*/15 * * * *" }
   ]
 }

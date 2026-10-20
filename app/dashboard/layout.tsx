@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 const AITutor = dynamic(() => import('@/components/ai-tutor').then(mod => mod.AITutor), { ssr: false });
 import { NotificationsBell } from '@/components/notifications-bell';
+import { TaskBell } from '@/components/admin/action-centre/task-bell';
 import { DashboardSearch } from '@/components/dashboard-search';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { CurrencySwitcher } from '@/components/currency-switcher';
@@ -239,6 +240,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin', icon: BarChart, labelKey: 'nav.analytics' },
       { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.aiBookCreator', label: 'AI Book Creator' },
       { href: '/dashboard/admin/queues', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Queues' },
+      { href: '/dashboard/admin/tasks', icon: ListTodo, labelKey: 'nav.dashboard', label: 'Action Centre' },
       { href: '/dashboard/admin/platform', icon: Settings, labelKey: 'nav.systemSettings', label: 'Platform tools' },
       { href: '/dashboard/admin/pulse', icon: Activity, labelKey: 'nav.insights', label: 'Pulse' },
       { href: '/dashboard/admin/safety-desk', icon: Shield, labelKey: 'nav.moderation', label: 'Safety Desk' },
@@ -623,6 +625,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const role = (account.mode ?? profile.role ?? 'student') as Role;
   const superAdmin = isSuperAdmin(profile);
+  const staff = resolveStaffRole({ email: profile.email, role: profile.role, adminRole: profile.adminRole });
+  const actionCentre = role === 'admin' && (staff === 'admin' || staff === 'super_admin');
   const roleLabel = account.mode
     ? MODE_NAMES[account.mode]
     : t(`roles.${profile.role}`, { defaultValue: ROLE_LABELS[profile.role] ?? profile.role });
@@ -786,6 +790,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span data-tour="sparks"><SparksChip /></span>
             <span data-tour="language"><LanguageSwitcher /></span>
             <CurrencySwitcher />
+            {actionCentre ? <TaskBell /> : null}
             <span data-tour="notifications"><NotificationsBell /></span>
             <span className="ms-1" data-tour="profile">
               <AccountMenu

@@ -247,6 +247,7 @@ const admin: RoleHome = {
     { id: 'users', label: 'People', href: '/dashboard/admin/users', category: 'people', hint: 'Roles and tiers' },
   ],
   tiles: [
+    { id: 'tasks', label: 'Action Centre', href: '/dashboard/admin/tasks', category: 'safety' },
     { id: 'queues', label: 'Queues', href: '/dashboard/admin/queues', category: 'safety' },
     { id: 'platform', label: 'Platform', href: '/dashboard/admin/platform', category: 'settings' },
     { id: 'pulse', label: 'Pulse', href: '/dashboard/admin/pulse', category: 'insights' },

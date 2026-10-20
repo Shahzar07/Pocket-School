@@ -23,6 +23,7 @@ export const PUSH_CATEGORIES = [
   'network',
   'safety',
   'hotline',
+  'admin',
   'emergency',
 ] as const;
 
@@ -56,6 +57,10 @@ export interface PushMessage {
   force?: boolean;
   /** Emergency alerts use a distinct sound. Expo receives this name. */
   sound?: string;
+  /** Android notification channel. Action Centre uses `emergency` or `admin`. */
+  channelId?: string;
+  /** FCM data. When set, it replaces the default `{link, category}` map. Values are strings. */
+  data?: Record<string, string>;
 }
 
 export interface PushStore {

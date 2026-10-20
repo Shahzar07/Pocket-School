@@ -30,6 +30,7 @@ import { reviewPartnerApplication } from './community-partners';
 import { resolveAppeal } from './et-moderation';
 import { appendChain } from './ledger';
 import { ActionError } from './actions';
+import { finishAdminTask } from './admin-tasks';
 
 function db(): Firestore {
   return adminDb();
@@ -361,6 +362,7 @@ export async function runDeskAction(actor: DeskActor, body: Record<string, unkno
     if (!inDeskScope(actor, rowScope(snap.data() ?? {}))) throw new ActionError('FORBIDDEN', 'That institution is outside your institution or region.');
     if (!reason) throw new ActionError('BAD_REQUEST', 'A reason is required.');
     await snap.ref.set({ status: 'approved', approvedBy: actor.uid, approvedAt: Date.now() }, { merge: true });
+    await finishAdminTask(`institutions/${id}`, actor.uid, 'done', reason);
     await audit(actor, 'institution-approve', id, { reason });
     return { ok: true as const };
   }

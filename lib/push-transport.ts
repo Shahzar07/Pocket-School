@@ -9,8 +9,27 @@ import { expoShouldPrune, webPushShouldPrune } from './push';
 
 const EXPO_URL = 'https://exp.host/--/api/v2/push/send';
 
+/** Action Centre pushes send their data map as-is. Other pushes keep link and category. */
+export function fcmDataFields(message: PushMessage): Record<string, string> {
+  if (message.data && Object.keys(message.data).length > 0) {
+    const data: Record<string, string> = {};
+    for (const [key, value] of Object.entries(message.data)) data[key] = value;
+    return data;
+  }
+  return { link: message.link ?? '', category: message.category };
+}
+
+export function fcmAndroidConfig(message: PushMessage): { priority: 'HIGH' | 'NORMAL'; notification: { channel_id: string } } | undefined {
+  if (!message.channelId) return undefined;
+  return {
+    priority: message.channelId === 'emergency' ? 'HIGH' : 'NORMAL',
+    notification: { channel_id: message.channelId },
+  };
+}
+
 export async function sendExpo(token: DeviceToken, message: PushMessage): Promise<SendOutcome> {
   try {
+  const channelId = message.channelId || (message.sound ? message.category : '');
   const response = await fetch(EXPO_URL, {
     method: 'POST',
     headers: {
@@ -22,8 +41,9 @@ export async function sendExpo(token: DeviceToken, message: PushMessage): Promis
       to: token.token,
       title: message.title,
       body: message.body,
-      data: { url: message.link ?? '', category: message.category },
-      ...(message.sound ? { sound: message.sound, channelId: message.category } : {}),
+      data: message.data ?? { url: message.link ?? '', category: message.category },
+      ...(message.sound ? { sound: message.sound } : {}),
+      ...(channelId ? { channelId } : {}),
     }),
   });
   const body: unknown = await response.json().catch(() => null);
@@ -52,8 +72,9 @@ export async function sendWebPush(token: DeviceToken, message: PushMessage): Pro
       JSON.stringify({
         title: message.title,
         body: message.body,
-        link: message.link ?? '',
+        link: message.link ?? message.data?.deepLink ?? '',
         category: message.category,
+        ...(message.data ?? {}),
       }),
     );
     return { ok: true, prune: false };
@@ -125,6 +146,7 @@ export async function sendFcm(token: DeviceToken, message: PushMessage): Promise
   try {
     if (account) {
       const access = await fcmAccessToken(account);
+      const android = fcmAndroidConfig(message);
       const response = await fetch(`https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${access}`, 'Content-Type': 'application/json' },
@@ -132,7 +154,8 @@ export async function sendFcm(token: DeviceToken, message: PushMessage): Promise
           message: {
             token: token.token,
             notification: { title: message.title, body: message.body },
-            data: { link: message.link ?? '', category: message.category },
+            data: fcmDataFields(message),
+            ...(android ? { android } : {}),
           },
         }),
       });
@@ -146,8 +169,12 @@ export async function sendFcm(token: DeviceToken, message: PushMessage): Promise
       headers: { Authorization: `key=${serverKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: token.token,
-        notification: { title: message.title, body: message.body },
-        data: { link: message.link ?? '', category: message.category },
+        notification: {
+          title: message.title,
+          body: message.body,
+          ...(message.channelId ? { android_channel_id: message.channelId } : {}),
+        },
+        data: fcmDataFields(message),
       }),
     });
     return { ok: response.ok, prune: false };

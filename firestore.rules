@@ -310,6 +310,94 @@ service cloud.firestore {
       );
     }
 
+    function clockOk(value) {
+      return value is string && value.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+    }
+    function digestTimesOk() {
+      return incoming().digestTimes is list
+        && incoming().digestTimes.size() >= 1
+        && incoming().digestTimes.size() <= 4
+        && clockOk(incoming().digestTimes[0])
+        && (incoming().digestTimes.size() < 2 || clockOk(incoming().digestTimes[1]))
+        && (incoming().digestTimes.size() < 3 || clockOk(incoming().digestTimes[2]))
+        && (incoming().digestTimes.size() < 4 || clockOk(incoming().digestTimes[3]));
+    }
+    function adminPushPrefsShape() {
+      return incoming().keys().hasOnly(['mode', 'digestTimes', 'quietHours', 'categories', 'lastDigestAt'])
+        && incoming().mode in ['instant', 'digest']
+        && digestTimesOk()
+        && incoming().quietHours is map
+        && incoming().quietHours.keys().hasOnly(['start', 'end', 'tz'])
+        && clockOk(incoming().quietHours.start)
+        && clockOk(incoming().quietHours.end)
+        && incoming().quietHours.tz is string
+        && incoming().quietHours.tz.size() > 0
+        && incoming().quietHours.tz.size() <= 64
+        && incoming().categories is map
+        && incoming().categories.keys().hasOnly(['admin', 'emergency'])
+        && incoming().categories.admin is bool
+        && incoming().categories.emergency == true;
+    }
+    function taskSchool() {
+      return resource.data.get('scope', {}).get('institutionId', '');
+    }
+    function taskRegion() {
+      return resource.data.get('scope', {}).get('region', '');
+    }
+    function mySchool() {
+      return userData().get('institutionId', '');
+    }
+    function myRegion() {
+      return userData().get('region', '') != ''
+        ? userData().get('region', '')
+        : userData().get('state', '');
+    }
+    function adminTaskVisible() {
+      return callerIsSuper()
+        || (mySchool() is string && mySchool() != '' && taskSchool() == mySchool())
+        || (myRegion() is string && myRegion() != '' && taskRegion() == myRegion());
+    }
+    function taskWorkflowKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['status', 'claimedBy', 'claimedAt', 'snoozedUntil', 'resolvedAt', 'resolvedBy', 'resolutionReason', 'resolution']);
+    }
+    function taskResolutionClear() {
+      return incoming().get('resolution', null) == null
+        && incoming().get('resolvedBy', '') == ''
+        && incoming().get('resolutionReason', '') == ''
+        && incoming().get('resolvedAt', null) == null;
+    }
+    function taskResolutionWritten() {
+      return incoming().resolution is map
+        && incoming().resolution.keys().hasOnly(['action', 'reason', 'by', 'at'])
+        && incoming().resolution.action in ['done', 'dismiss', 'reject']
+        && incoming().resolution.by == request.auth.uid
+        && incoming().resolution.at is number
+        && incoming().resolution.reason is string
+        && incoming().resolution.reason.size() <= 500
+        && (
+          incoming().resolution.action == 'done'
+          || incoming().resolution.reason.size() >= 3
+        )
+        && incoming().resolvedAt == incoming().resolution.at
+        && incoming().resolvedBy == incoming().resolution.by
+        && incoming().resolutionReason == incoming().resolution.reason
+        && (
+          (incoming().status == 'done' && incoming().resolution.action == 'done')
+          || (incoming().status == 'dismissed' && incoming().resolution.action in ['dismiss', 'reject'])
+        );
+    }
+    function adminTaskUpdateOk() {
+      return taskWorkflowKeys()
+        && incoming().status in ['open', 'claimed', 'snoozed', 'done', 'dismissed']
+        && (
+          (incoming().status in ['done', 'dismissed'] && taskResolutionWritten())
+          || (incoming().status in ['open', 'claimed', 'snoozed'] && taskResolutionClear())
+        )
+        && (incoming().status != 'claimed' || (incoming().claimedBy == request.auth.uid && incoming().claimedAt is number))
+        && (incoming().status != 'snoozed' || (incoming().snoozedUntil is number && incoming().snoozedUntil > request.time.toMillis() && incoming().snoozedUntil < request.time.toMillis() + 691200000));
+    }
+
     function targetIsSuper() {
       return resource.data.get('adminRole', '') == 'super_admin'
         || resource.data.get('email', '') == 'shahzarrayyan123@gmail.com'
@@ -531,6 +619,21 @@ service cloud.firestore {
       // expiry, and the name on the card.
       match /private/{docId} {
         allow read, write: if isUser(userId);
+      }
+
+      // Action Centre push preferences. This subcollection does not replace
+      // the notificationPrefs map stored on the user document.
+      match /notificationPrefs/{prefId} {
+        allow read: if isUser(userId) || isAdmin();
+        allow create: if isUser(userId)
+          && prefId == 'admin'
+          && adminPushPrefsShape()
+          && !incoming().keys().hasAny(['lastDigestAt']);
+        allow update: if isUser(userId)
+          && prefId == 'admin'
+          && adminPushPrefsShape()
+          && incoming().get('lastDigestAt', null) == resource.data.get('lastDigestAt', null);
+        allow delete: if false;
       }
 
       // Limits for one linked child. The child can read them. Only the parent
@@ -1675,6 +1778,14 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isAdmin() && incoming().actorId == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    // Action Centre. Clients cannot create or delete. An admin may update
+    // only the workflow fields, and reject or dismiss requires a reason.
+    match /admin_tasks/{taskId} {
+      allow read: if isAdmin() && adminTaskVisible();
+      allow create, delete: if false;
+      allow update: if isAdmin() && adminTaskVisible() && adminTaskUpdateOk();
     }
 
     match /sparks_config/{docId} {

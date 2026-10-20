@@ -1271,3 +1271,71 @@ describe('exam packs', () => {
     await assertFails(deleteDoc(doc(student, 'exam_packs/draft-pack')));
   });
 });
+
+describe('admin action centre', () => {
+  const task = {
+    id: 'hotline-1',
+    type: 'safeline_case',
+    entityType: 'hotline_tickets',
+    entityPath: 'hotline_tickets/1',
+    refPath: 'hotline_tickets/1',
+    title: 'SafeLine case',
+    summary: 'A ticket is waiting.',
+    priority: 'critical',
+    slaTier: 'critical',
+    scope: { institutionId: 'school-a' },
+    status: 'open',
+    claimedBy: '',
+    claimedAt: null,
+    createdAt: 1,
+    dueAt: 2,
+    snoozedUntil: null,
+    resolvedAt: null,
+    resolvedBy: '',
+    resolutionReason: '',
+    resolution: null,
+  };
+
+  it('blocks client creates and a dismiss without a reason', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'admin_tasks/hotline-1'), task);
+    });
+    const admin = env.authenticatedContext('admin1', { adminRole: 'super_admin' }).firestore();
+    const student = env.authenticatedContext('adult1').firestore();
+    await assertFails(getDoc(doc(student, 'admin_tasks/hotline-1')));
+    await assertSucceeds(getDoc(doc(admin, 'admin_tasks/hotline-1')));
+    await assertFails(setDoc(doc(admin, 'admin_tasks/new-task'), { ...task, id: 'new-task' }));
+    await assertFails(deleteDoc(doc(admin, 'admin_tasks/hotline-1')));
+    await assertFails(updateDoc(doc(admin, 'admin_tasks/hotline-1'), {
+      status: 'dismissed',
+      resolution: { action: 'dismiss', reason: 'no', by: 'admin1', at: 9 },
+      resolvedAt: 9,
+      resolvedBy: 'admin1',
+      resolutionReason: 'no',
+    }));
+    await assertSucceeds(updateDoc(doc(admin, 'admin_tasks/hotline-1'), {
+      status: 'dismissed',
+      resolution: { action: 'reject', reason: 'Duplicate ticket', by: 'admin1', at: 9 },
+      resolvedAt: 9,
+      resolvedBy: 'admin1',
+      resolutionReason: 'Duplicate ticket',
+    }));
+  });
+
+  it('keeps emergency on in admin push preferences', async () => {
+    const admin = env.authenticatedContext('admin1', { adminRole: 'super_admin' }).firestore();
+    const student = env.authenticatedContext('adult1').firestore();
+    const prefs = {
+      mode: 'digest',
+      digestTimes: ['08:00', '17:00'],
+      quietHours: { start: '22:00', end: '07:00', tz: 'Asia/Kuala_Lumpur' },
+      categories: { admin: true, emergency: true },
+    };
+    await assertSucceeds(setDoc(doc(admin, 'users/admin1/notificationPrefs/admin'), prefs));
+    await assertFails(setDoc(doc(admin, 'users/admin1/notificationPrefs/admin'), {
+      ...prefs,
+      categories: { admin: false, emergency: false },
+    }));
+    await assertFails(setDoc(doc(student, 'users/admin1/notificationPrefs/admin'), prefs));
+  });
+});

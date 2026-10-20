@@ -13,6 +13,7 @@ import { amberPage, amberPublishRefusal, amberPushBody, readApproval } from '../
 import { ensureAmberReferral } from './amber';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
+import { finishAdminTask, rememberAdminTask } from './admin-tasks';
 import { createHash } from 'crypto';
 import {
   ALERT_AUTHORITY_REMINDER_MS,
@@ -435,6 +436,19 @@ export async function createAlert(uid: string, input: Record<string, unknown>) {
     createdAt: now,
   });
   await rateRef.set({ count: count + 1, uid, day: dayKey(now) }, { merge: true });
+  if (type === 'missing_child') {
+    await rememberAdminTask({
+      type: 'amber_request',
+      entityType: 'emergency_alerts',
+      entityPath: `emergency_alerts/${ref.id}`,
+      title: 'Amber request',
+      summary: 'An amber request is waiting for review.',
+      priority: 'high',
+      slaTier: 'high',
+      scope: { institutionId: actor.institutionId, ...(region.state ? { region: region.state } : {}) },
+      now,
+    });
+  }
   await audit(ref.id, actor, 'created', {
     before: {},
     after: { type, title, status: 'draft', subjectName: str(input.subjectName).slice(0, 80) },
@@ -546,6 +560,7 @@ export async function resolveAlert(uid: string, id: string, input: Record<string
   for (const post of posts.docs) {
     await post.ref.set({ body: 'Resolved. Personal details have been removed.', pinned: false }, { merge: true });
   }
+  await finishAdminTask(`emergency_alerts/${id}`, actor.id, 'done');
   await audit(id, actor, 'resolved', {
     before: { status: record.status, publicRedacted: record.publicRedacted === true },
     after: { status: 'resolved', publicRedacted: true, outcome },
@@ -831,6 +846,7 @@ export async function retractAlert(uid: string, id: string, input: Record<string
     institutionId: record.institutionId,
     createdAtMs: now,
   });
+  await finishAdminTask(`emergency_alerts/${id}`, actor.id, 'dismiss', 'Alert retracted');
   const recipients = await db().collection(`emergency_alerts/${id}/recipients`).limit(400).get();
   await notifyPeople(record, 'Correction', reason, recipients.docs.map(doc => doc.id));
   await audit(id, actor, 'retracted', {
