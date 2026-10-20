@@ -11,17 +11,22 @@ export function TaskCard({
   task,
   now,
   selected,
+  checked,
+  onToggle,
   onAct,
 }: {
   task: AdminTask;
   now: number;
   selected: boolean;
+  checked: boolean;
+  onToggle: (id: string) => void;
   onAct: (body: { id: string; action: string; reason?: string; snoozedUntil?: number }) => Promise<void>;
 }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const clock = countdown(task.dueAt, now);
+  const registration = task.type === 'registration' || task.type === 'teacher_verification';
   const needsReason = resolutionProblem('dismiss', reason) !== '';
 
   const run = (action: string, extra?: { snoozedUntil?: number }) => {
@@ -46,20 +51,24 @@ export function TaskCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
+          <label className="mb-2 flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground">
+            <input type="checkbox" checked={checked} onChange={() => onToggle(task.id)} aria-label={`Select ${task.title}`} />
+            Select
+          </label>
           <p className="text-xs font-semibold uppercase tracking-wide text-[#1E6A83]">{task.slaTier} · {task.type.replace(/_/g, ' ')}</p>
-          <h2 className="font-heading text-2xl text-[#203337]">{task.title}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-[#203337]">{task.summary}</p>
+          <h2 className="font-heading text-2xl text-foreground">{task.title}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-foreground">{task.summary}</p>
         </div>
         <p className={`text-sm font-semibold ${clock.overdue ? 'text-[#8E2F2F]' : 'text-[#203337]'}`} data-countdown="1">
           {clock.overdue ? clock.label : `${clock.label} left`}
         </p>
       </div>
-      <p className="mt-3 text-sm text-[#1E6A83]">
+      <p className="mt-3 text-sm text-[#1E6A83]" data-task-status={task.status}>
         {task.status === 'claimed' && task.claimedBy ? 'Claimed' : task.status}
         {task.status === 'snoozed' && task.snoozedUntil ? ` until ${new Date(task.snoozedUntil).toLocaleString()}` : ''}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Link href={sourceHref(task)} className={quietClass}>Open source</Link>
+        <Link href={sourceHref(task)} className={quietClass}>{task.type === 'safeline_case' ? 'Open SafeLine case' : 'Open source'}</Link>
         <Link href={deepLinkFor(task.id)} className={quietClass}>Task link</Link>
         <p className="w-full text-xs text-[#1E6A83]">Source path {task.entityPath}</p>
       </div>
@@ -76,7 +85,9 @@ export function TaskCard({
       {needsReason ? <p className="mt-1 text-sm text-[#1E6A83]">A reason is required to reject or dismiss.</p> : null}
       {error ? <p className="mt-1 text-sm text-[#8E2F2F]" role="alert">{error}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" className={buttonClass} disabled={busy} onClick={() => run('claim')}>Claim</button>
+        <button type="button" className={buttonClass} disabled={busy} onClick={() => run('claim')}>Assign to me</button>
+        {registration ? <button type="button" className={buttonClass} disabled={busy} onClick={() => run('approve_registration')}>Approve</button> : null}
+        {registration ? <button type="button" className={buttonClass} disabled={busy || needsReason} onClick={() => run('reject_registration')}>Decline</button> : null}
         <button type="button" className={buttonClass} disabled={busy} onClick={() => run('done')}>Done</button>
         <button type="button" className={buttonClass} disabled={busy || needsReason} onClick={() => run('dismiss')}>Dismiss</button>
         <button type="button" className={buttonClass} disabled={busy || needsReason} onClick={() => run('reject')}>Reject</button>

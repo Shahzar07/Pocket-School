@@ -4,6 +4,7 @@
  */
 
 import { adminDb } from '../firebase-admin';
+import { finishAdminTask, rememberAdminTask } from './admin-tasks';
 import {
   asVolumePlanId,
   billingMoved,
@@ -81,6 +82,7 @@ export async function markInstitutionPaid(institutionId: string, interval: Volum
   const next = recordPayment({ ...current, interval }, paidOn, interval);
   await ref.set(next.state);
   await adminDb().doc(`institutions/${institutionId}`).set({ billingPhase: next.state.phase, status: 'active' }, { merge: true });
+  await finishAdminTask(`institutions/${institutionId}/billing/current`, 'system', 'done');
   const name = String((await adminDb().doc(`institutions/${institutionId}`).get()).data()?.name ?? 'Your institution');
   await writeNotices(institutionId, next.notices, name);
   return next.notices;
@@ -98,6 +100,15 @@ export async function markInstitutionFailed(institutionId: string, on = todayIso
   await adminDb().doc(`institutions/${institutionId}`).set(patch, { merge: true });
   const name = String((await adminDb().doc(`institutions/${institutionId}`).get()).data()?.name ?? 'Your institution');
   await writeNotices(institutionId, next.notices, name);
+  await rememberAdminTask({
+    type: 'other',
+    entityType: 'billing',
+    entityPath: `institutions/${institutionId}/billing/current`,
+    title: 'Failed payment',
+    summary: 'A school payment needs attention.',
+    priority: 'high',
+    scope: { institutionId },
+  });
   return next.notices;
 }
 
@@ -112,6 +123,7 @@ export async function markIndividualPaid(uid: string, planId: string, interval: 
   });
   const next = recordPayment({ ...current, subject: 'individual', planId: known, seats: 1 }, paidOn, interval);
   await ref.set({ ...next.state, subject: 'individual', product: planId === 'teacher' ? 'teacher_plan' : 'plan' });
+  await finishAdminTask(`subscriber_billing/${uid}`, 'system', 'done');
 }
 
 export async function markIndividualFailed(uid: string, on = todayIso()): Promise<void> {
@@ -121,6 +133,14 @@ export async function markIndividualFailed(uid: string, on = todayIso()): Promis
   const current = readSubscription(snap.data() as Record<string, unknown>, blankSubscription('individual', on));
   const next = onPaymentFailed(current, on);
   await ref.set({ ...next.state, subject: 'individual' }, { merge: true });
+  await rememberAdminTask({
+    type: 'other',
+    entityType: 'subscriber_billing',
+    entityPath: `subscriber_billing/${uid}`,
+    title: 'Failed payment',
+    summary: 'A subscription payment needs attention.',
+    priority: 'high',
+  });
 }
 
 export async function advanceOpenBills(on = todayIso()): Promise<{ institutions: number; individuals: number }> {

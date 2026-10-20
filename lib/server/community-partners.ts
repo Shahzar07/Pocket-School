@@ -11,6 +11,7 @@ import { approvalLetter, approvalRoute, cleanPartnerApplication, type PartnerApp
 import { originFromUrl } from '../safety/disclaimer';
 import { currentMailAdapter, sendWithBackoff } from '../mail';
 import { ActionError } from './actions';
+import { finishAdminTask, rememberAdminTask } from './admin-tasks';
 
 function db(): Firestore {
   return adminDb();
@@ -42,6 +43,16 @@ export async function submitPartnerApplication(input: Partial<PartnerApplication
     reviewedAt: 0,
     reviewedBy: '',
   });
+  await rememberAdminTask({
+    type: 'partner_application',
+    entityType: 'communityPartnerApplications',
+    entityPath: `communityPartnerApplications/${id}`,
+    title: value.orgName || 'Community partner',
+    summary: 'A community partner application is waiting.',
+    priority: 'medium',
+    scope: value.region ? { region: value.region } : {},
+    now,
+  });
   const mailed = await notifyReviewQueue(id, value).catch(() => false);
   return { ok: true as const, id, stored: true, mailed };
 }
@@ -66,6 +77,12 @@ export async function reviewPartnerApplication(actorUid: string, id: string, dec
   }, { merge: true });
   const email = typeof data.email === 'string' ? data.email : '';
   const orgName = typeof data.orgName === 'string' ? data.orgName : '';
+  await finishAdminTask(
+    `communityPartnerApplications/${id}`,
+    actorUid,
+    decision === 'approved' ? 'done' : 'reject',
+    decision === 'approved' ? '' : 'Application declined',
+  );
   const applicantMailed = decision === 'approved'
     ? await notifyApplicant(email, orgName, type).catch(() => false)
     : false;

@@ -131,7 +131,12 @@ export function deepLinkFor(taskId: string): string {
 }
 
 /** Web route for the source. `entityPath` stays the Firestore path the app uses. */
-export function sourceHref(task: Pick<AdminTask, 'type' | 'id'>): string {
+export function sourceHref(task: Pick<AdminTask, 'type' | 'id'> & { entityType?: string }): string {
+  if (task.entityType === 'support_tickets') return '/dashboard/helpdesk';
+  if (task.entityType === 'refund_requests' || task.entityType === 'payouts' || task.entityType === 'billing' || task.entityType === 'subscriber_billing') {
+    return '/dashboard/admin/finance';
+  }
+  if (task.entityType === 'offers') return '/dashboard/admin/partners';
   if (task.type === 'safeline_case') return '/dashboard/admin/hotline';
   if (task.type === 'amber_request') return '/dashboard/admin/emergency';
   if (task.type === 'institution_verification') return '/dashboard/admin/institutions';
@@ -140,6 +145,37 @@ export function sourceHref(task: Pick<AdminTask, 'type' | 'id'>): string {
   if (task.type === 'registration' || task.type === 'teacher_verification') return '/dashboard/admin/users';
   if (task.type === 'partner_application') return '/dashboard/admin/partners';
   return deepLinkFor(task.id);
+}
+
+/** Urgent means critical or high. SafeLine critical stays first because `sortTasks` already ranks it that way. */
+export function countByType(tasks: readonly AdminTask[]): Array<{ type: AdminTaskType; total: number; urgent: number }> {
+  const map = new Map<AdminTaskType, { total: number; urgent: number }>();
+  for (const task of tasks) {
+    const row = map.get(task.type) ?? { total: 0, urgent: 0 };
+    row.total += 1;
+    if (task.slaTier === 'critical' || task.slaTier === 'high' || task.priority === 'critical' || task.priority === 'high') {
+      row.urgent += 1;
+    }
+    map.set(task.type, row);
+  }
+  return [...map.entries()]
+    .map(([type, row]) => ({ type, total: row.total, urgent: row.urgent }))
+    .sort((a, b) => b.urgent - a.urgent || b.total - a.total || a.type.localeCompare(b.type));
+}
+
+/**
+ * Emergency mail is sent even when the account email toggle is off and during quiet hours.
+ * Other admin mail follows the same decision as push.
+ */
+export function emailAllowed(
+  accountEmailOn: boolean,
+  prefs: AdminPushPrefs,
+  channel: 'emergency' | 'admin',
+  now: number,
+): boolean {
+  if (channel === 'emergency') return true;
+  if (!accountEmailOn) return false;
+  return pushDecision(prefs, channel, now) === 'send';
 }
 
 /** Strip addresses, phone numbers, and labelled names. The stored summary never keeps them. */

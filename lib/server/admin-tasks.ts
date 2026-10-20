@@ -14,6 +14,7 @@ import {
   androidChannel,
   buildAdminTask,
   digestDue,
+  emailAllowed,
   inQuietHours,
   parseAdminTask,
   presentTask,
@@ -30,6 +31,7 @@ import {
   type AdminTaskType,
   type ResolutionAction,
 } from '../admin/tasks';
+import { sendMail } from '../mail';
 import { sendPush, type PushCategory } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
@@ -88,8 +90,21 @@ async function fanout(task: AdminTask, now: number): Promise<void> {
     if (!adminInTaskScope(admin, task.scope)) continue;
     const prefsSnap = await db().doc(adminPushPrefsPath(person.id)).get();
     const prefs = readAdminPushPrefs(prefsSnap.exists ? prefsSnap.data() : null);
-    if (pushDecision(prefs, channel, now) !== 'send') continue;
+    const decision = pushDecision(prefs, channel, now);
     const category: PushCategory = channel === 'emergency' ? 'emergency' : 'admin';
+    const address = typeof data.email === 'string' ? data.email : '';
+    const accountEmailOn = !(data.notificationPrefs && typeof data.notificationPrefs === 'object' && (data.notificationPrefs as { email?: boolean }).email === false);
+    if (address && emailAllowed(accountEmailOn, prefs, channel, now)) {
+      const mailed = await sendMail({
+        to: address,
+        subject: payload.title,
+        text: `${task.summary || 'An admin task is waiting.'}\n${payload.deepLink}`,
+      }).catch(() => ({ sent: false as const, reason: 'provider' }));
+      if (!mailed.sent && mailed.reason !== 'not_configured') {
+        console.error('admin task email skipped', mailed.reason);
+      }
+    }
+    if (decision !== 'send') continue;
     await sendPush({
       recipientUid: person.id,
       category,
@@ -141,6 +156,10 @@ export async function rememberAdminTask(input: Parameters<typeof openAdminTask>[
 
 export async function listAdminTasks(actor: DeskActor, now = Date.now()): Promise<AdminTask[]> {
   if (!isAdminConfigured() || !canOpenDesk(actor)) return [];
+  const { syncPendingAdminTasks } = await import('./admin-task-sync');
+  await syncPendingAdminTasks().catch(error => {
+    console.error('admin task sync failed', error instanceof Error ? error.message : error);
+  });
   const snap = await db().collection(ADMIN_TASKS).where('status', 'in', ['open', 'claimed', 'snoozed']).limit(100).get();
   const tasks = snap.docs
     .map(doc => parseAdminTask(doc.id, doc.data()))
@@ -150,10 +169,11 @@ export async function listAdminTasks(actor: DeskActor, now = Date.now()): Promis
   return sortTasks(tasks, now);
 }
 
-async function loadTask(id: string): Promise<AdminTask> {
+export async function visibleAdminTask(actor: DeskActor, id: string): Promise<AdminTask> {
   const snap = await db().collection(ADMIN_TASKS).doc(id).get();
   const task = snap.exists ? parseAdminTask(snap.id, snap.data()) : null;
   if (!task) throw new ActionError('NOT_FOUND', 'That task was not found.');
+  if (!canSee(actor, task.scope)) throw new ActionError('FORBIDDEN', 'That task is outside your institution or region.');
   return task;
 }
 
@@ -171,8 +191,7 @@ export async function actOnAdminTask(
 ): Promise<AdminTask> {
   if (!isAdminConfigured()) throw new ActionError('BAD_REQUEST', 'The admin task list is coming soon.');
   if (!canOpenDesk(actor)) throw new ActionError('FORBIDDEN', 'This account cannot use the Action Centre.');
-  const task = await loadTask(input.id);
-  if (!canSee(actor, task.scope)) throw new ActionError('FORBIDDEN', 'That task is outside your institution or region.');
+  const task = await visibleAdminTask(actor, input.id);
   assertOpen(task);
   if (task.claimedBy && task.claimedBy !== actor.uid && !isSuperDesk(actor) && input.action !== 'claim') {
     throw new ActionError('FORBIDDEN', 'Another admin has claimed this task.');
@@ -287,8 +306,10 @@ export async function saveAdminPushPrefs(uid: string, raw: unknown): Promise<Adm
   return readAdminPushPrefs(stored);
 }
 
-export async function runAdminTaskCron(now = Date.now()): Promise<{ unsnoozed: number; digests: number }> {
-  if (!isAdminConfigured()) return { unsnoozed: 0, digests: 0 };
+export async function runAdminTaskCron(now = Date.now()): Promise<{ unsnoozed: number; digests: number; opened: number; closed: number }> {
+  if (!isAdminConfigured()) return { unsnoozed: 0, digests: 0, opened: 0, closed: 0 };
+  const { syncPendingAdminTasks } = await import('./admin-task-sync');
+  const synced = await syncPendingAdminTasks(true).catch(() => ({ opened: 0, closed: 0 }));
   const snoozed = await db().collection(ADMIN_TASKS).where('status', '==', 'snoozed').limit(200).get();
   let unsnoozed = 0;
   for (const doc of snoozed.docs) {
@@ -333,5 +354,5 @@ export async function runAdminTaskCron(now = Date.now()): Promise<{ unsnoozed: n
     }
     await ref.set({ lastDigestAt: now }, { merge: true });
   }
-  return { unsnoozed, digests };
+  return { unsnoozed, digests, opened: synced.opened, closed: synced.closed };
 }

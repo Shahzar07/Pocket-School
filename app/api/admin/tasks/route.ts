@@ -4,7 +4,8 @@ import { isAdminConfigured } from '@/lib/firebase-admin';
 import { ADMIN_SETUP_MESSAGE } from '@/lib/admin/desk-gate';
 import { actorFromProfile } from '@/lib/server/admin-desk';
 import { ActionError } from '@/lib/server/actions';
-import { actOnAdminTask, listAdminTasks, readStoredAdminPushPrefs } from '@/lib/server/admin-tasks';
+import { listAdminTasks, readStoredAdminPushPrefs } from '@/lib/server/admin-tasks';
+import { actOnManyAdminTasks, actOnOneAdminTask } from '@/lib/server/admin-task-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,12 +38,20 @@ export async function POST(req: NextRequest) {
   const profile = await loadUser(user.uid);
   const actor = actorFromProfile(user.uid, profile ?? undefined);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const action = str(body.action);
+  const reason = str(body.reason);
+  const snoozedUntil = typeof body.snoozedUntil === 'number' ? body.snoozedUntil : undefined;
+  const ids = Array.isArray(body.ids) ? body.ids.filter((item): item is string => typeof item === 'string' && item.length > 0) : [];
   try {
-    const task = await actOnAdminTask(actor, user.email ?? str(profile?.email), {
+    if (ids.length > 0) {
+      const result = await actOnManyAdminTasks(actor, user.email ?? str(profile?.email), { ids, action, reason, snoozedUntil });
+      return NextResponse.json({ ok: result.failures.length === 0, ...result });
+    }
+    const task = await actOnOneAdminTask(actor, user.email ?? str(profile?.email), {
       id: str(body.id),
-      action: str(body.action),
-      reason: str(body.reason),
-      snoozedUntil: typeof body.snoozedUntil === 'number' ? body.snoozedUntil : undefined,
+      action,
+      reason,
+      snoozedUntil,
     });
     return NextResponse.json({ ok: true, task });
   } catch (error) {

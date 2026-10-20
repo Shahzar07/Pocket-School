@@ -8,13 +8,31 @@ import { Button } from '@/components/ui/button';
 import { countdown, deepLinkFor } from '@/lib/admin/tasks';
 import { useAdminTasks } from './use-admin-tasks';
 
+const SEEN_KEY = 'poket-admin-task-seen';
+
+function readSeen(): string[] {
+  try {
+    const raw = window.localStorage.getItem(SEEN_KEY);
+    const parsed = raw ? JSON.parse(raw) as unknown : [];
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 export function TaskBell() {
   const router = useRouter();
   const { tasks } = useAdminTasks();
   const [open, setOpen] = useState(false);
+  const [seen, setSeen] = useState<string[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
   const now = Date.now();
   const waiting = tasks.filter(task => task.status === 'open' || task.status === 'claimed');
+  const unread = waiting.filter(task => !seen.includes(task.id));
+
+  useEffect(() => {
+    setSeen(readSeen());
+  }, []);
 
   useEffect(() => {
     function close(event: MouseEvent) {
@@ -30,14 +48,19 @@ export function TaskBell() {
         variant="ghost"
         size="icon"
         className="relative text-gray-600"
-        aria-label="Action Centre"
+        aria-label={unread.length > 0 ? `Action Centre, ${unread.length} unread` : 'Action Centre'}
         aria-expanded={open}
-        onClick={() => setOpen(value => !value)}
+        onClick={() => {
+          setOpen(value => !value);
+          const next = [...new Set([...seen, ...waiting.map(task => task.id)])].slice(-200);
+          setSeen(next);
+          window.localStorage.setItem(SEEN_KEY, JSON.stringify(next));
+        }}
       >
         <ListTodo className="h-5 w-5" />
-        {waiting.length > 0 ? (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#203337] px-1 text-[10px] font-bold text-white">
-            {waiting.length > 9 ? '9+' : waiting.length}
+        {unread.length > 0 ? (
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#203337] px-1 text-[10px] font-bold text-white" data-unread-count={unread.length}>
+            {unread.length > 9 ? '9+' : unread.length}
           </span>
         ) : null}
       </Button>
@@ -60,7 +83,7 @@ export function TaskBell() {
                     className="w-full rounded-xl px-2 py-2 text-left hover:bg-muted"
                     onClick={() => { setOpen(false); router.push(deepLinkFor(task.id)); }}
                   >
-                    <span className="block text-sm font-semibold text-[#203337]">{task.title}</span>
+                    <span className="block text-sm font-semibold text-foreground">{task.title}</span>
                     <span className={`text-xs ${clock.overdue ? 'text-[#8E2F2F]' : 'text-[#1E6A83]'}`}>
                       {task.slaTier} · {clock.overdue ? clock.label : `${clock.label} left`}
                     </span>
