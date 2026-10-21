@@ -6,6 +6,7 @@ import { loadCertificateAssets } from '@/lib/certificates/assets';
 import { CERTIFICATE_KEY_MESSAGE, CERTIFICATE_SAMPLE, isBuiltinTemplate, normaliseDesign, scopeDesignForActor, type CertificateDesign } from '@/lib/certificates/design';
 import { certificatePdf } from '@/lib/certificates/pdf';
 import { isAdminConfigured } from '@/lib/firebase-admin';
+import { decorateSample } from '@/lib/certificates/sample-placeholders';
 import { deleteDesign, listDesigns, saveDesign } from '@/lib/server/certificate-designs';
 import { loadToolActor } from '@/lib/server/tool-actor';
 
@@ -25,8 +26,9 @@ async function bundledFonts(): Promise<{ regular: Uint8Array; bold: Uint8Array }
 }
 
 async function pdfResponse(design: CertificateDesign, filename: string) {
-  const [fonts, assets] = await Promise.all([bundledFonts(), loadCertificateAssets(design)]);
-  const bytes = await certificatePdf(design, CERTIFICATE_SAMPLE, { ...fonts, assets });
+  const face = decorateSample(design);
+  const [fonts, assets] = await Promise.all([bundledFonts(), loadCertificateAssets(face)]);
+  const bytes = await certificatePdf(design, CERTIFICATE_SAMPLE, { ...fonts, assets, labelledSample: true });
   return new NextResponse(Buffer.from(bytes), {
     headers: {
       'Content-Type': 'application/pdf',

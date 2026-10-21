@@ -1,3 +1,5 @@
+import { designForIssue } from './sample-placeholders';
+
 export const CERTIFICATE_PALETTES = ['blue', 'cyan'] as const;
 export const CERTIFICATE_BORDERS = ['none', 'line', 'double', 'corner'] as const;
 export const CERTIFICATE_PAGE_SIZES = ['a4-landscape', 'a4-portrait', 'letter'] as const;
@@ -218,7 +220,7 @@ export function normaliseDesign(input: Partial<CertificateDesign> | null | undef
   const pageSize = input?.pageSize === 'a4-portrait' || input?.pageSize === 'letter' || input?.pageSize === 'a4-landscape'
     ? input.pageSize
     : base.pageSize;
-  return {
+  const draft: CertificateDesign = {
     id: clean(input?.id, 80) || base.id,
     name: clean(input?.name, 80) || base.name,
     title: clean(input?.title, 120) || base.title,
@@ -237,6 +239,7 @@ export function normaliseDesign(input: Partial<CertificateDesign> | null | undef
     isDefault: input?.isDefault === true && !clean(input?.institutionId, 120),
     pageSize,
   };
+  return designForIssue(draft);
 }
 
 export const CERTIFICATE_KEY_MESSAGE = 'Saving certificate templates needs the Firebase Admin key. This admin tool is coming soon.';

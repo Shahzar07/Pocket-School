@@ -8,6 +8,9 @@ test('the certificate designer shows one form and one sheet', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Add template' })).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'New template' })).toHaveCount(0);
   await expect(page.locator('[data-certificate-sheet="1"]')).toHaveCount(1);
+  await expect(page.locator('[data-certificate-sample="1"]')).toContainText('Template sample');
+  await expect(page.locator('[data-certificate-sheet="1"]')).toContainText('With Harbour');
+  await expect(page.getByLabel('Co-brand name')).toHaveValue('');
   await expect(page.locator('[data-certificate-footer="1"]')).toHaveCount(1);
   await expect(page.getByLabel('Page size')).toHaveValue('a4-landscape');
   const sheet = page.locator('[data-certificate-sheet="1"]');

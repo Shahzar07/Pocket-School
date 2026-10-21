@@ -4040,3 +4040,4 @@ components/certificates/designer.tsx	Renaming updates the tab. Duplicate keeps t
 components/certificates/designer.tsx	The PDF is this sheet: border, palette, logos, signatures, QR, and the copyright line.
 components/certificates/sheet.tsx	Institution logo
 components/certificates/sheet.tsx	QR code linking to the verify page
+components/certificates/designer.tsx	Template sample. North Academy, Harbour and the drawn signature stay on this preview. A student certificate leaves them off.

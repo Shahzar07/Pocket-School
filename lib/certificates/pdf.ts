@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { paletteColours, type CertificateDesign, type CertificateSample } from './design';
 import { copyrightNotice } from '../export/notice';
 import { certificateLayout, gradientHex, type Box } from './layout';
+import { decorateSample, designForIssue, isSamplePng } from './sample-placeholders';
 
 export interface CertificatePdfAssets {
   logo?: Uint8Array | null;
@@ -15,6 +16,17 @@ export interface CertificatePdfOptions {
   regular: Uint8Array;
   bold: Uint8Array;
   assets?: CertificatePdfAssets;
+  /** Preview of PS-1042. Issued certificates leave this off so sample art is removed. */
+  labelledSample?: boolean;
+}
+
+function assetsForIssue(assets: CertificatePdfAssets | undefined): CertificatePdfAssets | undefined {
+  if (!assets) return assets;
+  return {
+    logo: isSamplePng(assets.logo) ? null : assets.logo,
+    coBrand: isSamplePng(assets.coBrand) ? null : assets.coBrand,
+    signatures: (assets.signatures ?? []).map((image) => (isSamplePng(image) ? null : image)),
+  };
 }
 
 function paint(hex: string) {
@@ -118,8 +130,11 @@ export async function certificatePdf(
   sample: CertificateSample,
   options: CertificatePdfOptions,
 ): Promise<Uint8Array> {
-  const layout = certificateLayout(design);
-  const colours = paletteColours(design.palette);
+  const labelledSample = options.labelledSample === true;
+  const face = labelledSample ? decorateSample(design) : designForIssue(design);
+  const assets = labelledSample ? options.assets : assetsForIssue(options.assets);
+  const layout = certificateLayout(face);
+  const colours = paletteColours(face.palette);
   const ink = paint(colours.ink);
   const line = paint(colours.line);
   const pdf = await PDFDocument.create();
@@ -149,17 +164,17 @@ export async function certificatePdf(
     });
   }
 
-  if (design.border === 'line' || design.border === 'double') {
+  if (face.border === 'line' || face.border === 'double') {
     page.drawRectangle({
       x: layout.outer.x,
       y: topToPdf(pageHeight, layout.outer),
       width: layout.outer.w,
       height: layout.outer.h,
       borderColor: line,
-      borderWidth: design.border === 'double' ? 2.4 : 1.4,
+      borderWidth: face.border === 'double' ? 2.4 : 1.4,
     });
   }
-  if (design.border === 'double' && layout.inner) {
+  if (face.border === 'double' && layout.inner) {
     page.drawRectangle({
       x: layout.inner.x,
       y: topToPdf(pageHeight, layout.inner),
@@ -169,7 +184,7 @@ export async function certificatePdf(
       borderWidth: 1,
     });
   }
-  if (design.border === 'corner') {
+  if (face.border === 'corner') {
     const len = Math.min(layout.page.width, layout.page.height) * 0.06;
     const corners = [
       [layout.outer.x, layout.outer.y, 1, 1],
@@ -198,20 +213,20 @@ export async function certificatePdf(
     h: layout.wordmark.h * 0.4,
   }, ink);
 
-  const logo = await embedImage(pdf, options.assets?.logo);
-  const coBrand = await embedImage(pdf, options.assets?.coBrand);
+  const logo = await embedImage(pdf, assets?.logo);
+  const coBrand = await embedImage(pdf, assets?.coBrand);
   if (logo) drawContained(page, logo, layout.institution);
   if (coBrand) drawContained(page, coBrand, layout.coBrandLogo);
 
-  drawCentered(page, design.title || 'Certificate', bold, layout.titleSize, layout.title, ink);
-  if (design.showRecipient) drawCentered(page, sample.recipient, regular, layout.nameSize, layout.recipient, ink);
-  if (design.showCourse) drawCentered(page, sample.course, regular, layout.bodySize, layout.course, paint(colours.accent));
-  if (design.showDate) drawCentered(page, sample.date, regular, layout.bodySize, layout.date, ink);
-  if (design.showCertificateId) drawCentered(page, sample.certificateId, regular, layout.smallSize, layout.certificateId, ink);
-  if (design.coBrandName.trim()) drawCentered(page, `With ${design.coBrandName}`, regular, layout.bodySize, layout.coBrandName, ink);
+  drawCentered(page, face.title || 'Certificate', bold, layout.titleSize, layout.title, ink);
+  if (face.showRecipient) drawCentered(page, sample.recipient, regular, layout.nameSize, layout.recipient, ink);
+  if (face.showCourse) drawCentered(page, sample.course, regular, layout.bodySize, layout.course, paint(colours.accent));
+  if (face.showDate) drawCentered(page, sample.date, regular, layout.bodySize, layout.date, ink);
+  if (face.showCertificateId) drawCentered(page, sample.certificateId, regular, layout.smallSize, layout.certificateId, ink);
+  if (face.coBrandName.trim()) drawCentered(page, `With ${face.coBrandName}`, regular, layout.bodySize, layout.coBrandName, ink);
 
-  const signatureImages = await Promise.all((options.assets?.signatures ?? []).map((bytes) => embedImage(pdf, bytes)));
-  design.signatories.slice(0, layout.signatories.length).forEach((person, index) => {
+  const signatureImages = await Promise.all((assets?.signatures ?? []).map((bytes) => embedImage(pdf, bytes)));
+  face.signatories.slice(0, layout.signatories.length).forEach((person, index) => {
     const slot = layout.signatories[index];
     if (!slot) return;
     const imageBox = boxOf(slot, 0, 0.58);
@@ -233,7 +248,7 @@ export async function certificatePdf(
     drawCentered(page, person.title, regular, layout.tinySize, titleBox, paint(colours.accent));
   });
 
-  if (design.showQr && layout.qr.w > 0) {
+  if (face.showQr && layout.qr.w > 0) {
     const png = await embedImage(pdf, await qrPng(sample.verifyUrl));
     if (png) drawContained(page, png, layout.qr);
     const lines = wrapChars(sample.verifyUrl, regular, layout.tinySize, layout.verify.w);
@@ -263,9 +278,9 @@ export async function certificatePdf(
 
   drawCentered(page, copyrightNotice(), regular, layout.tinySize, layout.copyright, paint(colours.accent));
 
-  pdf.setTitle(design.title || 'Certificate');
+  pdf.setTitle(face.title || 'Certificate');
   pdf.setAuthor('Poket School');
-  pdf.setSubject(sample.verifyUrl);
+  pdf.setSubject(labelledSample ? `Template sample ${sample.verifyUrl}` : sample.verifyUrl);
   pdf.setCreator('Poket School certificate template');
   return pdf.save({ useObjectStreams: false });
 }

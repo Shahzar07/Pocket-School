@@ -14,6 +14,7 @@ import {
 } from './design';
 import { certificateLayout } from './layout';
 import { certificatePdf } from './pdf';
+import { decorateSample, designForIssue, isSampleImage } from './sample-placeholders';
 
 test('builtin templates do not share signatories and tabs are not both named New template', () => {
   const [cyan, blue] = builtinDesigns();
@@ -92,6 +93,58 @@ test('every page size keeps the QR, URL, and copyright inside the sheet', () => 
     if (pageSize === 'a4-portrait') assert.ok(layout.page.height > layout.page.width);
     else assert.ok(layout.page.width > layout.page.height);
   }
+});
+
+test('placeholder art stays on the labelled sample and is stripped before issue', async () => {
+  const blank = builtinDesigns()[0];
+  assert.ok(blank);
+  const sample = decorateSample(blank);
+  assert.equal(sample.coBrandName, 'Harbour');
+  assert.equal(isSampleImage(sample.logoUrl), true);
+  assert.equal(isSampleImage(sample.coBrandLogoUrl), true);
+  assert.equal(isSampleImage(sample.signatories[0]?.imageUrl), true);
+  const issued = designForIssue(sample);
+  assert.equal(issued.coBrandName, '');
+  assert.equal(issued.logoUrl, '');
+  assert.equal(issued.coBrandLogoUrl, '');
+  assert.equal(issued.signatories[0]?.imageUrl, '');
+  const saved = normaliseDesign(sample);
+  assert.equal(saved.coBrandName, '');
+  assert.equal(saved.logoUrl, '');
+  assert.equal(saved.signatories[0]?.imageUrl, '');
+  const real = designForIssue(normaliseDesign({
+    ...blank,
+    coBrandName: 'Harbour',
+    coBrandLogoUrl: 'https://cdn.example/harbour.png',
+  }));
+  assert.equal(real.coBrandName, 'Harbour');
+  assert.equal(real.coBrandLogoUrl, 'https://cdn.example/harbour.png');
+
+  const regular = readFileSync('public/fonts/NotoSans-Regular.ttf');
+  const bold = readFileSync('public/fonts/NotoSans-Bold.ttf');
+  const facts = {
+    recipient: 'Amina Yusuf',
+    course: 'IGCSE Mathematics',
+    date: '18 Oct 2026',
+    certificateId: 'PS-1042',
+    verifyUrl: 'https://poketschool.ai/verify/PS-1042',
+  };
+  const fonts = { regular, bold };
+  const sampleAssets = {
+    logo: Uint8Array.from(Buffer.from(sample.logoUrl.split(',')[1] ?? '', 'base64')),
+    coBrand: Uint8Array.from(Buffer.from(sample.coBrandLogoUrl.split(',')[1] ?? '', 'base64')),
+    signatures: [Uint8Array.from(Buffer.from(sample.signatories[0]?.imageUrl.split(',')[1] ?? '', 'base64'))],
+  };
+  const preview = await certificatePdf(blank, facts, { ...fonts, labelledSample: true, assets: sampleAssets });
+  const awarded = await certificatePdf(sample, facts, { ...fonts, labelledSample: false, assets: sampleAssets });
+  const previewDoc = await PDFDocument.load(preview);
+  const awardedDoc = await PDFDocument.load(awarded);
+  assert.match(previewDoc.getSubject() ?? '', /Template sample/);
+  assert.doesNotMatch(awardedDoc.getSubject() ?? '', /Template sample/);
+  const previewImages = Buffer.from(preview).toString('latin1').match(/\/Subtype \/Image/g)?.length ?? 0;
+  const awardedImages = Buffer.from(awarded).toString('latin1').match(/\/Subtype \/Image/g)?.length ?? 0;
+  assert.ok(previewImages > awardedImages);
+  assert.equal(awardedImages, 1);
 });
 
 test('the pdf matches the landscape sheet and embeds a font, border, and verify link', async () => {

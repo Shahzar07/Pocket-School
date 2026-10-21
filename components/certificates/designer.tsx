@@ -22,6 +22,7 @@ import {
   type CertificateSignatory,
 } from '@/lib/certificates/design';
 import { certificatePdf } from '@/lib/certificates/pdf';
+import { decorateSample } from '@/lib/certificates/sample-placeholders';
 import { CertificateSheet } from '@/components/certificates/sheet';
 
 const fieldClass = 'mt-1 min-h-11 w-full rounded-xl border border-[#D5E6EA] bg-white px-3 text-sm text-[#203337] dark:border-white/20 dark:bg-[#0B1417] dark:text-[#E8F4F6]';
@@ -141,6 +142,7 @@ export function CertificateDesigner({
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const current = designs.find((item) => item.id === currentId) ?? designs[0];
+  const previewDesign = current ? decorateSample(current) : null;
   const colours = paletteColours(current?.palette ?? 'cyan');
   const sample = CERTIFICATE_SAMPLE;
   const errors = current ? designFieldErrors(current) : [];
@@ -207,9 +209,9 @@ export function CertificateDesigner({
     try {
       const [fonts, assets] = await Promise.all([
         loadCertificateFonts(),
-        loadCertificateAssets(current),
+        loadCertificateAssets(previewDesign ?? current),
       ]);
-      const bytes = await certificatePdf(current, sample, { ...fonts, assets });
+      const bytes = await certificatePdf(current, sample, { ...fonts, assets, labelledSample: true });
       const copy = new Uint8Array(bytes.byteLength);
       copy.set(bytes);
       const blob = new Blob([copy], { type: 'application/pdf' });
@@ -413,8 +415,9 @@ export function CertificateDesigner({
         <p className="text-xs text-[#1E6A83] dark:text-[#3FE0D0]">The PDF is this sheet: border, palette, logos, signatures, QR, and the copyright line.</p>
       </form>
       <div className="w-full self-start lg:sticky lg:top-4" data-certificate-preview="1" style={{ color: colours.ink }}>
+        <p className="mb-2 text-center text-xs text-[#1E6A83] dark:text-[#3FE0D0]" data-certificate-sample="1">Template sample. North Academy, Harbour and the drawn signature stay on this preview. A student certificate leaves them off.</p>
         <div className="mx-auto w-full" style={{ width: `min(100%, calc(70vh * ${CERTIFICATE_PAGE_POINTS[current.pageSize].width} / ${CERTIFICATE_PAGE_POINTS[current.pageSize].height}))` }}>
-          <CertificateSheet design={current} sample={sample} />
+          <CertificateSheet design={previewDesign ?? current} sample={sample} />
         </div>
       </div>
     </div>
