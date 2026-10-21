@@ -38,12 +38,28 @@ test('public profile pages hide the site header', async ({ page }) => {
   await expect(page.getByRole('banner')).toHaveCount(0);
 });
 
-test('Programmes and products matches the other nav links', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+test('the landing page has no menu bar and no scrollbar', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 800 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /navigation/i })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Poket School', exact: false }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change language' })).toBeVisible();
+  const header = page.locator('[data-site-header="flow"]');
+  const overflow = await header.evaluate((node) => node.scrollWidth > node.clientWidth + 2);
+  expect(overflow).toBe(false);
+  await expect(page.getByRole('heading', { name: 'Product' })).toBeVisible();
+  await expect(page.locator('[data-landing-universities]')).toContainText('University of Oxford');
+  await expect(page.locator('[data-landing-teach]')).toContainText('visual learners');
+});
+
+test('other pages keep a menu that does not scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
-  const linkSize = await nav.getByRole('link', { name: 'Home', exact: true }).evaluate((node) => getComputedStyle(node).fontSize);
-  const summarySize = await nav.locator('summary').evaluate((node) => getComputedStyle(node).fontSize);
-  expect(linkSize).toBe('12px');
-  expect(summarySize).toBe(linkSize);
+  await expect(nav.getByRole('link', { name: 'Home', exact: true })).toBeVisible();
+  const box = await nav.boundingBox();
+  const scroll = await nav.evaluate((node) => node.scrollWidth > node.clientWidth + 2);
+  expect(scroll).toBe(false);
+  expect((box?.width ?? 0)).toBeLessThan(1024);
 });

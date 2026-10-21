@@ -132,36 +132,41 @@ export function SiteHeader() {
               Poket School <small>/ AI</small>
             </span>
           </Link>
-          <nav className={styles.desktopNav} aria-label={t("header.mainNav")}>
-            <Link href="/">{t("header.home")}</Link>
-            <Link href="/courses">{t("header.courses")}</Link>
-            <Link href="/ai-studio">{t("header.aiStudio")}</Link>
-            <Link href="/dashboard/studio/maths">{t("header.etMaths")}</Link>
-            <Link href="/dashboard/studio/exam-prep">{t("header.examPrep")}</Link>
-            <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
-            <Link href="/reads">{t("nav.books")}</Link>
-            <Link href="/pricing">{t("header.pricing")}</Link>
-            <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
-            <Link href="/institutions/register">{t("header.forSchools")}</Link>
-            <details className={styles.programmes}>
-              <summary>{t("header.programmes")}</summary>
-              <div className="absolute left-0 z-20 mt-2 max-h-80 w-64 overflow-auto rounded-2xl bg-white p-3 text-[#203337] shadow-lg">
-                {MARKET_LINKS.map((item) => (
-                  <Link key={item.href} className="block py-1 text-sm" href={item.href}>{item.label}</Link>
-                ))}
-              </div>
-            </details>
-            {!user && <Link href="/login">{t("header.signIn")}</Link>}
-          </nav>
+          {!isLanding && (
+            <nav className={styles.desktopNav} aria-label={t("header.mainNav")}>
+              <Link href="/">{t("header.home")}</Link>
+              <Link href="/courses">{t("header.courses")}</Link>
+              <Link href="/ai-studio">{t("header.aiStudio")}</Link>
+              <Link href="/dashboard/studio/maths">{t("header.etMaths")}</Link>
+              <details className={styles.moreMenu}>
+                <summary>{t("header.more")}</summary>
+                <div className={styles.morePanel}>
+                  <Link href="/dashboard/studio/exam-prep">{t("header.examPrep")}</Link>
+                  <Link href="/ai-teachers">{t("header.aiTeachers")}</Link>
+                  <Link href="/reads">{t("nav.books")}</Link>
+                  <Link href="/pricing">{t("header.pricing")}</Link>
+                  <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
+                  <Link href="/institutions/register">{t("header.forSchools")}</Link>
+                  <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-[#1E6A83]">{t("header.programmes")}</p>
+                  {MARKET_LINKS.map((item) => (
+                    <Link key={item.href} href={item.href}>{item.label}</Link>
+                  ))}
+                </div>
+              </details>
+            </nav>
+          )}
           <div className={styles.headerTools}>
             <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
             <CurrencySwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
             <ThemeToggle onDark={isLanding && !scrolled} />
           </div>
+          {!user && (
+            <Link className={styles.headerSign} href="/login">{t("header.signIn")}</Link>
+          )}
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
             {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} className="ps-dir-icon" />
           </Link>
-          <button
+          {!isLanding && <button
             className={styles.menuButton}
             ref={menuButtonRef}
             type="button"
@@ -171,9 +176,9 @@ export function SiteHeader() {
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X /> : <Menu />}
-          </button>
+          </button>}
         </div>
-        {mobileOpen && (
+        {!isLanding && mobileOpen && (
           <nav
             className={styles.mobileNav}
             id="site-navigation"

@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useWhiteLabel } from "@/components/white-label-provider";
 import { isBrandedLoginPath } from "@/lib/institution-login";
 import { isInstitutionJourneyPath } from "@/lib/institution-journey";
-import { MARKET_LINKS } from "@/lib/marketing/nav";
+import { FooterColumns, FooterLegalRow } from "@/components/site-footer-columns";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import {
@@ -65,31 +65,6 @@ function hidesSiteFooter(pathname: string): boolean {
 const FOOTER_VIDEO =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_114316_1c7889ad-2885-410e-b493-98119fee0ddb.mp4";
 
-const PLATFORM_LINKS = [
-  { labelKey: "footer.aiTeachers", href: "/ai-teachers" },
-  { labelKey: "footer.aiStudio", href: "/ai-studio" },
-  { labelKey: "footer.marketplace", href: "/courses" },
-  { labelKey: "nav.books", href: "/reads" },
-  { labelKey: "footer.pricing", href: "/pricing" },
-  { labelKey: "footer.blog", href: "/blog" },
-];
-
-const LEARNER_LINKS = [
-  { labelKey: "footer.students", href: "/signup?role=student" },
-  { labelKey: "footer.teachers", href: "/signup?role=teacher" },
-  { labelKey: "footer.parents", href: "/signup?role=parent" },
-  { labelKey: "footer.institutions", href: "mailto:institutions@poketschool.ai" },
-];
-
-const LEGAL_LINKS = [
-  { labelKey: "footer.privacy", href: "/legal?doc=privacy" },
-  { labelKey: "footer.terms", href: "/legal?doc=terms" },
-  { labelKey: "footer.cookies", href: "/legal?doc=cookies" },
-  { labelKey: "footer.aup", href: "/legal?doc=aup" },
-  { labelKey: "footer.help", href: "/help" },
-  { labelKey: "footer.contact", href: "mailto:hello@poketschool.ai" },
-];
-
 const SOCIALS = [
   { Icon: Instagram, label: "Instagram", href: "https://instagram.com" },
   { Icon: Twitter, label: "Twitter", href: "https://twitter.com" },
@@ -97,27 +72,6 @@ const SOCIALS = [
   { Icon: Facebook, label: "Facebook", href: "https://facebook.com" },
   { Icon: Music2, label: "TikTok", href: "https://tiktok.com" },
 ];
-
-function FooterLink({ href, label }: { href: string; label: string }) {
-  const external = href.startsWith("http") || href.startsWith("mailto:");
-  if (external) {
-    return (
-      <a
-        href={href}
-        target={href.startsWith("http") ? "_blank" : undefined}
-        rel={href.startsWith("http") ? "noreferrer" : undefined}
-        className="hover:text-white transition-colors"
-      >
-        {label}
-      </a>
-    );
-  }
-  return (
-    <Link href={href} className="hover:text-white transition-colors">
-      {label}
-    </Link>
-  );
-}
 
 export function SiteFooter() {
   const { t } = useTranslation();
@@ -145,37 +99,15 @@ export function SiteFooter() {
               {t("footer.tagline2")}
             </p>
           </div>
-          <div>
-            <h2>{t("footer.product")}</h2>
-            {PLATFORM_LINKS.map((l) => (
-              <Link key={l.labelKey} href={l.href}>
-                {t(l.labelKey)}
-              </Link>
-            ))}
-          </div>
-          <div>
-            <h2>{t("footer.forLearners")}</h2>
-            {LEARNER_LINKS.map((l) => (
-              <Link key={l.labelKey} href={l.href}>
-                {t(l.labelKey)}
-              </Link>
-            ))}
-            {MARKET_LINKS.map((item) => (
-              <Link key={item.href} href={item.href}>{item.label}</Link>
-            ))}
-          </div>
+          <FooterColumns tone="ink" />
           <div className={styles.contactCard}>
             <h2>{t("footer.keepLearning")}</h2>
             <p>{t("footer.question")}</p>
             <a href="mailto:hello@poketschool.ai">hello@poketschool.ai ↗</a>
-            <div className={styles.legalLinks}>
-              {LEGAL_LINKS.filter((l) => l.labelKey !== "footer.contact").map((l) => (
-                <Link key={l.labelKey} href={l.href}>
-                  {t(l.labelKey)}
-                </Link>
-              ))}
-            </div>
           </div>
+        </div>
+        <div className={styles.legalLinks}>
+          <FooterLegalRow tone="ink" />
         </div>
         <div className={styles.footerLegal}>
           <p>{t("footer.disclaimer")}</p>
@@ -244,32 +176,15 @@ export function SiteFooter() {
             </div>
 
             {/* Link columns */}
-            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8">
-              {[
-                { title: t("footer.platform"), links: PLATFORM_LINKS },
-                { title: t("footer.forLearners"), links: LEARNER_LINKS },
-                { title: t("footer.legal"), links: LEGAL_LINKS },
-              ].map((col) => (
-                <div key={col.title}>
-                  <h4 className="text-sm uppercase tracking-wider text-white font-medium mb-4">
-                    {col.title}
-                  </h4>
-                  <ul className="text-xs space-y-2.5">
-                    {col.links.map((l) => (
-                      <li key={l.labelKey}>
-                        <FooterLink href={l.href} label={t(l.labelKey)} />
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+            <div className="md:col-span-7">
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                <FooterColumns tone="glass" />
+              </div>
+              <div className="mt-6 border-t border-white/15 pt-4">
+                <FooterLegalRow tone="glass" />
+              </div>
             </div>
           </div>
-          <ul className="mb-8 flex flex-wrap gap-x-4 gap-y-2 text-xs">
-            {MARKET_LINKS.map((item) => (
-              <li key={item.href}><FooterLink href={item.href} label={item.label} /></li>
-            ))}
-          </ul>
 
           {/* Mandatory non-affiliation disclaimer — must be visible, not buried */}
           <div className="rounded-2xl bg-white/5 border border-white/10 px-5 py-4 mb-8">
