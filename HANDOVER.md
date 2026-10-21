@@ -83,6 +83,17 @@ npx firebase deploy --only firestore:rules,firestore:indexes --project ringed-se
 
 Deploy `storage.rules` in the same change once the Firebase project is on the Blaze plan. Blaze was not verified on 19 Oct 2026. Storage uploads and Cloud Functions need it.
 
+### Creator Store files (for Shahzar)
+
+`storage.rules` now covers `store/products/{productId}/thumbs/*` (public images, 5 MB), `preview/*` (public watermarked pages), and `private/paper.pdf` plus `private/markscheme.pdf` (never public, PDFs, 50 MB). Writes in those rules are only `adminRole` `super_admin`, `admin`, or `content_editor`.
+
+Two production steps are still open. Do not treat either as done:
+
+1. **Firebase Blaze plan.** Deploying these storage rules (and any storage upload in production) still needs Blaze. The importer does not deploy rules and does not report a successful deploy.
+2. **`FIREBASE_SERVICE_ACCOUNT` on Vercel.** Signed downloads are minted by the Admin SDK for about 10 minutes, and only after a purchase, an entitlement, or an admin or content editor check. The key is missing on every Vercel target. Until it is set, `POST /api/store/download` returns setup needed and does not invent a URL. A Firestore emulator host is enough for the importer to store files locally. It is not enough to sign a production URL.
+
+The import desk is `/dashboard/admin/store/import`. It saves drafts only. Publishing stays a separate admin action. See `docs/STORE_IMPORT.md`.
+
 ### Tests
 
 ```bash

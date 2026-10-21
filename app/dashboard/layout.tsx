@@ -39,7 +39,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { homeForMode, learnerSpaceRoles, modeRedirect, MODE_NAMES, type AccountMode } from '@/lib/account-modes';
 import { ACCESS_DENIED_MESSAGE, decideDashboardAccess } from '@/lib/dashboard-access';
-import { loginBlocked, resolveStaffRole } from '@/lib/admin-console';
+import { can, loginBlocked, resolveStaffRole } from '@/lib/admin-console';
 import { reportActivity } from '@/lib/audit/report';
 import { adminMfaPending } from '@/lib/admin-mfa-pending';
 import { AdminViewAsBanner, clearViewAs, useAdminIdle, useViewAs } from '@/components/admin-session';
@@ -72,7 +72,7 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash:
   partner_merchant: { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-student)' },
 };
 
-interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag; superOnly?: boolean }
+interface NavEntry { href: string; icon: React.ElementType; labelKey: string; label?: string; flag?: FeatureFlag; superOnly?: boolean; contentOnly?: boolean }
 interface NavGroup { sectionKey?: string; sectionLabel?: string; items: NavEntry[] }
 
 const NAV: Record<Role, NavGroup[]> = {
@@ -239,6 +239,7 @@ const NAV: Record<Role, NavGroup[]> = {
     { items: [
       { href: '/dashboard/admin', icon: BarChart, labelKey: 'nav.analytics' },
       { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.aiBookCreator', label: 'AI Book Creator' },
+      { href: '/dashboard/admin/store/import', icon: Library, labelKey: 'nav.creatorStore', label: 'Store import', contentOnly: true },
       { href: '/dashboard/admin/queues', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Queues' },
       { href: '/dashboard/admin/tasks', icon: ListTodo, labelKey: 'nav.dashboard', label: 'Action Centre' },
       { href: '/dashboard/admin/platform', icon: Settings, labelKey: 'nav.systemSettings', label: 'Platform tools' },
@@ -653,7 +654,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       : [bookItem, cmsItem, ...group.items];
     return {
       ...group,
-      items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.flag || isFeatureEnabled(flags, item.flag))),
+      items: withCms.filter((item) => (!item.superOnly || superAdmin) && (!item.contentOnly || can(staffRole, 'content')) && (!item.flag || isFeatureEnabled(flags, item.flag))),
     };
   }).filter(group => group.items.length > 0);
   const accent = ROLE_ACCENT[role];

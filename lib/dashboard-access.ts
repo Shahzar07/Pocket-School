@@ -133,6 +133,14 @@ export function decideDashboardAccess(
     const staff = actor.role === 'admin' || isSuperAdmin(actor);
     return staff || (teaching && canOpenCms(actor)) ? { allowed: true } : deny(actor, mode);
   }
+  if (matches(path, '/dashboard/admin/store')) {
+    const staff = resolveStaffRole({
+      email: actor.email,
+      role: actor.role,
+      adminRole: actor.adminRole,
+    });
+    return can(staff, 'content') ? { allowed: true } : deny(actor, mode);
+  }
   if (matches(path, '/dashboard/admin')) {
     return isSuperAdmin(actor) ? { allowed: true } : deny(actor, mode);
   }
