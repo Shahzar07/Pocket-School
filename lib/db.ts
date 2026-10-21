@@ -2763,6 +2763,11 @@ export interface Exam {
   status: 'draft' | 'published';
   availableFrom?: Timestamp;
   availableTo?: Timestamp;
+  /** Learner level from the shared list. Older exams omit it. */
+  level?: string;
+  subject?: string;
+  /** Exam board style id from the shared board list. */
+  boardStyle?: string;
   createdBy: string;
   createdAt?: Timestamp;
 }
