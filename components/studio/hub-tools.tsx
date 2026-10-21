@@ -52,7 +52,7 @@ export const STUDIO_TOOLS: StudioTool[] = [
     well: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] dark:bg-[var(--ps-cyan-soft)] dark:text-[var(--ps-cyan)]',
     bar: 'bg-[#1E6A83] dark:border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]',
     links: [
-      { href: `${STUDIO_MATHS}/packs`, label: 'Exam packs' },
+      { href: '/dashboard/studio/exams/packs?subject=mathematics', label: 'Exam packs' },
       { href: `${STUDIO_MATHS}/lab`, label: "Today's puzzle" },
     ],
   },
@@ -65,6 +65,7 @@ export const STUDIO_TOOLS: StudioTool[] = [
     well: 'bg-[#FBECEA] text-[#9A3B2F] dark:bg-[#2C1816] dark:text-[#F0B2A8]',
     bar: 'bg-[#9A3B2F] dark:bg-[#E88976]',
     links: [
+      { href: '/dashboard/studio/exams/packs', label: 'Official exams' },
       { href: `${STUDIO_EXAM_PREP}/new`, label: 'New plan' },
     ],
   },

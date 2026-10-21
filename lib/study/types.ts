@@ -75,7 +75,7 @@ export interface StudyAsset {
 export interface Flashcard { front: string; back: string }
 export interface QuizQuestion { question: string; options: string[]; answer: string; explanation: string }
 export interface TrueFalseItem { statement: string; answer: boolean; explanation: string }
-export interface Exercise { prompt: string; hint: string; solution: string; answer: string; marks: number }
+export interface Exercise { prompt: string; hint: string; solution: string; answer: string; marks: number; image?: string }
 export interface LessonAsset { markdown: string; checkpoints: { question: string; answer: string }[] }
 export interface PodcastAsset { title: string; style: PodcastStyle; lines: { speaker: 'A' | 'B'; text: string }[] }
 

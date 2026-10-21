@@ -77,7 +77,7 @@ export function StudyLaunchpad() {
           <Camera className="w-4 h-4" /> Scan a problem
         </Link>
         <div className="mt-auto pt-4 flex flex-wrap gap-2 text-[12px] font-semibold">
-          <Link href="/dashboard/studio/maths/packs" className="h-8 px-3 rounded-full border border-border inline-flex items-center gap-1.5 hover:border-primary/40"><BookMarked className="w-3.5 h-3.5 text-primary" /> SPM · IGCSE · A Level packs</Link>
+          <Link href="/dashboard/studio/exams/packs?subject=mathematics" className="h-8 px-3 rounded-full border border-border inline-flex items-center gap-1.5 hover:border-primary/40"><BookMarked className="w-3.5 h-3.5 text-primary" /> SPM · IGCSE · A Level packs</Link>
           <Link href="/dashboard/studio/maths/lab" className="h-8 px-3 rounded-full border border-border inline-flex items-center gap-1.5 hover:border-primary/40"><Puzzle className="w-3.5 h-3.5 text-primary" /> Today&apos;s puzzle</Link>
         </div>
       </motion.div>

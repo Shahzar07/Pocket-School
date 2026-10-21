@@ -251,7 +251,7 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.curriculumCms', sectionLabel: 'Curriculum', items: [
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
-      { href: '/dashboard/admin/exam-packs', icon: BookMarked, labelKey: 'nav.curriculumCms', label: 'Exam packs' },
+      { href: '/dashboard/admin/exam-packs', icon: BookMarked, labelKey: 'nav.curriculumCms', label: 'Exam pack desk' },
     ]},
     { items: [
       { href: '/dashboard/admin/planner', icon: Target, labelKey: 'nav.goals', label: 'Study planner', superOnly: true },

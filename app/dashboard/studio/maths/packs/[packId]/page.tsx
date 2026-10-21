@@ -119,7 +119,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
 
   return (
     <DashPage>
-      <Link href="/dashboard/studio/maths/packs" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> All exam packs</Link>
+      <Link href="/dashboard/studio/exams/packs" className="text-[13px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> All exam packs</Link>
 
       <div className="grid lg:grid-cols-12 gap-5">
         <Panel className="lg:col-span-5 relative overflow-hidden">
@@ -216,7 +216,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
                   <motion.div key={setKey} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                     <ExercisesView
                       key={setKey}
-                      exercises={questions.map(q => ({ prompt: `${q.paper ? `*${q.paper}* · ` : ''}${q.question}`, hint: '', solution: q.solution, answer: q.answer, marks: q.marks }))}
+                      exercises={questions.map(q => ({ prompt: `${q.paper ? `*${q.paper}* · ` : ''}${q.question}`, hint: '', solution: q.solution, answer: q.answer, marks: q.marks, ...(q.image ? { image: q.image } : {}) }))}
                       onComplete={finish}
                       extraAction={(_, i) => (
                         <Link href={`/dashboard/studio/maths?problem=${encodeURIComponent(questions[i].question)}`}

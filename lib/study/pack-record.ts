@@ -33,6 +33,8 @@ function cleanQuestion(raw: unknown): AuthoredQuestion | null {
   const marks = Math.max(1, Math.min(12, Math.round(Number(row.marks) || 1)));
   const answer = text(row.answer, 500);
   const paper = text(row.paper, 40);
+  const image = text(row.image, 500);
+  const safeImage = /^https:\/\/\S+$/i.test(image) ? image : '';
   return {
     question,
     marks,
@@ -40,6 +42,7 @@ function cleanQuestion(raw: unknown): AuthoredQuestion | null {
     markScheme,
     ...(answer ? { answer } : {}),
     ...(paper ? { paper } : {}),
+    ...(safeImage ? { image: safeImage } : {}),
   };
 }
 
@@ -89,6 +92,9 @@ export function normaliseRemotePack(input: unknown): RemotePack | null {
     scale,
     blurb: text(row.blurb, 2000),
     accent: '#1E6A83',
+    subject: text(row.subject, 80) || 'Mathematics',
+    learnerLevel: text(row.learnerLevel, 40) || 'igcse',
+    boardStyle: text(row.boardStyle, 80),
     units,
     status,
     freeFirstTopic: row.freeFirstTopic !== false,
@@ -157,5 +163,6 @@ export function presentAuthored(topic: PackTopic) {
     answer: item.answer ?? '',
     paper: item.paper ?? '',
     solution: [item.solution.trim(), item.markScheme.trim() ? `Mark scheme\n${item.markScheme.trim()}` : ''].filter(Boolean).join('\n\n'),
+    ...(item.image ? { image: item.image } : {}),
   }));
 }

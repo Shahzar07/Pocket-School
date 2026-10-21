@@ -695,7 +695,7 @@ export default function MathsTutorPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/dashboard/studio/maths/packs" className="mt-4 flex items-center justify-between rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold hover:bg-primary/15">
+              <Link href="/dashboard/studio/exams/packs?subject=mathematics" className="mt-4 flex items-center justify-between rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold hover:bg-primary/15">
                 <span className="inline-flex items-center gap-2"><Target className="w-4 h-4" /> SPM · IGCSE · A Level exam packs</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>

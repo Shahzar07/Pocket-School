@@ -6,13 +6,16 @@ import { DashHeader, DashPage } from '@/components/dash-ui';
 import { authedFetch } from '@/lib/authed-fetch';
 import type { AuthoredQuestion, ExamPack, PackTopic, PackUnit } from '@/lib/study/exam-packs';
 import { PACK_IMPORT_KEY, PACK_STORE_KEY, readPackStore } from '@/lib/study/pack-admin';
+import { LevelMenu } from '@/components/level-menu';
+import { boardsForLevel } from '@/lib/essay/board-styles';
+import { officialSubjectOptions } from '@/lib/study/pack-catalog';
 import { packCopy as copy } from '@/lib/study/pack-copy';
 import { slugPackId } from '@/lib/study/pack-record';
 
 const SCALES = ['igcse', 'alevel', 'spm', 'ib', 'percent'] as const;
 
 function blankQuestion(): AuthoredQuestion {
-  return { question: '', marks: 3, solution: '', markScheme: '' };
+  return { question: '', marks: 3, solution: '', markScheme: '', image: '' };
 }
 
 function blankPack(): ExamPack {
@@ -21,6 +24,9 @@ function blankPack(): ExamPack {
     name: '',
     board: 'School syllabus',
     level: 'IGCSE',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'cambridge-igcse',
     scale: 'igcse',
     blurb: '',
     accent: '#1E6A83',
@@ -139,13 +145,12 @@ export default function ExamPackAdminPage() {
     <DashPage>
       <div data-exam-pack-desk>
         <DashHeader
-          eyebrow="ET Maths"
-          title="Exam packs"
-          accent="for admins."
+          eyebrow={copy.deskEyebrow}
+          title={copy.deskTitle}
           description={copy.lead}
         />
         <p className="text-sm">
-          <Link className="font-semibold text-[#1E6A83]" href="/dashboard/studio/maths/packs">Open the student pack list</Link>
+          <Link className="font-semibold text-[#1E6A83]" href="/dashboard/studio/exams/packs">Open the student pack list</Link>
         </p>
         {notice ? <p className="text-sm text-[#1E6A83]" role="status">{notice}</p> : null}
         <ul data-exam-pack-list className="divide-y divide-border rounded-3xl border border-border bg-card px-4">
@@ -153,7 +158,7 @@ export default function ExamPackAdminPage() {
             <li key={pack.id} data-pack-id={pack.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
               <div>
                 <p className="font-semibold">{pack.name}</p>
-                <p className="text-sm text-muted-foreground">{pack.level} · {pack.board} · {pack.status === 'draft' ? copy.draft : copy.published}</p>
+                <p className="text-sm text-muted-foreground">{pack.subject || 'Mathematics'} · {pack.level} · {pack.board} · {pack.status === 'draft' ? copy.draft : copy.published}</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" className="h-10 rounded-full border px-3 text-sm font-semibold" onClick={() => setDraft(editable(pack))}>{copy.edit}</button>
@@ -166,6 +171,30 @@ export default function ExamPackAdminPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold">{copy.name}
               <input className="mt-1 h-11 w-full rounded-xl border px-3" value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} />
+            </label>
+            <label className="text-sm font-semibold">{copy.subject}
+              <select className="mt-1 h-11 w-full rounded-xl border px-3" aria-label={copy.subject} value={draft.subject || 'Mathematics'} onChange={event => setDraft({ ...draft, subject: event.target.value })}>
+                {officialSubjectOptions().map(item => <option key={item.slug} value={item.label}>{item.label}</option>)}
+              </select>
+            </label>
+            <div className="text-sm font-semibold">{copy.learnerLevel}
+              <div className="mt-1 font-normal">
+                <LevelMenu
+                  value={draft.learnerLevel || 'igcse'}
+                  ariaLabel={copy.learnerLevel}
+                  className="w-full"
+                  onChange={(next) => {
+                    const boards = boardsForLevel(next);
+                    const boardStyle = boards.some(item => item.id === draft.boardStyle) ? draft.boardStyle : (boards[0]?.id ?? '');
+                    setDraft({ ...draft, learnerLevel: next, boardStyle });
+                  }}
+                />
+              </div>
+            </div>
+            <label className="text-sm font-semibold">{copy.examBoard}
+              <select className="mt-1 h-11 w-full rounded-xl border px-3" aria-label={copy.examBoard} value={draft.boardStyle || ''} onChange={event => setDraft({ ...draft, boardStyle: event.target.value })}>
+                {boardsForLevel(draft.learnerLevel || 'igcse').map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
             </label>
             <label className="text-sm font-semibold">{copy.level}
               <input className="mt-1 h-11 w-full rounded-xl border px-3" value={draft.level} onChange={event => setDraft({ ...draft, level: event.target.value })} />
@@ -210,7 +239,7 @@ export default function ExamPackAdminPage() {
                   {(topic.questions ?? []).map((question, questionIndex) => (
                     <div key={questionIndex} className="grid gap-2">
                       <label className="text-sm font-semibold">{copy.question}
-                        <textarea className="mt-1 w-full rounded-xl border px-3 py-2" rows={2} value={question.question} onChange={event => {
+                        <textarea className="mt-1 w-full rounded-xl border px-3 py-2" rows={2} placeholder={copy.questionHint} value={question.question} onChange={event => {
                           const questions = [...(topic.questions ?? [])];
                           questions[questionIndex] = { ...question, question: event.target.value };
                           updateTopic(unitIndex, topicIndex, { ...topic, questions });
@@ -234,6 +263,13 @@ export default function ExamPackAdminPage() {
                         <textarea className="mt-1 w-full rounded-xl border px-3 py-2" rows={2} value={question.markScheme} onChange={event => {
                           const questions = [...(topic.questions ?? [])];
                           questions[questionIndex] = { ...question, markScheme: event.target.value };
+                          updateTopic(unitIndex, topicIndex, { ...topic, questions });
+                        }} />
+                      </label>
+                      <label className="text-sm font-semibold">{copy.image}
+                        <input className="mt-1 h-11 w-full rounded-xl border px-3" value={question.image ?? ''} placeholder={copy.imageHint} onChange={event => {
+                          const questions = [...(topic.questions ?? [])];
+                          questions[questionIndex] = { ...question, image: event.target.value };
                           updateTopic(unitIndex, topicIndex, { ...topic, questions });
                         }} />
                       </label>

@@ -145,10 +145,28 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/studio/maths/packs`
 - **Audience:** everyone
-- **Purpose:** Syllabus packs that organise ET Maths practice by exam.
-- **Overlaps:** Exam prep.
-- **Decision:** Keep. Packs are maths practice; exam prep is the wider plan.
+- **Purpose:** Redirects to the official exam packs filtered to Mathematics.
+- **Overlaps:** ET Exams official packs.
+- **Decision:** Keep as the ET Maths shortcut. The catalogue lives under ET Exams.
 - **Owner keys:** None.
+
+### Official exams
+
+- **Route:** `/dashboard/studio/exams/packs`
+- **Audience:** everyone
+- **Purpose:** Official exam packs for every subject, filtered by subject, level, and exam board.
+- **Overlaps:** The ET Maths shortcut and the admin exam pack desk.
+- **Decision:** Keep. This is the student home for official packs.
+- **Owner keys:** Firestore collection exam_packs.
+
+### Official exam pack
+
+- **Route:** `/dashboard/studio/exams/packs/[packId]`
+- **Audience:** everyone
+- **Purpose:** One official syllabus pack: topics, questions, LaTeX, figures, and mark schemes.
+- **Overlaps:** The official exam list.
+- **Decision:** Keep.
+- **Owner keys:** Firestore collection exam_packs.
 
 ### Maths pack
 
@@ -771,14 +789,14 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep as the platform catalogue.
 - **Owner keys:** None.
 
-### Exam packs
+### Exam pack desk
 
 - **Route:** `/dashboard/admin/exam-packs`
 - **Audience:** admin
-- **Purpose:** Admins add, edit, and delete ET Maths syllabus packs. Students open the same packs from the studio.
+- **Purpose:** Admins add, edit, and delete official exam packs for any subject. Signed-in students open published packs from ET Exams. Drafts stay on this desk.
 - **Overlaps:** The student maths pack list.
 - **Decision:** Keep. This is the only add, edit, and delete desk. The studio list is read-only.
-- **Owner keys:** None. Packs are stored on this device.
+- **Owner keys:** Firestore collection exam_packs. Writes go through /api/admin/exam-packs.
 
 ### Curriculum CMS
 

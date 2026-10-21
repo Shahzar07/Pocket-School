@@ -13,6 +13,7 @@ import type { GradeScaleId } from './types';
  */
 
 export interface AuthoredQuestion {
+  /** Plain text or LaTeX ($x^2$ or \\(x^2\\)). */
   question: string;
   marks: number;
   /** Worked solution the student compares with their own. */
@@ -21,6 +22,8 @@ export interface AuthoredQuestion {
   markScheme: string;
   answer?: string;
   paper?: string;
+  /** Optional https figure. Questions do not have to be maths. */
+  image?: string;
 }
 
 export interface PackTopic {
@@ -38,6 +41,12 @@ export interface ExamPack {
   name: string;
   board: string;
   level: string;
+  /** Subject name. The six built-in packs are Mathematics. */
+  subject?: string;
+  /** Id from the shared learner-level list. */
+  learnerLevel?: string;
+  /** Id from the shared exam-board list. */
+  boardStyle?: string;
   scale: GradeScaleId;
   blurb: string;
   accent: string;
@@ -63,6 +72,9 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'SPM Mathematics',
     board: 'National syllabus',
     level: 'SPM',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'spm',
     scale: 'spm',
     blurb: 'The full Mathematics syllabus, with Paper 1 and Paper 2 style questions.',
     accent: packStrip('National syllabus'),
@@ -84,6 +96,9 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'SPM Additional Mathematics',
     board: 'National syllabus',
     level: 'SPM',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'spm',
     scale: 'spm',
     blurb: 'Every Additional Mathematics chapter from functions to kinematics, with exam-style working and mark schemes.',
     accent: packStrip('National syllabus'),
@@ -103,6 +118,9 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'IGCSE Mathematics (0580)',
     board: 'International',
     level: 'Extended',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'cambridge-igcse',
     scale: 'igcse',
     blurb: 'IGCSE Mathematics Extended — all nine syllabus areas at Paper 2 and Paper 4 standard.',
     accent: packStrip('International'),
@@ -123,6 +141,9 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'IGCSE Additional Mathematics (0606)',
     board: 'International',
     level: 'IGCSE',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'cambridge-igcse',
     scale: 'igcse',
     blurb: 'IGCSE Additional Mathematics — the bridge to A Level, from polynomials to calculus.',
     accent: packStrip('International'),
@@ -138,6 +159,9 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'A Level Mathematics (9709)',
     board: 'International',
     level: 'AS & A Level',
+    subject: 'Mathematics',
+    learnerLevel: 'a-level',
+    boardStyle: 'cambridge-alevel',
     scale: 'alevel',
     blurb: 'Pure 1, Pure 3, Mechanics and Probability & Statistics 1 — the most common A Level route.',
     accent: packStrip('International'),
@@ -153,6 +177,9 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'Mathematics: Analysis and Approaches',
     board: 'Diploma',
     level: 'SL & HL',
+    subject: 'Mathematics',
+    learnerLevel: 'pre-university',
+    boardStyle: 'ib',
     scale: 'ib',
     blurb: 'All five AA topics, Paper 1 (no calculator) and Paper 2 style, scored on the 1–7 scale.',
     accent: packStrip('Diploma'),
@@ -190,4 +217,5 @@ export interface PackQuestion {
   answer: string;
   solution: string;
   paper: string;
+  image?: string;
 }

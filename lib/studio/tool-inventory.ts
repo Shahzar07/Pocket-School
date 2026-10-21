@@ -40,6 +40,8 @@ export interface ToolRoute {
   entry?: 'timetable';
   /** Exact path match. Prefix matches would swallow child tools. */
   exact?: boolean;
+  /** Nested under another sidebar tool, such as Official exams under ET Exams. */
+  parent?: string;
   why: string;
 }
 
@@ -99,6 +101,16 @@ export const TOOL_ROUTES: ToolRoute[] = [
     wrapped: true,
     covers: ['/dashboard/studio/exam-prep'],
     why: 'Exam plans, mocks, oral practice, topics, and shared plans.',
+  },
+  {
+    id: 'official-exams',
+    label: 'Official exams',
+    href: '/dashboard/studio/exams/packs',
+    sidebar: true,
+    wrapped: true,
+    covers: ['/dashboard/studio/exams/packs'],
+    parent: 'et-exams',
+    why: 'Official exam packs for every subject. ET Exams owns this list.',
   },
   {
     id: 'et-essays',
@@ -255,13 +267,13 @@ export const TOOL_ROUTES: ToolRoute[] = [
   },
   {
     id: 'exam-packs',
-    label: 'Exam packs',
+    label: 'Exam pack desk',
     href: '/dashboard/admin/exam-packs',
     sidebar: true,
     wrapped: false,
     covers: ['/dashboard/admin/exam-packs'],
     gate: 'admin',
-    why: 'Admin desk for ET Maths syllabus packs. It stays in the admin dashboard so Curriculum can open it.',
+    why: 'Admin desk for official exam packs. It stays in the admin dashboard so Curriculum can open it.',
   },
   {
     id: 'creator-store',
@@ -383,6 +395,7 @@ export interface SidebarTool {
   placement: 'primary' | 'tools';
   mode?: DeskToolId;
   entry?: 'timetable';
+  parentId?: string;
 }
 
 const TOOL_ICONS: Record<string, ToolIconName> = {
@@ -403,6 +416,7 @@ const TOOL_ICONS: Record<string, ToolIconName> = {
   'ai-teachers': 'graduation',
   'lesson-generator': 'upload',
   'exam-builder': 'file-question',
+  'official-exams': 'book-marked',
   'report-studio': 'file-text',
   'course-architect': 'layers',
   'exam-packs': 'package',
@@ -423,6 +437,7 @@ export function sidebarTools(actor: ToolActor | null | undefined, place: 'dashbo
     placement: route.id === 'ai-teachers' ? 'primary' as const : 'tools' as const,
     mode: route.mode,
     entry: route.entry,
+    parentId: route.parent,
     rank: route.id === 'ai-teachers' ? -1 : (TAB_ORDER.indexOf(route.id) >= 0 ? TAB_ORDER.indexOf(route.id) : 100 + index),
   }));
   ranked.sort((a, b) => a.rank - b.rank);
