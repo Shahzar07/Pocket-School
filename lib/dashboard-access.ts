@@ -121,6 +121,9 @@ export function decideDashboardAccess(
     const teaching = hasAccountRole(actor, 'teacher');
     return isSuperAdmin(actor) || isInstitutionAdmin(actor) || teaching || isPartnerMerchant(actor) ? { allowed: true } : deny(actor, mode);
   }
+  if (matches(path, '/dashboard/admin/exam-packs')) {
+    return isSuperAdmin(actor) ? { allowed: true } : deny(actor, mode);
+  }
   if (matches(path, '/dashboard/admin/curriculum')) {
     const staffCms = (hasAccountRole(actor, 'teacher') || isInstitutionAdmin(actor)) && canOpenCms(actor);
     return isSuperAdmin(actor) || staffCms ? { allowed: true } : deny(actor, mode);

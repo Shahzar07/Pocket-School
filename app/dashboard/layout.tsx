@@ -248,7 +248,12 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
       { href: '/dashboard/admin/placement', icon: Layers, labelKey: 'nav.placement', label: 'Course placement', superOnly: true },
       { href: '/dashboard/admin/help', icon: HelpCircle, labelKey: 'nav.helpArticles', label: 'Admin help' },
+    ]},
+    { sectionKey: 'nav.curriculumCms', sectionLabel: 'Curriculum', items: [
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
+      { href: '/dashboard/admin/exam-packs', icon: BookMarked, labelKey: 'nav.curriculumCms', label: 'Exam pack desk' },
+    ]},
+    { items: [
       { href: '/dashboard/admin/planner', icon: Target, labelKey: 'nav.goals', label: 'Study planner', superOnly: true },
       { href: '/dashboard/admin/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
       { href: '/dashboard/admin/signatures', icon: ShieldCheck, labelKey: 'nav.verifications', label: 'Copyright signatures', superOnly: true },

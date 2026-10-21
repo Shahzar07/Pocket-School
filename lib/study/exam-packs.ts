@@ -1,26 +1,63 @@
+import { packStrip } from './pack-accent';
 import type { GradeScaleId } from './types';
 
 /**
  * Official exam packs: the real syllabus structure for each qualification,
  * topic by topic. Practice questions are written in the style of each
- * board's papers; the first topic of every pack is free to try.
+ * board's papers; the first topic of every pack is free to try unless
+ * `freeFirstTopic` is turned off.
  *
  * Questions are generated to the syllabus, not copied from past papers —
  * past papers are copyright of the exam boards. An admin-curated bank of
  * licensed past-paper questions can be layered on top later.
  */
 
-export interface PackTopic { id: string; title: string; weight: number }
+export interface AuthoredQuestion {
+  /** Plain text or LaTeX ($x^2$ or \\(x^2\\)). */
+  question: string;
+  marks: number;
+  /** Worked solution the student compares with their own. */
+  solution: string;
+  /** Examiner mark scheme, separate from the worked solution. */
+  markScheme: string;
+  answer?: string;
+  paper?: string;
+  /** Optional https figure. Questions do not have to be maths. */
+  image?: string;
+}
+
+export interface PackTopic {
+  id: string;
+  title: string;
+  weight: number;
+  questions?: AuthoredQuestion[];
+}
 export interface PackUnit { id: string; title: string; topics: PackTopic[] }
+
+export type PackStatus = 'draft' | 'published' | 'hidden';
+
 export interface ExamPack {
   id: string;
   name: string;
   board: string;
   level: string;
+  /** Subject name. The six built-in packs are Mathematics. */
+  subject?: string;
+  /** Id from the shared learner-level list. */
+  learnerLevel?: string;
+  /** Id from the shared exam-board list. */
+  boardStyle?: string;
   scale: GradeScaleId;
   blurb: string;
   accent: string;
   units: PackUnit[];
+  /** Missing on the built-in seed. Remote packs always set this. */
+  status?: PackStatus;
+  /**
+   * When false, every topic costs Sparks. When missing or true, the first
+   * topic of the first unit stays free.
+   */
+  freeFirstTopic?: boolean;
 }
 
 const t = (unit: string, titles: (string | [string, number])[]): PackTopic[] =>
@@ -35,9 +72,12 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'SPM Mathematics',
     board: 'National syllabus',
     level: 'SPM',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'spm',
     scale: 'spm',
     blurb: 'The full Mathematics syllabus, with Paper 1 and Paper 2 style questions.',
-    accent: 'var(--primary)',
+    accent: packStrip('National syllabus'),
     units: [
       { id: 'f4', title: 'Core', topics: t('f4', [
         ['Quadratic functions and equations in one variable', 5], 'Number bases', 'Logical reasoning', 'Operations on sets',
@@ -56,9 +96,12 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'SPM Additional Mathematics',
     board: 'National syllabus',
     level: 'SPM',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'spm',
     scale: 'spm',
     blurb: 'Every Additional Mathematics chapter from functions to kinematics, with exam-style working and mark schemes.',
-    accent: '#8B5CF6',
+    accent: packStrip('National syllabus'),
     units: [
       { id: 'f4', title: 'Core', topics: t('f4', [
         ['Functions', 5], ['Quadratic functions', 5], 'Systems of equations', ['Indices, surds and logarithms', 5],
@@ -75,9 +118,12 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'IGCSE Mathematics (0580)',
     board: 'International',
     level: 'Extended',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'cambridge-igcse',
     scale: 'igcse',
     blurb: 'IGCSE Mathematics Extended — all nine syllabus areas at Paper 2 and Paper 4 standard.',
-    accent: '#E5484D',
+    accent: packStrip('International'),
     units: [
       { id: 'num', title: 'Number', topics: t('num', ['Types of number, factors and primes', 'Fractions, decimals, percentages', ['Indices and standard form', 4], 'Ratio, proportion and rates', 'Bounds and estimation', ['Surds', 3], 'Percentage change and interest']) },
       { id: 'alg', title: 'Algebra and graphs', topics: t('alg', [['Algebraic manipulation and factorising', 5], ['Linear and quadratic equations', 5], 'Simultaneous equations', 'Inequalities', 'Sequences', ['Functions: composite and inverse', 4], ['Graphs of functions', 4], 'Differentiation and turning points']) },
@@ -95,9 +141,12 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'IGCSE Additional Mathematics (0606)',
     board: 'International',
     level: 'IGCSE',
+    subject: 'Mathematics',
+    learnerLevel: 'igcse',
+    boardStyle: 'cambridge-igcse',
     scale: 'igcse',
     blurb: 'IGCSE Additional Mathematics — the bridge to A Level, from polynomials to calculus.',
-    accent: '#30A46C',
+    accent: packStrip('International'),
     units: [
       { id: 'a', title: 'Algebra', topics: t('a', [['Functions', 4], ['Quadratic functions', 4], 'Factors of polynomials', 'Equations, inequalities and graphs', 'Simultaneous equations', ['Logarithmic and exponential functions', 4]]) },
       { id: 'g', title: 'Geometry and trigonometry', topics: t('g', ['Straight-line graphs', 'Coordinate geometry of the circle', 'Circular measure', ['Trigonometry', 5]]) },
@@ -110,9 +159,12 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'A Level Mathematics (9709)',
     board: 'International',
     level: 'AS & A Level',
+    subject: 'Mathematics',
+    learnerLevel: 'a-level',
+    boardStyle: 'cambridge-alevel',
     scale: 'alevel',
     blurb: 'Pure 1, Pure 3, Mechanics and Probability & Statistics 1 — the most common A Level route.',
-    accent: '#E8A33D',
+    accent: packStrip('International'),
     units: [
       { id: 'p1', title: 'Pure Mathematics 1', topics: t('p1', [['Quadratics', 4], ['Functions', 4], 'Coordinate geometry', 'Circular measure', ['Trigonometry', 4], 'Series', ['Differentiation', 5], ['Integration', 5]]) },
       { id: 'p3', title: 'Pure Mathematics 3', topics: t('p3', ['Algebra', ['Logarithmic and exponential functions', 4], ['Trigonometry', 4], ['Differentiation', 5], ['Integration', 5], 'Numerical solution of equations', 'Vectors', ['Differential equations', 4], ['Complex numbers', 4]]) },
@@ -125,9 +177,12 @@ export const EXAM_PACKS: ExamPack[] = [
     name: 'Mathematics: Analysis and Approaches',
     board: 'Diploma',
     level: 'SL & HL',
+    subject: 'Mathematics',
+    learnerLevel: 'pre-university',
+    boardStyle: 'ib',
     scale: 'ib',
     blurb: 'All five AA topics, Paper 1 (no calculator) and Paper 2 style, scored on the 1–7 scale.',
-    accent: '#0EA5E9',
+    accent: packStrip('Diploma'),
     units: [
       { id: 'na', title: 'Number and algebra', topics: t('na', ['Sequences and series', 'Exponents and logarithms', ['Binomial theorem', 3], 'Proof']) },
       { id: 'fn', title: 'Functions', topics: t('fn', [['Properties of functions', 4], 'Transformations of graphs', 'Quadratic, rational, exponential and log functions', 'Inverse and composite functions']) },
@@ -146,9 +201,14 @@ export function packTopics(pack: ExamPack): (PackTopic & { unit: string })[] {
   return pack.units.flatMap(u => u.topics.map(tp => ({ ...tp, unit: u.title })));
 }
 
-/** The first topic of every pack is free. */
+/** The first topic is free unless this pack turns that off. */
 export function isFreeTopic(pack: ExamPack, topicId: string) {
+  if (pack.freeFirstTopic === false) return false;
   return pack.units[0]?.topics[0]?.id === topicId;
+}
+
+export function showsFreeTopic(pack: ExamPack) {
+  return pack.freeFirstTopic !== false && Boolean(pack.units[0]?.topics[0]);
 }
 
 export interface PackQuestion {
@@ -157,4 +217,5 @@ export interface PackQuestion {
   answer: string;
   solution: string;
   paper: string;
+  image?: string;
 }

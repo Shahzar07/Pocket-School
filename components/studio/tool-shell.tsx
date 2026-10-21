@@ -197,24 +197,29 @@ export function ShellSidebar({
   const home = dashboardHomeHref(profile?.role);
   const primary = tools.filter(tool => tool.placement === 'primary');
   const list = tools.filter(tool => tool.placement !== 'primary');
-  const renderTool = (tool: SidebarTool) => {
+  const childTools = (id: string) => list.filter(tool => tool.parentId === id);
+  const roots = list.filter(tool => !tool.parentId || !list.some(item => item.id === tool.parentId));
+  const renderTool = (tool: SidebarTool, nested = false) => {
     if (tool.mode && modeControl) return <div key={tool.id}>{modeControl(tool)}</div>;
     const current = active === tool.id;
-    const className = current ? SHELL_ACTIVE : SHELL_LINK;
+    const className = `${current ? SHELL_ACTIVE : SHELL_LINK}${nested ? ' ps-9' : ''}`;
     return (
-      <Link
-        key={tool.id}
-        href={tool.href}
-        onClick={onClose}
-        aria-current={current ? 'page' : undefined}
-        data-studio-entry={tool.entry}
-        data-studio-placement={tool.placement}
-        className={className}
-      >
-        {tool.placement === 'primary' ? <StudioDot active={current} /> : null}
-        <ToolGlyph name={tool.icon} />
-        <span className="min-w-0 truncate">{tool.label}</span>
-      </Link>
+      <div key={tool.id}>
+        <Link
+          href={tool.href}
+          onClick={onClose}
+          aria-current={current ? 'page' : undefined}
+          data-studio-entry={tool.entry}
+          data-studio-placement={tool.placement}
+          data-studio-subitem={nested ? tool.id : undefined}
+          className={className}
+        >
+          {tool.placement === 'primary' ? <StudioDot active={current} /> : null}
+          <ToolGlyph name={tool.icon} />
+          <span className="min-w-0 truncate">{tool.label}</span>
+        </Link>
+        {childTools(tool.id).map(child => renderTool(child, true))}
+      </div>
     );
   };
   return (
@@ -248,7 +253,7 @@ export function ShellSidebar({
           <div className="space-y-0.5">{recents}</div>
           <p className="px-3 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--studio-faint)]">Tools</p>
           <div data-studio-tools="list" className="space-y-0.5">
-            {list.map(renderTool)}
+            {roots.map(tool => renderTool(tool))}
             {afterTools}
           </div>
         </nav>

@@ -67,6 +67,12 @@ describe('AI tool shell inventory', () => {
     assert.equal(activeSidebarId('/dashboard/studio', tools), 'ai-studio');
     assert.equal(activeSidebarId('/dashboard/studio/et', tools), 'et-ai');
     assert.equal(activeSidebarId('/dashboard/studio/maths/packs/igcse', tools), 'et-maths');
+    assert.equal(activeSidebarId('/dashboard/studio/exams/packs', tools), 'official-exams');
+    const official = tools.find(tool => tool.id === 'official-exams');
+    assert.equal(official?.label, 'Official exams');
+    assert.equal(official?.parentId, 'et-exams');
+    assert.equal(sidebarTools({ role: 'student' }, 'dashboard').some(tool => tool.label === 'Exam pack desk'), false);
+    assert.equal(sidebarTools({ role: 'admin' }, 'dashboard').some(tool => tool.label === 'Exam pack desk'), true);
     assert.equal(activeSidebarId('/dashboard/teacher/timetable', tools), 'timetabler');
     assert.equal(activeSidebarId('/reads/studio', tools), 'book-studio');
     assert.equal(activeSidebarId('/dashboard/studio/teachers/et-maths', tools), 'ai-teachers');

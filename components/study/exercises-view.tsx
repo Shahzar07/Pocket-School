@@ -36,6 +36,7 @@ export function ExercisesView({ exercises, onComplete, extraAction }: {
               <span className="text-[12px] text-muted-foreground tabular-nums">[{ex.marks} marks]</span>
             </div>
             <div className="text-[15px] text-foreground leading-relaxed [&_p]:my-1"><MathMarkdown>{ex.prompt}</MathMarkdown></div>
+            {ex.image ? <img src={ex.image} alt="" className="mt-3 max-h-64 w-auto rounded-xl border border-border" /> : null}
             <textarea value={st.work ?? ''} onChange={e => set(i, { work: e.target.value })} rows={3} placeholder="Your working (optional — paper is fine too)…"
               className="mt-3 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-[14px] outline-none focus:border-primary" />
             <div className="flex flex-wrap gap-2 mt-3">
