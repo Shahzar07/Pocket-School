@@ -109,6 +109,16 @@ test('the language list covers the major world languages and rtl scripts', () =>
   }
   assert.equal(catalogs.en.landing.hero.title, 'Learn your way. Go further with AI.');
   assert.equal(catalogs.ms.landing.hero.title, 'Belajar dengan cara anda. Pergi lebih jauh dengan AI.');
+  const chromeCopy = catalogs as unknown as Record<string, {
+    home: { v3: { title: string; titleEm: string } };
+    header: { home: string; programmes: string; forSchools: string };
+  }>;
+  assert.equal(chromeCopy.en.home.v3.title, 'Learn your way.');
+  assert.equal(chromeCopy.ms.home.v3.title, 'Belajar dengan cara anda.');
+  assert.equal(chromeCopy.ms.home.v3.titleEm, 'Pergi lebih jauh dengan AI.');
+  assert.notEqual(chromeCopy.ms.header.home, chromeCopy.en.header.home);
+  assert.equal(chromeCopy.ms.header.programmes, 'Program dan produk');
+  assert.notEqual(chromeCopy.ms.header.forSchools, chromeCopy.en.header.forSchools);
   assert.equal(catalogs.ar.landing.hero.title, 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.');
   assert.equal(catalogs.en.landing.degrees.title, 'Beyond A-Level.');
   assert.equal(catalogs.en.landing.newFeatures.label, 'New features');

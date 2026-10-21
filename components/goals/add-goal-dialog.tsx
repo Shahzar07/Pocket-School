@@ -9,6 +9,7 @@ import {
 } from '@/lib/insights/goals';
 import { GOAL_ON_TIME_BONUS, GOAL_STREAK_BONUS } from '@/lib/sparks';
 import { isoDateKey } from '@/lib/insights/dates';
+import { CloseControl, confirmIfDirty, useLayerDismiss } from '@/components/ui/close-control';
 
 const CATEGORIES: GoalCategory[] = ['study', 'revision', 'practice', 'reading', 'other'];
 const KINDS: { id: GoalTargetKind; label: string }[] = [
@@ -68,6 +69,8 @@ export function AddGoalDialog({
 
   const course = useMemo(() => courses.find(item => item.id === courseId), [courses, courseId]);
   const unit = course?.units.find(item => item.id === unitId);
+  const dirty = [title, freeTextTarget, studioTask, checkText, reflectionPrompt, reward, courseId, endDate].some((value) => value.trim().length > 0);
+  useLayerDismiss(open, onClose, dirty);
 
   if (!open) return null;
 
@@ -121,9 +124,20 @@ export function AddGoalDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="add-goal-title">
-      <div className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4" data-add-goal>
-        <div>
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-goal-title"
+      onMouseDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (!confirmIfDirty(dirty)) return;
+        onClose();
+      }}
+    >
+      <div className="relative bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4" data-add-goal>
+        <CloseControl onClose={onClose} dirty={dirty} className="absolute top-2 right-2" />
+        <div className="pe-12">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">New goal</p>
           <h2 id="add-goal-title" className="font-heading text-2xl text-foreground">Add a goal</h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -252,7 +266,7 @@ export function AddGoalDialog({
         <Input value={reward} onChange={e => setReward(e.target.value)} placeholder="Optional reward, for example a film night" aria-label="Reward" />
         <p className="text-sm text-[#1E6A83]">Teachers and linked parents can see this goal.</p>
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => { if (confirmIfDirty(dirty)) onClose(); }}>Cancel</Button>
           <Button type="button" onClick={submit} disabled={saving || !title.trim()}>{saving ? 'Saving…' : 'Save goal'}</Button>
         </div>
       </div>

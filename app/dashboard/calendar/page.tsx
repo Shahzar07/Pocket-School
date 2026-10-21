@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, ChevronLeft, ChevronRight, X, Calendar, Trash2, Loader2 } from 'lucide-react';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
+import { Plus, ChevronLeft, ChevronRight, Calendar, Trash2, Loader2 } from 'lucide-react';
 import { CalendarTools } from '@/components/calendar/calendar-tools';
 import type { CalendarItem } from '@/lib/insights/calendar';
 import { Timestamp } from 'firebase/firestore';
@@ -60,6 +61,7 @@ export default function CalendarPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: '', date: '', type: 'event' as CalendarEvent['type'], description: '', targets: ['all'] as string[] });
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  useLayerDismiss(selected !== null, () => setSelected(null));
   const [view, setView] = useState<'month' | 'terms'>('month');
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('view') === 'terms') setView('terms');
@@ -235,9 +237,7 @@ export default function CalendarPage() {
         >
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-2xl text-foreground">New Event</h2>
-            <button onClick={() => setShowCreate(false)} className="p-2 rounded-xl hover:bg-muted transition-colors">
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <CloseControl onClose={() => setShowCreate(false)} dirty={form.title.trim().length > 0 || form.date.trim().length > 0} />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Event title *" className="rounded-xl h-11 bg-muted/50" />
@@ -356,9 +356,7 @@ export default function CalendarPage() {
                 <h3 className="font-heading text-2xl text-foreground">{selected.title}</h3>
                 <p className="text-sm text-muted-foreground mt-1">{selected.startDate?.toDate?.().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
-              <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
+              <CloseControl onClose={() => setSelected(null)} />
             </div>
             {selected.description && <p className="text-sm text-foreground">{selected.description}</p>}
             <p className="text-sm text-muted-foreground">{describeTargets(selected.targets?.length ? selected.targets : [selected.audience])}</p>

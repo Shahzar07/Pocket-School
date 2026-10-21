@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { EssayReview } from '@/components/essays/essay-review';
+import { PublicToolShell } from '@/components/studio/tool-shell';
 
 export const metadata: Metadata = {
   title: 'ET Essays review',
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
 
 export default function EssayReviewPage() {
   return (
+    <PublicToolShell>
     <main className="mx-auto max-w-[900px] px-4 py-8 sm:px-6">
       <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">ET AI</p>
       <h1 className="mt-1 font-heading text-4xl tracking-[-0.04em]">Teacher review</h1>
@@ -18,5 +20,6 @@ export default function EssayReviewPage() {
         <EssayReview />
       </div>
     </main>
+    </PublicToolShell>
   );
 }

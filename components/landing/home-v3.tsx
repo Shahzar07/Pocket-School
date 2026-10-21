@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { AI_TEACHERS } from '@/lib/ai-teachers';
 import { LANGUAGES } from '@/lib/languages';
 import { HOME } from '@/lib/marketing/home';
@@ -7,23 +10,24 @@ import { FeaturedShowcase } from '@/components/courses/featured-showcase';
 const serif = { fontFamily: 'var(--font-dm-serif), Georgia, serif' } as const;
 
 export function HomeV3() {
+  const { t } = useTranslation();
   const teachers = String(AI_TEACHERS.length);
   const languages = String(LANGUAGES.length);
   return (
     <div className="bg-white text-[#203337]" style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }} data-landing="v3">
       <section className="bg-[linear-gradient(165deg,#0B1417_0%,#1E6A83_52%,#3FE0D0_130%)] px-6 py-16 text-white sm:py-24">
         <div className="mx-auto max-w-5xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#3FE0D0]">{HOME.eyebrow}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#3FE0D0]">{t('home.v3.eyebrow')}</p>
           <h1 className="mt-4 text-4xl leading-[1.05] sm:text-6xl" style={serif}>
-            {HOME.title}<br />
-            <em className="text-[#3FE0D0]">{HOME.titleEm}</em>
+            {t('home.v3.title')}<br />
+            <em className="text-[#3FE0D0]">{t('home.v3.titleEm')}</em>
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/85">{HOME.lede}</p>
-          <p className="mt-3 text-sm text-white/75">{HOME.cred}</p>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/85">{t('home.v3.lede')}</p>
+          <p className="mt-3 text-sm text-white/75">{t('home.v3.cred')}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-bold text-[#203337]" href="/signup">{HOME.start}</Link>
-            <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="/institutions/register">{HOME.schools}</Link>
-            <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="/demo">{HOME.demo}</Link>
+            <Link className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-bold text-[#203337]" href="/signup">{t('home.v3.start')}</Link>
+            <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="/institutions/register">{t('home.v3.schools')}</Link>
+            <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="/demo">{t('home.v3.demo')}</Link>
           </div>
           <dl className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div><dt className="text-2xl font-semibold" style={serif}>{HOME.levelsLabel}</dt><dd className="text-xs text-white/70">{HOME.formatsLabel}</dd></div>

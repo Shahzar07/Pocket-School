@@ -22,7 +22,7 @@ import { writeViewAs } from '@/lib/view-as';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
+import { CloseControl, confirmIfDirty, useLayerDismiss } from '@/components/ui/close-control';
 
 interface Row { id: string; data: UserProfile }
 
@@ -52,6 +52,12 @@ export function AdminAccountPanel({
   const [tier, setTier] = useState(String(row.data.accessTier ?? ''));
   const [permission, setPermission] = useState('addon:cms');
   const [activity, setActivity] = useState<SparkTransaction[]>([]);
+  const dirty = reason.trim() !== (row.data.statusReason ?? '').trim() || amount.trim().length > 0;
+  const requestClose = () => {
+    if (!confirmIfDirty(dirty)) return;
+    onClose();
+  };
+  useLayerDismiss(true, onClose, dirty);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -84,7 +90,7 @@ export function AdminAccountPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/30 flex justify-end" onClick={onClose}>
+    <div className="fixed inset-0 z-40 bg-black/30 flex justify-end" onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
       <aside className="w-full max-w-md h-full bg-card border-l border-border overflow-y-auto p-5 space-y-5" onClick={event => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -92,9 +98,7 @@ export function AdminAccountPanel({
             <h2 className="text-2xl font-semibold">{row.data.name}</h2>
             <p className="text-sm text-muted-foreground">{row.data.email}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close profile" className="w-9 h-9 grid place-items-center rounded-xl hover:bg-muted">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseControl onClose={onClose} dirty={dirty} />
         </div>
 
         <dl className="grid grid-cols-2 gap-3 text-sm">

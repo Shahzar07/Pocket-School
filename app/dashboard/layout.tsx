@@ -15,6 +15,8 @@ import {
   Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
   Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase, IdCard, Tag, StickyNote,
 } from 'lucide-react';
+import { ToolShell } from '@/components/studio/tool-shell';
+import { isAiToolPath, ownsStudioShell } from '@/lib/studio/tool-inventory';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 const AITutor = dynamic(() => import('@/components/ai-tutor').then(mod => mod.AITutor), { ssr: false });
@@ -356,10 +358,11 @@ function isNavActive(href: string, pathname: string): boolean {
 const NavItem = ({ entry, pathname, onClick, router, compact }: {
   entry: NavEntry; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>; compact: boolean;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const active = isNavActive(entry.href, pathname);
   const Icon = entry.icon;
-  const label = entry.label ?? t(entry.labelKey);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const label = entry.label && language.startsWith('en') ? entry.label : t(entry.labelKey);
 
   return (
     <button
@@ -385,7 +388,7 @@ const NavItem = ({ entry, pathname, onClick, router, compact }: {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const flags = useFeatureFlags();
   const { user, profile, loading, fetchProfile } = useAuthSTORE();
   const account = useAccountMode();
@@ -646,10 +649,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const accent = ROLE_ACCENT[role];
   const dashRole: DashRole = role === 'institution_admin' ? 'institution' : role === 'partner_merchant' ? 'student' : role;
   const compactNav = !sidebarOpen;
-  const immersive = pathname === '/dashboard/studio' || pathname === '/dashboard/studio/et';
+  const immersive = isAiToolPath(pathname);
+  const shellOwnsPage = ownsStudioShell(pathname);
 
   return (
-    <div className={`flex h-dvh overflow-hidden ${immersive ? 'bg-[#1A1918]' : ''}`} data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} style={immersive ? undefined : { background: accent.wash }}>
+    <div className="flex h-dvh overflow-hidden" data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} style={immersive ? undefined : { background: accent.wash }}>
       <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
@@ -704,7 +708,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div key={gi} className="space-y-0.5">
               {(group.sectionLabel || group.sectionKey) && !compactNav && (
                 <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
-                  {group.sectionLabel ?? t(group.sectionKey!)}
+                  {group.sectionLabel && (i18n.resolvedLanguage ?? i18n.language).startsWith('en')
+                    ? group.sectionLabel
+                    : group.sectionKey
+                      ? t(group.sectionKey)
+                      : group.sectionLabel}
                 </p>
               )}
               {group.items.map(entry => (
@@ -811,7 +819,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Scrollable Main with ambient gradient wash */}
-        {pathname.startsWith('/dashboard/studio') ? null : (
+        {immersive ? null : (
         <div className="px-4 lg:px-6 pb-2">
           <Breadcrumbs />
         </div>
@@ -821,8 +829,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           )}
           <OfflineBanner />
-          <div className={pathname.startsWith('/dashboard/studio') ? 'relative flex min-h-0 flex-1 flex-col' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
-            {pathname.startsWith('/dashboard/studio') ? children : (
+          <div className={immersive ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
+            {immersive ? (shellOwnsPage ? children : <ToolShell>{children}</ToolShell>) : (
               <>
             {accessDenied && (
               <div role="alert" className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

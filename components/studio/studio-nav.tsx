@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { isAiToolPath } from '@/lib/studio/tool-inventory';
 import { STUDIO_TIMETABLE } from '@/lib/studio-paths';
 import { studioTimetableGate } from '@/lib/timetable/access';
 import { TIMETABLE_COPY } from '@/lib/timetable/copy';
@@ -53,15 +54,11 @@ export function StudioNav() {
 
 export function StudioFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
-  if (pathname.startsWith('/dashboard/studio/timetable')) {
-    return <div className="min-h-[calc(100vh-4rem)] bg-background" data-nested-frame="0">{children}</div>;
-  }
-  /* Chat homes own the only "AI Studio" navigation, inside the dark sidebar. */
-  const chatHome = pathname === '/dashboard/studio' || pathname === '/dashboard/studio/et';
-  if (chatHome) {
+  /* Tool routes use the full-page shell. This frame must not add a second nav. */
+  if (isAiToolPath(pathname)) {
     return (
-      <div className="flex min-h-0 flex-col bg-background" data-studio-shell="chat">
-        <div className="min-w-0 flex-1">{children}</div>
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-x-clip bg-transparent" data-studio-shell={pathname === '/dashboard/studio' || pathname === '/dashboard/studio/et' ? 'chat' : 'tool'}>
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       </div>
     );
   }

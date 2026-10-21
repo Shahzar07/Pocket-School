@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { bannerCopy, type PromoDraft } from '@/lib/promos';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
+import { dismissPromo, isPromoDismissed } from '@/lib/ui/dismissed-promos';
 
 interface BannerPromo extends PromoDraft {
   code: string;
@@ -11,7 +13,9 @@ interface BannerPromo extends PromoDraft {
 
 export function PromoBanner() {
   const [copy, setCopy] = useState<string | null>(null);
+  const [code, setCode] = useState('');
   const [href, setHref] = useState('/pricing');
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -29,17 +33,31 @@ export function PromoBanner() {
           endsAt: first.endsAt,
           banner: true,
         }, today);
-        if (!text) return;
+        if (!text || isPromoDismissed(first.code)) return;
+        setCode(first.code);
         setCopy(text);
         setHref(`/r/${encodeURIComponent(first.code)}`);
       })
       .catch(() => undefined);
   }, []);
 
-  if (!copy) return null;
+  const visible = Boolean(copy) && !hidden;
+  const dismiss = () => {
+    if (code) dismissPromo(code);
+    setHidden(true);
+  };
+  useLayerDismiss(visible, dismiss);
+
+  if (!visible || !copy) return null;
   return (
-    <Link href={href} className="block bg-foreground text-background text-center text-sm font-semibold px-4 py-2">
-      {copy}
-    </Link>
+    <div className="relative bg-foreground text-background" data-promo-banner="1">
+      <Link href={href} className="block px-14 py-2 text-center text-sm font-semibold">
+        {copy}
+      </Link>
+      <CloseControl
+        onClose={dismiss}
+        className="absolute top-1/2 right-1 -translate-y-1/2 text-background hover:bg-background/15 focus-visible:ring-offset-foreground"
+      />
+    </div>
   );
 }

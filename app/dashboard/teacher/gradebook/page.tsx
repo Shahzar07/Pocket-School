@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { CloseControl, confirmIfDirty, useLayerDismiss } from '@/components/ui/close-control';
 import { ClipboardList, CheckCircle2, Sparkles, Search, Download } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -25,6 +26,8 @@ export default function GradebookPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [feedback, setFeedback] = useState('');
+  const feedbackDirty = selected !== null && feedback !== (selected.gradedFeedback ?? '');
+  useLayerDismiss(selected !== null, () => setSelected(null), feedbackDirty);
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState('');
@@ -201,7 +204,14 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
 
       {/* Submission detail modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onMouseDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (!confirmIfDirty(feedbackDirty)) return;
+            setSelected(null);
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -215,9 +225,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
                   {selected.studentName || 'Student'} · {selected.answers.filter(a => a.correct).length}/{selected.maxScore} correct
                 </p>
               </div>
-              <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setSelected(null)}>
-                ✕
-              </Button>
+              <CloseControl onClose={() => setSelected(null)} dirty={feedbackDirty} />
             </div>
 
             {/* Answers */}

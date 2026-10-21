@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { markNotificationRead, markAllNotificationsRead, Notification } from '@/lib/db';
@@ -54,6 +55,7 @@ export function NotificationsBell({ tone = 'default' }: { tone?: 'default' | 'on
   }, [open]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  useLayerDismiss(open, () => setOpen(false), false, panelRef);
 
   async function handleClick(n: Notification) {
     if (!n.read) await markNotificationRead(n.id);
@@ -85,11 +87,12 @@ export function NotificationsBell({ tone = 'default' }: { tone?: 'default' | 'on
 
       {open && (
         <div className="absolute right-0 top-11 w-80 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-border">
             <span className="font-semibold text-foreground text-sm">Notifications</span>
             {unreadCount > 0 && (
               <button onClick={handleMarkAll} className="text-xs text-blue-600 hover:underline">Mark all read</button>
             )}
+            <CloseControl onClose={() => setOpen(false)} />
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 && (

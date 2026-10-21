@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { HelpCircle, Plus, MessageSquare, CheckCircle2, X, Loader2 } from 'lucide-react';
+import { CloseControl, confirmIfDirty, useLayerDismiss } from '@/components/ui/close-control';
+import { HelpCircle, Plus, MessageSquare, CheckCircle2, Loader2 } from 'lucide-react';
 import { DocumentDelivery } from '@/components/document-delivery';
 import { textDocument } from '@/lib/documents/packet';
 import type { Deliverable } from '@/lib/documents/delivery';
@@ -66,12 +67,14 @@ export default function HelpdeskPage() {
   const [reply, setReply] = useState('');
   const [note, setNote] = useState('');
   const [assignee, setAssignee] = useState('');
+  const replyDirty = reply.trim().length > 0 || note.trim().length > 0 || assignee.trim().length > 0;
   const [form, setForm] = useState<{ subject: string; description: string; priority: SupportTicket['priority'] }>({ subject: '', description: '', priority: 'normal' });
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [asking, setAsking] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
+  useLayerDismiss(selected !== null && isAdmin, () => setSelected(null), replyDirty);
 
   const load = async () => {
     if (!user) return;
@@ -225,9 +228,7 @@ export default function HelpdeskPage() {
         >
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-2xl text-foreground">New Support Ticket</h2>
-            <button onClick={() => setShowCreate(false)} className="p-2 rounded-xl hover:bg-muted transition-colors">
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <CloseControl onClose={() => setShowCreate(false)} dirty={form.subject.trim().length > 0 || form.description.trim().length > 0} />
           </div>
           <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Subject *" className="rounded-xl h-11 bg-muted/50" />
           <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe your issue in detail *" className="rounded-xl text-sm resize-none min-h-28 bg-muted/50" />
@@ -325,16 +326,18 @@ export default function HelpdeskPage() {
 
       {/* Reply modal */}
       {selected && isAdmin && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onMouseDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (!confirmIfDirty(replyDirty)) return;
+          setSelected(null);
+        }}>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
             className="bg-card border border-border rounded-3xl p-7 max-w-md w-full space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-2xl text-foreground">Reply to Ticket</h3>
-              <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
+              <CloseControl onClose={() => setSelected(null)} dirty={replyDirty} />
             </div>
             <div className="bg-muted/50 rounded-2xl p-4">
               <p className="text-xs font-semibold text-muted-foreground mb-1">{selected.subject}</p>

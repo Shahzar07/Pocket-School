@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 import {
   addWallComment,
   publishWallPost,
@@ -17,7 +18,7 @@ import {
 import { wallHandle } from '@/lib/wall/live-shape';
 import {
   BadgeCheck, Bell, Bookmark, CalendarDays, Globe2, ImagePlus, Lock, MapPin,
-  MessageCircle, MoreHorizontal, School, Send, Share2, Smile, Users, X,
+  MessageCircle, MoreHorizontal, School, Send, Share2, Smile, Users,
 } from 'lucide-react';
 import {
   audienceChoices, audienceLabel, emptyReactions, filterFeed, gridSpans, parseTokens,
@@ -118,6 +119,7 @@ export function WallScreen({
   const [notice, setNotice] = useState('');
   const [savedOnly, setSavedOnly] = useState(false);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+  useLayerDismiss(lightbox !== null, () => setLightbox(null));
   const [menu, setMenu] = useState('');
   const [thread, setThread] = useState('');
   const sentinel = useRef<HTMLDivElement>(null);
@@ -349,8 +351,13 @@ export function WallScreen({
       </aside>
 
       {lightbox ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#203337]/80 p-4" role="dialog" aria-label="Photo">
-          <button type="button" className="absolute right-4 top-4 rounded-full bg-white p-2 text-[#203337]" aria-label="Close photo" onClick={() => setLightbox(null)}><X className="h-5 w-5" /></button>
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-[#203337]/80 p-4"
+          role="dialog"
+          aria-label="Photo"
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setLightbox(null); }}
+        >
+          <CloseControl onClose={() => setLightbox(null)} className="absolute top-3 right-3 z-10 bg-white text-[#203337] hover:bg-white" />
           <img src={lightbox.images[lightbox.index]} alt="" className="max-h-[80vh] max-w-full rounded-2xl object-contain" />
           <div className="absolute bottom-6 flex gap-2">
             {lightbox.images.map((src, index) => (

@@ -13,6 +13,7 @@ import {
 } from '@/lib/enterprise';
 import type { DemoLead } from '@/lib/institution-store';
 import { ROCHFORD_SCHOOL } from '@/lib/institutions/rochford';
+import { CloseControl, confirmIfDirty, useLayerDismiss } from '@/components/ui/close-control';
 
 const LEAD_COLUMNS: LeadStatus[] = ['new', 'contacted', 'qualified', 'demo', 'won', 'lost'];
 
@@ -65,6 +66,9 @@ export function InstitutionDirectory({
   const [levels, setLevels] = useState('');
   const [city, setCity] = useState('');
   const [formError, setFormError] = useState('');
+  const formDirty = [name, group, campuses, website, levels, city].some((value) => value.trim().length > 0);
+  const closeCreate = () => setCreating(false);
+  useLayerDismiss(creating, closeCreate, formDirty);
   const visible = useMemo(() => filterDirectory(rows, filter), [rows, filter]);
   const allChecked = visible.length > 0 && visible.every((row) => selected.includes(row.id));
 
@@ -272,9 +276,17 @@ export function InstitutionDirectory({
       )}
 
       {creating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (!confirmIfDirty(formDirty)) return;
+            closeCreate();
+          }}
+        >
           <form
-            className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl border border-border bg-card p-6 space-y-4"
+            className="relative max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl border border-border bg-card p-6 space-y-4"
+            onMouseDown={(event) => event.stopPropagation()}
             onSubmit={(event) => {
               event.preventDefault();
               setFormError('');
@@ -300,7 +312,10 @@ export function InstitutionDirectory({
               });
             }}
           >
-            <h2 className="font-heading text-2xl">Add institution</h2>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="font-heading text-2xl">Add institution</h2>
+              <CloseControl onClose={closeCreate} dirty={formDirty} />
+            </div>
             <label className="block text-sm">
               Name
               <Input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-11 rounded-xl" />
@@ -358,7 +373,7 @@ export function InstitutionDirectory({
             </label>
             {formError ? <p className="text-sm text-[#203337]">{formError}</p> : null}
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1 rounded-full" onClick={() => setCreating(false)}>Cancel</Button>
+              <Button type="button" variant="outline" className="flex-1 rounded-full" onClick={() => { if (confirmIfDirty(formDirty)) closeCreate(); }}>Cancel</Button>
               <Button type="submit" className="flex-1 rounded-full" disabled={busy}>Create</Button>
             </div>
           </form>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 import { CATEGORY_STYLE, searchLinks, type DashRole } from '@/lib/dashboard/home';
 import { CategoryIcon } from './icons';
 
@@ -25,6 +26,7 @@ export function CommandPalette({ role }: { role: DashRole }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  useLayerDismiss(open, () => setOpen(false));
   if (!open) return null;
   const hits = searchLinks(role, query);
 
@@ -33,9 +35,10 @@ export function CommandPalette({ role }: { role: DashRole }) {
       <div
         role="dialog"
         aria-label="Search the dashboard"
-        className="mx-auto w-full max-w-lg rounded-[24px] border border-border bg-card p-3 shadow-[var(--shadow-card)]"
+        className="relative mx-auto w-full max-w-lg rounded-[24px] border border-border bg-card p-3 pe-16 shadow-[var(--shadow-card)]"
         onClick={event => event.stopPropagation()}
       >
+        <CloseControl onClose={() => setOpen(false)} className="absolute top-2 right-2" />
         <label className="flex h-12 items-center gap-2 rounded-[18px] border border-border px-3">
           <Search className="h-5 w-5 text-muted-foreground" />
           <input

@@ -2,6 +2,28 @@
 
 For Shahzar. No secret values. Playwright: `npm run test:e2e` (`.github/workflows/e2e.yml`). Local specs do not call production Firebase.
 
+## Full-page AI shell (local emulator, this pull request)
+
+`e2e/studio-chat.spec.ts` against a Next dev server with `NEXT_PUBLIC_FIREBASE_EMULATORS=1`, Auth on `9099`, Firestore on `8080`, and Storage on `9199`. `E2E_EMULATOR=1` and `E2E_PREVIEW_PASSWORD` were set for the signed-in tests. The password stays out of git.
+
+GitHub Actions runs the same file without the emulators, so the signed-in tests skip there. The public test and the signed-out studio test still run. Playwright on this pull request is green.
+
+| Test | Result |
+| --- | --- |
+| Signed-out `/dashboard/studio` leaves the spinner and opens `/login` | Passed |
+| Student composer sends, mic and photo answer, tool hops | Passed |
+| Teacher composer on `/dashboard/studio/et` | Passed |
+| Student and teacher studio homes show chat, mic, and attach | Passed |
+| Dark layout, student, including 390px sidebar | Passed. `scrollWidth` of the top-right cluster stays within `clientWidth`. |
+| Dark layout, teacher, teachers grid, ET Science chat | Passed |
+| Theme toggle persists light, including a 390px studio shot | Passed |
+| One tool per role in dark and light | Passed on a rerun. The first full-suite attempt lost the dev server with `ERR_CONNECTION_REFUSED` on `/dashboard/parent/planner` (the process was out of memory). The rerun of that test passed in 1.5m. |
+| Public `/ai-teachers` and `/reads/studio` in both themes | Passed. Book preview uses `[data-book-preview="1"]`. |
+
+`lib/studio/tool-inventory.test.ts`: 3 passed.
+
+Screenshots: `studio-dark-desktop-1440.png`, `studio-light-desktop.png`, `studio-light-mobile.png`, `studio-top-right-no-scrollbar.png`, `book-studio-dark-desktop.png`, `book-studio-dark-mobile.png`, `book-studio-light-desktop.png`, `ai-teachers-grid-dark-desktop.png`, `ai-teacher-chat-dark-desktop.png`, `ai-teachers-chat-dark-mobile.png`, `ai-teachers-dark-desktop.png`, `ai-teachers-light-desktop.png`, `ai-teachers-light-mobile.png`, `ai-tools-contact-sheet.png`.
+
 ## Production, `main` `f9d395c` (19 Oct 2026)
 
 Deployment `dpl_14rQsk7dNuwsVEwsrWhBCVnP1VE6` is READY and aliased to https://pocket-school-ochre.vercel.app. Commit `f9d395cb84d904c123b77abb599eea441e934bd8` (squash of #151).
@@ -68,14 +90,14 @@ Do not treat an open row as a pass.
 
 ## Portraits and standalone studio (local emulator, 19 Oct 2026, before #151)
 
-This table is a local run from before the dark full-screen studio. It is not the current signed-in home. #151 replaced the header tabs with the dark sidebar. See `QA_QC.md`, “Dark AI Studio layout”, for the current local evidence.
+This table is a local run from before the full-screen studio. It is a historical record. The current signed-in home is the full-page shell in dark and light. See `QA_QC.md`, “Dark AI Studio layout” and “Full-page shell on every AI tool”.
 
 Signed in on `http://127.0.0.1:3466` with the Auth and Firestore emulators. Student `student.preview@poketschool.ai` (Amina Yusuf) and teacher `teacher.preview@poketschool.ai` (Ms Lee). Password was a local emulator password and is not a production credential.
 
 | Check | Student | Teacher |
 | --- | --- | --- |
 | `/ai-teachers` photographic portraits | Pass (public page, distinct faces, no SVG) | Same public page |
-| `/dashboard/studio` one sidebar and header tabs | Historical pass, before #151. The current home is the dark full-screen chat. | Historical pass |
+| `/dashboard/studio` one sidebar and header tabs | Historical pass, from before the full-screen shell. The current home is the full-page shell. | Historical pass |
 | `/dashboard/studio/teachers` a face on every card | Pass. 35 `ET ` images. No `/teachers/` 404. | Pass. 35 faces. |
 | `/dashboard/studio/et` portrait in the chat header | Pass. 1 header face. | Pass |
 | Student dashboard teacher picker | Pass. 12 faces. | Not the student home |

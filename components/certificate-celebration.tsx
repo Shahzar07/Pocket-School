@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 import { CertificateDocument } from '@/components/certificate-document';
 import type { CertificateAward } from '@/lib/certificates';
 
@@ -18,6 +19,7 @@ export function CertificateCelebration({
   award: CertificateAward | null;
   onClose: () => void;
 }) {
+  useLayerDismiss(award !== null, onClose);
   if (!award) return null;
   return (
     <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-3 sm:p-6">
@@ -29,6 +31,7 @@ export function CertificateCelebration({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[#f7fbfc] shadow-2xl"
       >
+        <CloseControl onClose={onClose} className="absolute top-2 right-2 z-10 text-[#203337]" />
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
           {CONFETTI.concat(CONFETTI, CONFETTI).map((color, index) => (
             <motion.span

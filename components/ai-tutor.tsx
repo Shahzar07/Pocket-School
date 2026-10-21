@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertCircle, Camera, Sparkles, X } from 'lucide-react';
+import { AlertCircle, Camera, Sparkles } from 'lucide-react';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 import Link from 'next/link';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { tutorModeFor } from '@/lib/learner-level';
@@ -23,6 +24,8 @@ export function AITutor() {
   useEffect(() => {
     if (!modeTouched.current && profile?.level) setMode(tutorModeFor(profile.level));
   }, [profile?.level]);
+
+  useLayerDismiss(isOpen, () => setIsOpen(false));
 
   const context = [
     lessonTitle ? `The student is studying: ${lessonTitle}.` : '',
@@ -74,9 +77,7 @@ export function AITutor() {
                 >
                   AI Teachers
                 </Link>
-                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 rounded-full" onClick={() => setIsOpen(false)} aria-label="Close ET AI">
-                  <X className="w-5 h-5" />
-                </Button>
+                <CloseControl onClose={() => setIsOpen(false)} className="text-[#203337] hover:bg-black/10" />
               </div>
             </div>
             <div className="px-3 py-2 border-b border-white/10 bg-white/5 flex items-center gap-2 shrink-0">

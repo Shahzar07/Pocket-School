@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
+import { PublicToolShell } from '@/components/studio/tool-shell';
 import { portraitAlt, teacherPortrait } from '@/lib/teacher-portrait';
 import Image from 'next/image';
 import {
@@ -67,7 +68,8 @@ export default function AiTeachersPage() {
   const showCefr = filter === 'All' || filter === 'Languages';
 
   return (
-    <div className="min-h-screen bg-white">
+    <PublicToolShell>
+    <div className="min-h-full bg-transparent">
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
@@ -222,6 +224,7 @@ export default function AiTeachersPage() {
         onOpenChange={(o) => !o && setSelected(null)}
       />
     </div>
+    </PublicToolShell>
   );
 }
 
