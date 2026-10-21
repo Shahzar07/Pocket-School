@@ -110,4 +110,10 @@ test('action centre lists a registration and assigns it', async ({ page }) => {
   await page.screenshot({ path: 'docs/qa/action-centre/action-centre-light.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'docs/qa/action-centre/action-centre-light-mobile.png', fullPage: true });
+  await page.evaluate(() => {
+    window.localStorage.setItem('theme', 'dark');
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  });
+  await page.screenshot({ path: 'docs/qa/action-centre/action-centre-dark-mobile.png', fullPage: true });
 });

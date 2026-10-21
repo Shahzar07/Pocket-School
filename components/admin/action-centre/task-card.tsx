@@ -59,7 +59,7 @@ export function TaskCard({
           <h2 className="font-heading text-2xl text-foreground">{task.title}</h2>
           <p className="mt-1 max-w-2xl text-sm text-foreground">{task.summary}</p>
         </div>
-        <p className={`text-sm font-semibold ${clock.overdue ? 'text-[#8E2F2F]' : 'text-[#203337]'}`} data-countdown="1">
+        <p className={`text-sm font-semibold ${clock.overdue ? 'text-[#1E6A83] dark:text-[#3FE0D0]' : 'text-[#203337]'}`} data-countdown="1">
           {clock.overdue ? clock.label : `${clock.label} left`}
         </p>
       </div>
@@ -83,7 +83,7 @@ export function TaskCard({
         />
       </label>
       {needsReason ? <p className="mt-1 text-sm text-[#1E6A83]">A reason is required to reject or dismiss.</p> : null}
-      {error ? <p className="mt-1 text-sm text-[#8E2F2F]" role="alert">{error}</p> : null}
+      {error ? <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]" role="alert">{error}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" className={buttonClass} disabled={busy} onClick={() => run('claim')}>Assign to me</button>
         {registration ? <button type="button" className={buttonClass} disabled={busy} onClick={() => run('approve_registration')}>Approve</button> : null}

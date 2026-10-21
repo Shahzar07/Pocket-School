@@ -85,7 +85,7 @@ export function ActionCentrePage() {
             <li key={row.type}>
               <button type="button" className="rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground" onClick={() => setType(row.type)}>
                 {row.type.replace(/_/g, ' ')} {row.total}
-                {row.urgent > 0 ? <span className="text-[#8E2F2F]"> · {row.urgent} urgent</span> : null}
+                {row.urgent > 0 ? <span className="text-[#1E6A83] dark:text-[#3FE0D0]"> · {row.urgent} urgent</span> : null}
               </button>
             </li>
           ))}

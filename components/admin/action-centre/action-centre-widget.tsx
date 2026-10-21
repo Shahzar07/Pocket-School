@@ -20,7 +20,7 @@ export function ActionCentreWidget() {
           {counts.map(row => (
             <li key={row.type} className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-foreground">
               {row.type.replace(/_/g, ' ')} {row.total}
-              {row.urgent > 0 ? <span className="text-[#8E2F2F]"> · {row.urgent} urgent</span> : null}
+              {row.urgent > 0 ? <span className="text-[#1E6A83] dark:text-[#3FE0D0]"> · {row.urgent} urgent</span> : null}
             </li>
           ))}
         </ul>
@@ -37,7 +37,7 @@ export function ActionCentreWidget() {
                   <span className="block text-sm font-semibold text-foreground">{task.title}</span>
                   <span className="text-xs text-[#1E6A83]">{task.slaTier}</span>
                 </span>
-                <span className={`text-sm font-semibold ${clock.overdue ? 'text-[#8E2F2F]' : 'text-foreground'}`}>
+                <span className={`text-sm font-semibold ${clock.overdue ? 'text-[#1E6A83] dark:text-[#3FE0D0]' : 'text-foreground'}`}>
                   {clock.overdue ? clock.label : `${clock.label} left`}
                 </span>
               </Link>

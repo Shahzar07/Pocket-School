@@ -84,7 +84,7 @@ export function TaskBell() {
                     onClick={() => { setOpen(false); router.push(deepLinkFor(task.id)); }}
                   >
                     <span className="block text-sm font-semibold text-foreground">{task.title}</span>
-                    <span className={`text-xs ${clock.overdue ? 'text-[#8E2F2F]' : 'text-[#1E6A83]'}`}>
+                    <span className={`text-xs ${clock.overdue ? 'text-[#1E6A83] dark:text-[#3FE0D0]' : 'text-[#1E6A83]'}`}>
                       {task.slaTier} · {clock.overdue ? clock.label : `${clock.label} left`}
                     </span>
                   </button>
