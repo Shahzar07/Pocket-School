@@ -24,6 +24,8 @@ export interface AuthoredQuestion {
   paper?: string;
   /** Optional https figure. Questions do not have to be maths. */
   image?: string;
+  /** Shown on the marking step only when an admin wrote one. */
+  examinerTip?: string;
 }
 
 export interface PackTopic {
