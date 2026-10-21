@@ -100,11 +100,12 @@ Admin actions still open: publish the six blog drafts, mark featured courses, me
 
 ## Pathway detail pages
 
-Homepage cards for Primary, IGCSE, A-Level, LLB Law, MBBS Medicine, and Independent open a page with stages, subjects, ET teachers, the card price, and FAQPage JSON-LD. Content lives in `lib/pathways/catalog.ts`. Admins correct it at `/dashboard/admin/pathways`.
+Homepage cards for Primary, IGCSE, A-Level, LLB Law, MBBS Medicine, and Independent open a page with stages, subjects, ET teachers, the card price, and FAQPage JSON-LD. Content lives in `lib/pathways/catalog.ts`. Admins correct it at `/dashboard/admin/pathways`. Re-checked after the rebase onto `487246d`.
 
 | Feature | Yes or no | Evidence | Needs key |
 | --- | --- | --- | --- |
-| Pathway cards | Yes | `e2e/pathways.spec.ts` (8 passed). Each homepage card opens its page with a stage navigator, subjects, and FAQPage JSON-LD. Screenshots `pathway-llb.png`, `pathway-llb-dark.png`, `pathway-igcse.png`, `pathway-igcse-mobile.png`. | None |
+| Pathway cards | Yes | `e2e/pathways.spec.ts` (8 passed). Each homepage card opens its page with a stage navigator, subjects, and FAQPage JSON-LD. Screenshots `docs/qa/pathways/pathway-llb.png`, `pathway-llb-dark.png`, `pathway-igcse.png`, `pathway-igcse-mobile.png`. | None |
+| Admin pathway desk | Yes | Same spec, skipped in CI unless the emulator is on. The desk sets `data-pathway-desk="1"`, hides the AI Studio shell, and keeps the site theme. Screenshots `docs/qa/pathways/pathway-editor-light.png`, `pathway-editor-dark.png`, `pathway-editor-mobile.png`. | None on the emulator. |
 
 ## Dark AI Studio layout
 
