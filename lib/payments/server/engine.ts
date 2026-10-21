@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { roleForServerCheck } from '../../admin-access';
 import { adminDb, isAdminConfigured } from '../../firebase-admin';
+import { finishAdminTask, rememberAdminTask } from '../../server/admin-tasks';
 import type { AccessTier } from '../../entitlements';
 import {
   ActionError,
@@ -1028,6 +1029,7 @@ async function applyGrant(grant: PlannedGrant, checkout: CheckoutDoc, reversing:
       title: grant.title, checkoutId: checkout.id, createdAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     if (grant.action === 'payout') await maybeTransfer(checkout, grant.payeeId, grant.amount ?? 0, quote.currency);
+    else await finishAdminTask(`payouts/${checkout.id}`, 'system', 'done');
     return;
   }
   if (grant.action === 'notify' && grant.userId && grant.message) {
@@ -1052,9 +1054,18 @@ async function maybeTransfer(checkout: CheckoutDoc, payeeId: string, amount: num
       transfer_group: checkout.id,
     }, { idempotencyKey: `transfer_${checkout.id}` });
     await db().doc(`payouts/${checkout.id}`).set({ status: 'transferred' }, { merge: true });
+    await finishAdminTask(`payouts/${checkout.id}`, 'system', 'done');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Transfer failed';
     await db().doc(`payouts/${checkout.id}`).set({ status: 'transfer_failed', detail: message.slice(0, 240) }, { merge: true });
+    await rememberAdminTask({
+      type: 'other',
+      entityType: 'payouts',
+      entityPath: `payouts/${checkout.id}`,
+      title: 'Payout failed',
+      summary: 'A payout transfer failed.',
+      priority: 'high',
+    });
   }
 }
 
@@ -1085,6 +1096,8 @@ export async function applyReversal(checkoutId: string, eventId: string) {
   const plan = fulfillmentFrom(checkout, checkout.provider);
   for (const grant of planReversal(plan)) await applyGrant(grant, checkout, true);
   await db().doc(`checkouts/${checkoutId}`).set({ status: 'refunded', refundedAt: FieldValue.serverTimestamp() }, { merge: true });
+  await finishAdminTask(`refund_requests/${checkoutId}`, 'system', 'done');
+  await finishAdminTask(`payouts/${checkoutId}`, 'system', 'done');
   await db().doc(`transactions/${checkoutId}`).set({ status: 'refunded' }, { merge: true });
   await db().doc(`invoices/${checkout.quote.kind === 'invoice' ? checkout.quote.sku : checkoutId}`).set({
     status: 'cancelled', refunded: true,
@@ -1116,6 +1129,14 @@ export async function refundCheckout(
     await db().doc(`refund_requests/${checkoutId}`).set({
       checkoutId, amount: checkout.quote.total, currency: checkout.quote.currency,
       status: 'requested', createdAt: FieldValue.serverTimestamp(),
+    });
+    await rememberAdminTask({
+      type: 'other',
+      entityType: 'refund_requests',
+      entityPath: `refund_requests/${checkoutId}`,
+      title: 'Refund request',
+      summary: 'A refund is waiting for the gateway.',
+      priority: 'high',
     });
     return { status: 'requested', message: 'The refund is recorded. Complete it in the gateway dashboard. Entitlements stay until you mark the sandbox or Stripe refund.' };
   }

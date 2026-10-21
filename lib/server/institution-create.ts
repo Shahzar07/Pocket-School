@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { blankProfile } from '@/lib/enterprise';
 import { adminDb } from '@/lib/firebase-admin';
+import { rememberAdminTask } from '@/lib/server/admin-tasks';
 import { ROCHFORD_SCHOOL, type RochfordFixture } from '@/lib/institutions/rochford';
 
 export interface InstitutionDraft {
@@ -120,5 +121,15 @@ export async function createPlatformInstitution(draft: InstitutionDraft): Promis
   });
   batch.set(adminDb().doc(`institutions/${ref.id}/settings/profile`), profile);
   await batch.commit();
+  await rememberAdminTask({
+    type: 'institution_verification',
+    entityType: 'institutions',
+    entityPath: `institutions/${ref.id}`,
+    title: draft.name,
+    summary: `Institution approval is waiting for ${draft.name}`,
+    priority: 'medium',
+    scope: draft.state ? { region: draft.state } : {},
+    now: Date.now(),
+  });
   return { id: ref.id, created: true };
 }

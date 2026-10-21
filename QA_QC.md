@@ -158,3 +158,16 @@ The same shell wraps each AI tool: dark and light, theme toggle, light dashboard
 | /dashboard/admin/blog | not wrapped | Journal CMS. Not an AI writer. |
 | Gradebook, attendance, billing, SafeLine, helpdesk, messages | not wrapped | School desk pages, not AI tool canvases. |
 | Floating ET tutor | not wrapped | The dock stays on non-tool pages. Tool routes hide it and use the shell. |
+
+## Action Centre
+
+Collection `admin_tasks`. Rules and indexes are in the repo and are not deployed. A missing `FCM_SERVICE_ACCOUNT` does not fail the task write. A missing `RESEND_API_KEY` or `RESEND_FROM` skips email.
+
+| Feature | Yes or no | Evidence | Needs key |
+| --- | --- | --- | --- |
+| Task schema and queue inventory | Yes | `lib/admin/task-sources.test.ts` and `lib/admin/tasks.test.ts`. SafeLine summary stays generic. Student join is `registration`. Teacher join is `teacher_verification`. Blog drafts are not a queue. | None |
+| Urgent counts, assign, snooze, done, reject reason | Yes | Same unit tests for SLA order and the reason check. The page sends claim as Assign to me, and reject stays disabled until the reason is at least 3 characters. | `FIREBASE_SERVICE_ACCOUNT` for a live list. The emulator host makes the admin SDK configured. |
+| Registration approve | Yes | `approve_registration` calls the existing join decision and closes the task. Decline requires a reason. | `FIREBASE_SERVICE_ACCOUNT` to write the join request. |
+| Push and email degrade | Yes | `emailAllowed` keeps emergency mail on during quiet hours. `sendFcm` returns quietly without `FCM_SERVICE_ACCOUNT` and `FCM_SERVER_KEY`. `sendMail` returns `not_configured` without `RESEND_API_KEY` and `RESEND_FROM`. | `FCM_SERVICE_ACCOUNT` to deliver web push. `RESEND_API_KEY` and `RESEND_FROM` to deliver email. |
+| Firestore rules | Yes | `tests/firestore.rules.test.ts` “blocks client creates and a dismiss without a reason” and “keeps emergency on in admin push preferences”. | Rules are not deployed. |
+| Signed-in to-do page | Yes | `e2e/admin-tasks.spec.ts` signs in as the super admin, shows the registration, and Assign to me sets `data-task-status="claimed"`. Re-checked after the rebase onto `487246d`. Screenshots `docs/qa/action-centre/action-centre-dark.png`, `action-centre-light.png`, and `action-centre-light-mobile.png`. Skipped unless `E2E_EMULATOR=1`. | None on the emulator. |

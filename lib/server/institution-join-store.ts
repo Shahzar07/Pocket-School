@@ -2,6 +2,8 @@ import 'server-only';
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '../firebase-admin';
+import { joinTaskType } from '../admin/task-sources';
+import { rememberAdminTask } from './admin-tasks';
 import { seedInstitutionCatalogue, type ProgrammeGrant } from '../institution-catalogue';
 import {
   claimMessage,
@@ -362,6 +364,18 @@ export async function attachJoin(input: {
       childEmails: [],
       createdAt: new Date().toISOString(),
     }, { merge: true });
+    const taskType = joinTaskType(input.attempt.role);
+    await rememberAdminTask({
+      type: taskType,
+      entityType: 'join_requests',
+      entityPath: `institutions/${academy.id}/join_requests/${input.uid}`,
+      title: taskType === 'teacher_verification' ? 'Teacher application' : 'Student registration',
+      summary: taskType === 'teacher_verification'
+        ? 'A teacher asked to join a school. Review and assign a class from the people page.'
+        : 'A student registration is waiting. Review, approve, or assign a class.',
+      priority: 'high',
+      scope: { institutionId: academy.id },
+    });
     await notify(academy.id, decision.status === 'waiting_for_seat' ? 'A student is waiting for a seat' : 'A join request is waiting', decision.message);
     await logAutomation({
       rule: 'institution_join',

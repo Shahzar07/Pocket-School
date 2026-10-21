@@ -3,6 +3,8 @@ import { isAdminConfigured, adminDb } from '../firebase-admin';
 import { isPublicDirectorySchool, membershipOutcome, toPublicInstitution, type DirectorySource } from '../institutions/public-directory';
 import { sendNotification } from './actions';
 import { lookupInviteCode } from './public-directory';
+import { joinTaskType } from '../admin/task-sources';
+import { finishAdminTask, rememberAdminTask } from './admin-tasks';
 
 function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -123,6 +125,18 @@ export async function requestInstitutionMembership(input: {
     updatedAt: now,
   }, { merge: true });
   await sendNotification(input.uid, 'School request sent', `${shown.displayName} still has to approve this request. You can learn independently until then.`, '/dashboard').catch(() => undefined);
+  const taskType = joinTaskType(input.role);
+  await rememberAdminTask({
+    type: taskType,
+    entityType: 'join_requests',
+    entityPath: `institutions/${input.institutionId}/join_requests/${input.uid}`,
+    title: taskType === 'teacher_verification' ? 'Teacher application' : 'Student registration',
+    summary: taskType === 'teacher_verification'
+      ? 'A teacher asked to join a school. Review and assign a class from the people page.'
+      : 'A student registration is waiting. Review, approve, or assign a class.',
+    priority: 'high',
+    scope: { institutionId: input.institutionId },
+  });
   const staffWord = input.role === 'teacher' ? 'staff' : input.role;
   await notifyAdmins(input.institutionId, text(academy.get('adminId')), 'A join request is waiting', `${input.name} asked to join as ${staffWord}.`);
   return { status: 'pending', institutionName: shown.displayName, message: 'Request sent. You can learn independently until the school approves it.' };
@@ -169,6 +183,12 @@ export async function decideInstitutionMembership(input: {
     await sendNotification(input.userId, 'School request declined', `${schoolName} declined the request. This account stays independent.`, '/dashboard').catch(() => undefined);
   }
   await notifyAdmins(input.institutionId, text(academy.get('adminId')), input.decision === 'approved' ? 'Join request approved' : 'Join request declined', `${name} is ${input.decision}.`);
+  await finishAdminTask(
+    `institutions/${input.institutionId}/join_requests/${input.userId}`,
+    input.actorId,
+    input.decision === 'approved' ? 'done' : 'reject',
+    input.decision === 'approved' ? '' : 'Registration declined',
+  );
   return { status: input.decision };
 }
 

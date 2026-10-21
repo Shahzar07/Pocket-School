@@ -24,6 +24,7 @@ import { sendPush } from '../push';
 import { adminPushStore } from '../push-store';
 import { sendToDevice } from '../push-transport';
 import { networkAllowed, readVerification } from '../verification/policy';
+import { rememberAdminTask } from './admin-tasks';
 
 function db(): Firestore {
   return adminDb();
@@ -418,6 +419,17 @@ export async function reportContent(uid: string, input: { targetType: string; ta
     targetType: str(input.targetType),
     targetId: str(input.targetId),
     createdAtMs: Date.now(),
+  });
+  const school = str((await db().doc(`users/${uid}`).get()).get('institutionId'));
+  await rememberAdminTask({
+    type: 'report',
+    entityType: 'reports',
+    entityPath: `reports/${ref.id}`,
+    title: 'Community report',
+    summary: 'A community report is waiting.',
+    priority: 'medium',
+    scope: school ? { institutionId: school } : {},
+    now: Date.now(),
   });
   return { id: ref.id };
 }

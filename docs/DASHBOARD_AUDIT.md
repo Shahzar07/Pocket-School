@@ -951,6 +951,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep.
 - **Owner keys:** None.
 
+### Action Centre
+
+- **Route:** `/dashboard/admin/tasks`
+- **Audience:** admin
+- **Purpose:** The queued admin to-do list. SafeLine names stay on the source document.
+- **Overlaps:** Queues and the Safety Desk.
+- **Decision:** Keep. Clients cannot create tasks.
+- **Owner keys:** FIREBASE_SERVICE_ACCOUNT.
+
 ### Queues
 
 - **Route:** `/dashboard/admin/queues`

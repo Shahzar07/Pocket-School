@@ -46,7 +46,7 @@ test('push body accepts a known category and rejects an unknown one', () => {
   assert.equal('category' in parsed && parsed.category, 'goals');
   assert.deepEqual(
     parsePushRequest({ recipientUid: 'u1', category: 'reading', title: 'x', body: 'y' }),
-    { error: 'category must be goals, flags, attendance, digests, grades, assignments, general, progress, alumni, institution, achievements, network, safety, hotline, or emergency.' },
+    { error: 'category must be goals, flags, attendance, digests, grades, assignments, general, progress, alumni, institution, achievements, network, safety, hotline, admin, or emergency.' },
   );
 });
 
