@@ -28,7 +28,7 @@ import { authedFetch } from '@/lib/api-client';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, profile } = useAuthSTORE();
+  const { user, profile, loading: authLoading } = useAuthSTORE();
   const [step, setStep] = useState(1);
   const [programme, setProgramme] = useState('');
   const [yearGroup, setYearGroup] = useState('');
@@ -51,6 +51,7 @@ export default function OnboardingPage() {
     setPrefilled(true);
   }, [profile, prefilled]);
 
+  if (authLoading) return null;
   if (!user || !profile) {
     if (typeof window !== 'undefined') router.push('/login');
     return null;
