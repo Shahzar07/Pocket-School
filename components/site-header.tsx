@@ -14,7 +14,7 @@ import styles from "./home-chrome.module.css";
 import { PromoBanner } from "@/components/promo-banner";
 import { isBrandedLoginPath } from "@/lib/institution-login";
 import { isInstitutionJourneyPath } from "@/lib/institution-journey";
-import { MARKET_LINKS, MARKET_MENU } from "@/lib/marketing/nav";
+import { MARKET_LINKS } from "@/lib/marketing/nav";
 
 const NAV_LINKS = [
   { label: "Marketplace", href: "/courses" },
@@ -47,7 +47,9 @@ function hidesSiteChrome(pathname: string): boolean {
     isBrandedLoginPath(pathname) ||
     isInstitutionJourneyPath(pathname) ||
     pathname === "/offer" ||
-    pathname.startsWith("/offer/")
+    pathname.startsWith("/offer/") ||
+    pathname === "/p" ||
+    pathname.startsWith("/p/")
   );
 }
 
@@ -117,7 +119,10 @@ export function SiteHeader() {
       <a className={styles.skip} href="#content">
         {t("landing.skip")}
       </a>
-      <header className={`${styles.header} ${scrolled || !isLanding ? styles.scrolled : ""}`}>
+      <header
+        className={`${styles.header} ${isLanding ? styles.headerFlow : styles.scrolled}`}
+        data-site-header={isLanding ? "flow" : "fixed"}
+      >
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand}>
             <span className={styles.mark} aria-hidden>
@@ -137,9 +142,9 @@ export function SiteHeader() {
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
-            <Link href="/institutions/register">For Schools & Organisations</Link>
-            <details className="relative">
-              <summary className="cursor-pointer list-none">{MARKET_MENU}</summary>
+            <Link href="/institutions/register">{t("header.forSchools")}</Link>
+            <details className={styles.programmes}>
+              <summary>{t("header.programmes")}</summary>
               <div className="absolute left-0 z-20 mt-2 max-h-80 w-64 overflow-auto rounded-2xl bg-white p-3 text-[#203337] shadow-lg">
                 {MARKET_LINKS.map((item) => (
                   <Link key={item.href} className="block py-1 text-sm" href={item.href}>{item.label}</Link>
@@ -183,7 +188,7 @@ export function SiteHeader() {
             <Link href="/reads">{t("nav.books")}</Link>
             <Link href="/pricing">{t("header.pricing")}</Link>
             <Link href="/blog">{t("header.blog")}</Link>
-            <Link href="/institutions/register">For Schools & Organisations</Link>
+            <Link href="/institutions/register">{t("header.forSchools")}</Link>
             {MARKET_LINKS.map((item) => (
               <Link key={item.href} href={item.href}>{item.label}</Link>
             ))}

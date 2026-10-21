@@ -29,11 +29,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 25px;
+  gap: 16px;
+  min-width: 0;
 }
 .brand {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 10px;
   font-size: 16px;
   font-weight: 800;
@@ -56,17 +58,35 @@
 }
 .desktopNav {
   display: flex;
-  gap: 24px;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 16px;
+  overflow-x: auto;
   background: #ffffff26;
   border: 1px solid #ffffff30;
-  padding: 9px 25px;
+  padding: 9px 16px;
   border-radius: 12px;
   backdrop-filter: blur(12px);
 }
-.desktopNav a {
+.desktopNav a,
+.desktopNav summary {
   white-space: nowrap;
   font-size: 12px;
+  line-height: 1.2;
   color: #f2fbff;
+}
+.programmes {
+  position: relative;
+}
+.programmes summary {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.programmes summary::-webkit-details-marker {
+  display: none;
 }
 .desktopNav a:hover {
   text-decoration: underline;
@@ -123,8 +143,12 @@
   padding-top: 9px;
   padding-bottom: 9px;
 }
-.scrolled .desktopNav a {
+.scrolled .desktopNav a,
+.scrolled .desktopNav summary {
   color: #315b68;
+}
+.headerFlow {
+  position: absolute;
 }
 .mobileNav {
   display: none;

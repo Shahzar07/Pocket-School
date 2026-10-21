@@ -1,13 +1,15 @@
 'use client';
 
 import { StudioView } from '@/components/reads/studio-view';
-import { StudioFrame } from '@/components/studio/studio-nav';
 
-/** The same Book Studio as Poket Reads, opened from the CMS. */
+/**
+ * AI Book Creator. The dashboard layout already hides the admin menu and
+ * draws the ET AI shell around this route. This page only fills that shell.
+ */
 export default function BookStudioPage() {
   return (
-    <StudioFrame>
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden" data-book-studio="1">
       <StudioView />
-    </StudioFrame>
+    </div>
   );
 }

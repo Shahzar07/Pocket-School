@@ -14,6 +14,7 @@ import {
 import { previewHome } from '@/lib/dashboard/preview';
 import { CategoryIcon } from './icons';
 import { HomeView } from './home-view';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 
 export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: number }) {
   const home = roleHome(role);
@@ -28,6 +29,9 @@ export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: numb
   const [moreOpen, setMoreOpen] = useState(false);
   const [order, setOrder] = useState<string[] | undefined>(undefined);
   const [coach, setCoach] = useState(role === 'student');
+  useLayerDismiss(searchOpen, () => setSearchOpen(false));
+  useLayerDismiss(bellOpen, () => setBellOpen(false));
+  useLayerDismiss(profileOpen, () => setProfileOpen(false));
   const [arranging, setArranging] = useState(false);
   const hits = searchLinks(role, query);
 
@@ -124,7 +128,8 @@ export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: numb
           </header>
 
           {searchOpen ? (
-            <div className="border-b border-border bg-card px-4 py-3" role="dialog" aria-label="Search">
+            <div className="relative border-b border-border bg-card px-4 py-3 pe-16" role="dialog" aria-label="Search">
+              <CloseControl onClose={() => setSearchOpen(false)} className="absolute top-2 right-2" />
               <input
                 autoFocus
                 value={query}
@@ -148,7 +153,8 @@ export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: numb
           ) : null}
 
           {bellOpen ? (
-            <div className="border-b border-border bg-card px-4 py-3" role="dialog" aria-label="Notifications">
+            <div className="relative border-b border-border bg-card px-4 py-3 pe-16" role="dialog" aria-label="Notifications">
+              <CloseControl onClose={() => setBellOpen(false)} className="absolute top-2 right-2" />
               {notices.map(group => (
                 <section key={group.category} className="mb-3">
                   <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{group.label}</h2>
@@ -163,7 +169,8 @@ export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: numb
           ) : null}
 
           {profileOpen ? (
-            <div className="border-b border-border bg-card px-4 py-3 text-sm" role="menu">
+            <div className="relative border-b border-border bg-card px-4 py-3 pe-16 text-sm" role="menu">
+              <CloseControl onClose={() => setProfileOpen(false)} className="absolute top-2 right-2" />
               <p className="font-semibold">{preview.name}</p>
               <p className="text-muted-foreground">{home.label}</p>
               <Link href="/dashboard/profile" className="mt-2 inline-flex min-h-12 items-center font-semibold text-primary">Settings</Link>

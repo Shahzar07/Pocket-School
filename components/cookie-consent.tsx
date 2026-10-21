@@ -14,7 +14,8 @@ import { isBrandedLoginPath } from '@/lib/institution-login';
 import { isInstitutionJourneyPath } from '@/lib/institution-journey';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { Cookie, X } from 'lucide-react';
+import { Cookie } from 'lucide-react';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 
 const STORAGE_KEY = 'poket-cookie-consent';
 
@@ -73,6 +74,7 @@ export function CookieConsent() {
 
   const acceptAll = () => persist({ functional: true, analytics: true, aiPerformance: true });
   const rejectAll = () => persist({ functional: false, analytics: false, aiPerformance: false });
+  useLayerDismiss(open, rejectAll);
 
   if (isBrandedLoginPath(pathname) || isInstitutionJourneyPath(pathname)) return null;
 
@@ -103,9 +105,7 @@ export function CookieConsent() {
                     <Link href="/legal?doc=privacy" className="text-primary hover:underline font-medium">{t('cookie.privacyPolicy')}</Link>.
                   </p>
                 </div>
-                <button onClick={rejectAll} aria-label={t('cookie.close')} className="text-muted-foreground hover:text-foreground shrink-0">
-                  <X className="w-4 h-4" />
-                </button>
+                <CloseControl onClose={rejectAll} className="-mt-1 -me-1" />
               </div>
 
               <AnimatePresence>

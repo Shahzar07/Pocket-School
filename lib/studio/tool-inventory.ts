@@ -211,16 +211,7 @@ export const TOOL_ROUTES: ToolRoute[] = [
     sidebar: true,
     wrapped: true,
     covers: ['/dashboard/studio/teachers', '/ai-teachers'],
-    why: 'Portrait grid and each teacher chat, including the public session.',
-  },
-  {
-    id: 'et-subject',
-    label: 'ET + Subject',
-    href: '/ai-teachers',
-    sidebar: true,
-    wrapped: true,
-    covers: [],
-    why: 'The other teachers address. Highlight follows AI Teachers when that grid is open.',
+    why: 'Portrait grid and each teacher chat. ET + Subject was this same grid, so it is not a second link. /ai-teachers stays as the public address.',
   },
   {
     id: 'lesson-generator',
@@ -330,7 +321,6 @@ export function plannerHref(role: string | undefined): string {
 export function toolHref(route: ToolRoute, role: string | undefined, place: 'dashboard' | 'public'): string {
   if (route.id === 'planner') return plannerHref(role);
   if (route.id === 'ai-teachers') return place === 'dashboard' ? '/dashboard/studio/teachers' : '/ai-teachers';
-  if (route.id === 'et-subject') return place === 'dashboard' ? '/ai-teachers' : '/dashboard/studio/teachers';
   if (route.id === 'essay-writer' && (role === 'student' || !role)) return '/dashboard/student/essay';
   return route.href;
 }
@@ -359,22 +349,84 @@ function allowed(actor: ToolActor | null | undefined, gate: ToolGate | undefined
   return false;
 }
 
+export const TOOL_ICON_NAMES = [
+  'sparkles',
+  'bot',
+  'calculator',
+  'clipboard',
+  'pen',
+  'book',
+  'book-marked',
+  'users',
+  'search',
+  'calendar',
+  'calendar-range',
+  'graduation',
+  'upload',
+  'file-question',
+  'file-text',
+  'layers',
+  'package',
+  'store',
+  'calendar-days',
+  'layout',
+] as const;
+
+export type ToolIconName = (typeof TOOL_ICON_NAMES)[number];
+
 export interface SidebarTool {
   id: string;
   label: string;
   href: string;
+  icon: ToolIconName;
+  /** Top group, above Recents. Everything else stays in Tools. */
+  placement: 'primary' | 'tools';
   mode?: DeskToolId;
   entry?: 'timetable';
 }
 
+const TOOL_ICONS: Record<string, ToolIconName> = {
+  'ai-studio': 'sparkles',
+  'et-ai': 'bot',
+  'et-maths': 'calculator',
+  'et-exams': 'clipboard',
+  'et-essays': 'pen',
+  'essay-writer': 'pen',
+  'book-studio': 'book',
+  'ai-book-creator': 'book-marked',
+  poketreads: 'book',
+  'teacher-toolkit': 'layout',
+  'parent-explainer': 'users',
+  'research-helper': 'search',
+  'study-planner': 'calendar',
+  timetabler: 'calendar-range',
+  'ai-teachers': 'graduation',
+  'lesson-generator': 'upload',
+  'exam-builder': 'file-question',
+  'report-studio': 'file-text',
+  'course-architect': 'layers',
+  'exam-packs': 'package',
+  'creator-store': 'store',
+  planner: 'calendar-days',
+  calendar: 'calendar',
+};
+
+/** Former tab-bar order. AI Teachers is pulled into the top group. */
+const TAB_ORDER = ['ai-studio', 'et-ai', 'et-maths', 'et-exams', 'et-essays', 'creator-store', 'ai-book-creator', 'timetabler'];
+
 export function sidebarTools(actor: ToolActor | null | undefined, place: 'dashboard' | 'public'): SidebarTool[] {
-  return TOOL_ROUTES.filter(route => route.sidebar && allowed(actor, route.gate)).map(route => ({
+  const ranked = TOOL_ROUTES.filter(route => route.sidebar && allowed(actor, route.gate)).map((route, index) => ({
     id: route.id,
     label: route.label,
     href: toolHref(route, actor?.role ?? undefined, place),
+    icon: TOOL_ICONS[route.id] ?? 'sparkles',
+    placement: route.id === 'ai-teachers' ? 'primary' as const : 'tools' as const,
     mode: route.mode,
     entry: route.entry,
+    rank: route.id === 'ai-teachers' ? -1 : (TAB_ORDER.indexOf(route.id) >= 0 ? TAB_ORDER.indexOf(route.id) : 100 + index),
   }));
+  ranked.sort((a, b) => a.rank - b.rank);
+  return ranked.map(({ rank: _rank, ...tool }) => tool);
 }
 
 function coversPath(route: ToolRoute, pathname: string): boolean {
@@ -409,12 +461,6 @@ export function activeSidebarId(pathname: string, tools: SidebarTool[]): string 
         : pathname === prefix || pathname.startsWith(`${prefix}/`);
       if (!hit) continue;
       if (!best || prefix.length > best.length) best = { id: tool.id, length: prefix.length };
-    }
-  }
-  if (best?.id === 'et-subject' && tools.some(tool => tool.id === 'ai-teachers')) {
-    const teachers = tools.find(tool => tool.id === 'ai-teachers');
-    if (teachers && (pathname === pathOnly(teachers.href) || pathname.startsWith(`${pathOnly(teachers.href)}/`))) {
-      return 'ai-teachers';
     }
   }
   return best?.id ?? null;

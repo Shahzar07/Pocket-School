@@ -40,6 +40,28 @@ describe('AI tool shell inventory', () => {
     assert.equal(student.includes('AI Book Creator'), false);
   });
 
+  it('puts AI Teachers in the top group and gives every tool an icon', () => {
+    for (const role of ['student', 'teacher', 'parent', 'admin', 'institution_admin'] as const) {
+      const tools = sidebarTools({ role }, 'dashboard');
+      const teachers = tools.find(tool => tool.id === 'ai-teachers');
+      assert.ok(teachers);
+      assert.equal(teachers.placement, 'primary');
+      assert.equal(teachers.icon, 'graduation');
+      assert.equal(tools.some(tool => tool.label === 'ET + Subject'), false);
+      assert.equal(tools.every(tool => tool.icon.length > 0), true);
+    }
+    const admin = sidebarTools({ role: 'admin' }, 'dashboard').filter(tool => tool.placement === 'tools').map(tool => tool.id);
+    assert.deepEqual(admin.slice(0, 8), [
+      'ai-studio', 'et-ai', 'et-maths', 'et-exams', 'et-essays', 'creator-store', 'ai-book-creator', 'timetabler',
+    ]);
+    const studentTools = sidebarTools({ role: 'student' }, 'dashboard');
+    assert.equal(studentTools.some(tool => tool.id === 'timetabler' || tool.id === 'teacher-toolkit'), false);
+    assert.equal(studentTools.some(tool => tool.id === 'book-studio'), true);
+    const teacherTools = sidebarTools({ role: 'teacher' }, 'dashboard');
+    assert.equal(teacherTools.some(tool => tool.id === 'timetabler'), true);
+    assert.equal(teacherTools.some(tool => tool.id === 'teacher-toolkit'), true);
+  });
+
   it('highlights the longest matching tool', () => {
     const tools = sidebarTools({ role: 'teacher' }, 'dashboard');
     assert.equal(activeSidebarId('/dashboard/studio', tools), 'ai-studio');

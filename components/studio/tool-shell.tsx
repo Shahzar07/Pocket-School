@@ -4,7 +4,11 @@ import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { ArrowLeft, Asterisk, HelpCircle, Home, Menu, Phone, Plus, Search, User as UserIcon } from 'lucide-react';
+import {
+  ArrowLeft, Asterisk, BookMarked, BookOpen, Bot, Calculator, Calendar, CalendarDays, CalendarRange,
+  ClipboardList, FileQuestionMark, FileText, GraduationCap, HelpCircle, Home, Layers, LayoutDashboard,
+  Library, Menu, MessageSquare, Package, PenLine, Phone, Plus, Search, Sparkles, Store, Upload, User as UserIcon, Users,
+} from 'lucide-react';
 import { AccountMenu } from '@/components/account/account-menu';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { DashboardSearch } from '@/components/dashboard-search';
@@ -22,6 +26,7 @@ import {
   activeSidebarId,
   sidebarTools,
   type SidebarTool,
+  type ToolIconName,
 } from '@/lib/studio/tool-inventory';
 import type { TourRole } from '@/lib/tour-steps';
 
@@ -29,6 +34,53 @@ const TOUR_ROLES = new Set<string>(['student', 'teacher', 'parent', 'admin', 'in
 
 export const SHELL_LINK = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--studio-dim)] transition-colors hover:bg-[var(--studio-surface-hover)] hover:text-[var(--studio-text)]';
 export const SHELL_ACTIVE = 'flex w-full items-center gap-2.5 rounded-lg bg-[#3FE0D0] px-3 py-2 text-sm font-semibold text-[#203337]';
+
+const TOOL_GLYPH: Record<ToolIconName, typeof Home> = {
+  sparkles: Sparkles,
+  bot: Bot,
+  calculator: Calculator,
+  clipboard: ClipboardList,
+  pen: PenLine,
+  book: BookOpen,
+  'book-marked': BookMarked,
+  users: Users,
+  search: Search,
+  calendar: Calendar,
+  'calendar-range': CalendarRange,
+  graduation: GraduationCap,
+  upload: Upload,
+  'file-question': FileQuestionMark,
+  'file-text': FileText,
+  layers: Layers,
+  package: Package,
+  store: Store,
+  'calendar-days': CalendarDays,
+  layout: LayoutDashboard,
+};
+
+export function StudioDot({ active = false }: { active?: boolean }) {
+  return <span className={`h-2 w-2 shrink-0 rounded-full ${active ? 'bg-[#203337]' : 'bg-[#3FE0D0]'}`} data-studio-dot="1" aria-hidden />;
+}
+
+export function ToolGlyph({ name }: { name: ToolIconName }) {
+  const Icon = TOOL_GLYPH[name];
+  return <Icon className="h-4 w-4 shrink-0" aria-hidden />;
+}
+
+function StudioShortcuts({ onClose }: { onClose: () => void }) {
+  return (
+    <>
+      <Link href="/dashboard/studio" onClick={onClose} className={SHELL_LINK}>
+        <StudioDot />
+        <MessageSquare className="h-4 w-4 shrink-0" aria-hidden /> Chats
+      </Link>
+      <Link href="/dashboard/studio?view=library" onClick={onClose} className={SHELL_LINK}>
+        <StudioDot />
+        <Library className="h-4 w-4 shrink-0" aria-hidden /> Library
+      </Link>
+    </>
+  );
+}
 
 function dashboardHomeHref(role: string | undefined): string {
   if (role === 'teacher') return '/dashboard/teacher';
@@ -143,6 +195,28 @@ export function ShellSidebar({
   const tools = sidebarTools(profile, place);
   const active = suppressActive ? null : activeSidebarId(pathname, tools);
   const home = dashboardHomeHref(profile?.role);
+  const primary = tools.filter(tool => tool.placement === 'primary');
+  const list = tools.filter(tool => tool.placement !== 'primary');
+  const renderTool = (tool: SidebarTool) => {
+    if (tool.mode && modeControl) return <div key={tool.id}>{modeControl(tool)}</div>;
+    const current = active === tool.id;
+    const className = current ? SHELL_ACTIVE : SHELL_LINK;
+    return (
+      <Link
+        key={tool.id}
+        href={tool.href}
+        onClick={onClose}
+        aria-current={current ? 'page' : undefined}
+        data-studio-entry={tool.entry}
+        data-studio-placement={tool.placement}
+        className={className}
+      >
+        {tool.placement === 'primary' ? <StudioDot active={current} /> : null}
+        <ToolGlyph name={tool.icon} />
+        <span className="min-w-0 truncate">{tool.label}</span>
+      </Link>
+    );
+  };
   return (
     <aside
       aria-label="ET AI Studio"
@@ -163,41 +237,21 @@ export function ShellSidebar({
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">
         <nav className="mt-1 space-y-0.5" aria-label="AI Studio">
           <Link href={home} onClick={onClose} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-[var(--studio-text)] hover:bg-[var(--studio-surface-hover)]">
-            <Home className="h-4 w-4 text-[var(--studio-accent-text)]" aria-hidden /> Dashboard
+            <Home className="h-4 w-4 shrink-0 text-[var(--studio-accent-text)]" aria-hidden /> Dashboard
           </Link>
           <button type="button" onClick={onNew} className="flex w-full items-center gap-2.5 rounded-xl border border-[var(--studio-border)] px-3 py-2.5 text-sm font-semibold text-[var(--studio-text)] hover:bg-[var(--studio-surface-hover)]">
-            <Plus className="h-4 w-4 text-[var(--studio-accent-text)]" aria-hidden /> {newLabel}
+            <Plus className="h-4 w-4 shrink-0 text-[var(--studio-accent-text)]" aria-hidden /> {newLabel}
           </button>
-          {beforeTools}
+          {beforeTools ?? <StudioShortcuts onClose={onClose} />}
+          <div data-studio-primary="1" className="space-y-0.5">{primary.map(renderTool)}</div>
+          <p className="px-3 pb-1.5 pt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--studio-faint)]">Recents</p>
+          <div className="space-y-0.5">{recents}</div>
           <p className="px-3 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--studio-faint)]">Tools</p>
           <div data-studio-tools="list" className="space-y-0.5">
-            {tools.map(tool => {
-              if (tool.mode && modeControl) return <div key={tool.id}>{modeControl(tool)}</div>;
-              const current = active === tool.id;
-              return (
-                <Link
-                  key={tool.id}
-                  href={tool.href}
-                  onClick={onClose}
-                  aria-current={current ? 'page' : undefined}
-                  data-studio-entry={tool.entry}
-                  className={current ? SHELL_ACTIVE : SHELL_LINK}
-                >
-                  {tool.label}
-                </Link>
-              );
-            })}
+            {list.map(renderTool)}
+            {afterTools}
           </div>
-          {afterTools}
         </nav>
-        <p className="px-3 pb-1.5 pt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--studio-faint)]">Recents</p>
-        <div className="space-y-0.5">
-          {recents ?? (
-            <Link href="/dashboard/studio?view=library" onClick={onClose} className={SHELL_LINK}>
-              Library
-            </Link>
-          )}
-        </div>
       </div>
       <div className="shrink-0 space-y-1 border-t border-[var(--studio-border-soft)] p-3">
         {email ? <ShellAccount email={email} /> : (
@@ -260,7 +314,14 @@ function ShellFrame({
   modeControl?: (tool: SidebarTool) => ReactNode;
 }) {
   const { resolvedTheme } = useTheme();
-  const light = shellLight(resolvedTheme);
+  const [light, setLight] = useState(false);
+  useEffect(() => {
+    if (resolvedTheme === 'light' || resolvedTheme === 'dark') {
+      setLight(shellLight(resolvedTheme));
+      return;
+    }
+    setLight(document.documentElement.classList.contains('light'));
+  }, [resolvedTheme]);
   const { open, setOpen } = useShellOpen();
   const frame = fill === 'viewport' ? 'fixed inset-0 z-[80] h-dvh' : 'h-full min-h-0 w-full';
   return (
@@ -293,7 +354,7 @@ function ShellFrame({
             <ShellEssentials />
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto">{children}</div>
       </div>
     </div>
   );
@@ -325,7 +386,9 @@ export function ToolShell({ children }: { children: ReactNode }) {
       newLabel={book ? 'New book' : 'New chat'}
       onNew={onNew}
       afterTools={(
-        <Link href="/dashboard/studio?view=tools" className={SHELL_LINK}>All tools</Link>
+        <Link href="/dashboard/studio?view=tools" className={SHELL_LINK}>
+          <Sparkles className="h-4 w-4 shrink-0" aria-hidden /> All tools
+        </Link>
       )}
     >
       {children}
@@ -352,7 +415,11 @@ export function PublicToolShell({ children }: { children: ReactNode }) {
         }
         router.push('/dashboard/studio');
       }}
-      afterTools={<Link href="/dashboard/studio?view=tools" className={SHELL_LINK}>All tools</Link>}
+      afterTools={(
+        <Link href="/dashboard/studio?view=tools" className={SHELL_LINK}>
+          <Sparkles className="h-4 w-4 shrink-0" aria-hidden /> All tools
+        </Link>
+      )}
     >
       {children}
     </ShellFrame>

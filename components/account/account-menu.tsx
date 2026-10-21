@@ -12,6 +12,7 @@ import { clearViewAs } from '@/components/admin-session';
 import { ModeSwitch } from '@/components/account/mode-switch';
 import type { AccountMode } from '@/lib/account-modes';
 import { menuPosition } from '@/lib/ui/menu-position';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 
 export function AccountMenu({
   name,
@@ -40,6 +41,8 @@ export function AccountMenu({
   const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useLayerDismiss(open, () => setOpen(false), false, panelRef);
 
   const place = () => {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -101,8 +104,9 @@ export function AccountMenu({
           role="menu"
           data-account-menu-panel
           style={{ position: 'fixed', left: box.left, top: box.top, zIndex: 80 }}
-          className="w-72 rounded-2xl border border-border bg-card p-2 shadow-lg"
+          className="relative w-72 rounded-2xl border border-border bg-card p-2 pe-14 shadow-lg"
         >
+          <CloseControl onClose={() => setOpen(false)} className="absolute top-1 right-1" />
           <div className="px-2 py-2">
             <p className="truncate text-sm font-semibold">{name}</p>
             <p className="truncate text-xs text-muted-foreground">{email}</p>

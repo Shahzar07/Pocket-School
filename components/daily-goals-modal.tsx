@@ -7,6 +7,7 @@ import { greeting } from '@/lib/greeting';
 import { GOAL_ON_TIME_BONUS } from '@/lib/sparks';
 import { isAssignedSource, sourceLabel, type PlanLink } from '@/lib/study/planner';
 import { toast } from 'sonner';
+import { CloseControl, confirmIfDirty, useLayerDismiss } from '@/components/ui/close-control';
 import {
   BookMarked, BookOpen, ClipboardList, GripVertical, Loader2, PenLine, Plus, RotateCcw, Star, Target, Trash2, User,
 } from 'lucide-react';
@@ -180,6 +181,13 @@ export function DailyGoalsModal({
     }
   };
 
+  const unsaved = mode === 'commit' && drafts.some((draft) => !draft.locked && !draft.persisted && draft.title.trim().length > 0);
+  const finish = () => {
+    if (mode === 'review') onDone();
+    else void handleSkip();
+  };
+  useLayerDismiss(open, finish, unsaved);
+
   const doneCount = reviewGoals.filter((goal) => goal.done).length;
 
   return (
@@ -194,12 +202,18 @@ export function DailyGoalsModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="goals-checkin-title"
+          onMouseDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (!confirmIfDirty(unsaved)) return;
+            finish();
+          }}
         >
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            className="my-auto w-full max-w-2xl overflow-hidden rounded-[28px] border border-[#1E6A83] bg-white shadow-[0_24px_80px_-20px_rgba(32,51,55,0.45)]"
+            className="relative my-auto w-full max-w-2xl overflow-hidden rounded-[28px] border border-[#1E6A83] bg-white shadow-[0_24px_80px_-20px_rgba(32,51,55,0.45)]"
           >
+            <CloseControl onClose={finish} dirty={unsaved} className="absolute top-3 right-3 z-10 bg-white text-[#203337] hover:bg-white" />
             <div className="relative overflow-hidden p-6 text-white" style={{ background: 'var(--ps-hero)' }}>
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#1E6A83] bg-[#3FE0D0] font-heading text-lg text-[#203337]" aria-hidden>

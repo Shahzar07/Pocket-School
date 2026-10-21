@@ -7,6 +7,20 @@ export const chromeEn = {
     etMaths: 'ET Maths',
     examPrep: 'Exam Prep',
     blog: 'Blog',
+    forSchools: 'For Schools & Organisations',
+    programmes: 'Programmes and products',
+  },
+  home: {
+    v3: {
+      eyebrow: 'The lifelong learning platform',
+      title: 'Learn your way.',
+      titleEm: 'Go further with AI.',
+      lede: 'Named ET AI teachers, ET AI Studio, and the records a school keeps — goals, attendance, and report cards — on one login.',
+      cred: 'Built with Rochford’s International School, Ipoh.',
+      start: 'Start free',
+      schools: 'For schools and organisations',
+      demo: 'Book a demo',
+    },
   },
   footer: {
     blog: 'Blog',
@@ -89,7 +103,25 @@ export const chromeEn = {
 };
 
 const ms = {
-  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep', blog: 'Blog' },
+  header: {
+    etMaths: 'ET Maths',
+    examPrep: 'Exam Prep',
+    blog: 'Blog',
+    forSchools: 'Untuk sekolah dan organisasi',
+    programmes: 'Program dan produk',
+  },
+  home: {
+    v3: {
+      eyebrow: 'Platform pembelajaran sepanjang hayat',
+      title: 'Belajar dengan cara anda.',
+      titleEm: 'Pergi lebih jauh dengan AI.',
+      lede: 'Guru ET AI yang bernama, ET AI Studio, dan rekod yang sekolah simpan — matlamat, kehadiran, dan kad laporan — pada satu log masuk.',
+      cred: 'Dibina bersama Rochford’s International School, Ipoh.',
+      start: 'Mula percuma',
+      schools: 'Untuk sekolah dan organisasi',
+      demo: 'Tempah demo',
+    },
+  },
   footer: { blog: 'Blog' },
   nav: {
     community: 'Komuniti',

@@ -13,6 +13,7 @@ import {
 import type { PreviewAlert, PreviewBadge, PreviewChild, PreviewRow, PreviewStat } from '@/lib/dashboard/preview';
 import { AlertCard, BadgeArt, DashSkeleton, InsightMap, ListCard, StatCard, TileLink } from './cards';
 import { CategoryIcon } from './icons';
+import { CloseControl } from '@/components/ui/close-control';
 
 export function HomeView({
   role,
@@ -118,7 +119,8 @@ export function HomeView({
       </header>
 
       {showCoach ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-border bg-card px-4 py-3" role="note">
+        <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-border bg-card px-4 py-3 pe-16" role="note">
+          {onDismissCoach ? <CloseControl onClose={onDismissCoach} className="absolute top-2 right-2" /> : null}
           <p className="text-sm text-foreground">
             New here? The onboarding course walks through these tiles. Start with the three tasks above.
           </p>

@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Send, MessageSquare, Inbox, Plus, X } from 'lucide-react';
+import { CloseControl, confirmIfDirty, useLayerDismiss } from '@/components/ui/close-control';
+import { Send, MessageSquare, Inbox, Plus } from 'lucide-react';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -32,6 +33,9 @@ export default function ParentCommunications() {
   const [children, setChildren] = useState<{ id: string; data: UserProfile }[]>([]);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
   const [compose, setCompose] = useState({ toId: '', subject: '', body: '' });
+  const composeDirty = compose.toId.trim().length > 0 || compose.subject.trim().length > 0 || compose.body.trim().length > 0;
+  const closeCompose = () => setShowCompose(false);
+  useLayerDismiss(showCompose, closeCompose, composeDirty);
 
   const teacherName = (uid: string) => teachers.find(t => t.id === uid)?.name ?? 'Teacher';
 
@@ -122,13 +126,21 @@ export default function ParentCommunications() {
 
       {/* Compose modal */}
       {showCompose && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onMouseDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (!confirmIfDirty(composeDirty)) return;
+            closeCompose();
+          }}
+        >
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
             className="bg-card border border-border rounded-3xl p-7 max-w-lg w-full space-y-5"
+            onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <h2 className="font-heading text-2xl text-foreground">New Message</h2>
-              <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setShowCompose(false)}><X className="w-4 h-4" /></Button>
+              <CloseControl onClose={closeCompose} dirty={composeDirty} />
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -156,7 +168,7 @@ export default function ParentCommunications() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 rounded-full h-11 font-semibold" onClick={() => setShowCompose(false)}>Cancel</Button>
+              <Button variant="outline" className="flex-1 rounded-full h-11 font-semibold" onClick={() => { if (confirmIfDirty(composeDirty)) closeCompose(); }}>Cancel</Button>
               <Button className="flex-1 rounded-full h-11 font-bold border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] gap-2" onClick={handleSend} disabled={sending}>
                 <Send className="w-4 h-4" />{sending ? 'Sending…' : 'Send Message'}
               </Button>

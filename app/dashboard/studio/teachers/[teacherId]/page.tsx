@@ -12,7 +12,7 @@ export default function StudioTeacherPage({ params }: { params: Promise<{ teache
     return <p className="p-8 text-sm">That teacher is not in AI Studio. <Link href="/dashboard/studio/teachers" className="underline">Back to AI Teachers</Link></p>;
   }
   return (
-    <div className="h-[calc(100dvh-3.5rem)] min-h-0">
+    <div className="h-full min-h-0 overflow-hidden">
       <TeacherConversation teacher={teacher} variant="studio" />
     </div>
   );

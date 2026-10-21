@@ -409,15 +409,15 @@ export function StudioView() {
   const brief = [book.title, book.genre, book.ageRating, book.blurb].filter(Boolean).join('. ');
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="font-heading text-[40px] tracking-[-0.04em] sm:text-[52px]">{t('reads.studio.title')}</h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{t('reads.studio.lead')}</p>
-        <p className="mt-3 rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-[13px] text-[var(--ps-cyan-text)]">{t('reads.studio.preview')}</p>
-        <p className="mt-2 text-[13px] text-muted-foreground">{savedAt ? `${t('reads.studio.savedDevice')} · ${new Date(savedAt).toLocaleTimeString()}` : t('reads.studio.pending')}</p>
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--studio-bg,transparent)] text-[var(--studio-text,inherit)]" data-book-workspace="1">
+      <header className="shrink-0 border-b border-[var(--studio-border-soft,var(--border))] px-4 py-3 sm:px-6">
+        <h1 className="font-heading break-words text-2xl tracking-tight sm:text-3xl">{t('reads.studio.title')}</h1>
+        <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[var(--studio-dim,var(--muted-foreground))]">{t('reads.studio.lead')}</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-[var(--studio-dim,var(--muted-foreground))]">{t('reads.studio.preview')}</p>
+        <p className="mt-1 text-[12px] text-[var(--studio-dim,var(--muted-foreground))]">{savedAt ? `${t('reads.studio.savedDevice')} · ${new Date(savedAt).toLocaleTimeString()}` : t('reads.studio.pending')}</p>
       </header>
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="space-y-2">
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="min-h-0 min-w-0 space-y-2 overflow-y-auto border-b border-[var(--studio-border-soft,var(--border))] p-3 lg:border-b-0 lg:border-e">
           <p className="px-1 text-[12px] text-muted-foreground">{counts.draft} {t('reads.studio.draft')} · {counts.review} {t('reads.studio.review')} · {counts.published} {t('reads.studio.published')}</p>
           <button
             type="button"
@@ -458,7 +458,7 @@ export function StudioView() {
             </button>
           ))}
         </aside>
-        <section className="space-y-5 rounded-[28px] border border-border bg-card p-5 sm:p-6">
+        <section className="min-h-0 min-w-0 space-y-5 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
           <div className="flex flex-wrap gap-2">
             <Step active={book.status === 'draft'} label={t('reads.studio.draft')} />
             <Step active={book.status === 'review'} label={t('reads.studio.review')} />
@@ -560,11 +560,11 @@ export function StudioView() {
                 })}
                 onChange={targets => update({ targets, ...bookFlagsFromTargets(targets) })}
               />
-              <fieldset className="space-y-3 rounded-2xl border border-border p-3">
-                <label className="flex items-start gap-2 text-sm font-semibold">
+              <fieldset data-book-featured="1" className="space-y-3 rounded-2xl border border-border bg-[var(--studio-surface,#fff)] p-3 text-[var(--studio-text,#203337)]">
+                <label className="flex items-start gap-3 text-sm font-semibold">
                   <input
                     type="checkbox"
-                    className="mt-1"
+                    className="mt-1 size-5 shrink-0 accent-[#1E6A83]"
                     checked={book.showcase?.featured === true}
                     onChange={event => update({
                       showcase: {
@@ -577,7 +577,7 @@ export function StudioView() {
                   />
                   <span>
                     {PREVIEW.featured}
-                    <span className="mt-1 block font-normal text-muted-foreground">{PREVIEW.featuredHelp}</span>
+                    <span className="mt-1 block font-normal text-[var(--studio-dim,#1E6A83)]">{PREVIEW.featuredHelp}</span>
                   </span>
                 </label>
                 <label className="block text-sm font-semibold">{PREVIEW.priority}
@@ -592,9 +592,9 @@ export function StudioView() {
                         until: book.showcase?.until ?? '',
                       },
                     })}
-                    className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                    className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 font-normal text-[var(--studio-text,#203337)]"
                   />
-                  <span className="mt-1 block font-normal text-muted-foreground">{PREVIEW.priorityHelp}</span>
+                  <span className="mt-1 block font-normal text-[var(--studio-dim,#1E6A83)]">{PREVIEW.priorityHelp}</span>
                 </label>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm font-semibold">{PREVIEW.from}
@@ -609,7 +609,7 @@ export function StudioView() {
                           until: book.showcase?.until ?? '',
                         },
                       })}
-                      className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                      className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 font-normal text-[var(--studio-text,#203337)] [color-scheme:inherit]"
                     />
                   </label>
                   <label className="text-sm font-semibold">{PREVIEW.until}
@@ -624,7 +624,7 @@ export function StudioView() {
                           until: event.target.value,
                         },
                       })}
-                      className="mt-1 h-11 w-full rounded-xl border border-border px-3 font-normal"
+                      className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 font-normal text-[var(--studio-text,#203337)] [color-scheme:inherit]"
                     />
                   </label>
                 </div>
@@ -941,8 +941,8 @@ export function StudioView() {
       </div>
       {studentPreview && (
         <div className="fixed inset-0 z-50 overflow-auto bg-[#F7F6F3]" data-student-preview="1">
-          <div className="sticky top-0 z-10 flex justify-end p-3">
-            <button type="button" onClick={() => setStudentPreview(false)} className="h-10 rounded-full bg-[#1E6A83] px-4 text-sm font-bold text-white">{PREVIEW.closeStudent}</button>
+          <div className="sticky top-0 z-10 flex items-center justify-end gap-2 bg-[#F7F6F3]/95 p-3">
+            <button type="button" onClick={() => setStudentPreview(false)} className="h-11 rounded-full bg-[#1E6A83] px-4 text-sm font-bold text-white">{PREVIEW.closeStudent}</button>
           </div>
           <Reader key={book.id} bookId={book.id} preview />
         </div>

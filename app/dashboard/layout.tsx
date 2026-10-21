@@ -358,10 +358,11 @@ function isNavActive(href: string, pathname: string): boolean {
 const NavItem = ({ entry, pathname, onClick, router, compact }: {
   entry: NavEntry; pathname: string; onClick: () => void; router: ReturnType<typeof useRouter>; compact: boolean;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const active = isNavActive(entry.href, pathname);
   const Icon = entry.icon;
-  const label = entry.label ?? t(entry.labelKey);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const label = entry.label && language.startsWith('en') ? entry.label : t(entry.labelKey);
 
   return (
     <button
@@ -387,7 +388,7 @@ const NavItem = ({ entry, pathname, onClick, router, compact }: {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const flags = useFeatureFlags();
   const { user, profile, loading, fetchProfile } = useAuthSTORE();
   const account = useAccountMode();
@@ -707,7 +708,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div key={gi} className="space-y-0.5">
               {(group.sectionLabel || group.sectionKey) && !compactNav && (
                 <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
-                  {group.sectionLabel ?? t(group.sectionKey!)}
+                  {group.sectionLabel && (i18n.resolvedLanguage ?? i18n.language).startsWith('en')
+                    ? group.sectionLabel
+                    : group.sectionKey
+                      ? t(group.sectionKey)
+                      : group.sectionLabel}
                 </p>
               )}
               {group.items.map(entry => (

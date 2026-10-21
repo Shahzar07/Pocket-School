@@ -16,7 +16,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, X, ArrowRight, ArrowLeft, Loader2, Send, RotateCcw } from 'lucide-react';
+import { Sparkles, ArrowRight, ArrowLeft, Loader2, Send, RotateCcw } from 'lucide-react';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 import {
   defaultTour, getStep, matchSteps, type TourRole, type TourStep,
 } from '@/lib/tour-steps';
@@ -213,6 +214,7 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
     setIntro(null);
     markSeen();
   }, []);
+  useLayerDismiss(open, close);
 
   /* Move to the current step: navigate, wait, spotlight. */
   useEffect(() => {
@@ -288,7 +290,6 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
       if (asking) return;
       if (e.key === 'ArrowRight') setIndex(i => Math.min(i + 1, steps.length - 1));
       if (e.key === 'ArrowLeft') setIndex(i => Math.max(i - 1, 0));
@@ -420,10 +421,7 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
                     {step?.title ?? 'What would you like to know?'}
                   </h3>
                 </div>
-                <button onClick={close} aria-label="Close the tour"
-                  className="shrink-0 w-7 h-7 grid place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
-                  <X className="w-4 h-4" />
-                </button>
+                <CloseControl onClose={close} className="-mt-1 -me-1" />
               </div>
 
               <div className="px-5 pb-4">

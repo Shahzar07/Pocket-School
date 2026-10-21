@@ -76,6 +76,8 @@ async function expectDarkStudio(page: Page, role: 'student' | 'teacher') {
   await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible();
   await expect(page.locator('[data-studio-immersive="1"]')).toBeVisible();
   await expect(page.locator('[data-tour="sidebar"]')).toHaveCount(0);
+  await expect(page.locator('[data-studio-nav="header"]')).toHaveCount(0);
+  await expect(page.getByText('What this page is for')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Toggle sidebar' })).toHaveCount(0);
   const nav = page.getByRole('navigation', { name: 'AI Studio' });
   await expect(nav).toHaveCount(1);
@@ -85,9 +87,12 @@ async function expectDarkStudio(page: Page, role: 'student' | 'teacher') {
   for (const name of ['New chat', 'Chats', 'Library', 'All tools']) {
     await expect(nav.getByRole('button', { name, exact: true })).toBeVisible();
   }
-  for (const name of ['AI Teachers', 'ET + Subject', 'ET Maths', 'ET Exams', 'ET Essays', 'Book Studio', 'Planner', 'Calendar']) {
+  for (const name of ['AI Teachers', 'ET Maths', 'ET Exams', 'ET Essays', 'Book Studio', 'Planner', 'Calendar']) {
     await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
   }
+  await expect(nav.getByRole('link', { name: 'ET + Subject', exact: true })).toHaveCount(0);
+  await expect(nav.locator('[data-studio-placement="primary"]')).toHaveAttribute('href', '/dashboard/studio/teachers');
+  await expect(nav.locator('[data-studio-dot="1"]').first()).toBeVisible();
   const chips = page.locator('[data-studio-tools="chips"]');
   await expect(chips).toBeVisible();
   for (const name of ['ET AI', 'PoketReads', 'AI Book Creator', 'Creator Store']) {

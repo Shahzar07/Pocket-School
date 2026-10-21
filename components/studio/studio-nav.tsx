@@ -57,8 +57,8 @@ export function StudioFrame({ children }: { children: React.ReactNode }) {
   /* Tool routes use the full-page shell. This frame must not add a second nav. */
   if (isAiToolPath(pathname)) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col bg-transparent" data-studio-shell={pathname === '/dashboard/studio' || pathname === '/dashboard/studio/et' ? 'chat' : 'tool'}>
-        <div className="min-h-0 min-w-0 flex-1">{children}</div>
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-x-clip bg-transparent" data-studio-shell={pathname === '/dashboard/studio' || pathname === '/dashboard/studio/et' ? 'chat' : 'tool'}>
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       </div>
     );
   }

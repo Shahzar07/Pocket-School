@@ -3992,3 +3992,9 @@ components/wall/wall-screen.tsx	Loading saved posts…
 components/alumni/rochford-desk.tsx	Join a self-reported group
 components/alumni/rochford-desk.tsx	You are in the Rochford alumni network. This stays after a reload.
 components/wall/wall-screen.tsx	Loading saved posts…
+components/studio/tool-shell.tsx	AI STUDIO
+components/studio/tool-shell.tsx	AI Studio
+components/studio/tool-shell.tsx	Close menu
+components/studio/tool-shell.tsx	ET AI Studio
+components/studio/tool-shell.tsx	New session
+components/studio/tool-shell.tsx	Open ET AI menu

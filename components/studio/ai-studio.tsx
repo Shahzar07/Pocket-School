@@ -15,7 +15,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
 import { MathMarkdown } from '@/components/math-markdown';
 import { readLanguage } from '@/lib/languages';
-import { ShellEssentials, ShellSidebar, SHELL_ACTIVE, SHELL_LINK } from '@/components/studio/tool-shell';
+import { ShellEssentials, ShellSidebar, SHELL_ACTIVE, SHELL_LINK, StudioDot, ToolGlyph } from '@/components/studio/tool-shell';
 import { plannerHref } from '@/lib/studio/tool-inventory';
 import { studioCssVars } from '@/lib/studio/shell-theme';
 import { DeskFrame } from '@/components/studio/desk-frame';
@@ -178,7 +178,6 @@ function studioToolLinks(embedded: boolean, role: string | undefined, showTimeta
     { href: '/dashboard/studio', label: 'AI Studio' },
     { href: '/dashboard/studio/et', label: 'ET AI' },
     { href: embedded ? '/dashboard/studio/teachers' : '/ai-teachers', label: 'AI Teachers' },
-    { href: embedded ? '/ai-teachers' : '/dashboard/studio/teachers', label: 'ET + Subject' },
     { href: '/dashboard/studio/maths', label: 'ET Maths' },
     { href: '/dashboard/studio/exam-prep', label: 'ET Exams' },
     { href: '/dashboard/studio/essays', label: 'ET Essays' },
@@ -789,7 +788,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               aria-current={view === 'chat' ? 'page' : undefined}
               className={view === 'chat' ? SHELL_ACTIVE : SHELL_LINK}
             >
-              <MessageSquare className="h-4 w-4" aria-hidden /> Chats
+              <StudioDot active={view === 'chat'} />
+              <MessageSquare className="h-4 w-4 shrink-0" aria-hidden /> Chats
             </button>
             <button
               type="button"
@@ -797,7 +797,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               aria-current={view === 'library' ? 'page' : undefined}
               className={view === 'library' ? SHELL_ACTIVE : SHELL_LINK}
             >
-              <Library className="h-4 w-4" aria-hidden /> Library
+              <StudioDot active={view === 'library'} />
+              <Library className="h-4 w-4 shrink-0" aria-hidden /> Library
             </button>
           </>
         )}
@@ -808,7 +809,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             aria-current={view === tool.mode ? 'page' : undefined}
             className={view === tool.mode ? SHELL_ACTIVE : SHELL_LINK}
           >
-            {tool.label}
+            <ToolGlyph name={tool.icon} />
+            <span className="min-w-0 truncate">{tool.label}</span>
           </button>
         )}
         afterTools={(
