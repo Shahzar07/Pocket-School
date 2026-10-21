@@ -68,10 +68,12 @@ export function ToolGlyph({ name }: { name: ToolIconName }) {
 }
 
 function StudioShortcuts({ onClose }: { onClose: () => void }) {
+  const pathname = usePathname() ?? '';
+  const chat = pathname === '/dashboard/studio/et' || pathname.startsWith('/dashboard/studio/et/');
   return (
     <>
-      <Link href="/dashboard/studio" onClick={onClose} className={SHELL_LINK}>
-        <StudioDot />
+      <Link href="/dashboard/studio/et" onClick={onClose} aria-current={chat ? 'page' : undefined} className={chat ? SHELL_ACTIVE : SHELL_LINK} data-studio-chat="1">
+        <StudioDot active={chat} />
         <MessageSquare className="h-4 w-4 shrink-0" aria-hidden /> Chats
       </Link>
       <Link href="/dashboard/studio?view=library" onClick={onClose} className={SHELL_LINK}>
@@ -195,6 +197,7 @@ export function ShellSidebar({
   const tools = sidebarTools(profile, place);
   const active = suppressActive ? null : activeSidebarId(pathname, tools);
   const home = dashboardHomeHref(profile?.role);
+  const studioHome = place === 'dashboard' && pathname === '/dashboard/studio';
   const primary = tools.filter(tool => tool.placement === 'primary');
   const list = tools.filter(tool => tool.placement !== 'primary');
   const renderTool = (tool: SidebarTool) => {
@@ -224,13 +227,13 @@ export function ShellSidebar({
       className={`${open ? 'flex' : 'hidden'} absolute inset-y-0 start-0 z-40 h-full min-h-0 w-[min(264px,86vw)] shrink-0 flex-col overflow-hidden border-e border-[var(--studio-border-soft)] bg-[var(--studio-sidebar)] shadow-xl lg:static lg:flex lg:shadow-none`}
     >
       <div className="shrink-0 p-3">
-        <Link href={place === 'dashboard' ? '/dashboard/studio' : '/'} className="mb-1 flex items-center gap-2.5 px-2 py-2" onClick={onClose}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3FE0D0]">
-            <Asterisk className="h-5 w-5 text-[#203337]" />
+        <Link href={place === 'dashboard' ? '/dashboard/studio' : '/'} onClick={onClose} aria-current={studioHome ? 'page' : undefined} className={`mb-1 flex items-center gap-2.5 rounded-xl px-2 py-2 ${studioHome ? 'bg-[#3FE0D0]' : ''}`}>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${studioHome ? 'bg-[#203337]' : 'bg-[#3FE0D0]'}`}>
+            <Asterisk className={`h-5 w-5 ${studioHome ? 'text-[#3FE0D0]' : 'text-[#203337]'}`} />
           </div>
           <div>
-            <p className="text-[15px] font-bold leading-tight text-[var(--studio-text)]">ET</p>
-            <p className="text-[10px] uppercase leading-tight tracking-[0.2em] text-[var(--studio-accent-text)]">AI STUDIO</p>
+            <p className={`text-[15px] font-bold leading-tight ${studioHome ? 'text-[#203337]' : 'text-[var(--studio-text)]'}`}>ET</p>
+            <p className={`text-[10px] uppercase leading-tight tracking-[0.2em] ${studioHome ? 'text-[#203337]' : 'text-[var(--studio-accent-text)]'}`}>AI STUDIO</p>
           </div>
         </Link>
       </div>
@@ -385,11 +388,6 @@ export function ToolShell({ children }: { children: ReactNode }) {
       email={userEmail || profile?.email || undefined}
       newLabel={book ? 'New book' : 'New chat'}
       onNew={onNew}
-      afterTools={(
-        <Link href="/dashboard/studio?view=tools" className={SHELL_LINK}>
-          <Sparkles className="h-4 w-4 shrink-0" aria-hidden /> All tools
-        </Link>
-      )}
     >
       {children}
     </ShellFrame>
@@ -415,11 +413,6 @@ export function PublicToolShell({ children }: { children: ReactNode }) {
         }
         router.push('/dashboard/studio');
       }}
-      afterTools={(
-        <Link href="/dashboard/studio?view=tools" className={SHELL_LINK}>
-          <Sparkles className="h-4 w-4 shrink-0" aria-hidden /> All tools
-        </Link>
-      )}
     >
       {children}
     </ShellFrame>

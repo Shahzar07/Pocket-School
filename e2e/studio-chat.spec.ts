@@ -84,20 +84,23 @@ async function expectDarkStudio(page: Page, role: 'student' | 'teacher') {
   const dashboard = nav.getByRole('link', { name: 'Dashboard', exact: true });
   await expect(dashboard).toBeVisible();
   await expect(dashboard).toHaveAttribute('href', role === 'teacher' ? '/dashboard/teacher' : '/dashboard');
-  for (const name of ['New chat', 'Chats', 'Library', 'All tools']) {
+  for (const name of ['New chat', 'Library']) {
     await expect(nav.getByRole('button', { name, exact: true })).toBeVisible();
   }
+  await expect(nav.getByRole('link', { name: 'Chats', exact: true })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Chats', exact: true })).toHaveAttribute('href', '/dashboard/studio/et');
+  await expect(nav.getByRole('button', { name: 'All tools', exact: true })).toHaveCount(0);
+  await expect(nav.getByRole('link', { name: 'AI Studio', exact: true })).toHaveCount(0);
+  await expect(nav.getByRole('link', { name: 'ET AI', exact: true })).toHaveCount(0);
   for (const name of ['AI Teachers', 'ET Maths', 'ET Exams', 'ET Essays', 'Book Studio', 'Planner', 'Calendar']) {
     await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
   }
   await expect(nav.getByRole('link', { name: 'ET + Subject', exact: true })).toHaveCount(0);
   await expect(nav.locator('[data-studio-placement="primary"]')).toHaveAttribute('href', '/dashboard/studio/teachers');
   await expect(nav.locator('[data-studio-dot="1"]').first()).toBeVisible();
-  const chips = page.locator('[data-studio-tools="chips"]');
-  await expect(chips).toBeVisible();
-  for (const name of ['ET AI', 'PoketReads', 'AI Book Creator', 'Creator Store']) {
-    await expect(chips.getByRole('link', { name, exact: true })).toBeVisible();
-  }
+  await expect(page.locator('[data-studio-tools="chips"]')).toHaveCount(0);
+  await expect(page.locator('select#et-teacher')).toHaveCount(0);
+  await expect(page.locator('[data-studio-fill="1"]')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to Poket School' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Poket SafeLine' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Help Center' })).toBeVisible();
@@ -164,7 +167,7 @@ async function chatOn(page: Page, path: string, shot: string) {
     { name: 'ET Maths', url: /\/dashboard\/studio\/maths/ },
     { name: 'ET Exams', url: /\/dashboard\/studio\/exam-prep/ },
     { name: 'ET Essays', url: /\/dashboard\/studio\/essays/ },
-    { name: 'ET AI', url: /\/dashboard\/studio\/et/ },
+    { name: 'Chats', url: /\/dashboard\/studio\/et/ },
   ];
   for (const hop of hops) {
     await dismissCookies(page);
@@ -286,12 +289,13 @@ test.describe('ET AI studio chat', () => {
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-desktop-1440.png', fullPage: false });
     await page.setViewportSize({ width: 1024, height: 640 });
     const fit = await page.evaluate(() => {
-      const chips = document.querySelector('[data-studio-tools="chips"]')?.getBoundingClientRect();
+      const chips = document.querySelector('[data-studio-tools="chips"]');
       const composer = document.querySelector('[data-studio-composer="1"]')?.getBoundingClientRect();
-      if (!chips || !composer) return { ok: false, reason: 'missing' };
-      const overlaps = chips.bottom > composer.top + 1;
-      const within = chips.top >= 0 && chips.bottom <= window.innerHeight + 1 && composer.bottom <= window.innerHeight + 1;
-      return { ok: !overlaps && within, overlaps, within, chipsBottom: chips.bottom, composerTop: composer.top, height: window.innerHeight };
+      const fill = document.querySelector('[data-studio-fill="1"]')?.getBoundingClientRect();
+      if (chips || !composer || !fill) return { ok: false, reason: 'missing', chips: Boolean(chips) };
+      const within = composer.bottom <= window.innerHeight + 1 && composer.top >= 0;
+      const wide = composer.width >= fill.width - 48;
+      return { ok: within && wide, within, wide, composerWidth: composer.width, fillWidth: fill.width, height: window.innerHeight };
     });
     expect(fit.ok, JSON.stringify(fit)).toBe(true);
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -305,7 +309,8 @@ test.describe('ET AI studio chat', () => {
     await expect(page.getByRole('button', { name: 'Read aloud' }).last()).toBeVisible();
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/studio-dark-student-reply.png', fullPage: false });
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(page.locator('[data-studio-tools="row"]').getByRole('link', { name: 'Dashboard', exact: true })).toBeVisible();
+    await expect(page.locator('[data-studio-tools="row"]').getByRole('link', { name: 'Dashboard', exact: true })).toHaveCount(0);
+    await expect(page.locator('[data-studio-tools="chips"]')).toHaveCount(0);
     await page.evaluate(() => {
       document.querySelector<HTMLButtonElement>('[aria-label="Open ET AI menu"]')?.click();
     });
@@ -328,6 +333,8 @@ test.describe('ET AI studio chat', () => {
     await page.goto('/dashboard/studio/teachers', { waitUntil: 'domcontentloaded' });
     await dismissCookies(page);
     await expect(page.locator('[data-studio-layout="dark"]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-studio-canvas="teachers"]')).toBeVisible();
+    await expect(page.locator('[data-studio-tools="chips"]')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'ET Science' }).first()).toBeVisible();
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/ai-teachers-grid-dark-desktop.png', fullPage: false });
     await page.goto('/dashboard/studio/teachers/et-science', { waitUntil: 'domcontentloaded' });

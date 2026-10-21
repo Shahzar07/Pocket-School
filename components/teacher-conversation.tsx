@@ -524,7 +524,7 @@ export function TeacherConversation({
   };
 
   return (
-    <div className={`${frame} overflow-hidden flex flex-col ${lightChat ? 'bg-[#F7FBFC] text-[#203337]' : 'bg-[#07070E] text-white'}`} data-teacher-theme={lightChat ? 'light' : 'dark'} dir={textDirection(lang)}>
+    <div className={`${frame} flex h-full flex-col overflow-hidden ${lightChat ? 'bg-[#F7FBFC] text-[#203337]' : 'bg-[#07070E] text-white'}`} data-teacher-theme={lightChat ? 'light' : 'dark'} data-studio-fill={variant === 'studio' ? '1' : undefined} dir={textDirection(lang)}>
       <AnimatePresence>
         {livePrompt && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/70 grid place-items-center p-4" onClick={() => setLivePrompt(false)}>
@@ -546,7 +546,7 @@ export function TeacherConversation({
         )}
       </AnimatePresence>
 
-      <header className="min-h-12 px-2 py-1 flex flex-wrap items-center justify-between gap-1 border-b border-white/10 shrink-0 bg-[#0D0D18]">
+      <header className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-1 border-b border-white/10 bg-[#0D0D18] px-2 py-1">
         {variant === 'dock' ? <span className="text-sm font-semibold">{teacher.name}</span> : (
           <Link href={backHref} className="min-h-11 px-2 inline-flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white rounded-full">
             <Image src={teacher.avatarUrl} alt={portraitAlt(teacher.name)} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />

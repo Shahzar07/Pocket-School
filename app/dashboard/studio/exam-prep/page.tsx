@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Plus, Flame, CalendarDays, Target, GraduationCap, Link2, FileText, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { DashPage, DashHeader, Panel } from '@/components/dash-ui';
+import { StudioCanvas } from '@/components/studio/studio-canvas';
 import { listPreps } from '@/lib/study/db';
 import { daysBetween, dueToday, isoDay } from '@/lib/study/schedule';
 import { gradeFor, weightedMastery } from '@/lib/study/grades';
@@ -31,28 +31,25 @@ export default function ExamPrepListPage() {
   };
 
   return (
-    <DashPage>
-      <DashHeader
-        eyebrow={<><Link href="/dashboard/studio" className="hover:underline">ET AI Studio</Link> · ET Exams</>}
-        title="Walk into every exam"
-        accent="ready."
-        description="Add your notes, slides and past papers. ET AI turns them into a day-by-day plan that ends on your exam date: lessons, quizzes, flashcards, podcasts and a full mock."
-        actions={
-          <Link href="/dashboard/studio/exam-prep/new" className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5 hover:opacity-90">
-            <Plus className="w-4 h-4" /> New exam prep
-          </Link>
-        }
-      />
-
-      {preps === null ? (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">{[0, 1, 2].map(i => <div key={i} className="h-52 rounded-2xl bg-muted animate-pulse" />)}</div>
-      ) : preps.length === 0 ? (
-        <Panel>
-          <div className="grid md:grid-cols-2 gap-8 items-center py-4">
+    <StudioCanvas
+      canvas="exams"
+      title="ET Exams"
+      description="Add your notes, slides and past papers. ET AI turns them into a day-by-day plan that ends on your exam date: lessons, quizzes, flashcards, podcasts and a full mock."
+      actions={
+        <Link href="/dashboard/studio/exam-prep/new" className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] hover:opacity-90">
+          <Plus className="h-4 w-4" /> New exam prep
+        </Link>
+      }
+    >
+      <div className="flex min-h-full flex-col gap-6">
+        {preps === null ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{[0, 1, 2].map(i => <div key={i} className="h-52 animate-pulse rounded-2xl bg-[var(--studio-raised)]" />)}</div>
+        ) : preps.length === 0 ? (
+          <div className="grid items-start gap-8 md:grid-cols-2">
             <div>
-              <p className="font-heading text-2xl text-foreground mb-2">Your notes in. Your study plan out.</p>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Upload photos of your notes, PDFs, slides or old exams and set your exam date. ET AI finds the topics, builds your plan and teaches you from your own material — so you only study what&apos;s actually on the exam.</p>
-              <Link href="/dashboard/studio/exam-prep/new" className="h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center gap-2"><Sparkles className="w-4 h-4" /> Create my first plan</Link>
+              <p className="mb-2 font-heading text-2xl text-[var(--studio-text)]">Your notes in. Your study plan out.</p>
+              <p className="mb-5 text-sm leading-relaxed text-[var(--studio-dim)]">Upload photos of your notes, PDFs, slides or old exams and set your exam date. ET AI finds the topics, builds your plan and teaches you from your own material — so you only study what&apos;s actually on the exam.</p>
+              <Link href="/dashboard/studio/exam-prep/new" className="inline-flex h-11 items-center gap-2 rounded-full bg-[#3FE0D0] px-5 font-semibold text-[#203337]"><Sparkles className="h-4 w-4" /> Create my first plan</Link>
             </div>
             <ol className="space-y-3">
               {[
@@ -61,43 +58,40 @@ export default function ExamPrepListPage() {
                 { icon: Target, t: 'Follow today’s goals', d: 'Lessons, quizzes, flashcards, podcasts.' },
                 { icon: GraduationCap, t: 'Sit a full mock', d: 'Marked, graded, with your gaps.' },
               ].map(({ icon: I, t, d }, i) => (
-                <li key={t} className="flex gap-3 items-start">
-                  <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary grid place-items-center shrink-0"><I className="w-4 h-4" /></span>
-                  <span><span className="text-[13px] text-muted-foreground">Step {i + 1}</span><span className="block font-semibold text-foreground">{t}</span><span className="text-[13px] text-muted-foreground">{d}</span></span>
+                <li key={t} className="flex items-start gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#3FE0D0]/15 text-[#1E6A83]"><I className="h-4 w-4" /></span>
+                  <span><span className="text-[13px] text-[var(--studio-dim)]">Step {i + 1}</span><span className="block font-semibold text-[var(--studio-text)]">{t}</span><span className="text-[13px] text-[var(--studio-dim)]">{d}</span></span>
                 </li>
               ))}
             </ol>
           </div>
-        </Panel>
-      ) : (
-        <>
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {upcoming.map((p, i) => <PrepCard key={p.id} prep={p} index={i} />)}
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {upcoming.map((p, i) => <PrepCard key={p.id} prep={p} index={i} />)}
+            </div>
+            {past.length > 0 && (
+              <>
+                <p className="pt-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--studio-dim)]">Past exams</p>
+                <div className="grid gap-4 opacity-80 sm:grid-cols-2 xl:grid-cols-3">
+                  {past.map((p, i) => <PrepCard key={p.id} prep={p} index={i} />)}
+                </div>
+              </>
+            )}
+          </>
+        )}
+        <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-[var(--studio-border-soft)] pt-4">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--studio-raised)]"><Link2 className="h-4 w-4" /></span>
+          <div className="min-w-[200px] flex-1">
+            <p className="text-[15px] font-semibold text-[var(--studio-text)]">Got a link from a classmate?</p>
+            <p className="text-[13px] text-[var(--studio-dim)]">Start your own copy of their plan — your progress stays private.</p>
           </div>
-          {past.length > 0 && (
-            <>
-              <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-muted-foreground pt-4">Past exams</p>
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 opacity-80">
-                {past.map((p, i) => <PrepCard key={p.id} prep={p} index={i} />)}
-              </div>
-            </>
-          )}
-        </>
-      )}
-
-      <Panel>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-muted grid place-items-center"><Link2 className="w-4 h-4" /></span>
-          <div className="flex-1 min-w-[200px]">
-            <p className="font-semibold text-foreground text-[15px]">Got a link from a classmate?</p>
-            <p className="text-[13px] text-muted-foreground">Start your own copy of their plan — your progress stays private.</p>
-          </div>
-          <input value={joinLink} onChange={e => setJoinLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && join()} placeholder="Paste the share link"
-            className="h-10 w-full sm:w-72 rounded-full border border-border bg-background px-4 text-sm outline-none focus:border-primary" />
-          <button onClick={join} className="h-10 px-4 rounded-full border border-border text-sm font-semibold">Open</button>
+          <input value={joinLink} onChange={e => setJoinLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && join()} placeholder="Paste the share link" aria-label="Share link"
+            className="h-10 w-full rounded-full border border-[var(--studio-border)] bg-transparent px-4 text-sm text-[var(--studio-text)] outline-none focus:border-[#3FE0D0] sm:w-72" />
+          <button type="button" onClick={join} className="h-10 rounded-full border border-[var(--studio-border)] px-4 text-sm font-semibold">Open</button>
         </div>
-      </Panel>
-    </DashPage>
+      </div>
+    </StudioCanvas>
   );
 }
 
@@ -109,7 +103,7 @@ function PrepCard({ prep, index }: { prep: ExamPrep; index: number }) {
   const grade = Object.keys(prep.mastery ?? {}).length ? gradeFor(prep.gradeScale, mastery) : '—';
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-      <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="block group bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 hover:border-primary/40 transition-colors">
+      <Link href={`/dashboard/studio/exam-prep/${prep.id}`} className="group block rounded-2xl border border-[var(--studio-border-soft)] bg-[var(--studio-surface)] p-5 transition-colors hover:border-[#3FE0D0]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary truncate">{prep.subject || 'Exam'}</p>

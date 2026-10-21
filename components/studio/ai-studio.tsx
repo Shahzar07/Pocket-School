@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { toast } from 'sonner';
@@ -21,7 +22,7 @@ import { studioCssVars } from '@/lib/studio/shell-theme';
 import { DeskFrame } from '@/components/studio/desk-frame';
 import { ToolLoading } from '@/components/studio/boot';
 import {
-  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare, Home,
+  Sparkles, ArrowUp, ArrowLeft, Library, MessageSquare,
   FileText, ClipboardList, Network, BookMarked,
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, ChevronRight,
@@ -194,18 +195,6 @@ function studioToolLinks(embedded: boolean, role: string | undefined, showTimeta
   return links;
 }
 
-const CHIP = 'rounded-full border border-[var(--studio-border)] bg-[var(--studio-surface)] px-2.5 py-1 text-[11px] font-semibold leading-none text-[var(--studio-text)] hover:border-[#3FE0D0]';
-
-/** Students land on /dashboard. Other roles open their own home. */
-function dashboardHomeHref(role: string | undefined): string {
-  if (role === 'teacher') return '/dashboard/teacher';
-  if (role === 'parent') return '/dashboard/parent';
-  if (role === 'institution_admin') return '/dashboard/institution';
-  if (role === 'admin' || role === 'super_admin' || role === 'content_editor') return '/dashboard/admin';
-  if (role === 'partner_merchant') return '/dashboard/partner';
-  return '/dashboard';
-}
-
 /* Rotating status lines ET shows while working. */
 const THINKING_PHRASES = [
   'Searching and thinking the best solutions for you…',
@@ -266,7 +255,9 @@ function PocoWorking({ creating }: { creating: boolean }) {
 }
 
 export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
-  const frame = embedded ? 'min-h-0 flex-1' : 'h-dvh';
+  const pathname = usePathname() ?? '';
+  const chatPage = pathname === '/dashboard/studio/et' || pathname.startsWith('/dashboard/studio/et/');
+  const frame = embedded ? 'h-full min-h-0 flex-1' : 'h-dvh';
   const [user, setUser] = useState<User | null>(null);
   /** Undefined until Firebase reports the first auth state — prevents a
    * sign-in flash for users who are already logged in. */
@@ -770,7 +761,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   }
 
   return (
-    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden ${FOCUS} [&_a]:focus-visible:outline [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-[#3FE0D0] [&_button]:focus-visible:outline [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-[#3FE0D0] [&_select]:focus-visible:outline [&_select]:focus-visible:outline-2 [&_select]:focus-visible:outline-[#3FE0D0] [&_input]:focus-visible:outline [&_input]:focus-visible:outline-2 [&_input]:focus-visible:outline-[#3FE0D0] [&_textarea]:focus-visible:outline [&_textarea]:focus-visible:outline-2 [&_textarea]:focus-visible:outline-[#3FE0D0]`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'}>
+    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden ${FOCUS} [&_a]:focus-visible:outline [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-[#3FE0D0] [&_button]:focus-visible:outline [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-[#3FE0D0] [&_select]:focus-visible:outline [&_select]:focus-visible:outline-2 [&_select]:focus-visible:outline-[#3FE0D0] [&_input]:focus-visible:outline [&_input]:focus-visible:outline-2 [&_input]:focus-visible:outline-[#3FE0D0] [&_textarea]:focus-visible:outline [&_textarea]:focus-visible:outline-2 [&_textarea]:focus-visible:outline-[#3FE0D0]`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'} data-studio-fill="1">
 
       <ShellSidebar
         open={sidebarOpen}
@@ -782,15 +773,16 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
         suppressActive={view !== 'chat'}
         beforeTools={(
           <>
-            <button
-              type="button"
-              onClick={() => { setView('chat'); setSidebarOpen(false); }}
-              aria-current={view === 'chat' ? 'page' : undefined}
-              className={view === 'chat' ? SHELL_ACTIVE : SHELL_LINK}
+            <Link
+              href="/dashboard/studio/et"
+              onClick={() => setSidebarOpen(false)}
+              aria-current={chatPage ? 'page' : undefined}
+              className={chatPage ? SHELL_ACTIVE : SHELL_LINK}
+              data-studio-chat="1"
             >
-              <StudioDot active={view === 'chat'} />
+              <StudioDot active={chatPage} />
               <MessageSquare className="h-4 w-4 shrink-0" aria-hidden /> Chats
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() => { setView('library'); setSidebarOpen(false); }}
@@ -811,16 +803,6 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           >
             <ToolGlyph name={tool.icon} />
             <span className="min-w-0 truncate">{tool.label}</span>
-          </button>
-        )}
-        afterTools={(
-          <button
-            type="button"
-            onClick={() => { setView('tools'); setSidebarOpen(false); }}
-            aria-current={view === 'tools' ? 'page' : undefined}
-            className={view === 'tools' ? SHELL_ACTIVE : SHELL_LINK}
-          >
-            <Sparkles className="h-4 w-4" aria-hidden /> All tools
           </button>
         )}
         recents={[...chats].reverse().map(item => (
@@ -846,18 +828,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           </div>
         ) : null}
         {/* Mobile top bar */}
-        <div className={`flex flex-wrap items-center gap-2 overflow-hidden border-b px-3 py-2 lg:hidden ${C.borderSoft}`} data-studio-tools="row">
+        <div className={`flex items-center border-b px-2 py-1 lg:hidden ${C.borderSoft}`} data-studio-tools="row">
           <button type="button" onClick={() => setSidebarOpen(true)} className={C.dim} aria-label="Open ET AI menu" aria-expanded={sidebarOpen}><Menu className="w-5 h-5" /></button>
-          <Link href={dashboardHomeHref(profile?.role)} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">
-            <Home className="h-3.5 w-3.5" aria-hidden /> Dashboard
-          </Link>
-          <TeacherPortrait teacher={teacher} size={32} className="h-8 w-8 rounded-full object-cover" />
-          <span className="text-sm font-bold shrink-0">{teacher.name}</span>
-          <button type="button" onClick={newChat} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.newChat}</button>
-          <button type="button" onClick={() => { setView('library'); setSidebarOpen(false); }} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.library}</button>
-          <button type="button" onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); }} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.maths}</button>
-          <button type="button" onClick={() => setView('essays')} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.essays}</button>
-          <button type="button" onClick={() => setSidebarOpen(true)} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.recents}</button>
         </div>
 
         {view === 'teacher-toolkit' ? (
@@ -894,40 +866,31 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           />
         ) : (
           <>
-            <header className="flex items-center gap-3 border-b border-border px-3 py-1.5" data-et-teacher={teacher.id}>
+            <header className="flex items-center gap-3 border-b border-border px-3 py-1.5" data-et-teacher={teacher.id} data-studio-surface={chatPage ? 'chat' : 'studio'}>
               <TeacherPortrait teacher={teacher} size={32} className="h-8 w-8 rounded-full object-cover" />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{teacher.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{teacher.title}</p>
+                <p className="truncate text-sm font-semibold">{chatPage ? 'Chat' : 'AI Studio'}</p>
+                <p className="truncate text-xs text-muted-foreground">{teacher.name}</p>
               </div>
-              <label className="sr-only" htmlFor="et-teacher">{ET_COPY.teacher}</label>
-              <select
-                id="et-teacher"
-                aria-label={ET_COPY.teacher}
-                value={teacher.id}
-                onChange={(event) => setTeacherId(event.target.value)}
-                className="max-w-[9rem] rounded-full border border-border bg-card px-2 py-1 text-xs"
-              >
-                {TEACHERS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
               <div className="ms-auto min-w-0 overflow-hidden"><ShellEssentials /></div>
             </header>
             {/* Thread */}
-            <div className="min-h-0 flex-1 overflow-y-auto" data-et-chat="1">
-              <div className="max-w-3xl mx-auto px-4 pb-2 pt-3 sm:px-6">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" data-et-chat="1">
+              <div className="flex w-full flex-1 flex-col px-4 py-6 sm:px-6">
                 {empty ? (
-                  <div className="relative text-center" data-testid="studio-greeting">
-                    <div className="pointer-events-none absolute inset-x-6 top-0 h-36 rounded-full opacity-50 blur-3xl" style={{ background: HERO }} aria-hidden />
-                    <div className="relative mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full" style={{ background: FILL, boxShadow: '0 0 48px rgba(63,224,208,0.35)' }}>
+                  <div className="w-full" data-testid="studio-greeting">
+                    <div className="mb-3 grid h-11 w-11 place-items-center rounded-full" style={{ background: FILL }}>
                       <Asterisk className="h-6 w-6 text-[#203337]" />
                     </div>
-                    <h1 className="relative font-heading text-2xl leading-tight tracking-tight sm:text-3xl">
-                      Hi, I&apos;m <span style={{ color: C.accent }}>ET AI</span>.
+                    <h1 className="font-heading text-3xl leading-tight tracking-tight sm:text-4xl">
+                      {chatPage ? 'Chat with ' : 'Hi, I\u2019m '}<span style={{ color: C.accent }}>ET AI</span>.
                     </h1>
-                    <p className={`relative mx-auto mt-1 max-w-md text-sm ${C.dim} sm:text-base`}>
-                      Ask anything, or pick a skill. ET AI turns a topic into a lesson, quiz, video, audio and more.
+                    <p className={`mt-2 max-w-2xl text-sm ${C.dim} sm:text-base`}>
+                      {chatPage
+                        ? 'This conversation fills the studio. Ask a question, send a photo, or keep going from Recents.'
+                        : 'Ask anything, or pick a skill. ET AI turns a topic into a lesson, quiz, video, audio and more.'}
                     </p>
-                    <div className="relative mt-3 grid w-full gap-2 text-left sm:grid-cols-2">
+                    <div className="mt-6 grid w-full gap-2 text-left sm:grid-cols-2">
                       {SUGGESTIONS.map(s => (
                         <button
                           key={s.label}
@@ -940,21 +903,6 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                           {s.label}
                         </button>
                       ))}
-                    </div>
-                    <div className="relative mt-3 flex flex-wrap justify-center gap-2" data-studio-tools="chips">
-                      {studioToolLinks(embedded, profile?.role, timetableGate !== 'hidden').map((link) => (
-                        <Link key={link.label} href={link.href} className={CHIP}>{link.label}</Link>
-                      ))}
-                      {canUseDeskTool(profile, 'teacher-toolkit') && (
-                        <button type="button" className={CHIP} onClick={() => setView('teacher-toolkit')}>Teacher Toolkit</button>
-                      )}
-                      {canUseDeskTool(profile, 'parent-explainer') && (
-                        <button type="button" className={CHIP} onClick={() => setView('parent-explainer')}>Parent Explainer</button>
-                      )}
-                      {canUseDeskTool(profile, 'research-helper') && (
-                        <button type="button" className={CHIP} onClick={() => setView('research-helper')}>Research Helper</button>
-                      )}
-                      <button type="button" className={CHIP} onClick={() => setView('tools')}>All tools</button>
                     </div>
                   </div>
                 ) : (
@@ -1040,10 +988,10 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             </div>
 
             {/* ── Composer ── */}
-            <div className="shrink-0 px-4 pb-3 pt-1 sm:px-6" data-studio-composer="1">
-              <div className="max-w-3xl mx-auto">
+            <div className="shrink-0 border-t border-[var(--studio-border-soft)] px-3 py-2 sm:px-4" data-studio-composer="1">
+              <div className="w-full">
                 <div
-                  className={`rounded-3xl border ${dragOver ? 'border-[#3FE0D0]' : C.border} ${C.surface} shadow-[0_8px_30px_rgba(63,224,208,0.12)] focus-within:border-[#3FE0D0] transition-colors`}
+                  className={`border ${dragOver ? 'border-[#3FE0D0]' : C.border} ${C.surface} focus-within:border-[#3FE0D0] transition-colors`}
                   onDragOver={(event) => { event.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={(event) => {

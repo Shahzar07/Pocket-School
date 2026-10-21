@@ -51,8 +51,10 @@ describe('AI tool shell inventory', () => {
       assert.equal(tools.every(tool => tool.icon.length > 0), true);
     }
     const admin = sidebarTools({ role: 'admin' }, 'dashboard').filter(tool => tool.placement === 'tools').map(tool => tool.id);
-    assert.deepEqual(admin.slice(0, 8), [
-      'ai-studio', 'et-ai', 'et-maths', 'et-exams', 'et-essays', 'creator-store', 'ai-book-creator', 'timetabler',
+    assert.equal(admin.includes('ai-studio'), false);
+    assert.equal(admin.includes('et-ai'), false);
+    assert.deepEqual(admin.slice(0, 6), [
+      'et-maths', 'et-exams', 'et-essays', 'creator-store', 'ai-book-creator', 'timetabler',
     ]);
     const studentTools = sidebarTools({ role: 'student' }, 'dashboard');
     assert.equal(studentTools.some(tool => tool.id === 'timetabler' || tool.id === 'teacher-toolkit'), false);
@@ -64,8 +66,8 @@ describe('AI tool shell inventory', () => {
 
   it('highlights the longest matching tool', () => {
     const tools = sidebarTools({ role: 'teacher' }, 'dashboard');
-    assert.equal(activeSidebarId('/dashboard/studio', tools), 'ai-studio');
-    assert.equal(activeSidebarId('/dashboard/studio/et', tools), 'et-ai');
+    assert.equal(activeSidebarId('/dashboard/studio', tools), null);
+    assert.equal(activeSidebarId('/dashboard/studio/et', tools), null);
     assert.equal(activeSidebarId('/dashboard/studio/maths/packs/igcse', tools), 'et-maths');
     assert.equal(activeSidebarId('/dashboard/teacher/timetable', tools), 'timetabler');
     assert.equal(activeSidebarId('/reads/studio', tools), 'book-studio');
