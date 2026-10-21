@@ -16,7 +16,11 @@ test('the homepage header scrolls away and other pages keep it fixed', async ({ 
   await expect(header).toHaveAttribute('data-site-header', 'flow');
   const homePosition = await header.evaluate((node) => getComputedStyle(node).position);
   expect(homePosition).toBe('absolute');
-  await page.evaluate(() => window.scrollTo(0, 900));
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 900);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800);
   const top = await header.evaluate((node) => node.getBoundingClientRect().top);
   expect(top).toBeLessThan(0);
 
@@ -24,7 +28,11 @@ test('the homepage header scrolls away and other pages keep it fixed', async ({ 
   const fixed = page.locator('[data-site-header]');
   await expect(fixed).toHaveAttribute('data-site-header', 'fixed');
   expect(await fixed.evaluate((node) => getComputedStyle(node).position)).toBe('fixed');
-  await page.evaluate(() => window.scrollTo(0, 900));
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 900);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800);
   const pinned = await fixed.evaluate((node) => node.getBoundingClientRect().top);
   expect(pinned).toBeGreaterThanOrEqual(0);
   expect(pinned).toBeLessThan(8);
