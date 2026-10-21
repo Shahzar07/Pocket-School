@@ -27,10 +27,15 @@ test('the add-a-block grid has one control per block', () => {
   assert.deepEqual(blockPalette().map(group => group.group), ['Lesson', 'Practice', 'Visual']);
 });
 
-test('Buzan branches do not use amber', () => {
+test('Buzan branches stay in the blue and cyan family', () => {
+  const banned = ['#f0a202', '#c8820a', '#e23b3b', '#7048e8', '#e8590c', '#d6336c'];
   for (const color of BUZAN_COLORS) {
-    assert.notEqual(color.toLowerCase(), '#f0a202');
-    assert.notEqual(color.toLowerCase(), '#c8820a');
+    assert.equal(banned.includes(color.toLowerCase()), false, color);
+    const hex = color.slice(1);
+    const red = Number.parseInt(hex.slice(0, 2), 16);
+    const green = Number.parseInt(hex.slice(2, 4), 16);
+    const blue = Number.parseInt(hex.slice(4, 6), 16);
+    assert.ok(blue >= red && blue >= green - 40, color);
   }
 });
 

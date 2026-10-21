@@ -218,6 +218,9 @@ test.describe('course builder desk', () => {
       expect(overlap).toBe(false);
     }
     await page.screenshot({ path: 'docs/qa/cms/cms-builder-light.png', fullPage: false });
+    await page.evaluate(() => document.documentElement.classList.add('dark'));
+    await page.screenshot({ path: 'docs/qa/cms/cms-builder-dark.png', fullPage: false });
+    await page.evaluate(() => document.documentElement.classList.remove('dark'));
 
     await page.locator('[data-right-tab="publish"]').click();
     await expect(page.locator('[data-downloads="1"]')).toBeVisible();
@@ -241,6 +244,9 @@ test.describe('course builder desk', () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: 'docs/qa/cms/cms-builder-mobile.png' });
+    await page.evaluate(() => document.documentElement.classList.add('dark'));
+    await page.screenshot({ path: 'docs/qa/cms/cms-builder-mobile-dark.png' });
+    await page.evaluate(() => document.documentElement.classList.remove('dark'));
 
     await signIn(page, TEACHER_EMAIL);
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -270,5 +276,11 @@ test.describe('course builder desk', () => {
     await expect(page.getByText('Sel tumbuhan mempunyai nukleus dan dinding sel.')).toBeVisible();
     await expect(page.getByRole('tab', { name: /Mind Map/ })).toContainText('10');
     await page.screenshot({ path: 'docs/qa/cms/cms-student-translation.png' });
+    await page.evaluate(() => document.documentElement.classList.add('dark'));
+    await page.screenshot({ path: 'docs/qa/cms/cms-student-translation-dark.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: 'docs/qa/cms/cms-student-translation-mobile-dark.png' });
+    await page.evaluate(() => document.documentElement.classList.remove('dark'));
+    await page.screenshot({ path: 'docs/qa/cms/cms-student-translation-mobile.png' });
   });
 });

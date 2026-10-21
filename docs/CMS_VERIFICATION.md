@@ -194,7 +194,7 @@ Checked on 21 Oct 2026 against the Firebase emulators and a local Next server. S
 | Alt text and a multiple-intelligence tag are on a visual block | PASS | `docs/qa/cms/cms-alt-mi.png` |
 | Student reader uses a saved Bahasa Melayu title | PASS | `docs/qa/cms/cms-student-translation.png` shows "Sel tumbuhan" |
 | Cached ET AI translation when no saved copy exists | PASS | Unit test for `displayedField`; the student hook calls `/api/content/translate` only when the saved copy falls back |
-| Lesson body in Bahasa Melayu on the student page | PASS | The Lesson tab is not behind the Sparks lock. The saved sentence “Sel tumbuhan mempunyai nukleus dan dinding sel.” is on screen. Mind Map still shows the ⚡10 lock. |
+| Lesson body in Bahasa Melayu on the student page | PASS | The Lesson tab is not behind the Sparks lock. The saved sentence “Sel tumbuhan mempunyai nukleus dan dinding sel.” is on screen. Mind Map still shows the ⚡10 lock. Light and dark, desktop and 390px: `docs/qa/cms/cms-student-translation.png`, `cms-student-translation-dark.png`, `cms-student-translation-mobile.png`, `cms-student-translation-mobile-dark.png`. |
 | Mobile builder | PASS | `docs/qa/cms/cms-builder-mobile.png` |
 
 Unit tests in `lib/cms/desk.test.ts`: 5 passed (teacher-only signature, unique block grid, no amber Buzan branch, infographic stats only from the written text, breadcrumb title).

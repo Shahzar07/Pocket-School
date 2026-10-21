@@ -5,14 +5,14 @@
  */
 
 export const BUZAN_COLORS = [
-  '#E23B3B',
-  '#1287A0',
-  '#2F9E44',
-  '#1C7ED6',
-  '#7048E8',
-  '#E8590C',
-  '#0CA678',
-  '#D6336C',
+  '#1E6A83',
+  '#3FE0D0',
+  '#203337',
+  '#0E7490',
+  '#155E75',
+  '#0891B2',
+  '#164E63',
+  '#115E73',
 ] as const;
 
 export interface BuzanNode {
