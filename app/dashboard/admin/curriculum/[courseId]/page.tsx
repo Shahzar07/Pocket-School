@@ -27,6 +27,7 @@ import {
 import { VisualBlock } from '@/components/lesson-visual';
 import { FormatPreview } from '@/components/lesson-format-views';
 import { Button } from '@/components/ui/button';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ROLE_LABELS } from '@/lib/roles';
@@ -69,7 +70,7 @@ import {
 import { fetchWithBackoff, withBackoff } from '@/lib/net-retry';
 import {
   ArrowLeft, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Copy, CornerDownRight,
-  Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive, X,
+  Eye, GripVertical, Loader2, Pencil, Plus, RotateCcw, Send, Sparkles, Trash2, Archive,
 } from 'lucide-react';
 
 /* ── Constants ──────────────────────────────────────────────── */
@@ -280,6 +281,7 @@ export default function ContentBuilderPage() {
   const [publishOpen, setPublishOpen] = useState(false);
   const [publishAccepted, setPublishAccepted] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  useLayerDismiss(publishOpen, () => { if (!publishing) setPublishOpen(false); });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftRef = useRef<Lesson | null>(null);
   const selectionRef = useRef({ unit: null as string | null, lesson: null as string | null });
@@ -1572,10 +1574,7 @@ export default function ContentBuilderPage() {
                   </h2>
                   <p className="text-xs text-muted-foreground truncate">{draft?.title}</p>
                 </div>
-                <button onClick={() => !publishing && setPublishOpen(false)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted" title="Close">
-                  <X className="w-4 h-4" />
-                </button>
+                <CloseControl onClose={() => { if (!publishing) setPublishOpen(false); }} />
               </div>
 
               <div className="px-5 py-4 space-y-4">

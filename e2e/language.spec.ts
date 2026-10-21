@@ -44,6 +44,10 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   await expect(page.getByRole('banner').getByRole('link', { name: 'Mula percuma' })).toBeVisible();
   await expect(page.locator('#content').getByRole('link', { name: 'Mula percuma' })).toBeVisible();
   await expect(page.locator('[data-landing-universities]')).toContainText('Menyediakan pelajar');
+  await expect(page.getByRole('heading', { level: 2, name: 'Masalah yang pelajar, ibu bapa, dan sekolah benar-benar hadapi.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Satu harga di seluruh dunia.' })).toBeVisible();
+  await expect(page.getByText('The problems a student, a parent, and a school actually have.')).toHaveCount(0);
+  await page.screenshot({ path: 'docs/qa/homepage/homepage-bahasa-below-hero.png', fullPage: true });
   await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
   const malayNav = page.getByRole('navigation', { name: 'Navigasi utama' });
   await expect(malayNav.getByRole('link', { name: 'Laman Utama', exact: true })).toBeVisible();

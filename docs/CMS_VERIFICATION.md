@@ -141,9 +141,9 @@ Rows: 128. Failed: 0.
 
 ## Included besides the shell
 
-- Bahasa Melayu changes the public nav and the homepage hero. `e2e/language.spec.ts` switches the globe and checks Laman Utama, Kursus, Mula percuma, and “Belajar dengan cara anda.” Dashboard items that had an English override use the catalog when the language is not English. The longer marketing sections under the hero still use the English HOME copy.
+- Bahasa Melayu changes the public nav, the homepage hero, and the sections under the hero. `e2e/language.spec.ts` switches the globe and checks Laman Utama, Kursus, Mula percuma, “Belajar dengan cara anda.”, and the Malay headings for the problem list and the worldwide price. Dashboard items that had an English override use the catalog when the language is not English.
 - Homepage header scrolls away on `/`, stays fixed on other public pages, and is hidden on `/p/[code]`. “Programmes and products” uses the same 12px size as the other nav links. Shots: `docs/qa/homepage/homepage-header-flow.png`, `docs/qa/homepage/homepage-header-scrolled-away.png`, `docs/qa/homepage/profile-header-hidden.png`, `docs/qa/homepage/homepage-bahasa.png`.
-- Shared dialogs, the cookie notice, toasts, and the dashboard popups that already called the close helper use one Close control: 44px hit area, the label Close, and a focus ring. The copyright modal and the curriculum editor are not in this change.
+- Shared dialogs, the cookie notice, toasts, and the dashboard popups that already called the close helper use one Close control: 44px hit area, the label Close, and a focus ring. The copyright upload modal and the curriculum publish dialog use that same Close control.
 
 ## Deferred
 
@@ -194,7 +194,7 @@ Checked on 21 Oct 2026 against the Firebase emulators and a local Next server. S
 | Alt text and a multiple-intelligence tag are on a visual block | PASS | `docs/qa/cms/cms-alt-mi.png` |
 | Student reader uses a saved Bahasa Melayu title | PASS | `docs/qa/cms/cms-student-translation.png` shows "Sel tumbuhan" |
 | Cached ET AI translation when no saved copy exists | PASS | Unit test for `displayedField`; the student hook calls `/api/content/translate` only when the saved copy falls back |
-| Lesson body in Bahasa Melayu on the student page | FAIL | The Lesson tab is the existing Sparks lock ("Unlock for ⚡15"), so the saved Malay sentence is not on screen |
+| Lesson body in Bahasa Melayu on the student page | PASS | The Lesson tab is not behind the Sparks lock. The saved sentence “Sel tumbuhan mempunyai nukleus dan dinding sel.” is on screen. Mind Map still shows the ⚡10 lock. |
 | Mobile builder | PASS | `docs/qa/cms/cms-builder-mobile.png` |
 
 Unit tests in `lib/cms/desk.test.ts`: 5 passed (teacher-only signature, unique block grid, no amber Buzan branch, infographic stats only from the written text, breadcrumb title).

@@ -16,6 +16,15 @@ import { TeachSection } from '@/components/landing/teach-section';
 
 const serif = { fontFamily: 'var(--font-dm-serif), Georgia, serif' } as const;
 
+type Problem = { problem: string; answer: string };
+type Feature = { href: string; title: string; body: string };
+type Level = { href: string; title: string; price: string; body: string };
+type Plan = { name: string; amount: string; period: string; body: string; href: string; cta: string };
+
+function asList<T>(value: unknown, fallback: T[]): T[] {
+  return Array.isArray(value) && value.length > 0 ? value as T[] : fallback;
+}
+
 const BOARD_ICONS: Record<string, LucideIcon> = {
   'Cambridge International (CAIE)': GraduationCap,
   'Pearson Edexcel': BookOpen,
@@ -53,6 +62,11 @@ export function HomeV3() {
   const { t } = useTranslation();
   const teachers = String(AI_TEACHERS.length);
   const languages = String(LANGUAGES.length);
+  const problems = asList<Problem>(t('home.v3.problems', { returnObjects: true }), HOME.problems);
+  const features = asList<Feature>(t('home.v3.features', { returnObjects: true }), HOME.features);
+  const levels = asList<Level>(t('home.v3.levels', { returnObjects: true }), HOME.levels);
+  const instPoints = asList<string>(t('home.v3.instPoints', { returnObjects: true }), HOME.instPoints);
+  const plans = asList<Plan>(t('home.v3.plans', { returnObjects: true }), HOME.plans);
   return (
     <div className="bg-white text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2]" style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }} data-landing="v3">
       <section className="bg-[linear-gradient(165deg,#0B1417_0%,#1E6A83_52%,#3FE0D0_130%)] px-6 py-16 text-white sm:py-24">
@@ -70,10 +84,10 @@ export function HomeV3() {
             <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="/demo">{t('home.v3.demo')}</Link>
           </div>
           <dl className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div><dt className="text-2xl font-semibold" style={serif}>{HOME.levelsLabel}</dt><dd className="text-xs text-white/70">{HOME.formatsLabel}</dd></div>
-            <div><dt className="text-2xl font-semibold" style={serif}>{teachers}</dt><dd className="text-xs text-white/70">{HOME.teachersLabel}</dd></div>
-            <div><dt className="text-2xl font-semibold" style={serif}>{languages}</dt><dd className="text-xs text-white/70">{HOME.languagesLabel}</dd></div>
-            <div><dt className="text-2xl font-semibold" style={serif}>{HOME.annual}</dt><dd className="text-xs text-white/70">{HOME.priceTag}</dd></div>
+            <div><dt className="text-2xl font-semibold" style={serif}>{t('home.v3.levelsLabel')}</dt><dd className="text-xs text-white/70">{t('home.v3.formatsLabel')}</dd></div>
+            <div><dt className="text-2xl font-semibold" style={serif}>{teachers}</dt><dd className="text-xs text-white/70">{t('home.v3.teachersLabel')}</dd></div>
+            <div><dt className="text-2xl font-semibold" style={serif}>{languages}</dt><dd className="text-xs text-white/70">{t('home.v3.languagesLabel')}</dd></div>
+            <div><dt className="text-2xl font-semibold" style={serif}>{t('home.v3.annual')}</dt><dd className="text-xs text-white/70">{t('home.v3.priceTag')}</dd></div>
           </dl>
         </div>
       </section>
@@ -113,11 +127,11 @@ export function HomeV3() {
         <FeaturedShowcase variant="row" />
       </section>
       <section id="features" className="mx-auto max-w-5xl px-6 py-16">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{HOME.solveTag}</p>
-        <h2 className="mt-2 max-w-2xl text-3xl sm:text-4xl" style={serif}>{HOME.solveTitle}</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#203337]/80 dark:text-[#E7F4F2]/80">{HOME.solveBody}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{t('home.v3.solveTag')}</p>
+        <h2 className="mt-2 max-w-2xl text-3xl sm:text-4xl" style={serif}>{t('home.v3.solveTitle')}</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#203337]/80 dark:text-[#E7F4F2]/80">{t('home.v3.solveBody')}</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-          {HOME.problems.map((item) => (
+          {problems.map((item) => (
             <li key={item.problem} className="rounded-2xl border border-[#1E6A83]/15 p-4 dark:border-[#3FE0D0]/25">
               <p className="font-semibold">{item.problem}</p>
               <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{item.answer}</p>
@@ -125,7 +139,7 @@ export function HomeV3() {
           ))}
         </ul>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {HOME.features.map((item) => {
+          {features.map((item) => {
             const Icon = FEATURE_ICONS[item.href] ?? Sparkles;
             return (
               <Link key={item.href} href={item.href} className="rounded-2xl bg-[#F4FBFA] p-5 hover:bg-[#3FE0D0]/25 dark:bg-[#122226] dark:hover:bg-[#1E6A83]/40">
@@ -139,10 +153,10 @@ export function HomeV3() {
       </section>
       <section className="bg-[#F4FBFA] px-6 py-16 dark:bg-[#122226]">
         <div className="mx-auto max-w-5xl">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{HOME.levelsTag}</p>
-          <h2 className="mt-2 text-3xl sm:text-4xl" style={serif}>{HOME.levelsTitle}</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{t('home.v3.levelsTag')}</p>
+          <h2 className="mt-2 text-3xl sm:text-4xl" style={serif}>{t('home.v3.levelsTitle')}</h2>
           <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {HOME.levels.map((item) => {
+            {levels.map((item) => {
               const Icon = LEVEL_ICONS[item.href] ?? GraduationCap;
               return (
                 <li key={item.href}>
@@ -159,32 +173,32 @@ export function HomeV3() {
         </div>
       </section>
       <section className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <h2 className="text-3xl sm:text-4xl" style={serif}>{HOME.rochfords}</h2>
-        <p className="mt-4 text-sm leading-relaxed text-[#203337]/80 dark:text-[#E7F4F2]/80">{HOME.rochfordsBody}</p>
-        <Link className="mt-4 inline-flex text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" href="/rochfords">{HOME.rochfords}</Link>
+        <h2 className="text-3xl sm:text-4xl" style={serif}>{t('home.v3.rochfords')}</h2>
+        <p className="mt-4 text-sm leading-relaxed text-[#203337]/80 dark:text-[#E7F4F2]/80">{t('home.v3.rochfordsBody')}</p>
+        <Link className="mt-4 inline-flex text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" href="/rochfords">{t('home.v3.rochfords')}</Link>
       </section>
       <section id="institutions" className="bg-[linear-gradient(165deg,#0B1417,#1E6A83)] px-6 py-16 text-white">
         <div className="mx-auto max-w-5xl">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3FE0D0]">{HOME.instTag}</p>
-          <h2 className="mt-2 max-w-xl text-3xl sm:text-4xl" style={serif}>{HOME.instTitle}</h2>
-          <p className="mt-3 max-w-2xl text-sm text-white/80">{HOME.instBody}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3FE0D0]">{t('home.v3.instTag')}</p>
+          <h2 className="mt-2 max-w-xl text-3xl sm:text-4xl" style={serif}>{t('home.v3.instTitle')}</h2>
+          <p className="mt-3 max-w-2xl text-sm text-white/80">{t('home.v3.instBody')}</p>
           <ul className="mt-6 grid gap-3 sm:grid-cols-3">
-            {HOME.instPoints.map((point) => (
+            {instPoints.map((point) => (
               <li key={point} className="rounded-2xl bg-white/10 p-4 text-sm">{point}</li>
             ))}
           </ul>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-bold text-[#203337]" href="/institutions">{HOME.instTag}</Link>
-            <a className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="mailto:institutions@poketschool.ai">{HOME.contact}</a>
+            <Link className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-bold text-[#203337]" href="/institutions">{t('home.v3.instTag')}</Link>
+            <a className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="mailto:institutions@poketschool.ai">{t('home.v3.contact')}</a>
           </div>
         </div>
       </section>
       <section id="pricing" className="mx-auto max-w-5xl px-6 py-16">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{HOME.priceTag}</p>
-        <h2 className="mt-2 text-3xl sm:text-4xl" style={serif}>{HOME.priceTitle}</h2>
-        <p className="mt-3 text-sm text-[#203337]/80 dark:text-[#E7F4F2]/80">{HOME.priceBody}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{t('home.v3.priceTag')}</p>
+        <h2 className="mt-2 text-3xl sm:text-4xl" style={serif}>{t('home.v3.priceTitle')}</h2>
+        <p className="mt-3 text-sm text-[#203337]/80 dark:text-[#E7F4F2]/80">{t('home.v3.priceBody')}</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {HOME.plans.map((plan) => (
+          {plans.map((plan) => (
             <li key={plan.name} className="flex flex-col rounded-2xl border border-[#1E6A83]/15 p-5 dark:border-[#3FE0D0]/25 dark:bg-[#1A1918]">
               <h3 className="text-xl" style={serif}>{plan.name}</h3>
               <p className="mt-2 text-3xl font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{plan.amount}</p>
@@ -196,10 +210,10 @@ export function HomeV3() {
         </ul>
       </section>
       <section className="bg-[#0B1417] px-6 py-14 text-center text-white">
-        <h2 className="text-3xl" style={serif}>{HOME.close}</h2>
+        <h2 className="text-3xl" style={serif}>{t('home.v3.close')}</h2>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3FE0D0] px-4 text-sm font-bold text-[#203337]" href="/signup">{HOME.start}</Link>
-          <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/30 px-4 text-sm font-semibold" href="/institutions/register">{HOME.schools}</Link>
+          <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#3FE0D0] px-4 text-sm font-bold text-[#203337]" href="/signup">{t('home.v3.start')}</Link>
+          <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/30 px-4 text-sm font-semibold" href="/institutions/register">{t('home.v3.schools')}</Link>
         </div>
       </section>
     </div>

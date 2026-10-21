@@ -864,7 +864,7 @@ export default function LessonPage() {
   const balance = profile?.sparksBalance ?? 0;
 
   const isFormatLocked = (format?: string) =>
-    !!format && isCurriculum && FORMAT_COSTS[format] != null && !unlockedFormats.includes(format);
+    !!format && format !== 'text' && isCurriculum && FORMAT_COSTS[format] != null && !unlockedFormats.includes(format);
 
   const handleUnlock = async (format: string) => {
     if (!user || unlockingFormat) return;

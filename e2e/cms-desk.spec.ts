@@ -192,7 +192,8 @@ test.describe('course builder desk', () => {
     await page.screenshot({ path: 'docs/qa/cms/cms-list-light.png' });
 
     await openPath(page, `/dashboard/admin/curriculum/${COURSE}?lesson=${LESSON}`);
-    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText('Cells and tissues', { timeout: 60_000 });
+    await expect(page.getByRole('link', { name: 'All Courses' })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText('Cells and tissues').first()).toBeVisible();
     await expect(page.locator('[data-block-grid="1"]')).toBeVisible();
     await expect(page.locator('[data-block-id="image"]')).toHaveCount(1);
     await expect(page.locator('[data-block-id="illustration"]')).toHaveCount(1);
@@ -225,6 +226,7 @@ test.describe('course builder desk', () => {
     await page.locator('[data-publish-lesson="1"]').click();
     const publishDialog = page.locator('[data-publish-dialog="1"]');
     await expect(publishDialog).toBeVisible();
+    await expect(publishDialog.locator('[data-close="1"]')).toBeVisible();
     await expect(publishDialog.locator('[data-copyright-gate="teacher"]')).toHaveCount(0);
     await page.screenshot({ path: 'docs/qa/cms/cms-publish-admin.png' });
     await publishDialog.getByRole('button', { name: 'Cancel' }).click();
@@ -246,6 +248,7 @@ test.describe('course builder desk', () => {
     await expect(page.locator('[data-publish-lesson="1"]')).toBeEnabled({ timeout: 60_000 });
     await page.locator('[data-publish-lesson="1"]').click();
     await expect(page.locator('[data-copyright-gate="teacher"]')).toBeVisible();
+    await expect(page.locator('[data-publish-dialog="1"] [data-close="1"]')).toBeVisible();
     await page.screenshot({ path: 'docs/qa/cms/cms-copyright-teacher.png' });
   });
 
@@ -264,6 +267,8 @@ test.describe('course builder desk', () => {
     await openPath(page, `/dashboard/student/courses/${COURSE}/lessons/${LESSON}`);
     await dismissCookies(page);
     await expect(page.getByRole('heading', { name: 'Sel tumbuhan' })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('Sel tumbuhan mempunyai nukleus dan dinding sel.')).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Mind Map/ })).toContainText('10');
     await page.screenshot({ path: 'docs/qa/cms/cms-student-translation.png' });
   });
 });
