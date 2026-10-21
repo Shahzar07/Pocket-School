@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { PDFDocument } from 'pdf-lib';
 import { parseSeatAllocation } from './allocations';
 import { builtinDesigns, normaliseDesign, paletteColours } from '../certificates/design';
 import { certificatePdf } from '../certificates/pdf';
@@ -38,22 +40,31 @@ test('seat allocation requires a target, seats, and dates', () => {
   assert.equal(ok.ok, true);
 });
 
-test('certificate palettes stay blue and cyan and the pdf names the title', () => {
+test('certificate palettes stay blue and cyan and the pdf names the title', async () => {
   const cyan = paletteColours('cyan');
   const blue = paletteColours('blue');
   assert.equal(cyan.ink, '#203337');
+  assert.equal(cyan.line.toLowerCase(), '#3fe0d0');
   assert.equal(blue.accent, '#1E6A83');
   assert.notEqual(cyan.line.toLowerCase(), '#c8922a');
+  assert.notEqual(cyan.line.toLowerCase(), '#c8820a');
   const design = normaliseDesign({ ...builtinDesigns()[0], title: 'Certificate of Achievement', isDefault: true });
-  const pdf = new TextDecoder().decode(certificatePdf(design, {
+  const regular = readFileSync('public/fonts/NotoSans-Regular.ttf');
+  const bold = readFileSync('public/fonts/NotoSans-Bold.ttf');
+  const bytes = await certificatePdf(design, {
     recipient: 'Amina Yusuf',
     course: 'IGCSE Mathematics',
     date: '18 Oct 2026',
     certificateId: 'PS-1042',
     verifyUrl: 'https://poketschool.ai/verify/PS-1042',
-  }));
-  assert.match(pdf, /^%PDF-1.4/);
-  assert.match(pdf, /Certificate of Achievement/);
+  }, { regular, bold });
+  assert.ok(bytes.byteLength > 2000);
+  const doc = await PDFDocument.load(bytes);
+  assert.equal(doc.getTitle(), 'Certificate of Achievement');
+  assert.equal(doc.getPageCount(), 1);
+  const { width, height } = doc.getPage(0).getSize();
+  assert.ok(width > height);
+  assert.ok(Math.abs(width - 841.89) < 0.2);
   assert.equal(normaliseDesign({ institutionId: 'school-1', isDefault: true }).isDefault, false);
 });
 

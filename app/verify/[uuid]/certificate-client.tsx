@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { CertificateDocument } from '@/components/certificate-document';
 import { verifyStatusText } from '@/lib/alumni';
 import { CERTIFICATE_DISCLAIMER, certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
+import { templateSampleRecord } from '@/lib/certificates/design';
 import { CredentialPanel } from '@/components/credentials/credential-panel';
 import { copyrightLine } from '@/lib/insights/copyright';
 import { automationEnabled } from '@/lib/automation-status';
@@ -59,6 +60,7 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
   const [revoking, setRevoking] = useState(false);
   const [checksOpen, setChecksOpen] = useState(true);
   const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [sampleMode, setSampleMode] = useState(false);
 
   useEffect(() => {
     automationEnabled('certificate_verify').then(setChecksOpen).catch(() => setChecksOpen(true));
@@ -81,7 +83,27 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
     }
     setLoading(true);
     try {
-      const cert = await getCertificateByUUID(target);
+      const cert = await getCertificateByUUID(target).catch(() => null);
+      const sample = cert ? null : templateSampleRecord(target);
+      if (!cert && sample) {
+        setSampleMode(true);
+        setVerified(true);
+        setCertData({
+          id: sample.id,
+          studentId: '',
+          studentName: sample.studentName,
+          courseId: '',
+          courseTitle: sample.courseTitle,
+          issuedAt: Timestamp.fromDate(new Date(sample.issuedAt)),
+          issuedBy: 'poket-school',
+          issuedByName: 'Poket School',
+          verifyUrl: sample.verifyUrl,
+          status: 'valid',
+        });
+        setPortfolioUrl('');
+        return;
+      }
+      setSampleMode(false);
       const filled = cert ? await withStudentNumber(cert) : null;
       setVerified(!!filled);
       setCertData(filled);
@@ -101,14 +123,14 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7F8] px-4 py-10">
+    <div className="min-h-screen bg-[#F4F7F8] px-4 py-10 text-[#203337] dark:bg-[#0B1417] dark:text-[#E8F4F6]">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-[#1E6A83] font-bold tracking-[0.22em] text-[11px]">
+          <Link href="/" className="inline-flex items-center gap-2 text-[#1E6A83] font-bold tracking-[0.22em] text-[11px] dark:text-[#3FE0D0]">
             <Award className="w-4 h-4" /> POKET SCHOOL
           </Link>
-          <h1 className="font-heading text-4xl text-[#1c2b30] mt-3">Verify a certificate</h1>
-          <p className="text-sm text-[#526066] mt-2">Anyone can confirm a certificate. This page shows the student number, name, course and issue date.</p>
+          <h1 className="font-heading text-4xl text-[#1c2b30] mt-3 dark:text-[#E8F4F6]">Verify a certificate</h1>
+          <p className="text-sm text-[#526066] mt-2 dark:text-[#3FE0D0]">Anyone can confirm a certificate. This page shows the student number, name, course and issue date.</p>
         </div>
         {!checksOpen && (
           <p className="rounded-2xl border border-[#203337]/10 bg-white px-4 py-4 text-sm text-center">Certificate checks are with a super admin at the moment.</p>
@@ -136,7 +158,8 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
           ) : null}
           <VerificationRecord
             certificate={certData}
-            canRevoke={profile?.role === 'admin' && !!user}
+            sample={sampleMode}
+            canRevoke={profile?.role === 'admin' && !!user && !sampleMode}
             revoking={revoking}
             onRevoke={async () => {
               if (!certData.id) return;
@@ -175,11 +198,13 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
 
 function VerificationRecord({
   certificate,
+  sample = false,
   canRevoke,
   revoking,
   onRevoke,
 }: {
   certificate: Certificate;
+  sample?: boolean;
   canRevoke: boolean;
   revoking: boolean;
   onRevoke: () => void;
@@ -196,20 +221,21 @@ function VerificationRecord({
     { label: 'Course', value: face.courseTitle },
     { label: 'Issue date', value: formatCertificateDate(face.issuedAt) },
     { label: 'Certificate ID', value: face.id },
-    { label: 'Status', value: verifyStatusText(face.status, certificate.revocationReason) },
+    { label: 'Status', value: sample ? 'Template sample' : verifyStatusText(face.status, certificate.revocationReason) },
   ];
   return (
     <div className="space-y-4">
-      <div className={`rounded-3xl border p-6 ${revoked ? 'bg-[#FDE8E8] border-[#E7B3AE]' : 'bg-[#E7F6F1] border-[#B7E4D4]'}`}>
-        <div className={`flex items-center justify-center gap-2 font-semibold ${revoked ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
+      <div className={`rounded-3xl border p-6 ${revoked ? 'bg-[#FDE8E8] border-[#E7B3AE]' : sample ? 'bg-[#E7FAF7] border-[#3FE0D0]' : 'bg-[#E7F6F1] border-[#B7E4D4]'}`}>
+        <div className={`flex items-center justify-center gap-2 font-semibold ${revoked ? 'text-[#9B1C1C]' : sample ? 'text-[#203337]' : 'text-[#0F6E56]'}`}>
           {revoked ? <XCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
-          {revoked ? 'Revoked' : 'Valid'}
+          {revoked ? 'Revoked' : sample ? 'Template sample' : 'Valid'}
         </div>
+        {sample ? <p className="mt-3 text-center text-sm text-[#203337]">This is the certificate template sample. It shows that the verify link resolves. It is not a student award.</p> : null}
         <dl className="mt-4 bg-white rounded-2xl border border-[#DADCE0] divide-y divide-[#DADCE0]">
           {rows.map((row) => (
             <div key={row.label} className="flex justify-between gap-4 px-4 py-3 text-sm">
               <dt className="text-[#526066] shrink-0">{row.label}</dt>
-              <dd className={`font-semibold text-right break-all ${row.label === 'Certificate ID' || row.label === 'Student number' ? 'font-mono text-xs sm:text-sm' : ''} ${row.label === 'Status' ? (revoked ? 'text-[#9B1C1C]' : 'text-[#0F6E56]') : 'text-[#1c2b30]'}`}>
+              <dd className={`font-semibold text-right break-all ${row.label === 'Certificate ID' || row.label === 'Student number' ? 'font-mono text-xs sm:text-sm' : ''} ${row.label === 'Status' ? (revoked ? 'text-[#9B1C1C]' : sample ? 'text-[#203337]' : 'text-[#0F6E56]') : 'text-[#1c2b30]'}`}>
                 {row.value}
               </dd>
             </div>
@@ -223,8 +249,8 @@ function VerificationRecord({
           </div>
         ) : null}
       </div>
-      <CertificateDocument certificate={face} />
-      {face.id ? <CredentialPanel id={face.id} /> : null}
+      {sample ? null : <CertificateDocument certificate={face} />}
+      {!sample && face.id ? <CredentialPanel id={face.id} /> : null}
     </div>
   );
 }

@@ -150,3 +150,24 @@ Rows: 128. Failed: 0.
 - Blog editor: full page, WYSIWYG, edit/preview, SEO/AEO, and custom fields. Left for a follow-up PR.
 - CMS: teacher copyright declaration, cached lesson translation, mind maps, infographics, every block type, the deduped Add a block grid, Properties/Publish/Allocate/History, the PDF icon overlap, breadcrumb course titles, downloads, alt text, and MI tags.
 - Rebase of #156, #155, and #154 onto this branch after it merges. They also touch `app/dashboard/layout.tsx` and `QA_QC.md`.
+
+# Certificate template verification
+
+Checked on 21 Oct 2026 from the certificate designer, without a signed-in admin. The page under test is the same `CertificateDesigner` the admin route renders. Preview: `/preview/admin-tools?view=certificates`. Verify: `/verify/PS-1042`.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| The editor form renders once. Save template, Add template, and the signatory footer are not repeated. | PASS | `e2e/certificate-template.spec.ts`. One `[data-certificate-form]`, one Save template, no button named New template. `docs/qa/certificates/certificates-light-desktop.png` |
+| Recipient name and Course or level sit on their own rows and do not clip into the row below. | PASS | Checkbox rows use a 44px minimum height. `docs/qa/certificates/certificates-light-desktop.png` |
+| Template tabs do not show "New template" twice. Rename, duplicate, delete with confirmation, and the default flag work. | PASS | The add button is Add template. The same e2e renames a tab to Harbour cyan, clears Default, duplicates, asks for confirmation, cancels, then deletes. |
+| A saved state is visible. | PASS | Preview save sets the status to "This preview does not write a template." A real save sets "Saved." when Firebase Admin is configured. |
+| Logo, co-brand, and signature fields reject a non-https link and accept a PNG upload. | PASS | The e2e types `http://example.com/logo.png`, sees the https error, then uploads a PNG and removes it. `lib/certificates/design.test.ts` |
+| The preview is one A4 landscape sheet that scales to the panel. It does not grow with the form. | PASS | Desktop sheet measured 440×311 (ratio 1.41) beside a 1537px form. `docs/qa/certificates/certificates-light-desktop.png` |
+| A4 portrait and US Letter are available. | PASS | The same e2e selects both. Portrait is taller than it is wide. US Letter stays landscape. |
+| The signatory, QR, and verify URL appear once and stay inside the sheet. | PASS | One footer node. Signatory text is Poket School, Issuer, the verify URL, and the copyright line. |
+| Light and dark, with the preview under the form on a phone. | PASS | `docs/qa/certificates/certificates-light-desktop.png`, `certificates-dark-desktop.png`, `certificates-light-mobile.png`, `certificates-dark-mobile.png`. Phone preview starts below the form. Dark card colour is #1A1918 on #0B1417. |
+| The PDF is the same sheet: A4 landscape, cyan #3FE0D0 and ink #203337, double border, Poket mark, institution logo, co-brand, title, recipient, course, date, id, signature, QR, verify link, copyright, embedded Noto Sans. No gold or amber. | PASS | `docs/qa/certificates/certificate-amina-yusuf.pdf` and `certificate-amina-yusuf.png`. Text baselines are separate (title y 377, name y 352, course y 335, date y 318, id y 304). `lib/certificates/design.test.ts` |
+| An institution admin cannot replace the platform default. | PASS | `scopeDesignForActor` sets `isDefault` false and id `institution-{id}`. The certificates API uses that helper. Covered by `lib/certificates/design.test.ts`. A signed-in institution session was not opened here. |
+| `/verify/PS-1042` resolves. | PASS | `e2e/certificate-template.spec.ts`. The page shows Amina Yusuf, IGCSE Mathematics, PS-1042, and "Template sample", and it does not call the sample a completed module. `docs/qa/certificates/certificates-verify-light.png`, `certificates-verify-dark.png` |
+
+Other CMS checks are not part of this change and are not marked here.

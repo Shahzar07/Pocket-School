@@ -2,6 +2,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import {
   builtinDesigns,
   normaliseDesign,
+  uniqueDesigns,
   type CertificateDesign,
 } from '@/lib/certificates/design';
 
@@ -13,9 +14,13 @@ export async function listDesigns(institutionId: string | null): Promise<Certifi
   const snap = await adminDb().collection('certificate_designs').limit(40).get();
   const stored = snap.docs.map((doc) => fromDoc(doc.id, doc.data() as Record<string, unknown>));
   const builtins = builtinDesigns().filter((item) => !stored.some((row) => row.id === item.id));
-  const all = [...builtins, ...stored];
+  const all = uniqueDesigns([...builtins, ...stored]);
   if (!institutionId) return all;
   return all.filter((item) => !item.institutionId || item.institutionId === institutionId);
+}
+
+export async function deleteDesign(id: string): Promise<void> {
+  await adminDb().doc(`certificate_designs/${id}`).delete();
 }
 
 export async function saveDesign(input: Partial<CertificateDesign>, actorId: string): Promise<CertificateDesign> {

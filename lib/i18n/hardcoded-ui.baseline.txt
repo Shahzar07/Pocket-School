@@ -4030,3 +4030,13 @@ components/blog/seo-panel.tsx	Save template
 components/blog/seo-panel.tsx	Step name
 components/blog/seo-panel.tsx	Template name
 components/blog/seo-panel.tsx	What to do
+app/verify/[uuid]/certificate-client.tsx	This is the certificate template sample. It shows that the verify link resolves. It is not a student award.
+components/certificates/designer.tsx	Add template
+components/certificates/designer.tsx	Certificate templates
+components/certificates/designer.tsx	Delete template
+components/certificates/designer.tsx	Page size
+components/certificates/designer.tsx	Poket cyan and Poket blue stay on the page. Duplicate one to make your own.
+components/certificates/designer.tsx	Renaming updates the tab. Duplicate keeps the original.
+components/certificates/designer.tsx	The PDF is this sheet: border, palette, logos, signatures, QR, and the copyright line.
+components/certificates/sheet.tsx	Institution logo
+components/certificates/sheet.tsx	QR code linking to the verify page
