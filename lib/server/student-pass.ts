@@ -285,6 +285,8 @@ export interface PublicCertificate {
   issuedAt: string;
   status: 'valid' | 'revoked';
   portfolioUrl: string;
+  /** Designer preview id. A stored certificate with this id is returned instead. */
+  sample?: boolean;
 }
 
 function issuedIso(value: unknown): string {
