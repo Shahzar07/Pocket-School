@@ -5,8 +5,18 @@ import JSZip from 'jszip';
 import { ApiError, authedFetch, bearerHeaders } from '@/lib/api-client';
 import { can, resolveStaffRole } from '@/lib/admin-console';
 import { useAuthSTORE } from '@/hooks/use-auth';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
 import { STORE_COPY } from '@/lib/store/copy';
 import { errorsToCsv, parseManifest, pendingSkus, type ManifestRow, type RowReport } from '@/lib/store/manifest';
+
+const IMPORT_STEPS = [
+  { id: 'zip', label: STORE_COPY.chooseZip },
+  { id: 'check', label: STORE_COPY.dryRun },
+  { id: 'drafts', label: STORE_COPY.importRows },
+] as const;
+
+type ImportStep = (typeof IMPORT_STEPS)[number]['id'];
 
 const JOB_KEY = 'poket-store-import';
 
@@ -70,6 +80,7 @@ export function ImportDesk() {
   const [progress, setProgress] = useState('');
   const [note, setNote] = useState('');
   const [setupResult, setSetupResult] = useState('');
+  const [step, setStep] = useState<ImportStep>('zip');
 
   const blocked = useMemo(() => reports.some(row => !row.ok), [reports]);
   const savedCount = reports.filter(row => row.saved === 'draft' || row.saved === 'resumed').length;
@@ -85,6 +96,7 @@ export function ImportDesk() {
     setFiles(packed.files);
     setRows(parsed.rows);
     setReports([]);
+    setStep('check');
     if (parsed.headerError) setNote(parsed.headerError);
   };
 
@@ -210,6 +222,7 @@ export function ImportDesk() {
         setProgress(`${finished}/${reports.length}`);
       }
       setReports([...next]);
+      setStep('drafts');
     } catch (error) {
       const message = error instanceof ApiError ? error.message : error instanceof Error ? error.message : STORE_COPY.setupNote;
       setNote(message);
@@ -266,6 +279,15 @@ export function ImportDesk() {
         <h1 className="font-heading text-2xl text-foreground">{STORE_COPY.importTitle}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{STORE_COPY.importBody}</p>
       </div>
+      <FlowTrail
+        steps={IMPORT_STEPS}
+        currentId={step}
+        onSelect={(id) => {
+          if (id === 'zip') setStep('zip');
+          if (id === 'check' && csv) setStep('check');
+          if (id === 'drafts' && savedCount > 0) setStep('drafts');
+        }}
+      />
       <p className="rounded-xl border border-border bg-card p-3 text-sm text-foreground" data-setup-note="1">{STORE_COPY.setupNote}</p>
       <div className="flex flex-wrap items-center gap-2">
         <input
@@ -275,13 +297,13 @@ export function ImportDesk() {
           className="max-w-full text-sm"
           onChange={(event) => { void loadFile(event.target.files?.[0]); }}
         />
-        <button type="button" className="h-10 rounded-xl bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-50" data-dry-run="1" disabled={busy || !csv} onClick={() => { void dryRun(); }}>{STORE_COPY.dryRun}</button>
+        <button type="button" className="h-10 rounded-xl bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50" data-dry-run="1" disabled={busy || !csv} onClick={() => { void dryRun(); }}>{STORE_COPY.dryRun}</button>
         <button type="button" className="h-10 rounded-xl border border-border px-4 text-sm font-semibold disabled:opacity-50" data-import-drafts="1" disabled={busy || reports.length === 0 || blocked} onClick={() => { void runImport(false); }}>{STORE_COPY.importRows}</button>
         <button type="button" className="h-10 rounded-xl border border-border px-4 text-sm font-semibold disabled:opacity-50" data-resume="1" disabled={busy || !resumeReady || reports.length === 0 || blocked} onClick={() => { void runImport(true); }}>{STORE_COPY.resume}</button>
         <button type="button" className="h-10 rounded-xl border border-border px-4 text-sm font-semibold disabled:opacity-50" data-export-errors="1" disabled={!reports.some(row => row.errors.length > 0)} onClick={exportErrors}>{STORE_COPY.exportErrors}</button>
       </div>
       {progress && <p className="text-sm font-semibold" data-import-progress="1">{STORE_COPY.progress} {progress}</p>}
-      {note && <p className="text-sm text-destructive" data-import-note="1">{note}</p>}
+      {note && <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]" data-import-note="1">{note}</p>}
       {setupResult && <p className="text-sm text-foreground" data-setup-needed="1">{setupResult}</p>}
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full min-w-[640px] text-left text-sm">
@@ -315,6 +337,16 @@ export function ImportDesk() {
         </table>
       </div>
       {savedCount > 0 && <p className="text-xs text-muted-foreground" data-draft-count={savedCount}>{savedCount}</p>}
+      <FlowNav
+        backDisabled={busy || step === 'zip'}
+        nextDisabled={busy || step === 'drafts' || (step === 'zip' && !csv) || (step === 'check' && (!csv || (reports.length > 0 && blocked)))}
+        onBack={() => setStep(step === 'drafts' ? 'check' : 'zip')}
+        onNext={() => {
+          if (step === 'zip' && csv) setStep('check');
+          else if (step === 'check' && reports.length === 0) void dryRun();
+          else if (step === 'check' && !blocked) void runImport(false);
+        }}
+      />
     </div>
   );
 }

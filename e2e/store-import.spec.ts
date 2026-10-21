@@ -32,6 +32,13 @@ async function sampleZip(): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
+async function setTheme(page: Page, theme: 'light' | 'dark') {
+  await page.evaluate((next) => {
+    localStorage.setItem('theme', next);
+    document.documentElement.classList.toggle('dark', next === 'dark');
+  }, theme);
+}
+
 async function dismissCookies(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Cookie consent' });
   for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -139,6 +146,8 @@ test.describe('creator store import', () => {
     await signIn(page);
     await dismissCookies(page);
     await expect(page.locator('[data-store-import="1"]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-flow-trail]')).toBeVisible();
+    await expect(page.locator('[data-flow-nav]')).toBeVisible();
     await expect(page.locator('[data-setup-note="1"]')).toContainText('Setup needed');
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.locator('input[type="file"]').setInputFiles({
@@ -146,16 +155,21 @@ test.describe('creator store import', () => {
       mimeType: 'application/zip',
       buffer: zip,
     });
+    await expect(page.locator('[data-flow-trail] [aria-current="step"]')).toHaveText('Dry run');
     await page.locator('[data-dry-run="1"]').click();
     await expect(page.locator('[data-import-row="PS-4MA1-H-P1"]')).toHaveAttribute('data-row-state', 'ready');
     await expect(page.locator('[data-import-row="PS-4BI1-F-N1"]')).toHaveAttribute('data-row-state', 'ready');
     await page.screenshot({ path: 'docs/qa/store/import-dry-run-desktop.png', fullPage: true });
+    await setTheme(page, 'dark');
+    await page.screenshot({ path: 'docs/qa/store/import-dry-run-desktop-dark.png', fullPage: true });
+    await setTheme(page, 'light');
 
     await dismissCookies(page);
     await page.locator('[data-import-drafts="1"]').click();
     await expect(page.locator('[data-import-row="PS-4MA1-H-P1"]')).toHaveAttribute('data-product-status', 'draft', { timeout: 60_000 });
     await expect(page.locator('[data-import-row="PS-4BI1-F-N1"]')).toHaveAttribute('data-product-status', 'draft');
     await expect(page.locator('[data-import-progress="1"]')).toContainText('2/2');
+    await expect(page.locator('[data-flow-trail] [aria-current="step"]')).toHaveText('Import drafts');
     const productId = await page.locator('[data-import-row="PS-4MA1-H-P1"]').getAttribute('data-product-id');
     expect(productId).toBeTruthy();
 
@@ -187,6 +201,11 @@ test.describe('creator store import', () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: 'docs/qa/store/import-drafts-mobile.png', fullPage: true });
+    await setTheme(page, 'dark');
+    await page.screenshot({ path: 'docs/qa/store/import-drafts-mobile-dark.png', fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: 'docs/qa/store/import-drafts-desktop-dark.png', fullPage: true });
+    await setTheme(page, 'light');
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/dashboard/store', { waitUntil: 'domcontentloaded' });
@@ -211,5 +230,10 @@ test.describe('creator store import', () => {
     await form.locator('button[type="submit"]').click();
     await expect(form.locator('[data-product-result="1"]')).toHaveText('Draft saved', { timeout: 30_000 });
     await page.screenshot({ path: 'docs/qa/store/product-form-desktop.png', fullPage: true });
+    await setTheme(page, 'dark');
+    await page.screenshot({ path: 'docs/qa/store/product-form-desktop-dark.png', fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: 'docs/qa/store/product-form-mobile-dark.png', fullPage: true });
+    await setTheme(page, 'light');
   });
 });

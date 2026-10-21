@@ -2,7 +2,7 @@
 
 Checked on 21 Oct 2026 against the Firebase emulators (Auth 9099, Firestore 8080, Storage 9199) and a local Next server. Production Blaze and `FIREBASE_SERVICE_ACCOUNT` were not present. That is recorded as setup needed, not as a successful download.
 
-Branch base is `origin/main` at `487246d` (the full-page AI shell). The diff adds storage rules, the importer, and the single-product form. Existing dashboard access cases in `lib/dashboard-access.test.ts` still pass.
+Branch base is `origin/main` after the pathway pages. The diff adds storage rules, the importer, and the single-product form. The importer uses the shared FlowTrail and FlowNav (ZIP, dry run, import drafts). Existing dashboard access cases in `lib/dashboard-access.test.ts` still pass. `/dashboard/admin/store/import` is in the dashboard audit.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
@@ -23,8 +23,13 @@ Branch base is `origin/main` at `487246d` (the full-page AI shell). The diff add
 Screenshots:
 
 - `docs/qa/store/import-dry-run-desktop.png`
+- `docs/qa/store/import-dry-run-desktop-dark.png`
 - `docs/qa/store/import-drafts-desktop.png`
+- `docs/qa/store/import-drafts-desktop-dark.png`
 - `docs/qa/store/import-drafts-mobile.png`
+- `docs/qa/store/import-drafts-mobile-dark.png`
 - `docs/qa/store/product-form-desktop.png`
+- `docs/qa/store/product-form-desktop-dark.png`
+- `docs/qa/store/product-form-mobile-dark.png`
 
 GitHub Playwright does not start the emulators, so `e2e/store-import.spec.ts` skips there. Run it locally with `E2E_EMULATOR=1` and `E2E_PREVIEW_PASSWORD`.

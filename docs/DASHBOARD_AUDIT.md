@@ -1626,6 +1626,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. A saved page replaces the catalogue copy for that pathway.
 - **Owner keys:** None.
 
+### Store import
+
+- **Route:** `/dashboard/admin/store/import`
+- **Audience:** admin
+- **Purpose:** Admins and content editors dry-run a ZIP of creator-store products and save valid rows as drafts.
+- **Overlaps:** The single product file form at /dashboard/store.
+- **Decision:** Keep. Bulk rows stay drafts until an admin publishes them. Downloads need FIREBASE_SERVICE_ACCOUNT.
+- **Owner keys:** FIREBASE_SERVICE_ACCOUNT
+
 ### Admin help
 
 - **Route:** `/dashboard/admin/help`

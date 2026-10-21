@@ -75,7 +75,7 @@ export function ProductFiles() {
           {STORE_COPY.previews}
           <input name="preview" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-label={STORE_COPY.previews} className="mt-1 block w-full text-sm" />
         </label>
-        <button type="submit" disabled={busy} className="h-10 rounded-xl bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-50">{STORE_COPY.saveProduct}</button>
+        <button type="submit" disabled={busy} className="h-10 rounded-xl bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50">{STORE_COPY.saveProduct}</button>
         {note && <p className="text-sm" data-product-result="1">{note}</p>}
       </form>
     </Panel>

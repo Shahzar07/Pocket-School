@@ -1611,6 +1611,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'None.',
   },
   {
+    path: '/dashboard/admin/store/import',
+    title: 'Store import',
+    purpose: 'Admins and content editors dry-run a ZIP of creator-store products and save valid rows as drafts.',
+    audience: ['admin'],
+    overlaps: 'The single product file form at /dashboard/store.',
+    decision: 'Keep. Bulk rows stay drafts until an admin publishes them. Downloads need FIREBASE_SERVICE_ACCOUNT.',
+    ownerKeys: 'FIREBASE_SERVICE_ACCOUNT',
+  },
+  {
     path: '/dashboard/admin/help',
     title: 'Admin help',
     purpose: 'Where each admin tool lives, what each role can do, which keys still say coming soon, and the help articles ET AI answers from.',
