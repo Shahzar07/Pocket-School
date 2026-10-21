@@ -1,9 +1,10 @@
-'use client';
-
+import { Suspense } from 'react';
 import { EssayWriter } from '@/components/essay-writer';
 
 export default function StudioEssayPage() {
   return (
-    <EssayWriter purpose="This page is ET AI Essay Writer. ET AI grades the essay from 9 to 1, shows the percentage, and maps it to A*–U. Teachers can assign the same task to a class, one student, or the institution." />
+    <Suspense fallback={null}>
+      <EssayWriter purpose="This page is ET AI Essay Writer. ET AI marks the essay against the level you choose. Teachers can assign the same task to a class, one student, or the institution." />
+    </Suspense>
   );
 }
