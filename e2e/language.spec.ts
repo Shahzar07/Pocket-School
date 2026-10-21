@@ -27,13 +27,12 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   expect(globeBox?.x ?? -1).toBeGreaterThanOrEqual(0);
   expect((globeBox?.x ?? 0) + (globeBox?.width ?? 0)).toBeLessThanOrEqual(1280);
   const search = page.getByRole('textbox', { name: 'Search languages' });
-  await globe.click();
-  try {
-    await expect(search).toBeVisible({ timeout: 2000 });
-  } catch {
-    await globe.click();
-    await expect(search).toBeVisible();
-  }
+  // The first click can land before hydration and do nothing. Click again until the menu stays open.
+  await expect(async () => {
+    if ((await globe.getAttribute('aria-expanded')) !== 'true') await globe.click();
+    await expect(globe).toHaveAttribute('aria-expanded', 'true', { timeout: 1_500 });
+    await expect(search).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: 20_000 });
   await search.fill('Malay');
   await page.getByRole('button', { name: /Bahasa Melayu/ }).click();
 
