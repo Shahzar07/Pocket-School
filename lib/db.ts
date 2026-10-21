@@ -2651,6 +2651,17 @@ export interface Assignment {
   createdBy: string;
   bloom?: string;
   createdAt?: Timestamp;
+  sendTo?: 'class' | 'student' | 'institution';
+  studentId?: string;
+  essay?: boolean;
+  essayLevel?: string;
+  essayType?: string;
+  essayRubric?: string;
+  essaySubject?: string;
+  essayBoard?: string;
+  essayWordTarget?: number;
+  essayReferencing?: string;
+  essayDegreeStyle?: 'uk' | 'cgpa';
 }
 
 export interface AssignmentSubmission {

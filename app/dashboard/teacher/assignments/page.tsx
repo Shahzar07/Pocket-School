@@ -17,6 +17,19 @@ import { toast } from 'sonner';
 import { Plus, ClipboardList, Eye, CheckCircle2, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
+import { essayCopy } from '@/lib/essay/copy';
+import {
+  type DegreeStyle,
+  type EssayLevelId,
+  ESSAY_LEVELS,
+  defaultWordTarget,
+  isEssayLevel,
+  levelLabel,
+  referencingApplies,
+  scaleBlurb,
+  writingTypesFor,
+  REFERENCING_STYLES,
+} from '@/lib/essay/scale-config';
 
 const STATUS_COLORS = { draft: 'bg-muted text-muted-foreground', published: 'bg-success/10 text-success border-success/40' };
 
@@ -50,6 +63,14 @@ export default function TeacherAssignmentsPage() {
   const [sendTo, setSendTo] = useState<'class' | 'student' | 'institution'>('class');
   const [studentId, setStudentId] = useState('');
   const [essayTask, setEssayTask] = useState(false);
+  const [essayLevel, setEssayLevel] = useState<EssayLevelId>('igcse');
+  const [essayType, setEssayType] = useState('argumentative');
+  const [essayRubric, setEssayRubric] = useState('');
+  const [essaySubject, setEssaySubject] = useState('');
+  const [essayBoard, setEssayBoard] = useState('');
+  const [essayWords, setEssayWords] = useState(String(defaultWordTarget('igcse')));
+  const [essayReferencing, setEssayReferencing] = useState('');
+  const [essayDegreeStyle, setEssayDegreeStyle] = useState<DegreeStyle>('uk');
 
   const [loadError, setLoadError] = useState(false);
 
@@ -78,11 +99,12 @@ export default function TeacherAssignmentsPage() {
     if (!form.title.trim() || !form.dueDate) { toast.error('Title and due date are required'); return; }
     setSaving(true);
     try {
+      const levelName = levelLabel(essayLevel);
       await createAssignment({
         courseId: selectedCourse,
         title: form.title,
         description: essayTask
-          ? `${form.description}\n\nWrite this in ET AI Essay Writer. ET AI grades on the 9–1 scale.`
+          ? `${form.description}\n\nWrite this in ET AI Essay Writer. ET AI marks it against ${levelName}. ${scaleBlurb(essayLevel, essayDegreeStyle)}`
           : form.description,
         dueDate: Timestamp.fromDate(new Date(form.dueDate)),
         maxScore: Number(form.maxScore),
@@ -93,7 +115,17 @@ export default function TeacherAssignmentsPage() {
         sendTo,
         studentId: sendTo === 'student' ? studentId : '',
         essay: essayTask,
-      } as Omit<Assignment, 'id'>);
+        ...(essayTask ? {
+          essayLevel,
+          essayType,
+          essayRubric,
+          essaySubject,
+          essayBoard,
+          essayWordTarget: Number(essayWords) || defaultWordTarget(essayLevel),
+          essayReferencing: referencingApplies(essayLevel) ? essayReferencing : '',
+          ...(essayLevel === 'degree' ? { essayDegreeStyle } : {}),
+        } : {}),
+      });
       toast.success('Assignment created!');
       setForm({ title: '', description: '', dueDate: '', maxScore: '100', submissionType: 'text', status: 'draft', allowLate: false });
       setView('list');
@@ -289,8 +321,71 @@ export default function TeacherAssignmentsPage() {
             </div>
             <label className="md:col-span-2 flex items-center gap-2 text-sm">
               <input type="checkbox" checked={essayTask} onChange={e => setEssayTask(e.target.checked)} />
-              ET AI Essay Writer task. ET AI grades it from 9 to 1.
+              {essayCopy.essayTask}
             </label>
+            {essayTask && (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">{essayCopy.level}</span>
+                  <select
+                    aria-label={essayCopy.level}
+                    value={essayLevel}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      if (!isEssayLevel(next)) return;
+                      setEssayLevel(next);
+                      setEssayType((current) => (writingTypesFor(next).some((type) => type.id === current) ? current : writingTypesFor(next)[0]!.id));
+                      setEssayWords(String(defaultWordTarget(next)));
+                    }}
+                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+                  >
+                    {ESSAY_LEVELS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">{essayCopy.writingType}</span>
+                  <select aria-label={essayCopy.writingType} value={essayType} onChange={(event) => setEssayType(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">
+                    {writingTypesFor(essayLevel).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">{essayCopy.subject}</span>
+                  <Input value={essaySubject} onChange={(event) => setEssaySubject(event.target.value)} placeholder={essayCopy.subjectPlaceholder} className="rounded-xl" />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">{essayCopy.board}</span>
+                  <Input value={essayBoard} onChange={(event) => setEssayBoard(event.target.value)} placeholder={essayCopy.boardPlaceholder} className="rounded-xl" />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">{essayCopy.words}</span>
+                  <Input type="number" min={1} value={essayWords} onChange={(event) => setEssayWords(event.target.value)} className="rounded-xl" />
+                </label>
+                {referencingApplies(essayLevel) && (
+                  <label className="block space-y-1">
+                    <span className="text-xs font-medium text-muted-foreground">{essayCopy.referencing}</span>
+                    <select aria-label={essayCopy.referencing} value={essayReferencing} onChange={(event) => setEssayReferencing(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">
+                      <option value="">{essayCopy.referencingPlaceholder}</option>
+                      {REFERENCING_STYLES.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                    </select>
+                  </label>
+                )}
+                {essayLevel === 'degree' && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <button type="button" aria-pressed={essayDegreeStyle === 'uk'} onClick={() => setEssayDegreeStyle('uk')} className={`min-h-11 px-4 rounded-full text-sm font-semibold ${essayDegreeStyle === 'uk' ? 'bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]' : 'border border-border'}`}>
+                      {essayCopy.uk}
+                    </button>
+                    <button type="button" aria-pressed={essayDegreeStyle === 'cgpa'} onClick={() => setEssayDegreeStyle('cgpa')} className={`min-h-11 px-4 rounded-full text-sm font-semibold ${essayDegreeStyle === 'cgpa' ? 'bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]' : 'border border-border'}`}>
+                      {essayCopy.cgpa}
+                    </button>
+                  </div>
+                )}
+                <label className="md:col-span-2 block space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">{essayCopy.rubric}</span>
+                  <Textarea value={essayRubric} onChange={(event) => setEssayRubric(event.target.value)} rows={3} placeholder={essayCopy.rubricPlaceholder} className="rounded-xl" />
+                  <p className="text-xs text-muted-foreground">{essayCopy.carried}</p>
+                </label>
+              </div>
+            )}
             <div className="md:col-span-2">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Description / Instructions</label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} placeholder="Describe the assignment…" className="rounded-xl" />

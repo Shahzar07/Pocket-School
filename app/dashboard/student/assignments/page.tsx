@@ -17,6 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ClipboardList, Upload, CheckCircle2, Clock, AlertTriangle, Loader2, Send } from 'lucide-react';
 import { NoteDock } from '@/components/notes/note-dock';
+import Link from 'next/link';
+import { essayCopy } from '@/lib/essay/copy';
+import { essayWriterHref, levelLabel, writingTypeLabel } from '@/lib/essay/scale-config';
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -195,6 +198,13 @@ export default function StudentAssignmentsPage() {
                   <div>
                     <h3 className="font-heading text-lg text-foreground">{item.assignment.title}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{item.assignment.description}</p>
+                    {(item.assignment.essay || item.assignment.essayLevel) && (
+                      <Link href={essayWriterHref(item.assignment)} className="inline-flex mt-2 text-sm font-semibold text-[var(--ps-cyan-text)]">
+                        {essayCopy.openWriter}
+                        {levelLabel(item.assignment.essayLevel) ? ` · ${levelLabel(item.assignment.essayLevel)}` : ''}
+                        {writingTypeLabel(item.assignment.essayType) ? ` · ${writingTypeLabel(item.assignment.essayType)}` : ''}
+                      </Link>
+                    )}
                     {due && (
                       <div className={`flex items-center gap-1 text-xs mt-2 ${status === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`}>
                         {status === 'overdue' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}

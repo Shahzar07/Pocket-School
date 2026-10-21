@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceAiAccess } from '@/lib/api-guard';
-import { gradeFromMark } from '@/lib/essay/scale';
+import { markEssayAtLevel, mergeModelMark } from '@/lib/essay/mark-level';
+import { criteriaFor, isEssayLevel, levelLabel } from '@/lib/essay/scale-config';
 import { chat, MODELS } from '@/lib/study/ai';
 
 export const runtime = 'nodejs';
@@ -8,13 +9,38 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   const denied = await enforceAiAccess(req);
   if (denied) return denied;
-  const body = (await req.json().catch(() => ({}))) as { essay?: string; prompt?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    essay?: string;
+    prompt?: string;
+    level?: string;
+    writingType?: string;
+    subject?: string;
+    board?: string;
+    wordTarget?: number;
+    referencing?: string;
+    rubric?: string;
+    degreeStyle?: 'uk' | 'cgpa';
+  };
   const essay = String(body.essay ?? '').slice(0, 12_000);
   const prompt = String(body.prompt ?? '').slice(0, 2_000);
   if (essay.trim().length < 40) {
-    return NextResponse.json({ error: 'Write a little more before ET AI grades it.' }, { status: 400 });
+    return NextResponse.json({ error: 'Write a little more before ET AI marks it.' }, { status: 400 });
   }
+  const levelId = isEssayLevel(body.level) ? body.level : 'igcse';
+  const local = markEssayAtLevel({
+    essay,
+    prompt,
+    levelId,
+    writingType: body.writingType,
+    subject: body.subject,
+    board: body.board,
+    wordTarget: Number(body.wordTarget) || undefined,
+    referencing: body.referencing,
+    rubric: body.rubric,
+    degreeStyle: body.degreeStyle === 'cgpa' ? 'cgpa' : 'uk',
+  });
   try {
+    const names = criteriaFor(levelId, body.rubric).map((item) => item.label).join(', ');
     const reply = await chat({
       models: MODELS.FAST,
       maxTokens: 700,
@@ -22,25 +48,19 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: 'You are ET AI grading for ET AI Essay Writer. Reply with JSON only: {"mark": number from 0 to 100, "feedback": string}. The mark is a percentage. Mention strengths and one next step. Do not mention any other brand.',
+          content: `You are ET AI marking for ET AI Essay Writer at ${levelLabel(levelId) || 'IGCSE'}. Reply with JSON only: {"mark": number from 0 to 100, "feedback": string}. The mark is a percentage estimate. Do not state an official board grade boundary. Mention one strength and one next step. Criteria to consider: ${names}. Do not mention any other brand.`,
         },
         { role: 'user', content: `Task: ${prompt || 'Open essay'}\n\nEssay:\n${essay}` },
       ],
     });
     const match = reply.match(/\{[\s\S]*\}/);
     const parsed = match ? JSON.parse(match[0]) as { mark?: number; feedback?: string } : {};
-    const grade = gradeFromMark(Number(parsed.mark));
-    return NextResponse.json({
-      ...grade,
-      feedback: typeof parsed.feedback === 'string' && parsed.feedback.trim()
-        ? parsed.feedback.trim()
-        : 'ET AI read the essay and could not write a longer note.',
-    });
+    return NextResponse.json(mergeModelMark(local, essay, parsed));
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
-    if (message.includes('OPENROUTER_API_KEY')) {
-      return NextResponse.json({ error: 'ET AI grading needs OPENROUTER_API_KEY.' }, { status: 503 });
+    if (!message.includes('OPENROUTER_API_KEY')) {
+      console.error('Essay model grade fell back to the local estimate', message);
     }
-    return NextResponse.json({ error: 'ET AI could not grade this essay.' }, { status: 500 });
+    return NextResponse.json(local);
   }
 }
