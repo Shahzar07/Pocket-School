@@ -58,15 +58,58 @@
 }
 .desktopNav {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
-  gap: 16px;
-  overflow-x: auto;
+  align-items: center;
+  gap: 14px;
+  overflow: visible;
   background: #ffffff26;
   border: 1px solid #ffffff30;
   padding: 9px 16px;
   border-radius: 12px;
   backdrop-filter: blur(12px);
+}
+.moreMenu {
+  position: relative;
+}
+.moreMenu summary {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.moreMenu summary::-webkit-details-marker {
+  display: none;
+}
+.morePanel {
+  position: absolute;
+  right: 0;
+  z-index: 30;
+  margin-top: 8px;
+  max-height: 70vh;
+  width: 16rem;
+  overflow: auto;
+  border-radius: 16px;
+  background: #fff;
+  padding: 12px;
+  color: #203337;
+  box-shadow: 0 12px 30px #153c4e33;
+}
+.morePanel a {
+  display: block;
+  padding: 6px 0;
+  color: #203337;
+  font-size: 13px;
+}
+.headerSign {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 .desktopNav a,
 .desktopNav summary {
@@ -74,6 +117,11 @@
   font-size: 12px;
   line-height: 1.2;
   color: #f2fbff;
+}
+.desktopNav .morePanel a {
+  display: block;
+  color: #203337;
+  white-space: normal;
 }
 .programmes {
   position: relative;
@@ -162,8 +210,8 @@
 }
 .footerGrid {
   display: grid;
-  grid-template-columns: 1.3fr 0.8fr 0.8fr 1.4fr;
-  gap: 35px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
 }
 .footerGrid p {
   font-size: 12px;
@@ -185,10 +233,10 @@
   color: var(--primary);
 }
 .contactCard {
+  grid-column: 1 / -1;
   background: #ecefee;
   border-radius: 14px;
   padding: 21px;
-  margin-top: -12px;
 }
 .contactCard h2 {
   margin-bottom: 10px;
@@ -237,7 +285,7 @@
   }
   .footerGrid {
     gap: 20px;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .contactCard {
     grid-column: span 3;
@@ -310,11 +358,15 @@
     padding-bottom: 15px;
   }
   .footerGrid {
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
-  .footerGrid > div:first-child {
-    grid-column: span 2;
+  .headerFlow .headerTools {
+    display: flex;
+  }
+  .headerFlow .headerInner {
+    flex-wrap: wrap;
+    row-gap: 8px;
   }
   .contactCard {
     grid-column: span 2;
@@ -410,4 +462,19 @@
 
 :global(.dark) .footerWordmark {
   color: rgba(255, 255, 255, 0.06);
+}
+
+:global(.dark) .morePanel {
+  background: var(--ps-card);
+  color: var(--ps-ink);
+}
+:global(.dark) .desktopNav .morePanel a {
+  color: var(--ps-ink);
+  background: transparent;
+}
+
+@media (min-width: 1280px) {
+  .footerGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
