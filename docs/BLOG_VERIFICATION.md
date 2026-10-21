@@ -1,10 +1,10 @@
 # Journal editor verification
 
-Checked on 21 Oct 2026 against the Firebase emulators (Auth 9099, Firestore 8080, Storage 9199) and `next dev` on port 3483. The actor was the emulator super admin `admin.e2e@poketschool.ai`. No production credentials were used.
+Checked on 21 Oct 2026 against the Firebase emulators (Auth 9099, Firestore 8080, Storage 9199) and `next dev` on port 3483. Re-checked after rebasing onto `main` at `487246d` (the full-page AI shell). The actor was the emulator super admin `admin.e2e@poketschool.ai`. No production credentials were used.
 
-Playwright: `e2e/blog-editor.spec.ts` — **1 passed**.
+Playwright: `e2e/blog-editor.spec.ts` — **1 passed** after the rebase.
 
-Unit tests: `lib/blog/seo.test.ts`, `lib/blog/richtext.test.ts`, `lib/blog/posts.test.ts` — **7 passed**.
+Unit tests: `lib/blog/seo.test.ts`, `lib/blog/richtext.test.ts`, `lib/blog/posts.test.ts` — **7 passed** after the rebase. The hardcoded-UI ratchet still fails on studio strings that already fail on `main` (`components/studio/ai-studio.tsx` and `components/teacher-conversation.tsx`). This branch does not change those files. The journal strings stay in the baseline, and the shell strings that were already listed stay too.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
