@@ -258,10 +258,10 @@ export const TOOL_ROUTES: ToolRoute[] = [
     label: 'Exam packs',
     href: '/dashboard/admin/exam-packs',
     sidebar: true,
-    wrapped: true,
+    wrapped: false,
     covers: ['/dashboard/admin/exam-packs'],
     gate: 'admin',
-    why: 'Admin desk for ET Maths syllabus packs.',
+    why: 'Admin desk for ET Maths syllabus packs. It stays in the admin dashboard so Curriculum can open it.',
   },
   {
     id: 'creator-store',

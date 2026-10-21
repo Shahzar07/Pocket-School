@@ -1,6 +1,9 @@
 import { EXAM_PACKS, type ExamPack } from './exam-packs';
 
+/** Legacy browser copy. The live catalog is the `exam_packs` collection. */
 export const PACK_STORE_KEY = 'poket-exam-packs';
+/** Set after the admin desk has offered the local copy to Firestore once. */
+export const PACK_IMPORT_KEY = 'poket-exam-packs-imported';
 
 export interface PackStore {
   packs: ExamPack[];

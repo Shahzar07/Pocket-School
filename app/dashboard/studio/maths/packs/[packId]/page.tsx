@@ -9,11 +9,12 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import { DashPage, Panel, PanelHeader, Segmented } from '@/components/dash-ui';
 import { MasteryBar } from '@/components/study/mastery-bar';
 import { ExercisesView } from '@/components/study/exercises-view';
+import { PackBoardLabel, PackStrip } from '@/components/study/pack-accent';
 import { getPack, packTopics, isFreeTopic, type ExamPack, type PackQuestion } from '@/lib/study/exam-packs';
-import { PACK_STORE_KEY, listPacks, readPackStore } from '@/lib/study/pack-admin';
+import { authedFetch, postJSON } from '@/lib/authed-fetch';
+import { presentAuthored } from '@/lib/study/pack-record';
 import { getPackProgress, savePackProgress, getPackSet, savePackSet, assertSparks, chargeSparks, blendMastery, recordStudyDay, InsufficientSparks, type PackProgress } from '@/lib/study/db';
 import { gradeFor, weightedMastery, GRADE_SCALES } from '@/lib/study/grades';
-import { postJSON } from '@/lib/authed-fetch';
 import { readLanguage } from '@/lib/languages';
 import { STUDY_COSTS } from '@/lib/sparks';
 import type { Difficulty } from '@/lib/study/types';
@@ -21,9 +22,20 @@ import type { Difficulty } from '@/lib/study/types';
 export default function PackPage({ params }: { params: Promise<{ packId: string }> }) {
   const { packId } = use(params);
   const [pack, setPack] = useState<ExamPack | null>(() => getPack(packId));
+  const [packLoaded, setPackLoaded] = useState(false);
   useEffect(() => {
-    const stored = listPacks(readPackStore(window.localStorage.getItem(PACK_STORE_KEY))).find((item) => item.id === packId) ?? null;
-    setPack(stored);
+    let cancel = false;
+    authedFetch(`/api/study/exam-packs/${packId}`).then(async res => {
+      if (cancel) return;
+      if (res.ok) {
+        const data = await res.json() as { pack?: ExamPack };
+        if (data.pack) setPack(data.pack);
+      } else if (res.status === 404) {
+        setPack(null);
+      }
+      setPackLoaded(true);
+    }).catch(() => { if (!cancel) setPackLoaded(true); });
+    return () => { cancel = true; };
   }, [packId]);
   const { user, profile } = useAuthSTORE();
   const uid = user?.uid;
@@ -40,7 +52,14 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
   const setKey = topic ? `${topic.id}__${difficulty}` : null;
 
   useEffect(() => {
-    if (!uid || !pack || !setKey) return;
+    if (!pack || !topic || !setKey) return;
+    const authored = presentAuthored(topic);
+    if (authored.length) {
+      setQuestions(authored);
+      setState('ready');
+      return;
+    }
+    if (!uid) return;
     let cancelled = false;
     setState('loading');
     setQuestions(null);
@@ -49,7 +68,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
       if (q?.length) { setQuestions(q); setState('ready'); } else setState('idle');
     }).catch(() => !cancelled && setState('idle'));
     return () => { cancelled = true; };
-  }, [uid, pack, setKey]);
+  }, [uid, pack, topic, setKey]);
 
   const generate = useCallback(async () => {
     if (!uid || !pack || !topic || !setKey) return;
@@ -70,6 +89,7 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
     }
   }, [uid, pack, topic, setKey, difficulty]);
 
+  if (!pack && !packLoaded) return <DashPage><Panel><Loader2 className="w-6 h-6 animate-spin text-primary" /></Panel></DashPage>;
   if (!pack) return <DashPage><Panel><p>Unknown exam pack.</p></Panel></DashPage>;
 
   const tried = topics.filter(tp => progress.mastery[tp.id] !== undefined);
@@ -103,8 +123,8 @@ export default function PackPage({ params }: { params: Promise<{ packId: string 
 
       <div className="grid lg:grid-cols-12 gap-5">
         <Panel className="lg:col-span-5 relative overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: pack.accent }} />
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] mt-1" style={{ color: pack.accent }}>{pack.board} · {pack.level}</p>
+          <PackStrip board={pack.board} className="absolute inset-x-0 top-0 h-1.5" />
+          <PackBoardLabel className="mt-1">{pack.board} · {pack.level}</PackBoardLabel>
           <h1 className="font-heading text-[28px] leading-tight tracking-[-0.03em] mt-1">{pack.name}</h1>
           <p className="text-[14px] text-muted-foreground mt-1.5">Hello, {profile?.name?.split(' ')[0] ?? 'there'} 👋 Let&apos;s win this.</p>
           <button onClick={randomTopic} className="mt-5 w-full rounded-2xl border border-dashed border-border py-6 hover:border-primary/50 hover:bg-primary/[0.03] transition-colors">

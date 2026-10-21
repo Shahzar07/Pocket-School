@@ -1244,3 +1244,30 @@ describe('institution membership', () => {
     assert.equal(again.data()?.body, 'Pond notes');
   });
 });
+
+describe('exam packs', () => {
+  it('lets an admin write and a signed-in student read only published packs', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users/inst1'), { role: 'institution_admin', name: 'Inst' });
+    });
+    const admin = env.authenticatedContext('admin1').firestore();
+    const student = env.authenticatedContext('adult1').firestore();
+    const school = env.authenticatedContext('inst1').firestore();
+    const guest = env.unauthenticatedContext().firestore();
+    const published = { id: 'harbour', name: 'Harbour statistics', status: 'published', freeFirstTopic: true };
+    const draft = { id: 'draft-pack', name: 'Draft statistics', status: 'draft', freeFirstTopic: false };
+    await assertSucceeds(setDoc(doc(admin, 'exam_packs/harbour'), published));
+    await assertSucceeds(setDoc(doc(admin, 'exam_packs/draft-pack'), draft));
+    await assertFails(setDoc(doc(student, 'exam_packs/student-pack'), { ...published, id: 'student-pack' }));
+    await assertFails(setDoc(doc(school, 'exam_packs/school-pack'), { ...published, id: 'school-pack' }));
+    await assertSucceeds(getDoc(doc(student, 'exam_packs/harbour')));
+    await assertSucceeds(getDoc(doc(school, 'exam_packs/harbour')));
+    await assertFails(getDoc(doc(student, 'exam_packs/draft-pack')));
+    await assertFails(getDoc(doc(guest, 'exam_packs/harbour')));
+    const listed = await assertSucceeds(getDocs(query(collection(student, 'exam_packs'), where('status', '==', 'published'))));
+    assert.equal(listed.docs.some(row => row.id === 'harbour'), true);
+    assert.equal(listed.docs.some(row => row.id === 'draft-pack'), false);
+    await assertSucceeds(deleteDoc(doc(admin, 'exam_packs/harbour')));
+    await assertFails(deleteDoc(doc(student, 'exam_packs/draft-pack')));
+  });
+});

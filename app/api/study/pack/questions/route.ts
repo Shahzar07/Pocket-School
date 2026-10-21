@@ -1,7 +1,8 @@
 import { requireUser, errorResponse } from '@/lib/server-auth';
 import { chatJSON, MODELS } from '@/lib/study/ai';
 import { JSON_RULES, lang } from '@/lib/study/prompts';
-import { getPack, packTopics, type PackQuestion } from '@/lib/study/exam-packs';
+import { packTopics, type PackQuestion } from '@/lib/study/exam-packs';
+import { publishedPack } from '@/lib/study/pack-server';
 
 export const maxDuration = 120;
 
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   try {
     await requireUser(req);
     const body = await req.json();
-    const pack = getPack(String(body.packId));
+    const pack = await publishedPack(String(body.packId));
     const topic = pack ? packTopics(pack).find(tp => tp.id === body.topicId) : null;
     if (!pack || !topic) return Response.json({ error: 'Unknown pack or topic.' }, { status: 400 });
     const difficulty = (['easier', 'similar', 'harder'].includes(body.difficulty) ? body.difficulty : 'similar') as keyof typeof DIFF;

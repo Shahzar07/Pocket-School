@@ -758,11 +758,11 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
   {
     path: '/dashboard/admin/exam-packs',
     title: 'Exam packs',
-    purpose: 'Admins add, edit, and delete ET Maths syllabus packs. Students open the same packs from the studio.',
+    purpose: 'Admins add, edit, and delete ET Maths syllabus packs. Signed-in students open published packs from the studio. Drafts stay on this desk.',
     audience: ['admin'],
     overlaps: 'The student maths pack list.',
     decision: 'Keep. This is the only add, edit, and delete desk. The studio list is read-only.',
-    ownerKeys: 'None. Packs are stored on this device.',
+    ownerKeys: 'Firestore collection exam_packs. Writes go through /api/admin/exam-packs.',
   },
   {
     path: '/dashboard/admin/curriculum',

@@ -59,6 +59,13 @@ describe('dashboard role guard', () => {
     assert.equal(decideDashboardAccess('/dashboard/admin/help', parent, 'parent').allowed, false);
   });
 
+  it('keeps the exam pack desk to platform admins', () => {
+    assert.equal(decideDashboardAccess('/dashboard/admin/exam-packs', admin).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/exam-packs', student).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/exam-packs', teacher).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/exam-packs', school).allowed, false);
+  });
+
   it('opens curriculum only for an admin or a teacher with the CMS add-on', () => {
     assert.equal(decideDashboardAccess('/dashboard/admin/curriculum', teacher).allowed, false);
     assert.equal(decideDashboardAccess('/dashboard/admin/curriculum/course-1', {

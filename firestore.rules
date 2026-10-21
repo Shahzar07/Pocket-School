@@ -1016,6 +1016,19 @@ service cloud.firestore {
       );
     }
 
+    // Exam packs. Platform admins write every status. Signed-in users read
+    // published packs. Drafts and hidden built-in tombstones stay admin-only.
+    match /exam_packs/{packId} {
+      allow read: if isSignedIn() && (isAdmin() || resource.data.status == 'published');
+      allow create, update: if isAdmin()
+        && incoming().id == packId
+        && incoming().status in ['draft', 'published', 'hidden']
+        && incoming().name is string
+        && incoming().name.size() > 0
+        && incoming().name.size() < 200;
+      allow delete: if isAdmin();
+    }
+
     // ── Courses ───────────────────────────────────────────────
     match /courses/{courseId} {
       // Published marketplace courses are browsable without an account —
