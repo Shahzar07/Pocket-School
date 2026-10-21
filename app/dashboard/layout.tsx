@@ -12,7 +12,7 @@ import {
   CheckCircle, Video, Calendar, Megaphone, Library, HelpCircle,
   CreditCard, FileBarChart, AlertTriangle, ListTodo, PenSquare,
   GraduationCap, Users, Star, Award, ClipboardCheck, UserCircle, ShieldCheck, X, Phone, Siren,
-  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper,
+  Sparkles, Store, Layers, LogOut, Mail, UserCog, BookMarked, Compass, Camera, Newspaper, Route,
   Wallet, Gift, Landmark, Plug, PieChart, Search, Briefcase, IdCard, Tag, StickyNote,
 } from 'lucide-react';
 import { ToolShell } from '@/components/studio/tool-shell';
@@ -245,6 +245,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/admin/pulse', icon: Activity, labelKey: 'nav.insights', label: 'Pulse' },
       { href: '/dashboard/admin/safety-desk', icon: Shield, labelKey: 'nav.moderation', label: 'Safety Desk' },
       { href: '/dashboard/admin/blog', icon: Newspaper, labelKey: 'nav.blog', label: 'Blog', superOnly: true },
+      { href: '/dashboard/admin/pathways', icon: Route, labelKey: 'nav.curriculumCms', label: 'Pathways' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/studio/timetable', icon: Calendar, labelKey: 'nav.aiStudio', label: TIMETABLE_COPY.studioTab },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
@@ -660,15 +661,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const compactNav = !sidebarOpen;
   const immersive = isAiToolPath(pathname);
   const shellOwnsPage = ownsStudioShell(pathname);
+  const pathwayDesk = pathname.startsWith('/dashboard/admin/pathways');
+  const fullBleed = immersive || pathwayDesk;
 
   return (
-    <div className="flex h-dvh overflow-hidden" data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} style={immersive ? undefined : { background: accent.wash }}>
+    <div className="flex h-dvh overflow-hidden" data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} data-pathway-desk={pathwayDesk ? '1' : undefined} style={pathwayDesk ? { background: 'var(--background)', color: 'var(--foreground)' } : immersive ? undefined : { background: accent.wash }}>
       <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
       </a>
       {/* The signed-in Studio chat is the whole viewport. Other pages keep this sidebar. */}
-      {immersive ? null : (
+      {fullBleed ? null : (
       <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none shrink-0 max-lg:fixed max-lg:inset-y-0 max-lg:z-50 ${sidebarOpen ? 'w-[264px]' : 'lg:w-[76px] w-0 max-lg:overflow-hidden'}`}>
 
         {/* Who you are, at the top — the reference design leads with identity
@@ -760,7 +763,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main Content ── */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <AdminViewAsBanner />
-        {immersive ? null : (
+        {fullBleed ? null : (
         <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t('nav.toggleSidebar')} aria-expanded={sidebarOpen}>
@@ -829,18 +832,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Scrollable Main with ambient gradient wash */}
-        {immersive ? null : (
+        {fullBleed ? null : (
         <div className="px-4 lg:px-6 pb-2">
           <Breadcrumbs />
         </div>
         )}
-        <main id="dashboard-main" className={immersive ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative flex-1 overflow-y-auto pb-20 lg:pb-0'}>
-          {immersive ? null : (
+        <main id="dashboard-main" className={fullBleed ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative flex-1 overflow-y-auto pb-20 lg:pb-0'}>
+          {fullBleed ? null : (
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           )}
           <OfflineBanner />
-          <div className={immersive ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
-            {immersive ? (shellOwnsPage ? children : <ToolShell>{children}</ToolShell>) : (
+          <div className={fullBleed ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
+            {pathwayDesk || (immersive && shellOwnsPage) ? children : immersive ? <ToolShell>{children}</ToolShell> : (
               <>
             {accessDenied && (
               <div role="alert" className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -859,10 +862,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      {immersive ? null : <MobileNav role={role} onMore={() => setSidebarOpen(true)} />}
-      {immersive ? null : <DashFab role={role} />}
+      {fullBleed ? null : <MobileNav role={role} onMore={() => setSidebarOpen(true)} />}
+      {fullBleed ? null : <DashFab role={role} />}
       <CommandPalette role={dashRole} />
-      {viewAs || immersive ? null : <AITutor />}
+      {viewAs || fullBleed ? null : <AITutor />}
     </div>
   );
 }

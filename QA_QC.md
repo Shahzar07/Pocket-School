@@ -98,6 +98,14 @@ Names only, checked 19 Oct 2026. The per-environment table (set or missing on pr
 
 Admin actions still open: publish the six blog drafts, mark featured courses, merge duplicate course titles and duplicate institution records. The edited timetable week is still browser storage. The timetabler price stays TBC by Harry. The go-live order is `FINAL_AUDIT.md` section 9.
 
+## Pathway detail pages
+
+Homepage cards for Primary, IGCSE, A-Level, LLB Law, MBBS Medicine, and Independent open a page with stages, subjects, ET teachers, the card price, and FAQPage JSON-LD. Content lives in `lib/pathways/catalog.ts`. Admins correct it at `/dashboard/admin/pathways`.
+
+| Feature | Yes or no | Evidence | Needs key |
+| --- | --- | --- | --- |
+| Pathway cards | Yes | `e2e/pathways.spec.ts` (8 passed). Each homepage card opens its page with a stage navigator, subjects, and FAQPage JSON-LD. Screenshots `pathway-llb.png`, `pathway-llb-dark.png`, `pathway-igcse.png`, `pathway-igcse-mobile.png`. | None |
+
 ## Dark AI Studio layout
 
 The signed-in home at `/dashboard/studio` and `/ai-studio` (redirect) is the ET AI chat at full viewport height, in dark and in light. The light dashboard sidebar and top bar stay off this page. Cyan `#3FE0D0` with `#203337` ink. Text on a light surface is `#1E6A83` or `#203337`. No gold. Dashboard sits above New chat and returns students to `/dashboard`, teachers to `/dashboard/teacher`, parents to `/dashboard/parent`, institution admins to `/dashboard/institution`, platform admins to `/dashboard/admin`, and partners to `/dashboard/partner`. Back to Poket School stays at the bottom. The card list stays behind All tools. Nothing from the previous studio was removed. The old line that the canvas stays dark when the site theme is light (`data-studio-theme="dark-default"`) is retired. The theme toggle is the row below.
