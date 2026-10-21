@@ -19,7 +19,7 @@ export function CoverEditor({
   coverImage: string;
   thumbnail: string;
   coverAlt: string;
-  onCover: (next: { coverImage: string; thumbnail: string; coverAlt: string }) => void;
+  onCover: (next: { coverImage?: string; thumbnail?: string; coverAlt?: string }) => void;
   onInsert: (markdown: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -42,7 +42,7 @@ export function CoverEditor({
       const stamp = Date.now();
       const banner = await uploadPreparedMedia(`blog/${id}/cover-${stamp}.webp`, made.cover, 'image/webp');
       const thumb = await uploadPreparedMedia(`blog/${id}/thumb-${stamp}.webp`, made.thumb, 'image/webp');
-      onCover({ coverImage: banner, thumbnail: thumb, coverAlt });
+      onCover({ coverImage: banner, thumbnail: thumb });
       toast.success(BLOG_DESK.uploaded);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : BLOG_DESK.failed);
@@ -111,7 +111,7 @@ export function CoverEditor({
         />
       </label>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="min-h-11 rounded-full border px-4 text-sm font-semibold" disabled={busy} onClick={() => onCover({ coverImage: '', thumbnail: '', coverAlt })}>
+        <button type="button" className="min-h-11 rounded-full border px-4 text-sm font-semibold" disabled={busy} onClick={() => onCover({ coverImage: '', thumbnail: '' })}>
           {BLOG_DESK.remove}
         </button>
       </div>
@@ -122,7 +122,7 @@ export function CoverEditor({
         <input
           value={coverAlt}
           data-blog-alt="cover"
-          onChange={(event) => onCover({ coverImage, thumbnail, coverAlt: event.target.value })}
+          onChange={(event) => onCover({ coverAlt: event.target.value })}
           className="mt-1 w-full min-h-11 rounded-xl border border-border px-3"
         />
       </label>

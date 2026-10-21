@@ -3998,3 +3998,35 @@ components/studio/tool-shell.tsx	Close menu
 components/studio/tool-shell.tsx	ET AI Studio
 components/studio/tool-shell.tsx	New session
 components/studio/tool-shell.tsx	Open ET AI menu
+app/blog/[slug]/page.tsx	Key takeaways
+app/dashboard/admin/blog/page.tsx	New essay
+app/dashboard/admin/blog/page.tsx	Only a super admin can copy an essay.
+app/dashboard/admin/blog/page.tsx	Only a super admin can save or publish. You can still open a draft.
+app/dashboard/admin/blog/page.tsx	That essay could not be copied.
+app/dashboard/admin/blog/page.tsx	This draft ships with the site. Duplicate it to make your own copy.
+components/blog/editor-desk.tsx	A title, a slug, and a body are required.
+components/blog/editor-desk.tsx	Add a question
+components/blog/editor-desk.tsx	Back to essays
+components/blog/editor-desk.tsx	ET AI is not connected. Empty fields were filled from the essay.
+components/blog/editor-desk.tsx	ET AI, families
+components/blog/editor-desk.tsx	Only a super admin can save or publish.
+components/blog/editor-desk.tsx	Only a super admin can save the journal.
+components/blog/editor-desk.tsx	Opening the essay…
+components/blog/editor-desk.tsx	Questions for the essay
+components/blog/editor-desk.tsx	The essay could not be saved. Sign in as a super admin and try again.
+components/blog/live-preview.tsx	Key takeaways
+components/blog/rich-editor.tsx	Essay source
+components/blog/rich-editor.tsx	Use a site path, an https link, or a mailto link.
+components/blog/seo-panel.tsx	/blog/your-essay
+components/blog/seo-panel.tsx	Add a field
+components/blog/seo-panel.tsx	Add a step
+components/blog/seo-panel.tsx	Add a takeaway
+components/blog/seo-panel.tsx	Custom fields
+components/blog/seo-panel.tsx	How-to steps
+components/blog/seo-panel.tsx	Key takeaways
+components/blog/seo-panel.tsx	Large image
+components/blog/seo-panel.tsx	SEO and answers
+components/blog/seo-panel.tsx	Save template
+components/blog/seo-panel.tsx	Step name
+components/blog/seo-panel.tsx	Template name
+components/blog/seo-panel.tsx	What to do

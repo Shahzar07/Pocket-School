@@ -1,5 +1,6 @@
 /** Marketing journal. Repo drafts never appear on the public site. */
 import { DRAFT_POSTS } from './drafts';
+import { parseSeoFields } from './seo';
 
 export type BlogStatus = 'draft' | 'scheduled' | 'published';
 
@@ -39,6 +40,25 @@ export interface BlogPost {
   affiliate: boolean;
   /** Repo drafts. They stay off the public site until a super admin saves a published copy. */
   sample: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  canonical?: string;
+  focusKeyword?: string;
+  secondaryKeywords?: string[];
+  robotsIndex?: boolean;
+  robotsFollow?: boolean;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  twitterCard?: 'summary' | 'summary_large_image';
+  tldr?: string;
+  takeaways?: string[];
+  howto?: { name: string; text: string }[];
+  targetQuestions?: string[];
+  entities?: string[];
+  reviewedAt?: number | null;
+  reviewer?: string;
+  customFields?: { key: string; kind: 'text' | 'url' | 'number' | 'date' | 'toggle'; value: string }[];
 }
 
 export const BLOG_CATEGORIES = ['Learning', 'ET AI', 'Families', 'Schools', 'Book Reviews'] as const;
@@ -259,5 +279,6 @@ export function parseStoredPost(slug: string, raw: unknown): BlogPost | null {
     faq,
     affiliate: data.affiliate === true || category === 'Book Reviews',
     sample: false,
+    ...parseSeoFields(data),
   };
 }

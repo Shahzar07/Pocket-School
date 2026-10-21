@@ -1,60 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { DashHeader, DashPage } from '@/components/dash-ui';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { resolveStaffRole } from '@/lib/admin-console';
 import { db } from '@/lib/firebase';
-import { BlogLivePreview } from '@/components/blog/live-preview';
-import { CoverEditor } from '@/components/blog/cover-editor';
-import { publishImageError } from '@/lib/blog/images';
-import { BLOG_CATEGORIES, SAMPLE_POSTS, isCoverPath, slugify, type BlogFaq, type BlogPost, type BlogStatus } from '@/lib/blog/posts';
-
-const EMPTY: BlogPost = {
-  slug: '',
-  title: '',
-  excerpt: '',
-  body: '',
-  category: 'Learning',
-  tags: [],
-  author: 'Poket School',
-  coverImage: '',
-  coverAlt: '',
-  thumbnail: '',
-  featured: false,
-  status: 'draft',
-  publishedAt: null,
-  updatedAt: 0,
-  ctaTitle: 'See how Poket School fits',
-  ctaBody: 'Read the offer, then open an account. ET AI stays with the learner from the first lesson.',
-  ctaLinks: [
-    { label: 'See the offer', href: '/offer' },
-    { label: 'Create an account', href: '/signup' },
-  ],
-  faq: [{ question: '', answer: '' }],
-  affiliate: false,
-  sample: false,
-};
-
-function fromStamp(value: number | null): string {
-  if (!value) return '';
-  const date = new Date(value);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16);
-}
+import { BLOG_CATEGORIES, SAMPLE_POSTS, slugify, type BlogPost, type BlogStatus } from '@/lib/blog/posts';
+import { withSeo } from '@/lib/blog/seo';
 
 export default function BlogDeskPage() {
+  const router = useRouter();
   const { profile } = useAuthSTORE();
   const staff = resolveStaffRole(profile ? { email: profile.email, role: profile.role, adminRole: profile.adminRole } : null);
   const allowed = staff === 'super_admin';
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [draft, setDraft] = useState<BlogPost>(EMPTY);
-  const [tags, setTags] = useState('');
+  const [saved, setSaved] = useState<BlogPost[]>([]);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All');
+  const [status, setStatus] = useState<'All' | BlogStatus>('All');
   const [notice, setNotice] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
 
   const load = async () => {
     try {
@@ -63,82 +30,79 @@ export default function BlogDeskPage() {
       snap.forEach((row) => {
         const data = row.data() as Partial<BlogPost>;
         if (typeof data.title !== 'string') return;
-        rows.push({ ...EMPTY, ...data, slug: row.id, sample: false, faq: Array.isArray(data.faq) ? data.faq : [] });
+        rows.push(withSeo({
+          slug: row.id,
+          title: data.title,
+          excerpt: typeof data.excerpt === 'string' ? data.excerpt : '',
+          body: typeof data.body === 'string' ? data.body : '',
+          category: typeof data.category === 'string' ? data.category : 'Learning',
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          author: typeof data.author === 'string' ? data.author : 'Poket School',
+          coverImage: typeof data.coverImage === 'string' ? data.coverImage : '',
+          coverAlt: data.coverAlt,
+          thumbnail: data.thumbnail,
+          featured: data.featured === true,
+          status: data.status || 'draft',
+          publishedAt: typeof data.publishedAt === 'number' ? data.publishedAt : null,
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0,
+          ctaTitle: data.ctaTitle || '',
+          ctaBody: data.ctaBody || '',
+          ctaLinks: Array.isArray(data.ctaLinks) ? data.ctaLinks : [],
+          faq: Array.isArray(data.faq) ? data.faq : [],
+          affiliate: data.affiliate === true,
+          sample: false,
+        }));
       });
-      setPosts(rows);
+      setSaved(rows);
       setNotice('');
     } catch {
-      setNotice('Saved essays could not be loaded. The unpublished drafts below stay on this page.');
+      setNotice('Saved essays could not be loaded. The site drafts below stay on this page.');
     }
   };
 
   useEffect(() => { void load(); }, []);
 
-  const edit = (post: BlogPost) => {
-    const next = { ...post, sample: false };
-    setDraft(next);
-    setTags(next.tags.join(', '));
-  };
+  const posts = useMemo(() => {
+    const bySlug = new Map<string, BlogPost>();
+    for (const post of SAMPLE_POSTS) bySlug.set(post.slug, post);
+    for (const post of saved) bySlug.set(post.slug, post);
+    const needle = query.trim().toLowerCase();
+    return [...bySlug.values()].filter((post) => {
+      if (category !== 'All' && post.category !== category) return false;
+      if (status !== 'All' && post.status !== status) return false;
+      if (!needle) return true;
+      return [post.title, post.excerpt, post.slug, post.category, ...post.tags].join('\n').toLowerCase().includes(needle);
+    });
+  }, [saved, query, category, status]);
 
-  const save = async () => {
+  const duplicate = async (post: BlogPost) => {
     if (!allowed) {
-      toast.error('Only a super admin can save the journal.');
+      toast.error('Only a super admin can copy an essay.');
       return;
     }
-    const slug = slugify(draft.slug || draft.title);
-    if (!slug || !draft.title.trim() || !draft.body.trim()) {
-      toast.error('A title, a slug, and a body are required.');
-      return;
-    }
-    const faq: BlogFaq[] = draft.faq.filter((item) => item.question.trim() && item.answer.trim()).slice(0, 8);
-    const coverImage = isCoverPath(draft.coverImage) ? draft.coverImage : '';
-    const thumbnail = draft.thumbnail && isCoverPath(draft.thumbnail) ? draft.thumbnail : '';
-    if (draft.status === 'published' || draft.status === 'scheduled') {
-      const imageError = publishImageError(coverImage, draft.coverAlt || '');
-      if (imageError) {
-        toast.error(imageError);
-        return;
-      }
-    }
-    const payload: BlogPost = {
-      ...draft,
-      slug,
-      title: draft.title.trim(),
-      excerpt: draft.excerpt.trim(),
-      body: draft.body,
-      tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 12),
-      coverImage,
-      coverAlt: (draft.coverAlt || '').trim(),
-      thumbnail,
-      affiliate: draft.category === 'Book Reviews' || draft.affiliate,
-      faq,
-      sample: false,
-      updatedAt: Date.now(),
-    };
-    setBusy(true);
+    const nextSlug = slugify(`${post.slug}-copy`);
+    const copy = withSeo({ ...post, slug: nextSlug, title: `${post.title} copy`, status: 'draft', sample: false, updatedAt: Date.now() });
     try {
-      await setDoc(doc(db, 'blogPosts', slug), payload);
-      toast.success(payload.status === 'published' ? 'Published.' : 'Saved.');
-      setDraft(payload);
-      await load();
+      await setDoc(doc(db, 'blogPosts', nextSlug), copy);
+      router.push(`/dashboard/admin/blog/${nextSlug}/edit`);
     } catch {
-      toast.error('The essay could not be saved. Sign in as a super admin and try again.');
-    } finally {
-      setBusy(false);
+      toast.error('That essay could not be copied.');
     }
   };
 
-  const remove = async (slug: string) => {
+  const remove = async (post: BlogPost) => {
     if (!allowed) return;
-    setBusy(true);
+    const stored = saved.some((item) => item.slug === post.slug);
+    if (!stored) {
+      toast.message('This draft ships with the site. Duplicate it to make your own copy.');
+      return;
+    }
+    if (!window.confirm(`Remove “${post.title}”?`)) return;
     try {
-      await deleteDoc(doc(db, 'blogPosts', slug));
-      if (draft.slug === slug) setDraft(EMPTY);
+      await deleteDoc(doc(db, 'blogPosts', post.slug));
       await load();
     } catch {
       toast.error('That essay could not be removed.');
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -147,132 +111,45 @@ export default function BlogDeskPage() {
       <DashHeader
         eyebrow="Journal"
         title="Blog"
-        accent="desk."
-        description="Super admins write, schedule, and publish. These six drafts stay off the public site until you publish them."
+        description="Write, schedule, and publish. Site drafts stay off the public site until you publish them."
+        actions={<Link href="/dashboard/admin/blog/new" className="inline-flex h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-bold text-[#203337]">New essay</Link>}
       />
-      {!allowed ? <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[var(--ps-cyan-text)]">Only a super admin can save or publish. You can still read the unpublished drafts.</p> : null}
-      {notice ? <p role="status" className="text-sm text-[var(--ps-cyan-text)]">{notice}</p> : null}
-
-      <section aria-labelledby="sample-drafts">
-        <h2 id="sample-drafts" className="text-sm font-bold">Unpublished drafts</h2>
-        <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {SAMPLE_POSTS.map((post) => (
-            <li key={post.slug} className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-[11px] font-bold tracking-wider text-[var(--ps-cyan-text)]">UNPUBLISHED DRAFT</p>
-              <h3 className="mt-1 font-semibold">{post.title}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{post.category}</p>
-              <button type="button" className="mt-3 min-h-11 text-sm font-bold text-primary" onClick={() => edit(post)}>
-                Edit
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <div className="flex justify-end">
-        <button type="button" className="h-10 rounded-full border px-4 text-sm font-semibold" onClick={() => setShowPreview((value) => !value)}>
-          {showPreview ? 'Hide live preview' : 'Show live preview'}
-        </button>
+      {!allowed ? <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[#1E6A83]">Only a super admin can save or publish. You can still open a draft.</p> : null}
+      {notice ? <p role="status" className="text-sm text-[#1E6A83]">{notice}</p> : null}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="text-sm font-semibold">Search
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]" />
+        </label>
+        <label className="text-sm font-semibold">Category
+          <select value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]">
+            <option>All</option>
+            {BLOG_CATEGORIES.map((name) => <option key={name}>{name}</option>)}
+          </select>
+        </label>
+        <label className="text-sm font-semibold">Status
+          <select value={status} onChange={(event) => setStatus(event.target.value as 'All' | BlogStatus)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]">
+            <option>All</option>
+            <option value="draft">Draft</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="published">Published</option>
+          </select>
+        </label>
       </div>
-      <section className={`grid gap-6 ${showPreview ? 'xl:grid-cols-[1fr_1fr_1fr]' : 'lg:grid-cols-[1fr_1.2fr]'}`}>
-        <div>
-          <h2 className="text-sm font-bold">Saved essays</h2>
-          <ul className="mt-3 space-y-2">
-            {posts.length === 0 ? <li className="text-sm text-muted-foreground">No saved essays yet.</li> : null}
-            {posts.map((post) => (
-              <li key={post.slug} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-3 py-2">
-                <button type="button" className="min-h-11 text-left text-sm font-semibold" onClick={() => edit(post)}>{post.title}</button>
-                <span className="text-xs uppercase text-muted-foreground">{post.status}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <form className="space-y-3 rounded-3xl border border-border bg-card p-4" onSubmit={(event) => { event.preventDefault(); void save(); }}>
-          <label className="block text-sm font-semibold">Title
-            <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value, slug: draft.slug || slugify(event.target.value) })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
-          </label>
-          <label className="block text-sm font-semibold">Slug
-            <input value={draft.slug} onChange={(event) => setDraft({ ...draft, slug: slugify(event.target.value) })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
-          </label>
-          <label className="block text-sm font-semibold">Excerpt
-            <textarea value={draft.excerpt} onChange={(event) => setDraft({ ...draft, excerpt: event.target.value })} rows={2} className="mt-1 w-full rounded-xl border border-border px-3 py-2" />
-          </label>
-          <label className="block text-sm font-semibold">Body
-            <textarea value={draft.body} onChange={(event) => setDraft({ ...draft, body: event.target.value })} rows={8} className="mt-1 w-full rounded-xl border border-border px-3 py-2" />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm font-semibold">Category
-              <select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3">
-                {BLOG_CATEGORIES.map((name) => <option key={name}>{name}</option>)}
-              </select>
-            </label>
-            <label className="text-sm font-semibold">Author
-              <input value={draft.author} onChange={(event) => setDraft({ ...draft, author: event.target.value })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
-            </label>
-          </div>
-          <label className="block text-sm font-semibold">Tags
-            <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="ET AI, families" className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
-          </label>
-          <CoverEditor
-            postId={slugify(draft.slug || draft.title)}
-            coverImage={draft.coverImage}
-            thumbnail={draft.thumbnail || ''}
-            coverAlt={draft.coverAlt || ''}
-            onCover={(next) => setDraft({ ...draft, ...next })}
-            onInsert={(markdown) => setDraft({ ...draft, body: `${draft.body.trim()}\n\n${markdown}\n` })}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm font-semibold">Status
-              <select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as BlogStatus })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3">
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="published">Published</option>
-              </select>
-            </label>
-            <label className="text-sm font-semibold">Publish time
-              <input type="datetime-local" value={fromStamp(draft.publishedAt)} onChange={(event) => setDraft({ ...draft, publishedAt: event.target.value ? new Date(event.target.value).getTime() : null })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
-            </label>
-          </div>
-          <label className="flex min-h-11 items-center gap-2 text-sm font-semibold">
-            <input type="checkbox" checked={draft.featured} onChange={(event) => setDraft({ ...draft, featured: event.target.checked })} />
-            Featured on the blog
-          </label>
-          <label className="block text-sm font-semibold">Call to action title
-            <input value={draft.ctaTitle} onChange={(event) => setDraft({ ...draft, ctaTitle: event.target.value })} className="mt-1 w-full min-h-11 rounded-xl border border-border px-3" />
-          </label>
-          <label className="block text-sm font-semibold">Call to action text
-            <textarea value={draft.ctaBody} onChange={(event) => setDraft({ ...draft, ctaBody: event.target.value })} rows={2} className="mt-1 w-full rounded-xl border border-border px-3 py-2" />
-          </label>
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-semibold">Questions for the essay</legend>
-            {draft.faq.map((item, index) => (
-              <div key={index} className="grid gap-2">
-                <input aria-label={`Question ${index + 1}`} value={item.question} onChange={(event) => setDraft({ ...draft, faq: draft.faq.map((row, i) => i === index ? { ...row, question: event.target.value } : row) })} placeholder="Question" className="min-h-11 rounded-xl border border-border px-3" />
-                <input aria-label={`Answer ${index + 1}`} value={item.answer} onChange={(event) => setDraft({ ...draft, faq: draft.faq.map((row, i) => i === index ? { ...row, answer: event.target.value } : row) })} placeholder="Answer" className="min-h-11 rounded-xl border border-border px-3" />
-              </div>
-            ))}
-            {draft.faq.length < 8 ? (
-              <button type="button" className="min-h-11 text-sm font-bold text-primary" onClick={() => setDraft({ ...draft, faq: [...draft.faq, { question: '', answer: '' }] })}>
-                Add a question
-              </button>
-            ) : null}
-          </fieldset>
-          <div className="flex flex-wrap gap-2">
-            <button type="submit" disabled={busy || !allowed} className="min-h-11 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-40">
-              {busy ? 'Saving…' : 'Save essay'}
-            </button>
-            {draft.slug && !draft.sample ? (
-              <button type="button" disabled={busy || !allowed} className="min-h-11 rounded-full border border-border px-5 text-sm font-bold" onClick={() => void remove(draft.slug)}>
-                Remove
-              </button>
-            ) : null}
-          </div>
-          <p className="text-xs text-muted-foreground">The call to action always links to the offer and to sign-up. A scheduled essay stays hidden until its time.</p>
-        </form>
-        {showPreview ? (
-          <BlogLivePreview post={{ ...draft, tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean) }} />
-        ) : null}
-      </section>
+      <ul className="grid gap-3 md:grid-cols-2">
+        {posts.map((post) => (
+          <li key={post.slug} className="rounded-2xl border border-border bg-card p-4" data-blog-row={post.slug}>
+            <p className="text-[11px] font-bold tracking-wider text-[#1E6A83]">{post.sample ? 'SITE DRAFT' : post.status.toUpperCase()}</p>
+            <h2 className="mt-1 font-semibold">{post.title}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{post.category}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href={`/dashboard/admin/blog/${post.slug}/edit`} className="inline-flex h-11 items-center text-sm font-bold text-[#1E6A83]">Edit</Link>
+              <Link href={`/dashboard/admin/blog/${post.slug}/edit#preview`} className="inline-flex h-11 items-center text-sm font-bold text-[#1E6A83]">Preview</Link>
+              <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => void duplicate(post)}>Duplicate</button>
+              <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => void remove(post)}>Delete</button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </DashPage>
   );
 }

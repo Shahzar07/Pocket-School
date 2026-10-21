@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { AFFILIATE_DISCLOSURE, AFFILIATE_REL, cardImage, coverAltOf, isAffiliateToken, isCoverPath, type BlogLink, type BlogPost } from '@/lib/blog/posts';
 
-const INLINE = /!\[([^\]]*)\]\(([^)]+)\)|\[SHOPEE_AFFILIATE_LINK:\s*([^\]]+)\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+const INLINE = /`([^`]+)`|!\[([^\]]*)\]\(([^)]+)\)|\[SHOPEE_AFFILIATE_LINK:\s*([^\]]+)\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|~~([^~]+)~~|\+\+([^+]+)\+\+|\*([^*]+)\*/g;
 const IMAGE_LINE = /^!\[([^\]]*)\]\(([^)]+)\)$/;
 
 function inline(text: string, key: string): ReactNode[] {
@@ -15,17 +15,23 @@ function inline(text: string, key: string): ReactNode[] {
     if (match.index > last) nodes.push(text.slice(last, match.index));
     const id = `${key}-${index}`;
     index += 1;
-    if (match[1] != null && match[2]) {
-      nodes.push(<EssayImage key={id} alt={match[1]} src={match[2]} />);
-    } else if (match[3]) {
+    if (match[1] != null) {
+      nodes.push(<code key={id} className="rounded bg-[#E7E1D8] px-1">{match[1]}</code>);
+    } else if (match[2] != null && match[3]) {
+      nodes.push(<EssayImage key={id} alt={match[2]} src={match[3]} />);
+    } else if (match[4]) {
       const token = match[0];
       nodes.push(<a key={id} href={token} rel={AFFILIATE_REL}>{token}</a>);
-    } else if (match[4] && match[5]) {
-      nodes.push(<TextLink key={id} href={match[5]}>{inline(match[4], id)}</TextLink>);
-    } else if (match[6]) {
-      nodes.push(<strong key={id}>{inline(match[6], id)}</strong>);
+    } else if (match[5] && match[6]) {
+      nodes.push(<TextLink key={id} href={match[6]}>{inline(match[5], id)}</TextLink>);
     } else if (match[7]) {
-      nodes.push(<em key={id}>{inline(match[7], id)}</em>);
+      nodes.push(<strong key={id}>{inline(match[7], id)}</strong>);
+    } else if (match[8]) {
+      nodes.push(<s key={id}>{inline(match[8], id)}</s>);
+    } else if (match[9]) {
+      nodes.push(<u key={id}>{inline(match[9], id)}</u>);
+    } else if (match[10]) {
+      nodes.push(<em key={id}>{inline(match[10], id)}</em>);
     }
     last = match.index + match[0].length;
   }
@@ -73,6 +79,48 @@ export function ArticleBody({ post }: { post: BlogPost }) {
       continue;
     }
     const key = `b-${index}`;
+    if (line.trim().startsWith('```')) {
+      const code: string[] = [];
+      index += 1;
+      while (index < lines.length && !(lines[index] ?? '').trim().startsWith('```')) {
+        code.push(lines[index] ?? '');
+        index += 1;
+      }
+      if ((lines[index] ?? '').trim().startsWith('```')) index += 1;
+      blocks.push(
+        <pre key={key} className="overflow-x-auto rounded-2xl bg-[#203337] p-4 text-sm leading-6 text-white">
+          <code>{code.join('\n')}</code>
+        </pre>,
+      );
+      continue;
+    }
+    if (line.trim().startsWith('|')) {
+      const rows: string[][] = [];
+      while (index < lines.length && (lines[index] ?? '').trim().startsWith('|')) {
+        const cells = (lines[index] ?? '').trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+        if (!cells.every((cell) => /^:?-+:?$/.test(cell))) rows.push(cells);
+        index += 1;
+      }
+      blocks.push(
+        <div key={key} className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={`${key}-${rowIndex}`}>
+                  {row.map((cell, cellIndex) => {
+                    const content = inline(cell, `${key}-${rowIndex}-${cellIndex}`);
+                    return rowIndex === 0
+                      ? <th key={cellIndex} className="border border-[#203337]/15 px-2 py-1 font-semibold">{content}</th>
+                      : <td key={cellIndex} className="border border-[#203337]/15 px-2 py-1">{content}</td>;
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
     if (line.trim() === '---') {
       blocks.push(<hr key={key} className="border-[#203337]/15" />);
       index += 1;
@@ -141,7 +189,7 @@ export function ArticleBody({ post }: { post: BlogPost }) {
       continue;
     }
     const paragraph: string[] = [];
-    while (index < lines.length && (lines[index] ?? '').trim() && !heading(lines[index] ?? '') && !(lines[index] ?? '').startsWith('>') && !/^[-*] /.test(lines[index] ?? '') && !/^\d+\. /.test(lines[index] ?? '') && (lines[index] ?? '').trim() !== '---' && !IMAGE_LINE.test((lines[index] ?? '').trim())) {
+    while (index < lines.length && (lines[index] ?? '').trim() && !heading(lines[index] ?? '') && !(lines[index] ?? '').startsWith('>') && !/^[-*] /.test(lines[index] ?? '') && !/^\d+\. /.test(lines[index] ?? '') && (lines[index] ?? '').trim() !== '---' && !(lines[index] ?? '').trim().startsWith('```') && !(lines[index] ?? '').trim().startsWith('|') && !IMAGE_LINE.test((lines[index] ?? '').trim())) {
       paragraph.push((lines[index] ?? '').trim());
       index += 1;
     }
@@ -229,7 +277,7 @@ export function PostHero({ post }: { post: BlogPost }) {
         style={{ background: 'linear-gradient(180deg, rgba(30,106,131,0.2) 0%, rgba(32,51,55,0.88) 78%)' }}
       />
       <div className="relative mx-auto flex min-h-[28rem] max-w-4xl flex-col justify-end px-4 pb-12 pt-28 sm:px-6">
-        <p className="text-xs font-bold tracking-[0.18em] text-[#3FE0D0]">{post.category}</p>
+        <p className="text-xs font-bold tracking-[0.18em] text-[#3FE0D0]" data-blog-badge="1">{post.category}</p>
         <h1 className="mt-3 max-w-3xl font-heading text-4xl tracking-tight text-white sm:text-5xl">{post.title}</h1>
       </div>
     </header>
