@@ -1473,6 +1473,24 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. Publishing stays with super admins.
 - **Owner keys:** None.
 
+### New essay
+
+- **Route:** `/dashboard/admin/blog/new`
+- **Audience:** admin
+- **Purpose:** A super admin starts a journal essay with a live preview and SEO fields.
+- **Overlaps:** Blog list.
+- **Decision:** Keep. Publishing stays with super admins.
+- **Owner keys:** None.
+
+### Edit essay
+
+- **Route:** `/dashboard/admin/blog/[id]/edit`
+- **Audience:** admin
+- **Purpose:** A super admin edits one journal essay. Bold text, images, and SEO survive a reload.
+- **Overlaps:** Blog list.
+- **Decision:** Keep. Publishing stays with super admins.
+- **Owner keys:** None.
+
 ### Admin help
 
 - **Route:** `/dashboard/admin/help`
