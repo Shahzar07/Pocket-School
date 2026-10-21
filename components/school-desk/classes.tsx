@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { deskCopy as t } from '@/lib/school-desk/copy';
+import { LevelMenu } from '@/components/level-menu';
+import { sameLevel } from '@/lib/levels';
 import {
-  LEVELS, addEnrolment, approveEnrolment, attendanceRate, bulkCreateClasses, createClass, gradeSetLabel, importRoster, postAnnouncement, roster, setTeachingMode, termResult, updateClass,
+  addEnrolment, approveEnrolment, attendanceRate, bulkCreateClasses, createClass, gradeSetLabel, importRoster, postAnnouncement, roster, setTeachingMode, termResult, updateClass,
   type DeskRole, type JoinMethod, type LevelName,
 } from '@/lib/school-desk/model';
 import { GoalRoster } from './goals';
@@ -58,7 +60,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
       const blob = `${item.name} ${item.subject} ${item.level}`.toLowerCase();
       if (query && !blob.includes(query.toLowerCase())) return false;
       if (subject && item.subject !== subject) return false;
-      if (level && item.level !== level) return false;
+      if (level && !sameLevel(item.level, level)) return false;
       if (term && item.term !== term) return false;
       if (campus && item.campus !== campus) return false;
       if (status && item.status !== status) return false;
@@ -102,10 +104,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
           <option value="">{t.all}</option>
           {subjects.map((item) => <option key={item}>{item}</option>)}
         </select>
-        <select className={deskStyles.field} value={level} onChange={(event) => setLevel(event.target.value)} aria-label={t.filterLevel}>
-          <option value="">{t.all}</option>
-          {LEVELS.map((item) => <option key={item}>{item}</option>)}
-        </select>
+        <LevelMenu ariaLabel={t.filterLevel} value={level} valueKind="label" allowEmpty emptyLabel={t.all} onChange={setLevel} />
         <select className={deskStyles.field} value={term} onChange={(event) => setTerm(event.target.value)} aria-label={t.filterTerm}>
           <option value="">{t.all}</option>
           {terms.map((item) => <option key={item}>{item}</option>)}
@@ -193,9 +192,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
             {(['name', 'subject', 'programme', 'term', 'campus', 'room', 'timetable', 'coTeachers', 'capacity'] as const).map((key) => (
               <input key={key} className={deskStyles.field} value={form[key]} onChange={(event) => setField(key, event.target.value)} aria-label={t.field[key]} />
             ))}
-            <select className={deskStyles.field} value={form.level} onChange={(event) => setField('level', event.target.value)} aria-label={t.filterLevel}>
-              {LEVELS.map((item) => <option key={item}>{item}</option>)}
-            </select>
+            <LevelMenu ariaLabel={t.filterLevel} value={form.level} valueKind="label" onChange={(next) => setField('level', next)} />
             <label className="text-sm text-[#1E6A83]">{t.visibility}
               <select className={`${deskStyles.field} mt-1 w-full`} value={visibility} data-class-visibility="1" aria-label={t.visibility} onChange={(event) => setVisibility(event.target.value === 'private' ? 'private' : 'school')}>
                 <option value="school">{t.schoolClass}</option>
@@ -230,9 +227,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               {(['name', 'subject', 'programme', 'term', 'campus', 'room', 'timetable', 'coTeachers', 'capacity'] as const).map((key) => (
                 <input key={key} className={deskStyles.field} value={edit[key]} onChange={(event) => setEditField(key, event.target.value)} aria-label={t.field[key]} />
               ))}
-              <select className={deskStyles.field} value={edit.level} onChange={(event) => setEditField('level', event.target.value)} aria-label={t.filterLevel}>
-                {LEVELS.map((item) => <option key={item}>{item}</option>)}
-              </select>
+              <LevelMenu ariaLabel={t.filterLevel} value={edit.level} valueKind="label" onChange={(next) => setEditField('level', next)} />
               <label className="text-sm text-[#1E6A83]">{t.assignTeacher}
                 <select className={`${deskStyles.field} mt-1 w-full`} value={klass.ownerTeacherName} aria-label={t.assignTeacher} onChange={(event) => setState(updateClass(state, klass.id, { ownerTeacherName: event.target.value, ownerTeacherId: event.target.value === 'Aisha Rahman' ? 'teacher-aisha' : 'teacher-assigned' }, state.actorName))}>
                   {['Aisha Rahman', 'Daniel Ong', 'Siti Aminah'].map((item) => <option key={item}>{item}</option>)}

@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
-  emptyDesk, canDeleteGoal, canEditGoal,
+  emptyDesk, canDeleteGoal, canEditGoal, isDeskLevel,
   type Assessment, type AssignedGoal, type DeskRole, type DeskState, type Enrolment, type GradeBand, type Mark, type ReportCard, type ScaleId, type SchoolClass, type SchoolInstitution,
 } from '@/lib/school-desk/model';
 import { plannerOps } from '@/lib/school-desk/planner-mirror';
@@ -61,7 +61,7 @@ function classFrom(id: string, data: DocumentData): SchoolClass | null {
     institutionId: text(data.institutionId),
     name: data.name,
     subject: text(data.subject),
-    level: data.level === 'Primary' || data.level === 'Lower Secondary' || data.level === 'IGCSE' || data.level === 'A-Level' ? data.level : 'IGCSE',
+    level: typeof data.level === 'string' && isDeskLevel(data.level) ? data.level : 'IGCSE',
     programme: text(data.programme),
     term: text(data.term),
     campus: text(data.campus),

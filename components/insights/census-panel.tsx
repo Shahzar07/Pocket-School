@@ -8,7 +8,8 @@ import {
 import { DashHeader, DashPage } from '@/components/dash-ui';
 import { Button } from '@/components/ui/button';
 import { authedFetch } from '@/lib/api-client';
-import { NAMED_LEVELS } from '@/lib/example-courses';
+import { LevelMenu } from '@/components/level-menu';
+import { LEARNER_LEVELS } from '@/lib/levels';
 import { insightsCsv, type InsightsView } from '@/lib/insights/census';
 import { toast } from 'sonner';
 
@@ -115,7 +116,7 @@ export function CensusPanel({
   const focus = country ? countryRows.find((place) => place.country === country) : undefined;
   const stateRows = focus ? focus.states : (shown?.states ?? []);
   const levels = useMemo(() => {
-    const names = new Set<string>(NAMED_LEVELS);
+    const names = new Set<string>(LEARNER_LEVELS.map((item) => item.label));
     for (const row of shown?.levels ?? []) names.add(row.name);
     return [...names];
   }, [shown]);
@@ -155,10 +156,7 @@ export function CensusPanel({
           </select>
         </label>
         <label className="text-xs font-semibold uppercase tracking-wider">Level
-          <select value={level} onChange={(event) => setLevel(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-white/10 bg-[#102820] px-3 text-sm" aria-label="Level filter">
-            <option value="">All levels</option>
-            {levels.map((name) => <option key={name} value={name}>{name}</option>)}
-          </select>
+          <LevelMenu ariaLabel="Level filter" value={level} valueKind="label" allowEmpty emptyLabel="All levels" extra={levels.filter((name) => name && !LEARNER_LEVELS.some((item) => item.label === name))} onChange={setLevel} />
         </label>
         {!locked && (
           <label className="text-xs font-semibold uppercase tracking-wider md:col-span-2">Institution

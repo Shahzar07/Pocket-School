@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { documentPdf } from '@/lib/institution-pricing';
+import { LevelMenu } from '@/components/level-menu';
 import {
-  JOIN_LEVELS,
   bulkMove,
   joinReport,
   offboard,
@@ -170,9 +170,7 @@ export function JoinVerificationSettings({
         <h2 className="font-heading text-2xl">Class code</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-4">
           <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} aria-label="Class code" className="h-11 rounded-2xl border border-[#203337]/15 px-3" />
-          <select value={codeLevel} onChange={(event) => setCodeLevel(event.target.value)} aria-label="Level name" className="h-11 rounded-2xl border border-[#203337]/15 px-3">
-            {JOIN_LEVELS.map((level) => <option key={level}>{level}</option>)}
-          </select>
+          <LevelMenu ariaLabel="Level name" value={codeLevel} valueKind="label" extra={['Law', 'RISE']} onChange={setCodeLevel} />
           <input value={codeClass} onChange={(event) => setCodeClass(event.target.value)} aria-label="Class name" className="h-11 rounded-2xl border border-[#203337]/15 px-3" />
           <input value={programmeId} onChange={(event) => setProgrammeId(event.target.value)} aria-label="Programme" className="h-11 rounded-2xl border border-[#203337]/15 px-3" />
         </div>
@@ -229,9 +227,7 @@ export function JoinVerificationSettings({
         </button>
         <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
           <input value={moveIds} onChange={(event) => setMoveIds(event.target.value)} aria-label="Student ids" className="h-11 rounded-2xl border border-[#203337]/15 px-3" />
-          <select value={moveLevel} onChange={(event) => setMoveLevel(event.target.value)} aria-label="Move to level" className="h-11 rounded-2xl border border-[#203337]/15 px-3">
-            {JOIN_LEVELS.map((level) => <option key={level}>{level}</option>)}
-          </select>
+          <LevelMenu ariaLabel="Move to level" value={moveLevel} valueKind="label" extra={['Law', 'RISE']} onChange={setMoveLevel} />
           <input value={moveClass} onChange={(event) => setMoveClass(event.target.value)} aria-label="Move to class" className="h-11 rounded-2xl border border-[#203337]/15 px-3" />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">

@@ -38,7 +38,8 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
   getAiGenerations, deleteAiGeneration, saveAiGeneration, type AiGeneration,
 } from '@/lib/db';
-import { PROGRAMMES, studioModeForProgramme, subjectsForProgramme } from '@/lib/programmes';
+import { LevelMenu } from '@/components/level-menu';
+import { studioModeForLevel, subjectsForLevel } from '@/lib/programmes';
 import { bookSourcePrompt, parseBookCommand } from '@/lib/platform/studio-commands';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { BOOKS, bookById } from '@/lib/reads/seed';
@@ -303,10 +304,10 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [level, setLevel] = useState('');
-  const derivedMode = level ? studioModeForProgramme(level) : 'k12';
+  const derivedMode = level ? studioModeForLevel(level) : 'k12';
   const [modeChoice, setModeChoice] = useState<string>('');
   const chatMode = (modeChoice || derivedMode) as typeof derivedMode;
-  const subjectOptions = subjectsForProgramme(level);
+  const subjectOptions = subjectsForLevel(level);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
   const [streamText, setStreamText] = useState('');
@@ -1161,21 +1162,18 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     <datalist id="programme-subjects">
                       {subjectOptions.map((option) => <option key={option} value={option} />)}
                     </datalist>
-                    <select
+                    <LevelMenu
+                      ariaLabel="Level"
                       value={level}
-                      onChange={e => {
-                        const next = e.target.value;
+                      allowEmpty
+                      emptyLabel="Level"
+                      onChange={(next) => {
                         setLevel(next);
-                        const options = subjectsForProgramme(next);
+                        const options = subjectsForLevel(next);
                         if (subject && options.length > 0 && !options.includes(subject)) setSubject('');
                       }}
-                      className={`max-w-[11rem] px-2.5 py-1.5 rounded-full text-xs border ${C.border} bg-card outline-none ${C.dim} cursor-pointer`}
-                      style={{ colorScheme: light ? 'light' : 'dark' }}
-                      aria-label="Level"
-                    >
-                      <option value="">Level</option>
-                      {PROGRAMMES.map(programme => <option key={programme.value} value={programme.value}>{programme.label}</option>)}
-                    </select>
+                      className="max-w-[14rem]"
+                    />
                     <select
                       value={modeChoice}
                       onChange={e => setModeChoice(e.target.value)}

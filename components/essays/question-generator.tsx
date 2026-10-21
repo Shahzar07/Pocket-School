@@ -2,16 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { essayLevelLabel, type EssayLevel } from '@/lib/essays/coaching';
+import { BoardMenu } from '@/components/essays/board-menu';
 import {
   ESSAY_SUBJECTS,
   ESSAY_TYPES,
-  EXAM_BOARDS,
   generateEssayQuestion,
   questionGuidance,
   readRecentQuestions,
   topicsFromText,
   writeRecentQuestions,
-  type ExamBoard,
   type EssayType,
   type GeneratedEssayQuestion,
 } from '@/lib/essays/questions';
@@ -27,7 +26,7 @@ export function QuestionGenerator({
   const [customSubject, setCustomSubject] = useState('');
   const [topics, setTopics] = useState('trade, cities');
   const [type, setType] = useState<EssayType>('argumentative');
-  const [board, setBoard] = useState<ExamBoard>('cambridge');
+  const [board, setBoard] = useState('cambridge');
   const [current, setCurrent] = useState<GeneratedEssayQuestion | null>(null);
   const recentRef = useRef<string[]>([]);
   const nonceRef = useRef(0);
@@ -60,9 +59,9 @@ export function QuestionGenerator({
   }, []);
 
   useEffect(() => {
-    const guide = questionGuidance(level);
+    const guide = questionGuidance(level, board);
     setCurrent(current => current ? { ...current, ...guide, level } : current);
-  }, [level]);
+  }, [level, board]);
 
   function shuffle() {
     nonceRef.current += 1;
@@ -89,12 +88,10 @@ export function QuestionGenerator({
           Topics
           <input aria-label="Topics" value={topics} onChange={event => setTopics(event.target.value)} placeholder="trade, cities" className="mt-1 block h-11 w-full rounded-xl border border-border bg-background px-3 font-normal" />
         </label>
-        <label className="text-sm font-semibold sm:col-span-2">
+        <div className="text-sm font-semibold sm:col-span-2">
           Exam board style
-          <select aria-label="Exam board style" value={board} onChange={event => setBoard(event.target.value as ExamBoard)} className="mt-1 block h-11 w-full rounded-xl border border-border bg-background px-3 font-normal">
-            {EXAM_BOARDS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
-        </label>
+          <BoardMenu level={level} value={board} onChange={setBoard} />
+        </div>
         {subject === 'other' && (
           <label className="text-sm font-semibold sm:col-span-2">
             Subject name

@@ -4,8 +4,14 @@
  * only a demo desk or a seed, never the live source.
  */
 
-export const LEVELS = ['Primary', 'Lower Secondary', 'IGCSE', 'A-Level'] as const;
-export type LevelName = (typeof LEVELS)[number];
+import { LEARNER_LEVELS, resolveLevel } from '@/lib/levels';
+
+export const LEVELS = LEARNER_LEVELS.map((level) => level.label);
+export type LevelName = string;
+
+export function isDeskLevel(value: string): boolean {
+  return resolveLevel(value) !== null;
+}
 
 export type ScaleId = 'igcse_9_1' | 'astar_g' | 'percent' | 'points' | 'pass_fail' | 'custom';
 export type AssessmentKind = 'assignment' | 'test' | 'quiz' | 'exam' | 'coursework' | 'lesson_quiz';
@@ -640,7 +646,7 @@ export function createClass(
   if (!canCreateClass(state, role)) {
     return { state, error: 'This school asks an institution admin to create classes. Teachers can create one only when the school allows it.' };
   }
-  if (!LEVELS.includes(input.level)) return { state, error: 'Choose a level name.' };
+  if (!isDeskLevel(input.level)) return { state, error: 'Choose a level name.' };
   const made = id(state, 'class');
   const klass: SchoolClass = {
     ...input,
@@ -697,7 +703,7 @@ export function bulkCreateClasses(state: DeskState, csv: string): { state: DeskS
   let created = 0;
   for (const line of lines.slice(1)) {
     const [name, subject, level, programme, term, campus, room, timetable, teacher, capacity] = line.split(',').map((part) => part.trim());
-    if (!name || !LEVELS.includes(level as LevelName)) continue;
+    if (!name || !isDeskLevel(level)) continue;
     const owner = classOwner(teacher || '', next);
     const result = createClass(next, {
       name,

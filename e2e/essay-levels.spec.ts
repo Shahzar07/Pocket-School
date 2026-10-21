@@ -170,7 +170,9 @@ test('ET AI Essay Writer marks IGCSE, degree, masters, and PhD', async ({ page }
     const setup = page.locator('[data-essay-setup="1"]');
     await page.setViewportSize({ width: 1280, height: 900 });
     await setTheme(page, 'light');
-    await setup.getByLabel('Level', { exact: true }).selectOption(item.id);
+    const levelId = item.id === 'degree' ? 'undergraduate' : item.id;
+    await setup.getByLabel('Level', { exact: true }).click();
+    await setup.locator(`[data-level-id="${levelId}"]`).click();
     await expect(setup.locator(`select[data-essay-type] option[value="${item.type}"]`)).toHaveCount(1);
     await setup.getByLabel('Writing type', { exact: true }).selectOption(item.type);
     await setup.getByLabel('Subject (optional)').fill(item.subject);
@@ -230,7 +232,8 @@ test('ET AI Essay Writer marks IGCSE, degree, masters, and PhD', async ({ page }
   await page.goto('/dashboard/teacher/assignments', { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: 'New Assignment' }).click();
   await page.getByRole('checkbox', { name: 'ET AI Essay Writer task. ET AI marks it against the chosen level.' }).check();
-  await page.getByLabel('Level', { exact: true }).selectOption('phd');
+  await page.getByLabel('Level', { exact: true }).click();
+  await page.locator('[data-level-id="phd"]').click();
   await page.getByLabel('Writing type', { exact: true }).selectOption('dissertation');
   await page.getByLabel('Rubric (optional)').fill('Thesis clarity\nSources');
   await expect(page.getByText('The level, writing type, and rubric are saved with this task.')).toBeVisible();

@@ -6,9 +6,10 @@ import {
   coerceWritingType,
   countWords,
   criteriaFor,
-  isEssayLevel,
   levelLabel,
   mapEssayScale,
+  scaleFamily,
+  toEssayLevelId,
   referencingApplies,
   referencingLabel,
   writingTypeLabel,
@@ -185,16 +186,16 @@ function modelParagraph(sentence: string, prompt: string): string {
 
 function levelStep(levelId: EssayLevelId, styleName: string): string {
   if (levelId === 'phd' || levelId === 'masters') return 'Keep the research question visible in the next draft.';
-  if ((levelId === 'degree' || levelId === 'professional') && styleName) return `Check the ${styleName} style on every source you use.`;
-  if (levelId === 'degree' || levelId === 'professional') return 'Check the referencing style on every source you use.';
+  if ((levelId === 'undergraduate' || levelId === 'professional') && styleName) return `Check the ${styleName} style on every source you use.`;
+  if (levelId === 'undergraduate' || levelId === 'professional') return 'Check the referencing style on every source you use.';
   return 'Return to the task in the last paragraph.';
 }
 
 export function markEssayAtLevel(input: MarkInput): LevelMark {
-  const levelId: EssayLevelId = isEssayLevel(input.levelId) ? input.levelId : 'igcse';
+  const levelId: EssayLevelId = toEssayLevelId(input.levelId);
   const essay = String(input.essay ?? '').slice(0, 12_000);
   const prompt = String(input.prompt ?? '').slice(0, 2_000);
-  const degreeStyle: DegreeStyle | undefined = levelId === 'degree'
+  const degreeStyle: DegreeStyle | undefined = scaleFamily(levelId) === 'degree'
     ? (input.degreeStyle === 'cgpa' ? 'cgpa' : 'uk')
     : undefined;
   const writingType = coerceWritingType(levelId, input.writingType);

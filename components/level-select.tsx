@@ -1,7 +1,8 @@
 'use client';
 
-import { NAMED_LEVELS, isNamedLevel } from '@/lib/example-courses';
+import { LevelMenu } from '@/components/level-menu';
 import { useCoursePlaceholders } from '@/hooks/use-example-course';
+import { isKnownLevel } from '@/lib/levels';
 
 export function LevelSelect({
   value,
@@ -17,21 +18,19 @@ export function LevelSelect({
   className?: string;
 }) {
   const { level: placeholder } = useCoursePlaceholders();
-  const known = !value || isNamedLevel(value);
+  const extra = value && !isKnownLevel(value) ? [value] : [];
 
   return (
-    <select
-      id={id}
-      aria-label={ariaLabel}
-      value={value}
-      onChange={event => onChange(event.target.value)}
-      className={`${className} ${value ? 'text-foreground' : 'text-muted-foreground'}`}
-    >
-      <option value="">{placeholder}</option>
-      {NAMED_LEVELS.map(level => (
-        <option key={level} value={level} className="text-foreground">{level}</option>
-      ))}
-      {!known ? <option value={value}>{value}</option> : null}
-    </select>
+    <div id={id} className={className}>
+      <LevelMenu
+        ariaLabel={ariaLabel}
+        value={value}
+        valueKind="label"
+        allowEmpty
+        emptyLabel={placeholder}
+        extra={extra}
+        onChange={onChange}
+      />
+    </div>
   );
 }

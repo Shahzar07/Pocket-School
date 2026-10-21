@@ -7,19 +7,20 @@ import { authedFetch } from '@/lib/api-client';
 import { ContentLanguageBar } from '@/components/content-language-bar';
 import { essayCopy } from '@/lib/essay/copy';
 import { useContentTranslation } from '@/hooks/use-content-translation';
+import { LevelMenu } from '@/components/level-menu';
 import { gradeFromMark } from '@/lib/essay/scale';
 import {
   type DegreeStyle,
   type EssayLevelId,
-  ESSAY_LEVELS,
   ESTIMATE_LABEL,
   REFERENCING_STYLES,
   countWords,
   defaultWordTarget,
-  isEssayLevel,
   mapEssayScale,
   referencingApplies,
   scaleBlurb,
+  scaleFamily,
+  toEssayLevelId,
   writingTypesFor,
 } from '@/lib/essay/scale-config';
 
@@ -114,7 +115,7 @@ function readResult(data: Record<string, unknown>): Result | null {
 export function EssayWriter({ purpose }: { purpose: string }) {
   const params = useSearchParams();
   const { i18n } = useTranslation();
-  const initialLevel = isEssayLevel(params.get('level')) ? params.get('level')! : 'igcse';
+  const initialLevel = toEssayLevelId(params.get('level'));
   const initialTypes = writingTypesFor(initialLevel);
   const initialType = initialTypes.some((type) => type.id === params.get('type'))
     ? params.get('type')!
@@ -157,7 +158,7 @@ export function EssayWriter({ purpose }: { purpose: string }) {
   const chooseDegree = (next: DegreeStyle) => {
     setDegreeStyle(next);
     setResult((current) => {
-      if (!current || current.levelId !== 'degree' || current.percentage == null) return current;
+      if (!current || scaleFamily(current.levelId as EssayLevelId) !== 'degree' || current.percentage == null) return current;
       const scale = mapEssayScale('degree', current.percentage, { degreeStyle: next });
       return { ...current, ...scale };
     });
@@ -179,7 +180,7 @@ export function EssayWriter({ purpose }: { purpose: string }) {
           wordTarget,
           referencing: referencingApplies(level) ? referencing : '',
           rubric,
-          degreeStyle: level === 'degree' ? degreeStyle : 'uk',
+          degreeStyle: scaleFamily(level) === 'degree' ? degreeStyle : 'uk',
         }),
       });
       const parsed = readResult(data);
@@ -199,12 +200,10 @@ export function EssayWriter({ purpose }: { purpose: string }) {
       <h1 className="font-heading text-4xl tracking-tight">Write, then let ET AI mark it</h1>
       <p className="text-sm text-muted-foreground">{purpose}</p>
       <div data-essay-setup="1" className="grid gap-3 sm:grid-cols-2">
-        <label className="block space-y-1">
+        <div className="block space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ps-cyan-text)]">{essayCopy.level}</span>
-          <select aria-label={essayCopy.level} data-essay-level={level} value={level} onChange={(event) => onLevel(event.target.value as EssayLevelId)} className={control}>
-            {ESSAY_LEVELS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
-        </label>
+          <LevelMenu ariaLabel={essayCopy.level} value={level} onChange={(next) => onLevel(toEssayLevelId(next))} />
+        </div>
         <label className="block space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ps-cyan-text)]">{essayCopy.writingType}</span>
           <select aria-label={essayCopy.writingType} data-essay-type={writingType} value={writingType} onChange={(event) => { setWritingType(event.target.value); setResult(null); }} className={control}>
@@ -232,7 +231,7 @@ export function EssayWriter({ purpose }: { purpose: string }) {
             </select>
           </label>
         )}
-        {level === 'degree' && (
+        {scaleFamily(level) === 'degree' && (
           <div className="sm:col-span-2 space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ps-cyan-text)]">{essayCopy.degreeStyle}</p>
             <div className="flex flex-wrap gap-2">
