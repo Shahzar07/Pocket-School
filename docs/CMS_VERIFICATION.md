@@ -153,7 +153,7 @@ Rows: 128. Failed: 0.
 
 # Certificate template verification
 
-Checked on 21 Oct 2026 from the certificate designer, without a signed-in admin. The page under test is the same `CertificateDesigner` the admin route renders. Preview: `/preview/admin-tools?view=certificates`. Verify: `/verify/PS-1042`.
+Checked on 21 Oct 2026 from the certificate designer, without a signed-in admin. Re-checked after the rebase onto `487246d`: `lib/certificates/design.test.ts` and `lib/admin/batch.test.ts` passed (11), and `e2e/certificate-template.spec.ts` passed (3). The page under test is the same `CertificateDesigner` the admin route renders. Preview: `/preview/admin-tools?view=certificates`. Verify: `/verify/PS-1042`.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
