@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PathwayFlow } from '@/components/flow/pathway-flow';
 import { pathwayFaqJsonLd, pathwayTeacher, type PathwayRecord } from '@/lib/pathways/catalog';
 
 const serif = { fontFamily: 'var(--font-dm-serif), Georgia, serif' } as const;
@@ -19,6 +20,9 @@ export function PathwayView({ pathway }: { pathway: PathwayRecord }) {
           ) : null}
         </div>
       </header>
+      <div className="mx-auto max-w-3xl px-5 pt-6 sm:px-6">
+        <PathwayFlow currentId={pathway.slug} />
+      </div>
       <nav className="sticky top-[76px] z-30 border-b border-foreground/15 bg-background/95 backdrop-blur" aria-label="Stages" data-stage-nav="1">
         <ul className="mx-auto flex max-w-3xl gap-2 overflow-x-auto px-5 py-3 sm:px-6">
           {pathway.stages.map((stage) => (

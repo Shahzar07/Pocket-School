@@ -77,9 +77,13 @@ test('IGCSE page lists subjects and boards', async ({ page }) => {
   await expect(page.getByText('Biology').first()).toBeVisible();
   await expect(page.getByText('Pearson Edexcel').first()).toBeVisible();
   await expect(page.getByText('Poket School does not award those grades.').first()).toBeVisible();
+  await expect(page.locator('[data-flow-trail]')).toBeVisible();
+  await expect(page.locator('[data-flow-nav] a').last()).toHaveAttribute('href', '/alevel');
   await page.screenshot({ path: 'docs/qa/pathways/pathway-igcse.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'docs/qa/pathways/pathway-igcse-mobile.png', fullPage: true });
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await page.screenshot({ path: 'docs/qa/pathways/pathway-igcse-mobile-dark.png', fullPage: true });
 });
 
 async function signIn(page: Page, email: string) {
@@ -166,4 +170,6 @@ test('admin pathway desk hides the studio shell', async ({ page }) => {
   await page.screenshot({ path: 'docs/qa/pathways/pathway-editor-dark.png', fullPage: false });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'docs/qa/pathways/pathway-editor-mobile.png', fullPage: false });
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await page.screenshot({ path: 'docs/qa/pathways/pathway-editor-mobile-dark.png', fullPage: false });
 });
