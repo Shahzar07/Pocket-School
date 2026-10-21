@@ -21,9 +21,13 @@ import { VideoPlayer } from '@/components/video-player';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { LessonManuscript } from '@/components/lesson-manuscript';
 import type { ImportResult } from '@/components/editor';
+import type { BlockDef } from '@/lib/cms/block-palette';
 import {
   AlertTriangle, Check, Copy, GripVertical, Loader2, Plus, Sparkles, Trash2, X,
 } from 'lucide-react';
+
+export type { BlockDef } from '@/lib/cms/block-palette';
+export { BLOCK_DEFS, blockPalette } from '@/lib/cms/block-palette';
 
 /* ── Shared bits ────────────────────────────────────────────── */
 
@@ -35,44 +39,6 @@ export const BLOOM_SHORT: Record<string, string> = {
   Remember: 'Remember', Understand: 'Understand', Apply: 'Apply',
   Analyse: 'Analyse', Evaluate: 'Evaluate', Create: 'Create',
 };
-
-export interface BlockDef {
-  id: string;
-  icon: string;
-  label: string;
-  sparks?: number;
-}
-
-export const BLOCK_DEFS: BlockDef[] = [
-  { id: 'objectives', icon: '🎯', label: 'Objectives' },
-  { id: 'video', icon: '🎬', label: 'Video', sparks: 15 },
-  { id: 'text', icon: '📝', label: 'Lesson Text' },
-  { id: 'image', icon: '🏞️', label: 'Image' },
-  { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
-  { id: 'vocabulary', icon: '📖', label: 'Vocabulary', sparks: 5 },
-  { id: 'activity', icon: '✏️', label: 'Activity' },
-  { id: 'quiz', icon: '✅', label: 'Quiz', sparks: 5 },
-  { id: 'assignment', icon: '📋', label: 'Assignment' },
-  { id: 'assessment', icon: '🏅', label: 'Assessment' },
-  { id: 'flashcards', icon: '🃏', label: 'Flashcards', sparks: 5 },
-  { id: 'mindmap', icon: '🧠', label: 'Mind Map', sparks: 10 },
-  { id: 'audio', icon: '🎧', label: 'Audio', sparks: 10 },
-  { id: 'infographic', icon: '📊', label: 'Infographic', sparks: 15 },
-  { id: 'slides', icon: '🖼️', label: 'Slides', sparks: 10 },
-  { id: 'notes', icon: '🗒️', label: 'Study Notes', sparks: 5 },
-  { id: 'summary', icon: '⚡', label: 'Summary' },
-  { id: 'problems', icon: '🧮', label: 'Problems', sparks: 5 },
-  { id: 'glossary', icon: '📚', label: 'Glossary', sparks: 5 },
-  { id: 'image', icon: '🖼️', label: 'Image', sparks: 10 },
-  { id: 'illustration', icon: '🎨', label: 'Illustration', sparks: 15 },
-  { id: 'unitTest', icon: '🧪', label: 'Unit Test' },
-  { id: 'mindmapImage', icon: '🗺️', label: 'Mind Map image' },
-  { id: 'comic', icon: '💬', label: 'Comic strip' },
-  { id: 'infographicImage', icon: '📊', label: 'Infographic' },
-  { id: 'revisionPoster', icon: '🖼️', label: 'Unit revision poster' },
-  { id: 'gallery', icon: '🎠', label: 'Gallery' },
-  { id: 'audioChant', icon: '🎵', label: 'Audio chant' },
-];
 
 export type AiRunOptions = {
   extraBrief?: string;
@@ -117,7 +83,7 @@ export function BlockShell({
           : 'border-border hover:border-teal-400/40'
       }`}
     >
-      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border/60">
+      <header className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-border/60">
         <button
           type="button"
           draggable
@@ -148,7 +114,7 @@ export function BlockShell({
             {bloom}
           </span>
         )}
-        <span className="flex-1" />
+        <span className="ml-auto flex shrink-0 items-center gap-0.5">
         {onRegenerate && (
           <button
             onClick={e => { e.stopPropagation(); onRegenerate(); }}
@@ -173,6 +139,7 @@ export function BlockShell({
         <button onClick={e => { e.stopPropagation(); onDelete(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50" title="Remove block">
           <X className="w-3.5 h-3.5" />
         </button>
+        </span>
       </header>
       <div className="p-4">{children}</div>
     </motion.section>
@@ -423,7 +390,7 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
         onImport={onImport}
         onPasteImages={onPasteImages}
       />
-      <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+      <div data-lesson-actions="1" className="relative z-0 mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span>~{Math.max(1, Math.round(words / 200))} min read</span>
         <span className="flex-1" />
         {onImprove && value.trim() ? (

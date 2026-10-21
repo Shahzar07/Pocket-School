@@ -21,6 +21,7 @@ function IntelligenceField({
     <label className="block text-xs text-muted-foreground">
       Multiple intelligence (optional)
       <select
+        data-mi-tag="1"
         value={value ?? ''}
         onChange={(event) => onChange(isIntelligence(event.target.value) ? event.target.value : undefined)}
         className="mt-1 w-full h-9 rounded-xl border border-border bg-card px-2 text-sm text-foreground"
@@ -38,6 +39,7 @@ function AltField({ value, onChange, label }: { value: string; onChange: (value:
     <label className="block text-xs text-muted-foreground">
       {label} <span className="text-red-600">Required</span>
       <Textarea
+        data-alt-text="1"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Describe the image or sound for someone who cannot see or hear it."

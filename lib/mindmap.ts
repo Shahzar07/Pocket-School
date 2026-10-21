@@ -6,7 +6,7 @@
 
 export const BUZAN_COLORS = [
   '#E23B3B',
-  '#F0A202',
+  '#1287A0',
   '#2F9E44',
   '#1C7ED6',
   '#7048E8',

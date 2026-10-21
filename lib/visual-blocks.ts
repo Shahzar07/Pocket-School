@@ -27,7 +27,7 @@ export type VisualBlockId = (typeof VISUAL_BLOCK_IDS)[number];
 export const VISUAL_LABELS: Record<VisualBlockId, string> = {
   mindmapImage: 'Mind Map image',
   comic: 'Comic strip',
-  infographicImage: 'Infographic',
+  infographicImage: 'Infographic image',
   revisionPoster: 'Unit revision poster',
   gallery: 'Gallery',
   audioChant: 'Audio chant',

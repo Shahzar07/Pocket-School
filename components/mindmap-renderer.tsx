@@ -16,7 +16,7 @@ function clampScale(value: number): number {
  * Radial Buzan map. Pinch, wheel, and drag move around the picture.
  * A prose study note is not drawn.
  */
-export function MindmapRenderer({ content, dark = false }: MindmapRendererProps) {
+export function MindmapRenderer({ content, dark = false, compact = false }: MindmapRendererProps & { compact?: boolean }) {
   const map = useMemo(() => parseBuzan(content), [content]);
   const layout = useMemo(() => (map ? layoutBuzan(map) : null), [map]);
   const [scale, setScale] = useState(1);
@@ -75,7 +75,7 @@ export function MindmapRenderer({ content, dark = false }: MindmapRendererProps)
 
   return (
     <div className={`rounded-3xl border ${panel} overflow-hidden`}>
-      <div className="flex items-center justify-between gap-2 px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
         <p className={`text-[11px] font-semibold uppercase tracking-widest ${dark ? 'text-slate-400' : 'text-muted-foreground'}`}>
           Mind map
         </p>
@@ -87,7 +87,7 @@ export function MindmapRenderer({ content, dark = false }: MindmapRendererProps)
       </div>
       <div
         ref={frame}
-        className="h-[70vh] max-h-[820px] min-h-[320px] cursor-grab overflow-hidden touch-none"
+        className={`${compact ? 'h-80 max-h-80 min-h-0' : 'h-[70vh] max-h-[820px] min-h-[320px]'} cursor-grab overflow-hidden touch-none`}
         onPointerDown={event => {
           event.currentTarget.setPointerCapture(event.pointerId);
           pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });

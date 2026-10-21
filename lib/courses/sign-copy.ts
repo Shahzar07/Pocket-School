@@ -3,8 +3,8 @@
 export const SIGN = {
   title: 'Copyright declaration',
   page: 'Copyright signatures',
-  pageHelp: 'Every instructor application and every new course keeps its own signature. Records cannot be edited.',
-  body: 'Type your full name, as it appears on your profile. The signature records the time, your IP address, and your browser. A new course needs a new signature.',
+  pageHelp: 'A teacher signs once for each course, the first time it is published. Records cannot be edited.',
+  body: 'Type your full name, as it appears on your profile. The signature records the time, your IP address, and your browser. Teachers sign once per course, at first publish.',
   name: 'Full name',
   sign: 'Sign declaration',
   signed: 'Declaration signed.',

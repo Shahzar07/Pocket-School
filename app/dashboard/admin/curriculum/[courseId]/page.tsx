@@ -20,7 +20,7 @@ import {
   Course, Module, Lesson, AiOutputs, Institution, LessonVisual,
 } from '@/lib/db';
 import {
-  BLOCK_DEFS, BLOOMS, BlockShell, ObjectivesBlock, VideoBlock, LessonTextBlock,
+  BLOCK_DEFS, BLOOMS, BlockShell, ObjectivesBlock, VideoBlock, LessonTextBlock, blockPalette,
   VocabularyBlock, ActivityBlock, QuizBlock, AssignmentBlock, AssessmentBlock,
   AudioBlock, MarkdownEditBlock, ProblemsBlock, type AiRunOptions, type BlockDef,
 } from '@/components/builder-blocks';
@@ -49,6 +49,11 @@ import { jobUpdate, visibleJob } from '@/lib/generation-jobs';
 import { filesToAssets, LessonIllustrationBlock, LessonImageBlock } from '@/components/lesson-pictures';
 import type { ImportResult } from '@/components/editor';
 import { LessonLanguagePanel } from '@/components/lesson-language-panel';
+import { CopyrightSign } from '@/components/courses/copyright-sign';
+import { teacherMustSignCopyright } from '@/lib/courses/copyright';
+import { SIGN } from '@/lib/courses/sign-copy';
+import { CMS_DESK } from '@/lib/cms/desk-copy';
+import { clearCrumbTitle, setCrumbTitle } from '@/lib/shell/crumb-titles';
 import { VisualBlockEditor } from '@/components/visual-blocks';
 import { UnitTestEditor } from '@/components/unit-test-editor';
 import { emptyVisualBlock, isVisualBlockId, upsertVisualBlock, visualPublishErrors } from '@/lib/visual-blocks';
@@ -248,6 +253,14 @@ export default function ContentBuilderPage() {
   const { user, profile } = useAuthSTORE();
 
   const [course, setCourse] = useState<Course | null>(null);
+  const needsCopyright = teacherMustSignCopyright(profile?.role, course?.copyrightSignatureId);
+
+  useEffect(() => {
+    const title = course?.title?.trim();
+    if (!title) return;
+    setCrumbTitle(courseId, title);
+    return () => clearCrumbTitle(courseId);
+  }, [course?.title, courseId]);
   const [units, setUnits] = useState<UnitWithLessons[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
@@ -776,7 +789,7 @@ export default function ContentBuilderPage() {
   };
 
   const confirmPublish = async () => {
-    if (!publishAccepted) return;
+    if (!publishAccepted || needsCopyright) return;
     setPublishing(true);
     try {
       await setStatus('published', 'Published');
@@ -1130,7 +1143,7 @@ export default function ContentBuilderPage() {
         <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={saveNow} disabled={!draft || saveState === 'saved' || saveState === 'saving'}>
           Save
         </Button>
-        <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5 bg-success hover:bg-success text-white"
+        <Button size="sm" data-publish-lesson="1" className="rounded-xl h-8 text-xs gap-1.5 bg-success hover:bg-success text-white"
           disabled={!draft || status === 'published'} onClick={openPublishModal}>
           <Send className="w-3 h-3" /> Publish
         </Button>
@@ -1430,39 +1443,47 @@ export default function ContentBuilderPage() {
                 }}
               >
                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Add a block</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {BLOCK_DEFS.map(def => {
-                    const added = blocksOrder.includes(def.id);
-                    return (
-                      <button
-                        key={def.id}
-                        disabled={added}
-                        draggable={!added}
-                        onDragStart={event => {
-                          event.dataTransfer.effectAllowed = 'copy';
-                          event.dataTransfer.setData('text/plain', `block:${def.id}`);
-                        }}
-                        onClick={() => {
-                          const visual = isVisualBlockId(def.id) ? emptyVisualBlock(def.id) : null;
-                          patchDraft({
-                            blocksOrder: [...blocksOrder, def.id],
-                            ...(visual ? { visualBlocks: upsertVisualBlock(draft.visualBlocks, visual) } : {}),
-                            ...(def.id === 'unitTest' ? { lessonType: 'unit_test' as const, isUnitQuiz: true, unitTest: draft.unitTest ?? emptyUnitTest() } : {}),
-                          });
-                        }}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-xs font-semibold transition-all ${
-                          added
-                            ? 'border-border/50 text-muted-foreground/40 cursor-not-allowed'
-                            : 'border-border text-foreground hover:border-teal-400 hover:shadow-sm active:scale-95'
-                        }`}
-                      >
-                        <span className="text-base">{def.icon}</span>
-                        <span className="flex-1">{def.label}</span>
-                        {def.sparks && !added && <span className="text-[10px] text-[var(--ps-cyan-text)]">⚡{def.sparks}</span>}
-                        {added && <CheckCircle2 className="w-3 h-3" />}
-                      </button>
-                    );
-                  })}
+                <div className="space-y-4" data-block-grid="1">
+                  {blockPalette().map(group => (
+                    <div key={group.group}>
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{group.group}</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {group.defs.map(def => {
+                          const added = blocksOrder.includes(def.id);
+                          return (
+                            <button
+                              key={def.id}
+                              data-block-id={def.id}
+                              disabled={added}
+                              draggable={!added}
+                              onDragStart={event => {
+                                event.dataTransfer.effectAllowed = 'copy';
+                                event.dataTransfer.setData('text/plain', `block:${def.id}`);
+                              }}
+                              onClick={() => {
+                                const visual = isVisualBlockId(def.id) ? emptyVisualBlock(def.id) : null;
+                                patchDraft({
+                                  blocksOrder: [...blocksOrder, def.id],
+                                  ...(visual ? { visualBlocks: upsertVisualBlock(draft.visualBlocks, visual) } : {}),
+                                  ...(def.id === 'unitTest' ? { lessonType: 'unit_test' as const, isUnitQuiz: true, unitTest: draft.unitTest ?? emptyUnitTest() } : {}),
+                                });
+                              }}
+                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-xs font-semibold transition-all ${
+                                added
+                                  ? 'border-border/50 text-muted-foreground/40 cursor-not-allowed'
+                                  : 'border-border text-foreground hover:border-teal-400 hover:shadow-sm active:scale-95'
+                              }`}
+                            >
+                              <span className="text-base">{def.icon}</span>
+                              <span className="flex-1">{def.label}</span>
+                              {def.sparks && !added && <span className="text-[10px] text-[var(--ps-cyan-text)]">⚡{def.sparks}</span>}
+                              {added && <CheckCircle2 className="w-3 h-3" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1471,11 +1492,23 @@ export default function ContentBuilderPage() {
 
         {/* ── Right: tabs ── */}
         <aside className="flex flex-col border-t border-border bg-muted/10 overflow-y-auto lg:border-t-0 lg:border-l">
-          <div className="sticky top-0 z-10 grid grid-cols-4 text-[11px] font-semibold border-b border-border bg-card">
-            {(['properties', 'publish', 'allocate', 'history'] as const).map(t => (
-              <button key={t} onClick={() => setRightTab(t)}
-                className={`py-2.5 capitalize transition-colors ${rightTab === t ? 'text-teal-600 border-b-2 border-teal-500' : 'text-muted-foreground hover:text-foreground'}`}>
-                {t}
+          <div role="tablist" aria-label="Desk" className="sticky top-0 z-10 grid grid-cols-2 gap-1 border-b border-border bg-card p-2">
+            {([
+              ['properties', 'Properties'],
+              ['publish', 'Publish'],
+              ['allocate', 'Allocate'],
+              ['history', 'History'],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={rightTab === id}
+                data-right-tab={id}
+                onClick={() => setRightTab(id)}
+                className={`min-h-11 rounded-xl px-2 text-sm font-semibold transition-colors ${rightTab === id ? 'bg-[#203337] text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+              >
+                {label}
               </button>
             ))}
           </div>
@@ -1526,6 +1559,7 @@ export default function ContentBuilderPage() {
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
               transition={{ duration: 0.2 }}
               onClick={e => e.stopPropagation()}
+              data-publish-dialog="1"
               className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl"
             >
               <div className="flex items-start gap-3 px-5 py-4 border-b border-border">
@@ -1546,6 +1580,23 @@ export default function ContentBuilderPage() {
 
               <div className="px-5 py-4 space-y-4">
                 <p className="text-sm leading-relaxed text-foreground">{PUBLISH_DISCLAIMER}</p>
+                {needsCopyright && user ? (
+                  <div data-copyright-gate="teacher">
+                    <p className="mb-2 text-sm font-semibold text-foreground">{CMS_DESK.signFirst}</p>
+                    <CopyrightSign
+                      uid={user.uid}
+                      profileName={profile?.name || ''}
+                      role="teacher"
+                      context="course_create"
+                      courseId={courseId}
+                      onSigned={(id) => {
+                        void updateCourse(courseId, { copyrightSignatureId: id }).then(() => {
+                          setCourse(current => current ? { ...current, copyrightSignatureId: id } : current);
+                        }).catch(() => toast.error(SIGN.failed));
+                      }}
+                    />
+                  </div>
+                ) : null}
                 <label className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-3 py-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -1565,7 +1616,7 @@ export default function ContentBuilderPage() {
                 </Button>
                 <Button
                   className="rounded-xl gap-2 bg-success hover:bg-success text-white"
-                  disabled={!publishAccepted || publishing}
+                  disabled={!publishAccepted || publishing || needsCopyright}
                   onClick={confirmPublish}
                 >
                   {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Publish
@@ -1827,7 +1878,7 @@ function BuilderBlock({
   unitPassMark?: number;
   onUnitPassMark: (value: number | null) => void;
 }) {
-  const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId };
+  const def: BlockDef = BLOCK_DEFS.find(d => d.id === blockId) ?? { id: blockId, icon: '📄', label: blockId, group: 'Lesson' };
   const outputs = draft.aiOutputs ?? {};
   const shell = (children: React.ReactNode, opts?: { regen?: string }) => (
     <BlockShell
@@ -2013,14 +2064,16 @@ function BuilderBlock({
     default: {
       const formatKey = blockId as keyof AiOutputs;
       const raw = outputs[formatKey];
-      const prose = ['notes', 'summary', 'infographic', 'mindmap'].includes(blockId);
+      const prose = ['notes', 'summary'].includes(blockId);
+      const visual = blockId === 'mindmap' || blockId === 'infographic';
       const textValue = typeof raw === 'string' ? raw : '';
       const has = raw != null && (!Array.isArray(raw) || raw.length > 0) && (typeof raw !== 'string' || raw.trim() !== '');
       const problemsText = typeof outputs.problems === 'string' ? outputs.problems : '';
       const problemsInvalid = blockId === 'problems' && problemsText.trim().length > 0 && !problemsAreWorked(problemsText);
-      if (prose) {
+      if (prose || visual) {
         return shell(
-          <div className="space-y-3">
+          <div className="space-y-3" data-format-block={blockId}>
+            {visual ? <FormatPreview format={blockId} outputs={outputs} embedded /> : null}
             <MarkdownEditBlock
               value={textValue}
               onChange={v => patch({ aiOutputs: { ...outputs, [formatKey]: v } })}
@@ -2322,7 +2375,9 @@ function PublishTab({ draft, course, statusCard, setStatus, patchCourse, courseI
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           Downloads
         </p>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">{CMS_DESK.downloadsHelp}</p>
         <select
+          data-downloads="1"
           aria-label="Download allowance for this course"
           value={course.downloadsEnabled === true ? 'on' : course.downloadsEnabled === false ? 'off' : 'tier'}
           onChange={e => {
