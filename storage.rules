@@ -40,5 +40,41 @@ service firebase.storage {
     match /institutions/{institutionId}/alerts/{alertId}/{fileName} {
       allow read, write: if false;
     }
+
+    // Creator Store files. Do not deploy until the Firebase project is on the Blaze plan.
+    // Thumbs and watermarked previews are public images. Paper and mark scheme stay
+    // separate under private/ and are never publicly readable. Downloads use a signed URL.
+    function storeWriter() {
+      return request.auth != null && (
+        request.auth.token.adminRole == 'super_admin'
+        || request.auth.token.adminRole == 'admin'
+        || request.auth.token.adminRole == 'content_editor'
+      );
+    }
+
+    match /store/products/{productId}/thumbs/{fileName} {
+      allow read: if true;
+      allow create, update: if storeWriter()
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if storeWriter();
+    }
+
+    match /store/products/{productId}/preview/{fileName} {
+      allow read: if true;
+      allow create, update: if storeWriter()
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if storeWriter();
+    }
+
+    match /store/products/{productId}/private/{fileName} {
+      allow read: if false;
+      allow create, update: if storeWriter()
+        && (fileName == 'paper.pdf' || fileName == 'markscheme.pdf')
+        && request.resource.size < 50 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow delete: if storeWriter();
+    }
   }
 }

@@ -41,6 +41,11 @@ describe('dashboard role guard', () => {
     assert.equal(decideDashboardAccess('/dashboard/admin/books', { role: 'admin', adminRole: 'content_editor' }).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/admin/books', { ...teacher, cms: true }).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/admin/books', teacher).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/store/import', admin).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/store/import', { role: 'admin', adminRole: 'content_editor' }).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/store/import', { role: 'admin', adminRole: 'support' }).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/store/import', { role: 'admin', adminRole: 'finance' }).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/store/import', teacher).allowed, false);
     assert.equal(decideDashboardAccess('/dashboard/admin/courses', admin).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/admin/payments', admin).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/admin/finance', parent, 'parent').allowed, false);

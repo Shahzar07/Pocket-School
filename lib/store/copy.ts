@@ -1,0 +1,41 @@
+/** Visible copy for the store importer. Kept out of JSX so the i18n ratchet stays quiet. */
+
+export const SETUP_NEEDED_MESSAGE =
+  'Setup needed: add FIREBASE_SERVICE_ACCOUNT on Vercel before a download can return a signed URL. Deploying storage rules in production also needs the Firebase Blaze plan. Nothing was marked successful.';
+
+export const STORE_COPY = {
+  setupNote: SETUP_NEEDED_MESSAGE,
+  importTitle: 'Store import',
+  importBody: 'A ZIP with manifest.csv and one folder per SKU. Valid rows are saved as drafts. An admin publishes them afterwards.',
+  dryRun: 'Dry run',
+  importRows: 'Import drafts',
+  resume: 'Resume import',
+  exportErrors: 'Export errors',
+  checkDownload: 'Check download',
+  publish: 'Publish',
+  published: 'Published',
+  draftSaved: 'Draft saved',
+  chooseZip: 'Choose a ZIP',
+  progress: 'Progress',
+  productTitle: 'Product files',
+  productBody: 'Paper and mark scheme stay private. The thumbnail and preview pages are the public files. This saves a draft.',
+  saveProduct: 'Save product draft',
+  openImporter: 'Bulk importer',
+  sku: 'SKU',
+  title: 'Title',
+  subject: 'Subject',
+  level: 'Level',
+  board: 'Exam board',
+  spec: 'Spec code',
+  type: 'Type',
+  priceUsd: 'Price USD',
+  priceMyr: 'Price MYR',
+  access: 'Access',
+  description: 'Description',
+  tags: 'Tags',
+  paper: 'Paper PDF',
+  markscheme: 'Mark scheme PDF',
+  thumbnail: 'Thumbnail PNG',
+  previews: 'Preview images',
+  status: 'Status',
+} as const;

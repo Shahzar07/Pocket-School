@@ -3356,3 +3356,18 @@ Feed queries are `schoolId + createdAt`, `authorHandle + createdAt`, and `feed +
 
 The app should follow `docs/DASHBOARD_UX.md` for the three-column wall: profile shortcuts, composer and feed, then events, groups, moments, online classmates, and SafeLine.
 
+## Creator Store product files
+
+Server-only. Clients do not read these collections. The Admin SDK writes them from `/api/store/import`, `/api/store/products`, and `/api/store/download`.
+
+`store_products/{productId}` is `{ sku, title, subject, level, examBoard, specCode, type, priceUsd, priceMyr, access, description, tags, paperPath, markschemePath, thumbnailPath, previewPaths, status, createdAt, updatedAt }`. `access` is `paid` or `free`. `status` is `draft` or `published`. Import and the single-product form always write `draft`. `sku` is unique. `level` is a level name.
+
+`store_purchases/{uid}_{productId}` is a purchase record the download route accepts. `alloc:store:{productId}` and `alloc:resource:{productId}` on `users.permissions` are the other entitlements.
+
+`store_download_logs` is an append-only log `{ userId, productId, sku, file, createdAt, expiresAt }` written only after a real signed URL is minted. `file` is `paper` or `markscheme`.
+
+`store_import_jobs/{jobId}` is `{ ownerId, createdAt }`. `store_import_jobs/{jobId}/rows/{sku}` is `{ status, productId, errors, updatedAt }` so an interrupted import can resume. `status` is `done` or `error`.
+
+Storage paths are in `docs/STORE_IMPORT.md`. Rules are in `storage.rules` and are not deployed.
+
+

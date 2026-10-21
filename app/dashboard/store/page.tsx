@@ -10,6 +10,8 @@ import { StoreScreen, type ResourceCard } from '@/components/scope-c/market-scre
 import { Panel } from '@/components/dash-ui';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { filterResources } from '@/lib/market-filters';
+import { can, resolveStaffRole } from '@/lib/admin-console';
+import { ProductFiles } from '@/components/store/product-files';
 
 export default function StorePage() {
   const { profile } = useAuthSTORE();
@@ -23,6 +25,7 @@ export default function StorePage() {
   };
   useEffect(() => { load(); }, []);
   const admin = profile?.role === 'admin';
+  const contentStaff = can(resolveStaffRole(profile), 'content');
   const visible = filterResources(resources, query, kind);
 
   return (
@@ -67,6 +70,7 @@ export default function StorePage() {
             .catch((error: Error) => toast.error(error.message));
         } : undefined}
       />
+      {contentStaff && <ProductFiles />}
     </FeatureGate>
     </StudioFrame>
   );
