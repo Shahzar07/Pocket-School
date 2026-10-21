@@ -12,6 +12,10 @@ import { QuestionGenerator } from '@/components/essays/question-generator';
 import { importFile } from '@/components/editor/import-file';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
+import { flowCopy } from '@/lib/flow/copy';
+import { flowNeighbor } from '@/lib/flow/steps';
 import { LevelMenu } from '@/components/level-menu';
 import { essayLevelLabel, type EssayLevel } from '@/lib/essays/coaching';
 import { resolveLevel } from '@/lib/levels';
@@ -384,9 +388,24 @@ export function EssaysDesk() {
   const showMark = mark && status !== 'flagged';
   const placed = placeNotes(body, showMark ? mark.inline : []);
   const planningOn = planningAllowed({ planningEnabled });
+  const essayFlow = [
+    { id: 'question', label: flowCopy.question },
+    { id: 'plan', label: flowCopy.plan },
+    { id: 'write', label: flowCopy.write },
+    { id: 'feedback', label: flowCopy.feedback },
+  ] as const;
+  const flowId = showMark ? 'feedback' : mode === 'history' ? 'write' : mode;
+  function selectFlow(id: string) {
+    if (id === 'feedback') {
+      setMode('write');
+      return;
+    }
+    if (id === 'question' || id === 'plan' || id === 'write') setMode(id);
+  }
 
   return (
     <div className="space-y-5">
+      <FlowTrail steps={essayFlow} currentId={flowId} onSelect={selectFlow} allowAhead />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="text-sm font-semibold">
           Level
@@ -573,6 +592,18 @@ export function EssaysDesk() {
           </div>
         </div>
       )}
+      <FlowNav
+        backDisabled={!flowNeighbor(essayFlow, flowId, -1)}
+        nextDisabled={!flowNeighbor(essayFlow, flowId, 1)}
+        onBack={() => {
+          const step = flowNeighbor(essayFlow, flowId, -1);
+          if (step) selectFlow(step.id);
+        }}
+        onNext={() => {
+          const step = flowNeighbor(essayFlow, flowId, 1);
+          if (step) selectFlow(step.id);
+        }}
+      />
     </div>
   );
 }

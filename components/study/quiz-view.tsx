@@ -1,6 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { useFlowKeys } from '@/components/flow/use-flow-keys';
+import { flowCopy } from '@/lib/flow/copy';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw } from 'lucide-react';
@@ -25,11 +28,23 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
   const answerIdx = source ? correctIndex(source.options, source.answer) : -1;
 
   const next = () => {
+    if (picked === null) return;
     if (i + 1 >= questions.length) {
       setFinished(true);
       onComplete(Math.round((right / questions.length) * 100));
     } else { setI(i + 1); setPicked(null); }
   };
+  const previous = () => {
+    if (i === 0) return;
+    setI(i - 1);
+    setPicked(null);
+  };
+  const jump = useCallback((nextIndex: number) => {
+    if (nextIndex > i && picked === null) return;
+    setI(nextIndex);
+    setPicked(null);
+  }, [i, picked]);
+  useFlowKeys(i, questions.length, jump, !finished);
 
   if (finished) {
     const pct = Math.round((right / questions.length) * 100);
@@ -84,6 +99,7 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
           )}
         </motion.div>
       </AnimatePresence>
+      <FlowNav onBack={previous} onNext={next} backDisabled={i === 0} nextDisabled={picked === null} nextLabel={i + 1 >= questions.length ? flowCopy.seeScore : flowCopy.next} />
     </div>
   );
 }
@@ -109,6 +125,12 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
   const [finished, setFinished] = useState(false);
   const it = display[i] ?? items[i];
   const source = items[i];
+  const jump = useCallback((nextIndex: number) => {
+    if (nextIndex > i && picked === null) return;
+    setI(nextIndex);
+    setPicked(null);
+  }, [i, picked]);
+  useFlowKeys(i, items.length, jump, !finished && Boolean(it && source));
   if (!it || !source) {
     return <p className="text-sm text-muted-foreground text-center">No statements yet.</p>;
   }
@@ -121,6 +143,18 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
     );
   }
   const choose = (v: boolean) => { if (picked !== null || !source) return; setPicked(v); if (v === source.answer) setRight(r => r + 1); };
+  const next = () => {
+    if (picked === null) return;
+    if (i + 1 >= items.length) {
+      setFinished(true);
+      onComplete(Math.round((right / items.length) * 100));
+    } else { setI(i + 1); setPicked(null); }
+  };
+  const previous = () => {
+    if (i === 0) return;
+    setI(i - 1);
+    setPicked(null);
+  };
   return (
     <div className="max-w-xl mx-auto text-center" dir={translation.dir}>
       <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
@@ -143,12 +177,13 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
       {picked !== null && (
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-start rounded-2xl bg-muted/50 border border-border p-4">
           <div className="text-[14px] leading-relaxed [&_p]:my-1"><MathMarkdown>{it.explanation}</MathMarkdown></div>
-          <button onClick={() => { if (i + 1 >= items.length) { setFinished(true); onComplete(Math.round((right / items.length) * 100)); } else { setI(i + 1); setPicked(null); } }}
+          <button onClick={next}
             className="mt-3 h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-1.5">
             {i + 1 >= items.length ? 'See score' : 'Next'} <ArrowRight className="w-4 h-4" />
           </button>
         </motion.div>
       )}
+      <FlowNav onBack={previous} onNext={next} backDisabled={i === 0} nextDisabled={picked === null} nextLabel={i + 1 >= items.length ? flowCopy.seeScore : flowCopy.next} />
     </div>
   );
 }

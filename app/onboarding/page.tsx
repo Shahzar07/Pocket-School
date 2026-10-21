@@ -17,6 +17,9 @@ import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
+import { flowCopy } from '@/lib/flow/copy';
 import { LevelMenu } from '@/components/level-menu';
 import { levelLabel, placementForLevel, resolveLevel } from '@/lib/levels';
 import { PROGRAMMES, NOT_APPLICABLE, assertPlacement, levelsForProgramme, toNamedLevel } from '@/lib/programmes';
@@ -229,6 +232,15 @@ export default function OnboardingPage() {
     <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="absolute top-4 end-4 z-20"><LanguageSwitcher /></div>
       <div className="w-full max-w-3xl">
+        <FlowTrail
+          steps={[
+            { id: '1', label: flowCopy.programme },
+            { id: '2', label: flowCopy.level },
+            { id: '3', label: flowCopy.style },
+          ]}
+          currentId={String(step)}
+          onSelect={(id) => setStep(Number(id))}
+        />
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-10">
           {[1, 2, 3].map(s => (
@@ -344,6 +356,17 @@ export default function OnboardingPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        <FlowNav
+          backDisabled={step <= 1}
+          nextDisabled={(step === 1 && !programme) || (step === 2 && !yearGroup) || (step === 3 && (!learningStyle || loading))}
+          nextLabel={step === 3 ? 'Start Learning' : flowCopy.next}
+          onBack={() => setStep(step === 3 && yearChoices.length === 1 && yearChoices[0] === NOT_APPLICABLE ? 1 : Math.max(1, step - 1))}
+          onNext={() => {
+            if (step === 1) setStep(yearChoices.length === 1 && yearChoices[0] === NOT_APPLICABLE ? 3 : 2);
+            else if (step === 2) setStep(3);
+            else void completeStudentOnboarding();
+          }}
+        />
       </div>
     </div>
   );

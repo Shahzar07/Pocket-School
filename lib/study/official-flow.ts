@@ -34,26 +34,7 @@ export interface ExamChoice {
   topicId?: string;
 }
 
-export function flowIndex<T extends { id: string }>(steps: readonly T[], currentId: string): number {
-  const index = steps.findIndex((step) => step.id === currentId);
-  return index < 0 ? 0 : index;
-}
-
-/** Arrow keys move between questions unless the user is typing. */
-export function flowKeyTarget(
-  event: { key: string; altKey: boolean; metaKey: boolean; ctrlKey: boolean; target: unknown },
-  count: number,
-  index: number,
-): number | null {
-  if (event.altKey || event.metaKey || event.ctrlKey) return null;
-  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return null;
-  const target = event.target as { tagName?: string; isContentEditable?: boolean } | null;
-  const tag = typeof target?.tagName === 'string' ? target.tagName.toUpperCase() : '';
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return null;
-  const next = index + (event.key === 'ArrowRight' ? 1 : -1);
-  if (next < 0 || next >= count) return null;
-  return next;
-}
+export { flowIndex, flowKeyTarget } from '@/lib/flow/steps';
 
 export function levelHref(): string {
   return '/dashboard/studio/exams/packs';
