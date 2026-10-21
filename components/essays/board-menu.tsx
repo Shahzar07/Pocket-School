@@ -75,6 +75,7 @@ export function BoardMenu({
               role="option"
               data-board-id={item.id}
               aria-selected={item.id === current.id}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => { onChange(item.id); setOpen(false); setQuery(''); }}
               className={`block w-full rounded-xl px-3 py-2 text-left text-sm ${item.id === current.id ? 'bg-[#3FE0D0] font-semibold text-[#203337]' : 'hover:bg-muted'}`}
             >

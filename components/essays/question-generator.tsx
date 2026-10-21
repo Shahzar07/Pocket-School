@@ -88,10 +88,10 @@ export function QuestionGenerator({
           Topics
           <input aria-label="Topics" value={topics} onChange={event => setTopics(event.target.value)} placeholder="trade, cities" className="mt-1 block h-11 w-full rounded-xl border border-border bg-background px-3 font-normal" />
         </label>
-        <label className="text-sm font-semibold sm:col-span-2">
+        <div className="text-sm font-semibold sm:col-span-2">
           Exam board style
           <BoardMenu level={level} value={board} onChange={setBoard} />
-        </label>
+        </div>
         {subject === 'other' && (
           <label className="text-sm font-semibold sm:col-span-2">
             Subject name

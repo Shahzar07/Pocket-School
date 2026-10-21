@@ -326,7 +326,7 @@ export default function TeacherAssignmentsPage() {
             </label>
             {essayTask && (
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="block space-y-1">
+                <div className="block space-y-1">
                   <span className="text-xs font-medium text-muted-foreground">{essayCopy.level}</span>
                   <LevelMenu
                     ariaLabel={essayCopy.level}
@@ -338,7 +338,7 @@ export default function TeacherAssignmentsPage() {
                       setEssayWords(String(defaultWordTarget(id)));
                     }}
                   />
-                </label>
+                </div>
                 <label className="block space-y-1">
                   <span className="text-xs font-medium text-muted-foreground">{essayCopy.writingType}</span>
                   <select aria-label={essayCopy.writingType} value={essayType} onChange={(event) => setEssayType(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm">

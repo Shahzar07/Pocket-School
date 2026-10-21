@@ -388,10 +388,10 @@ export function EssaysDesk() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <label className="text-sm font-semibold">
+        <div className="text-sm font-semibold">
           Level
           <LevelMenu ariaLabel="Level" value={level} onChange={next => setLevel((resolveLevel(next) ?? 'igcse') as EssayLevel)} className="mt-1 min-w-[16rem]" />
-        </label>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-full border border-border p-1" role="tablist" aria-label="ET Essays">
             {([

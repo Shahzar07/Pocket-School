@@ -200,10 +200,10 @@ export function EssayWriter({ purpose }: { purpose: string }) {
       <h1 className="font-heading text-4xl tracking-tight">Write, then let ET AI mark it</h1>
       <p className="text-sm text-muted-foreground">{purpose}</p>
       <div data-essay-setup="1" className="grid gap-3 sm:grid-cols-2">
-        <label className="block space-y-1">
+        <div className="block space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ps-cyan-text)]">{essayCopy.level}</span>
           <LevelMenu ariaLabel={essayCopy.level} value={level} onChange={(next) => onLevel(toEssayLevelId(next))} />
-        </label>
+        </div>
         <label className="block space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ps-cyan-text)]">{essayCopy.writingType}</span>
           <select aria-label={essayCopy.writingType} data-essay-type={writingType} value={writingType} onChange={(event) => { setWritingType(event.target.value); setResult(null); }} className={control}>

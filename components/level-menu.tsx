@@ -77,7 +77,7 @@ export function LevelMenu({
         >
           {allowEmpty ? (
             <li>
-              <button type="button" role="option" aria-selected={!resolved && !value} className="w-full rounded-xl px-3 py-2 text-left text-sm" onClick={() => choose('')}>
+              <button type="button" role="option" aria-selected={!resolved && !value} className="w-full rounded-xl px-3 py-2 text-left text-sm" onMouseDown={(event) => event.preventDefault()} onClick={() => choose('')}>
                 {emptyLabel}
               </button>
             </li>
@@ -96,6 +96,7 @@ export function LevelMenu({
                         role="option"
                         data-level-id={level.id}
                         aria-selected={selected}
+                        onMouseDown={(event) => event.preventDefault()}
                         onClick={() => choose(stored)}
                         className={`w-full rounded-xl px-3 py-2 text-left text-sm ${selected ? 'bg-[#3FE0D0] font-semibold text-[#203337]' : 'hover:bg-muted'}`}
                       >
@@ -109,7 +110,7 @@ export function LevelMenu({
           ))}
           {extra.filter((item) => item && !resolveLevel(item)).map((item) => (
             <li key={item}>
-              <button type="button" role="option" aria-selected={value === item} className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => choose(item)}>
+              <button type="button" role="option" aria-selected={value === item} className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted" onMouseDown={(event) => event.preventDefault()} onClick={() => choose(item)}>
                 {item}
               </button>
             </li>
