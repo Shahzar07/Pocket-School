@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { AlignLeft, Copy, GripVertical, ListChecks, Plus, Scale, Trash2 } from 'lucide-react';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
+import { flowNeighbor } from '@/lib/flow/steps';
 import { LevelMenu } from '@/components/level-menu';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -57,6 +60,20 @@ export function CreateExamForm({
   const [boardStyle, setBoardStyle] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [examStep, setExamStep] = useState('questions');
+  const examSteps = [
+    { id: 'questions', label: copy.questionsTitle },
+    { id: 'settings', label: copy.settings },
+    { id: 'preview', label: copy.preview },
+    { id: 'publish', label: copy.publish },
+  ];
+  function showExamStep(id: string) {
+    setExamStep(id);
+    if (id === 'preview') setPreview(true);
+    if (id === 'settings') setSettingsOpen(true);
+    const target = id === 'publish' ? 'exam-publish' : id === 'settings' ? 'exam-settings' : 'exam-questions';
+    window.requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: 'start' }));
+  }
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const subjects = subjectsForLevel(level);
   const boards = boardsForLevel(level);
@@ -188,18 +205,19 @@ export function CreateExamForm({
         <div className="flex flex-wrap gap-2">
           <button type="button" className={quiet} disabled={saving} onClick={() => onSave('draft', extra)}>{copy.saveDraft}</button>
           <button type="button" className={quiet} aria-pressed={preview} onClick={() => setPreview((open) => !open)}>{preview ? copy.closePreview : copy.preview}</button>
-          <button type="button" className={publish} disabled={saving} onClick={() => onSave('published', extra)}>{copy.publish}</button>
+          <button id="exam-publish" type="button" className={publish} disabled={saving} onClick={() => onSave('published', extra)}>{copy.publish}</button>
         </div>
       </div>
 
+      <FlowTrail steps={examSteps} currentId={examStep} allowAhead onSelect={showExamStep} />
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
+        <div id="exam-questions" className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--studio-accent-text)]">{copy.newAssessment}</p>
             <h2 className="mt-1 font-heading text-3xl tracking-tight text-[var(--studio-text)]">{copy.createExam}</h2>
           </div>
           {preview ? (
-            <section aria-label={copy.preview} className="space-y-4 rounded-2xl border border-[var(--studio-border)] bg-[var(--studio-surface)] p-5">
+            <section id="exam-preview" aria-label={copy.preview} className="space-y-4 rounded-2xl border border-[var(--studio-border)] bg-[var(--studio-surface)] p-5">
               <h3 className="font-heading text-2xl text-[var(--studio-text)]">{draft.title.trim() || copy.untitled}</h3>
               {draft.description ? <p className="text-sm text-[var(--studio-dim)]">{draft.description}</p> : null}
               <ol className="space-y-4">
@@ -323,7 +341,7 @@ export function CreateExamForm({
           </div>
         </div>
 
-        <aside className="order-first lg:sticky lg:top-20 lg:order-none lg:col-start-2 lg:row-start-1" data-exam-settings>
+        <aside id="exam-settings" className="order-first lg:sticky lg:top-20 lg:order-none lg:col-start-2 lg:row-start-1" data-exam-settings>
           <button
             type="button"
             className={`${quiet} mb-3 w-full lg:hidden`}
@@ -337,6 +355,18 @@ export function CreateExamForm({
           </div>
         </aside>
       </div>
+      <FlowNav
+        backDisabled={!flowNeighbor(examSteps, examStep, -1)}
+        nextDisabled={!flowNeighbor(examSteps, examStep, 1)}
+        onBack={() => {
+          const step = flowNeighbor(examSteps, examStep, -1);
+          if (step) showExamStep(step.id);
+        }}
+        onNext={() => {
+          const step = flowNeighbor(examSteps, examStep, 1);
+          if (step) showExamStep(step.id);
+        }}
+      />
     </div>
   );
 }

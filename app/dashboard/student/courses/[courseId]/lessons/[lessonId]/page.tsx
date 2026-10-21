@@ -28,6 +28,7 @@ import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import type { CertificateAward } from '@/lib/certificates';
 import { authedFetch } from '@/lib/api-client';
+import { LessonFlow } from '@/components/flow/lesson-flow';
 import { CertificateCelebration } from '@/components/certificate-celebration';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
@@ -798,7 +799,16 @@ export default function LessonPage() {
         setCompleted(completedIds.has(lessonId));
       } else {
         // Marketplace courses also track enrollment/completion.
-        enroll = await getEnrollment(user.uid, courseId);
+        const [enrollDoc, allUnits] = await Promise.all([
+          getEnrollment(user.uid, courseId),
+          getModulesWithLessons(courseId),
+        ]);
+        enroll = enrollDoc;
+        const currentUnit = allUnits.find((item) => item.module.id === result.moduleId);
+        if (currentUnit) {
+          setUnit(currentUnit.module);
+          setUnitLessons(currentUnit.lessons.filter((item) => item.status === 'published' || item.id === lessonId));
+        }
         setEnrollment(enroll);
         setCompleted((enroll?.completedLessons ?? []).includes(lessonId));
       }
@@ -1072,6 +1082,7 @@ export default function LessonPage() {
             </Badge>
           )}
         </div>
+        <LessonFlow courseId={courseId} lessonId={lessonId} lessons={unitLessons} />
         <VisualBlockView blocks={lesson.visualBlocks} />
         {(lesson.lessonType === 'unit_test' ? hasUnitPaper : quiz.length > 0) ? (
           <UnitQuizMode
@@ -1128,6 +1139,7 @@ export default function LessonPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
       <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
+      <LessonFlow courseId={courseId} lessonId={lessonId} lessons={unitLessons} />
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 min-w-0">

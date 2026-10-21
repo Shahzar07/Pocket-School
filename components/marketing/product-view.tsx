@@ -1,8 +1,11 @@
 import Link from 'next/link';
+import { PathwayFlow } from '@/components/flow/pathway-flow';
 import type { MarketPage } from '@/lib/marketing/pages';
+import { PATHWAY_STEPS } from '@/lib/flow/pathways';
 import { MARKET_BRAND } from '@/lib/marketing/nav';
 
 export function ProductView({ page }: { page: MarketPage }) {
+  const showPathway = PATHWAY_STEPS.some((step) => step.id === page.slug);
   return (
     <article className="bg-white text-[#203337]" style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }}>
       <header className="bg-[linear-gradient(160deg,#0B1417_0%,#1E6A83_58%,#3FE0D0_140%)] px-6 py-16 text-white">
@@ -13,6 +16,7 @@ export function ProductView({ page }: { page: MarketPage }) {
         </div>
       </header>
       <div className="mx-auto max-w-3xl space-y-10 px-6 py-12">
+        {showPathway ? <PathwayFlow currentId={page.slug} /> : null}
         {page.sections.map((section) => (
           <section key={section.heading}>
             <h2 className="text-2xl" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif' }}>{section.heading}</h2>

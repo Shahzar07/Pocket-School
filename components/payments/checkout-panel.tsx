@@ -1,6 +1,9 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
+import { flowCopy } from '@/lib/flow/copy';
 import { formatMoney } from '@/lib/money';
 import { CountrySelect } from '@/components/country-select';
 
@@ -44,7 +47,13 @@ export function CheckoutPanel({
   payLabel?: string;
 }) {
   const { i18n } = useTranslation();
+  const checkoutSteps = [
+    { id: 'review', label: flowCopy.review },
+    { id: 'pay', label: flowCopy.pay },
+  ];
   return (
+    <div className="space-y-4">
+    <FlowTrail steps={checkoutSteps} currentId={method ? 'pay' : 'review'} />
     <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] p-5 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -151,6 +160,13 @@ export function CheckoutPanel({
           </button>
         )}
       </aside>
+    </div>
+    <FlowNav
+      backHref="/pricing"
+      onNext={onPay}
+      nextDisabled={busy || methods.length === 0 || !onPay}
+      nextLabel={payLabel ?? flowCopy.pay}
+    />
     </div>
   );
 }

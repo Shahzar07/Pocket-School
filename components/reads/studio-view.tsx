@@ -7,6 +7,9 @@ import { useAuthSTORE } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
+import { flowNeighbor } from '@/lib/flow/steps';
 import {
   ImportPanel, VersionHistory, imageMarkdown, pushRevision, readAutosave, useAutosave,
 } from '@/components/editor';
@@ -464,6 +467,15 @@ export function StudioView() {
             <Step active={book.status === 'review'} label={t('reads.studio.review')} />
             <Step active={book.status === 'published'} label={t('reads.studio.published')} />
           </div>
+          <BookFlow tab={tab} onTab={setTab} labels={{
+            details: t('reads.studio.tabDetails'),
+            create: 'Create',
+            write: t('reads.studio.tabWrite'),
+            import: t('reads.studio.tabImport'),
+            pictures: t('reads.studio.tabPictures'),
+            cover: t('reads.studio.tabCover'),
+            preview: PREVIEW.tab,
+          }} />
           <div className="flex flex-wrap gap-2">
             <Tab tabId="details" on={tab === 'details'} label={t('reads.studio.tabDetails')} onClick={() => setTab('details')} />
             <Tab tabId="create" on={tab === 'create'} label="Create" onClick={() => setTab('create')} />
@@ -1022,6 +1034,38 @@ function OriginBadge({ origin }: { origin: 'ai' | 'human' | 'import' }) {
 
 function Step({ active, label }: { active: boolean; label: string }) {
   return <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>{label}</span>;
+}
+
+const BOOK_STEP_IDS = ['details', 'create', 'write', 'import', 'pictures', 'cover', 'preview'] as const;
+type BookTab = (typeof BOOK_STEP_IDS)[number];
+
+function BookFlow({
+  tab,
+  onTab,
+  labels,
+}: {
+  tab: BookTab;
+  onTab: (id: BookTab) => void;
+  labels: Record<BookTab, string>;
+}) {
+  const steps = BOOK_STEP_IDS.map((id) => ({ id, label: labels[id] }));
+  return (
+    <div className="space-y-2">
+      <FlowTrail steps={steps} currentId={tab} allowAhead onSelect={(id) => onTab(id as BookTab)} />
+      <FlowNav
+        backDisabled={!flowNeighbor(steps, tab, -1)}
+        nextDisabled={!flowNeighbor(steps, tab, 1)}
+        onBack={() => {
+          const step = flowNeighbor(steps, tab, -1);
+          if (step) onTab(step.id as BookTab);
+        }}
+        onNext={() => {
+          const step = flowNeighbor(steps, tab, 1);
+          if (step) onTab(step.id as BookTab);
+        }}
+      />
+    </div>
+  );
 }
 
 function Tab({ on, label, onClick, tabId }: { on: boolean; label: string; onClick: () => void; tabId: string }) {

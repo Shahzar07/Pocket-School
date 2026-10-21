@@ -14,6 +14,9 @@ import { CertificateDocument } from '@/components/certificate-document';
 import { verifyStatusText } from '@/lib/alumni';
 import { CERTIFICATE_DISCLAIMER, certificateStatus, certificateStudentNumber, formatCertificateDate, type CertificateFace } from '@/lib/certificates';
 import { templateSampleRecord } from '@/lib/certificates/design';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
+import { flowCopy } from '@/lib/flow/copy';
 import { CredentialPanel } from '@/components/credentials/credential-panel';
 import { copyrightLine } from '@/lib/insights/copyright';
 import { automationEnabled } from '@/lib/automation-status';
@@ -122,9 +125,25 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
     }
   };
 
+  const claimSteps = [
+    { id: 'lookup', label: flowCopy.lookup },
+    { id: 'certificate', label: flowCopy.certificate },
+  ];
+  const claimId = verified === true ? 'certificate' : 'lookup';
+
   return (
     <div className="min-h-screen bg-[#F4F7F8] px-4 py-10 text-[#203337] dark:bg-[#0B1417] dark:text-[#E8F4F6]">
       <div className="max-w-3xl mx-auto">
+        <FlowTrail
+          steps={claimSteps}
+          currentId={claimId}
+          onSelect={(id) => {
+            if (id === 'lookup') {
+              setVerified(null);
+              setCertData(null);
+            }
+          }}
+        />
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 text-[#1E6A83] font-bold tracking-[0.22em] text-[11px] dark:text-[#3FE0D0]">
             <Award className="w-4 h-4" /> POKET SCHOOL
@@ -191,6 +210,15 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
 
         <p className="text-center text-xs text-[#6b7c82] mt-8 max-w-lg mx-auto">{CERTIFICATE_DISCLAIMER}</p>
         <p className="text-center text-xs text-[#6b7c82] mt-3">{copyrightLine(new Date().getFullYear())}</p>
+        <FlowNav
+          backDisabled={verified !== true}
+          onBack={() => {
+            setVerified(null);
+            setCertData(null);
+          }}
+          nextDisabled={loading || !uuid.trim() || verified === true}
+          onNext={() => { void handleVerify(); }}
+        />
       </div>
     </div>
   );
