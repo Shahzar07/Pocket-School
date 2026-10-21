@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
-import { ProductView } from '@/components/marketing/product-view';
-import { pageBySlug } from '@/lib/marketing/pages';
+import { PathwayView } from '@/components/marketing/pathway-view';
+import { loadPathway } from '@/lib/pathways/load';
 
-const page = pageBySlug('mbbs');
+export async function generateMetadata(): Promise<Metadata> {
+  const pathway = await loadPathway('mbbs');
+  return { title: pathway.metaTitle, description: pathway.overview };
+}
 
-export const metadata: Metadata = {
-  title: page.metaTitle,
-  description: page.lede,
-};
-
-export default function Page() {
-  return <ProductView page={page} />;
+export default async function Page() {
+  const pathway = await loadPathway('mbbs');
+  return <PathwayView pathway={pathway} />;
 }

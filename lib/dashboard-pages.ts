@@ -1602,6 +1602,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'None.',
   },
   {
+    path: '/dashboard/admin/pathways',
+    title: 'Pathways',
+    purpose: 'Admins edit the public pathway pages: stages, subjects, ET teachers, and the questions.',
+    audience: ['admin'],
+    overlaps: 'The public Primary, IGCSE, A-Level, LLB, MBBS, and Independent pages.',
+    decision: 'Keep. A saved page replaces the catalogue copy for that pathway.',
+    ownerKeys: 'None.',
+  },
+  {
     path: '/dashboard/admin/help',
     title: 'Admin help',
     purpose: 'Where each admin tool lives, what each role can do, which keys still say coming soon, and the help articles ET AI answers from.',

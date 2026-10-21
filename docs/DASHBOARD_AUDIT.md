@@ -1617,6 +1617,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. Publishing stays with super admins.
 - **Owner keys:** None.
 
+### Pathways
+
+- **Route:** `/dashboard/admin/pathways`
+- **Audience:** admin
+- **Purpose:** Admins edit the public pathway pages: stages, subjects, ET teachers, and the questions.
+- **Overlaps:** The public Primary, IGCSE, A-Level, LLB, MBBS, and Independent pages.
+- **Decision:** Keep. A saved page replaces the catalogue copy for that pathway.
+- **Owner keys:** None.
+
 ### Admin help
 
 - **Route:** `/dashboard/admin/help`

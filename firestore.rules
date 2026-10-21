@@ -3274,6 +3274,54 @@ service cloud.firestore {
     }
 
     // Public lookup by id for the QR. Listing every card is refused.
+    // Public pathway pages. The site reads with the Admin SDK. Admins write
+    // a correction for subjects and stages. Guests cannot list the desk.
+    match /pathwayPages/{slug} {
+      allow get, list: if isAdmin() || callerIsSuper();
+      allow create, update: if (isAdmin() || callerIsSuper())
+        && slug in ['primary', 'igcse', 'alevel', 'llb', 'mbbs', 'independent']
+        && incoming().slug == slug
+        && incoming().title is string
+        && incoming().title.size() > 0
+        && incoming().title.size() < 120
+        && incoming().overview is string
+        && incoming().overview.size() > 0
+        && incoming().overview.size() < 2000
+        && incoming().audience is string
+        && incoming().audience.size() < 2000
+        && incoming().entry is string
+        && incoming().entry.size() < 2000
+        && incoming().duration is string
+        && incoming().duration.size() < 500
+        && incoming().priceLabel is string
+        && incoming().priceLabel.size() > 0
+        && incoming().priceLabel.size() < 80
+        && incoming().priceDetail is string
+        && incoming().priceDetail.size() < 800
+        && incoming().disclaimer is string
+        && incoming().disclaimer.size() < 600
+        && incoming().boardNote is string
+        && incoming().boardNote.size() < 800
+        && incoming().metaTitle is string
+        && incoming().metaTitle.size() < 160
+        && incoming().stages is list
+        && incoming().stages.size() > 0
+        && incoming().stages.size() < 9
+        && incoming().faqs is list
+        && incoming().faqs.size() > 0
+        && incoming().faqs.size() < 9
+        && incoming().included is list
+        && incoming().included.size() < 13
+        && incoming().boards is list
+        && incoming().boards.size() < 7
+        && incoming().progression is list
+        && incoming().progression.size() < 9
+        && incoming().ctas is list
+        && incoming().ctas.size() > 0
+        && incoming().ctas.size() < 5;
+      allow delete: if callerIsSuper();
+    }
+
     // Marketing journal. Super admins write. The public site reads published
     // rows with the Admin SDK, so clients cannot list the desk.
     match /blogPosts/{slug} {
