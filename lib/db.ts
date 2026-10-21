@@ -763,15 +763,11 @@ export async function getCourse(courseId: string): Promise<Course | null> {
 }
 
 export async function createCourse(data: Omit<Course, 'id'> & { platformSeed?: boolean }): Promise<string> {
-  const platformSeed = data.platformSeed === true;
   const copyrightSignatureId = data.copyrightSignatureId?.trim() || '';
-  if (!platformSeed && !copyrightSignatureId) {
-    throw new Error('Sign the copyright declaration before creating a course.');
-  }
-  const { platformSeed: _seed, ...rest } = data;
+  const { platformSeed: _seed, copyrightSignatureId: _signature, ...rest } = data;
   const ref = await addDoc(collection(db, 'courses'), {
     ...omitUndefined(rest),
-    copyrightSignatureId,
+    ...(copyrightSignatureId ? { copyrightSignatureId } : {}),
     enrollmentCount: data.enrollmentCount ?? 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),

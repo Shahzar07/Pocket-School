@@ -120,7 +120,7 @@ function isCorrectOption(opt: string, answer: string | undefined, options: strin
 
 /** Read-only preview of one AI-generated content format, shared between the
  * lesson player and the admin curriculum CMS review screen. */
-export function FormatPreview({ format, outputs }: { format: string; outputs: AiOutputs }) {
+export function FormatPreview({ format, outputs, embedded = false }: { format: string; outputs: AiOutputs; embedded?: boolean }) {
   const value = outputs[format as keyof AiOutputs];
 
   if (value == null || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && !value.trim())) {
@@ -128,7 +128,7 @@ export function FormatPreview({ format, outputs }: { format: string; outputs: Ai
   }
 
   if (format === 'mindmap' && typeof value === 'string') {
-    return <MindmapRenderer content={value} />;
+    return <MindmapRenderer content={value} compact={embedded} />;
   }
 
   if (format === 'infographic' && typeof value === 'string') {

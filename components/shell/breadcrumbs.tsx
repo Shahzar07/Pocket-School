@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { crumbLabel, useCrumbVersion } from '@/lib/shell/crumb-titles';
 
 const LABELS: Record<string, string> = {
   dashboard: 'Home',
@@ -35,12 +36,14 @@ const LABELS: Record<string, string> = {
 
 export function Breadcrumbs() {
   const pathname = usePathname();
+  useCrumbVersion();
   const parts = pathname.split('/').filter(Boolean);
   if (parts.length <= 1) return null;
   const crumbs = parts.map((part, index) => {
     const href = `/${parts.slice(0, index + 1).join('/')}`;
-    const label = LABELS[part] ?? part.replace(/-/g, ' ');
-    return { href, label, current: index === parts.length - 1 };
+    const named = crumbLabel(part);
+    const label = named ?? LABELS[part] ?? part.replace(/-/g, ' ');
+    return { href, label, current: index === parts.length - 1, named: Boolean(named) };
   });
 
   return (
@@ -49,9 +52,9 @@ export function Breadcrumbs() {
         <span key={crumb.href} className="inline-flex items-center gap-1 shrink-0">
           {index > 0 && <span aria-hidden="true">/</span>}
           {crumb.current ? (
-            <span aria-current="page" className="font-semibold text-foreground capitalize">{crumb.label}</span>
+            <span aria-current="page" className={`font-semibold text-foreground ${crumb.named ? '' : 'capitalize'}`}>{crumb.label}</span>
           ) : (
-            <Link href={crumb.href} className="capitalize hover:text-foreground">{crumb.label}</Link>
+            <Link href={crumb.href} className={`${crumb.named ? '' : 'capitalize'} hover:text-foreground`}>{crumb.label}</Link>
           )}
         </span>
       ))}

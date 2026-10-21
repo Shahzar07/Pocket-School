@@ -27,6 +27,11 @@ export function copyrightReady(record: { accepted?: boolean; version?: string; u
   return record?.accepted === true && record.version === COPYRIGHT_VERSION && Boolean(record.uid);
 }
 
+/** Teachers sign once, the first time that course is published. Students and admins do not. */
+export function teacherMustSignCopyright(role: string | null | undefined, signatureId: string | null | undefined): boolean {
+  return role === 'teacher' && !String(signatureId ?? '').trim();
+}
+
 export type SignatureContext = 'instructor_application' | 'course_create';
 
 /** Ignore case and extra spaces. The typed name must match the profile name. */

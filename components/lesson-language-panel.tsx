@@ -12,6 +12,7 @@ import { LANGUAGES, getLanguage } from '@/lib/languages';
 import { LESSON_TRANSLATION_COST } from '@/lib/sparks';
 import { formatAppNumber } from '@/lib/i18n/detect';
 import { Button } from '@/components/ui/button';
+import { CMS_DESK } from '@/lib/cms/desk-copy';
 
 /**
  * Editors add a localized title and body, or ask ET AI to translate the English
@@ -113,7 +114,7 @@ export function LessonLanguagePanel({
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+    <section data-cms-translation="review" className="rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Languages className="w-4 h-4 text-primary" />
         <h2 className="text-sm font-semibold text-foreground">{t('cms.heading')}</h2>
@@ -124,6 +125,7 @@ export function LessonLanguagePanel({
         )}
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed">{t('cms.hint')}</p>
+      <p className="text-xs text-muted-foreground leading-relaxed">{CMS_DESK.review}</p>
 
       <label className="block text-xs font-medium text-muted-foreground">
         {t('cms.target')}

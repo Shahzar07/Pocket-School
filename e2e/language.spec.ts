@@ -27,13 +27,12 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   expect(globeBox?.x ?? -1).toBeGreaterThanOrEqual(0);
   expect((globeBox?.x ?? 0) + (globeBox?.width ?? 0)).toBeLessThanOrEqual(1280);
   const search = page.getByRole('textbox', { name: 'Search languages' });
-  await globe.click();
-  try {
-    await expect(search).toBeVisible({ timeout: 2000 });
-  } catch {
-    await globe.click();
-    await expect(search).toBeVisible();
-  }
+  // The first click can land before hydration and do nothing. Click again until the menu stays open.
+  await expect(async () => {
+    if ((await globe.getAttribute('aria-expanded')) !== 'true') await globe.click();
+    await expect(globe).toHaveAttribute('aria-expanded', 'true', { timeout: 1_500 });
+    await expect(search).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: 20_000 });
   await search.fill('Malay');
   await page.getByRole('button', { name: /Bahasa Melayu/ }).click();
 
@@ -42,8 +41,21 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   await expect(hero).toContainText('Pergi lebih jauh dengan AI.');
   await expect(hero).not.toContainText('Learn your way.');
   await expect(page.getByRole('banner').getByRole('link', { name: 'Mula percuma' })).toBeVisible();
-  await expect(page.locator('#content').getByRole('link', { name: 'Mula percuma' })).toBeVisible();
+  await expect(page.locator('#content').getByRole('link', { name: 'Mula percuma' }).first()).toBeVisible();
   await expect(page.locator('[data-landing-universities]')).toContainText('Menyediakan pelajar');
+  await expect(page.getByRole('heading', { level: 2, name: 'Masalah yang pelajar, ibu bapa, dan sekolah benar-benar hadapi.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Satu harga di seluruh dunia.' })).toBeVisible();
+  await expect(page.getByText('The problems a student, a parent, and a school actually have.')).toHaveCount(0);
+  const below = page.locator('#features');
+  await below.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'docs/qa/homepage/homepage-bahasa-below-hero.png' });
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await page.screenshot({ path: 'docs/qa/homepage/homepage-bahasa-below-hero-dark.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'docs/qa/homepage/homepage-bahasa-below-hero-mobile.png' });
+  await page.evaluate(() => document.documentElement.classList.remove('dark'));
+  await page.screenshot({ path: 'docs/qa/homepage/homepage-bahasa-below-hero-mobile-light.png' });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
   const malayNav = page.getByRole('navigation', { name: 'Navigasi utama' });
   await expect(malayNav.getByRole('link', { name: 'Laman Utama', exact: true })).toBeVisible();

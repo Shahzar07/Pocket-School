@@ -141,9 +141,9 @@ Rows: 128. Failed: 0.
 
 ## Included besides the shell
 
-- Bahasa Melayu changes the public nav and the homepage hero. `e2e/language.spec.ts` switches the globe and checks Laman Utama, Kursus, Mula percuma, and “Belajar dengan cara anda.” Dashboard items that had an English override use the catalog when the language is not English. The longer marketing sections under the hero still use the English HOME copy.
+- Bahasa Melayu changes the public nav, the homepage hero, and the sections under the hero. `e2e/language.spec.ts` switches the globe and checks Laman Utama, Kursus, Mula percuma, “Belajar dengan cara anda.”, and the Malay headings for the problem list and the worldwide price. Dashboard items that had an English override use the catalog when the language is not English.
 - Homepage header scrolls away on `/`, stays fixed on other public pages, and is hidden on `/p/[code]`. “Programmes and products” uses the same 12px size as the other nav links. Shots: `docs/qa/homepage/homepage-header-flow.png`, `docs/qa/homepage/homepage-header-scrolled-away.png`, `docs/qa/homepage/profile-header-hidden.png`, `docs/qa/homepage/homepage-bahasa.png`.
-- Shared dialogs, the cookie notice, toasts, and the dashboard popups that already called the close helper use one Close control: 44px hit area, the label Close, and a focus ring. The copyright modal and the curriculum editor are not in this change.
+- Shared dialogs, the cookie notice, toasts, and the dashboard popups that already called the close helper use one Close control: 44px hit area, the label Close, and a focus ring. The copyright upload modal and the curriculum publish dialog use that same Close control.
 
 ## Deferred
 
@@ -172,3 +172,29 @@ Checked on 21 Oct 2026 from the certificate designer, without a signed-in admin.
 | `/verify/PS-1042` resolves. | PASS | `e2e/certificate-template.spec.ts`. The page shows Amina Yusuf, IGCSE Mathematics, PS-1042, and "Template sample", and it does not call the sample a completed module. `docs/qa/certificates/certificates-verify-light.png`, `certificates-verify-dark.png` |
 
 Other CMS checks are not part of this change and are not marked here.
+
+# CMS desk verification
+
+Checked on 21 Oct 2026 against the Firebase emulators and a local Next server. Sample course title: Cells and tissues. No real accounts.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Curriculum list does not ask for a copyright signature | PASS | `docs/qa/cms/cms-list-light.png` |
+| Admin publish does not ask for a copyright signature | PASS | `docs/qa/cms/cms-publish-admin.png` |
+| A teacher is asked to sign once, at first publish, when the course has no signature | PASS | `docs/qa/cms/cms-copyright-teacher.png` |
+| A student is not shown the copyright form | PASS | Student lesson has no `[data-copyright-sign]` |
+| Breadcrumb shows the course title | PASS | Builder navigation contains "Cells and tissues" |
+| Add a block has one Image, one Illustration, and separate Infographic / Infographic image | PASS | `docs/qa/cms/cms-builder-light.png` |
+| Blocks are grouped Lesson, Practice, Visual | PASS | Same screenshot |
+| Mind map renders the Buzan map from the lesson JSON | PASS | Map image in the builder screenshot |
+| Infographic renders the written sections and does not add a percentage | PASS | Builder contains "Plant cell" and no "%" |
+| PDF / Word toolbar does not cover the mind map or the ET AI actions | PASS | Bounding boxes in `e2e/cms-desk.spec.ts` |
+| Right panel tabs are Properties, Publish, Allocate, History | PASS | `docs/qa/cms/cms-publish-panel.png` |
+| Download allowance is on the Publish tab | PASS | `[data-downloads="1"]` |
+| Alt text and a multiple-intelligence tag are on a visual block | PASS | `docs/qa/cms/cms-alt-mi.png` |
+| Student reader uses a saved Bahasa Melayu title | PASS | `docs/qa/cms/cms-student-translation.png` shows "Sel tumbuhan" |
+| Cached ET AI translation when no saved copy exists | PASS | Unit test for `displayedField`; the student hook calls `/api/content/translate` only when the saved copy falls back |
+| Lesson body in Bahasa Melayu on the student page | PASS | The Lesson tab is not behind the Sparks lock. The saved sentence “Sel tumbuhan mempunyai nukleus dan dinding sel.” is on screen. Mind Map still shows the ⚡10 lock. Light and dark, desktop and 390px: `docs/qa/cms/cms-student-translation.png`, `cms-student-translation-dark.png`, `cms-student-translation-mobile.png`, `cms-student-translation-mobile-dark.png`. |
+| Mobile builder | PASS | `docs/qa/cms/cms-builder-mobile.png` |
+
+Unit tests in `lib/cms/desk.test.ts`: 5 passed (teacher-only signature, unique block grid, no amber Buzan branch, infographic stats only from the written text, breadcrumb title).

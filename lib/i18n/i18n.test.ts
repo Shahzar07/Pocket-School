@@ -116,6 +116,14 @@ test('the language list covers the major world languages and rtl scripts', () =>
   assert.equal(chromeCopy.en.home.v3.title, 'Learn your way.');
   assert.equal(chromeCopy.ms.home.v3.title, 'Belajar dengan cara anda.');
   assert.equal(chromeCopy.ms.home.v3.titleEm, 'Pergi lebih jauh dengan AI.');
+  assert.equal(
+    (catalogs.ms as unknown as { home: { v3: { solveTitle: string; priceTitle: string } } }).home.v3.solveTitle,
+    'Masalah yang pelajar, ibu bapa, dan sekolah benar-benar hadapi.',
+  );
+  assert.notEqual(
+    (catalogs.ms as unknown as { home: { v3: { solveTitle: string } } }).home.v3.solveTitle,
+    (catalogs.en as unknown as { home: { v3: { solveTitle: string } } }).home.v3.solveTitle,
+  );
   assert.notEqual(chromeCopy.ms.header.home, chromeCopy.en.header.home);
   assert.equal(chromeCopy.ms.header.programmes, 'Program dan produk');
   assert.notEqual(chromeCopy.ms.header.forSchools, chromeCopy.en.header.forSchools);

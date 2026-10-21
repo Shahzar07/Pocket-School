@@ -352,7 +352,7 @@ export function ContentExportToolbar({
   };
 
   return (
-    <div className="flex items-center gap-1.5 shrink-0 print:hidden">
+    <div data-export-toolbar="1" className="flex w-full flex-wrap items-center justify-end gap-1.5 print:hidden">
       <button type="button" onClick={handlePdf} className={btn} title="Open a printable version and save it as PDF">
         <Printer className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">PDF</span>
@@ -466,9 +466,9 @@ export function InfographicRenderer({ content, dark = false }: InfographicRender
       }`}
     >
       {/* Eyebrow + export toolbar */}
-      <div className="flex items-center justify-between gap-3 mb-5">
+      <div className="mb-5 flex flex-col gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1E6A83] to-[#203337] flex items-center justify-center shrink-0">
             <BarChart3 className="w-4 h-4 text-white" />
           </div>
           <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] truncate ${dark ? 'text-slate-400' : 'text-muted-foreground'}`}>

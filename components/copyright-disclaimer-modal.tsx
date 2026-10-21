@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 
 const STORAGE_KEY = 'ps_copyright_accepted';
 
 export function CopyrightDisclaimerModal() {
   const [show, setShow] = useState(false);
   const [checked, setChecked] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_KEY)) {
@@ -21,16 +23,23 @@ export function CopyrightDisclaimerModal() {
     setShow(false);
   }
 
+  function dismiss() {
+    setShow(false);
+  }
+
+  useLayerDismiss(show, dismiss, false, root);
+
   if (!show) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-        <div className="flex items-center gap-3 mb-4">
+      <div ref={root} className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" role="dialog" aria-modal="true" aria-labelledby="copyright-disclaimer-title">
+        <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
             <ShieldCheck className="w-5 h-5 text-blue-600" />
           </div>
-          <h2 className="text-lg font-bold text-[#202124]">Copyright & Upload Policy</h2>
+          <h2 id="copyright-disclaimer-title" className="text-lg font-bold text-[#202124] flex-1">Copyright & Upload Policy</h2>
+          <CloseControl onClose={dismiss} />
         </div>
         <div className="text-sm text-[#5F6368] space-y-3 mb-5">
           <p>Before uploading any content to Poket School, please read and agree to the following:</p>

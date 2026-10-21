@@ -864,7 +864,7 @@ export default function LessonPage() {
   const balance = profile?.sparksBalance ?? 0;
 
   const isFormatLocked = (format?: string) =>
-    !!format && isCurriculum && FORMAT_COSTS[format] != null && !unlockedFormats.includes(format);
+    !!format && format !== 'text' && isCurriculum && FORMAT_COSTS[format] != null && !unlockedFormats.includes(format);
 
   const handleUnlock = async (format: string) => {
     if (!user || unlockingFormat) return;
@@ -1047,7 +1047,7 @@ export default function LessonPage() {
   };
   const languageNotice = translation.autoTranslated ? (
     <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-primary">
-      <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
+      <span data-student-translation={translation.status} className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold">{t('lesson.autoTranslated')}</span>
       <button type="button" className="underline" onClick={translation.toggle}>
         {translation.showOriginal ? t('lesson.showTranslation') : t('lesson.showOriginal')}
       </button>
