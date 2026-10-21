@@ -23,6 +23,7 @@ import { filterTenantCatalogue } from '@/lib/tenant-host';
 import { listCatalogue } from '@/lib/institution-store';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { PublicFlow } from '@/components/school-desk/route-desk';
+import { LEARNER_LEVELS } from '@/lib/levels';
 
 const TYPE_FILTERS: { id: CourseType | 'all'; labelKey: string }[] = [
   { id: 'all', labelKey: 'market.all' },
@@ -34,13 +35,9 @@ const TYPE_FILTERS: { id: CourseType | 'all'; labelKey: string }[] = [
   { id: 'bundle', labelKey: 'market.bundles' },
 ];
 
-const LEVEL_FILTERS: { id: string; labelKey: string }[] = [
-  { id: 'All', labelKey: 'market.levelAll' },
-  { id: 'Primary', labelKey: 'market.levelPrimary' },
-  { id: 'Secondary', labelKey: 'market.levelSecondary' },
-  { id: 'GCSE', labelKey: 'market.levelGcse' },
-  { id: 'A-Level', labelKey: 'market.levelALevel' },
-  { id: 'University', labelKey: 'market.levelUniversity' },
+const LEVEL_FILTERS: { id: string; label: string }[] = [
+  { id: 'All', label: 'All' },
+  ...LEARNER_LEVELS.map((level) => ({ id: level.label, label: level.label })),
 ];
 
 const TYPE_LABEL_KEYS: Record<string, string> = {
@@ -196,7 +193,7 @@ export default function MarketplacePage() {
                   levelFilter === level.id ? 'bg-foreground text-background' : 'bg-transparent text-muted-foreground hover:bg-muted'
                 }`}
               >
-                {t(level.labelKey)}
+                {level.label}
               </button>
             ))}
           </div>

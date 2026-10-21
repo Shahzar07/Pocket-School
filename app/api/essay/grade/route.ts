@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceAiAccess } from '@/lib/api-guard';
 import { markEssayAtLevel, mergeModelMark } from '@/lib/essay/mark-level';
-import { criteriaFor, isEssayLevel, levelLabel } from '@/lib/essay/scale-config';
+import { criteriaFor, levelLabel, toEssayLevelId } from '@/lib/essay/scale-config';
 import { chat, MODELS } from '@/lib/study/ai';
 
 export const runtime = 'nodejs';
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (essay.trim().length < 40) {
     return NextResponse.json({ error: 'Write a little more before ET AI marks it.' }, { status: 400 });
   }
-  const levelId = isEssayLevel(body.level) ? body.level : 'igcse';
+  const levelId = toEssayLevelId(body.level);
   const local = markEssayAtLevel({
     essay,
     prompt,

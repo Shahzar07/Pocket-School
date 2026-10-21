@@ -6,6 +6,7 @@
  */
 
 import { NAMED_LEVELS, isNamedLevel } from './example-courses';
+import { resolveLevel } from './levels';
 
 export interface Programme {
   value: string;
@@ -310,6 +311,19 @@ export function subjectsForProgramme(value: string | null | undefined): readonly
   return programmeByValue(canonicalProgramme(value))?.subjects ?? [];
 }
 
+/** Subjects from every programme whose year resolves to this learner level. */
+export function subjectsForLevel(value: string | null | undefined): readonly string[] {
+  const id = resolveLevel(value);
+  if (!id) return subjectsForProgramme(value);
+  const names = new Set<string>();
+  for (const programme of PROGRAMMES) {
+    if (programme.years.some((year) => resolveLevel(year) === id)) {
+      for (const subject of programme.subjects) names.add(subject);
+    }
+  }
+  return [...names];
+}
+
 /** Access tier for a programme, or for a year-placement label. */
 export function tierForProgramme(value: string | null | undefined): 0 | 1 | 2 | 3 | 4 {
   const direct = programmeByValue(canonicalProgramme(value));
@@ -320,6 +334,14 @@ export function tierForProgramme(value: string | null | undefined): 0 | 1 | 2 | 
 
 /** Internal tutor mode. The studio shows one programme dropdown; this is not a second control. */
 export type StudioMode = 'k12' | 'college' | 'professional' | 'legal';
+
+export function studioModeForLevel(value: string | null | undefined): StudioMode {
+  const id = resolveLevel(value);
+  if (id === 'primary' || id === 'lower-secondary' || id === 'upper-secondary') return 'k12';
+  if (id === 'igcse' || id === 'a-level' || id === 'pre-university' || id === 'undergraduate' || id === 'masters' || id === 'phd') return 'college';
+  if (id === 'professional' || id === 'independent') return 'professional';
+  return studioModeForProgramme(value);
+}
 
 export function studioModeForProgramme(value: string | null | undefined): StudioMode {
   const programme = canonicalProgramme(value);

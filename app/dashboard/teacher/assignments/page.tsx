@@ -17,16 +17,17 @@ import { toast } from 'sonner';
 import { Plus, ClipboardList, Eye, CheckCircle2, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Timestamp } from 'firebase/firestore';
+import { LevelMenu } from '@/components/level-menu';
 import { essayCopy } from '@/lib/essay/copy';
 import {
   type DegreeStyle,
   type EssayLevelId,
-  ESSAY_LEVELS,
   defaultWordTarget,
-  isEssayLevel,
+  toEssayLevelId,
   levelLabel,
   referencingApplies,
   scaleBlurb,
+  scaleFamily,
   writingTypesFor,
   REFERENCING_STYLES,
 } from '@/lib/essay/scale-config';
@@ -123,7 +124,7 @@ export default function TeacherAssignmentsPage() {
           essayBoard,
           essayWordTarget: Number(essayWords) || defaultWordTarget(essayLevel),
           essayReferencing: referencingApplies(essayLevel) ? essayReferencing : '',
-          ...(essayLevel === 'degree' ? { essayDegreeStyle } : {}),
+          ...(scaleFamily(essayLevel) === 'degree' ? { essayDegreeStyle } : {}),
         } : {}),
       });
       toast.success('Assignment created!');
@@ -327,20 +328,16 @@ export default function TeacherAssignmentsPage() {
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="block space-y-1">
                   <span className="text-xs font-medium text-muted-foreground">{essayCopy.level}</span>
-                  <select
-                    aria-label={essayCopy.level}
+                  <LevelMenu
+                    ariaLabel={essayCopy.level}
                     value={essayLevel}
-                    onChange={(event) => {
-                      const next = event.target.value;
-                      if (!isEssayLevel(next)) return;
-                      setEssayLevel(next);
-                      setEssayType((current) => (writingTypesFor(next).some((type) => type.id === current) ? current : writingTypesFor(next)[0]!.id));
-                      setEssayWords(String(defaultWordTarget(next)));
+                    onChange={(next) => {
+                      const id = toEssayLevelId(next);
+                      setEssayLevel(id);
+                      setEssayType((current) => (writingTypesFor(id).some((type) => type.id === current) ? current : writingTypesFor(id)[0]!.id));
+                      setEssayWords(String(defaultWordTarget(id)));
                     }}
-                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-                  >
-                    {ESSAY_LEVELS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-                  </select>
+                  />
                 </label>
                 <label className="block space-y-1">
                   <span className="text-xs font-medium text-muted-foreground">{essayCopy.writingType}</span>
@@ -369,7 +366,7 @@ export default function TeacherAssignmentsPage() {
                     </select>
                   </label>
                 )}
-                {essayLevel === 'degree' && (
+                {scaleFamily(essayLevel) === 'degree' && (
                   <div className="flex flex-wrap gap-2 items-center">
                     <button type="button" aria-pressed={essayDegreeStyle === 'uk'} onClick={() => setEssayDegreeStyle('uk')} className={`min-h-11 px-4 rounded-full text-sm font-semibold ${essayDegreeStyle === 'uk' ? 'bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)]' : 'border border-border'}`}>
                       {essayCopy.uk}

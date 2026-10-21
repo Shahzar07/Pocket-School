@@ -1,12 +1,15 @@
 import type { EssayMark } from '@/lib/essays/mark';
 
-/** A marked essay always shows the 9–1 grade, the letter, and the percentage. */
+/** School marks keep 9–1. Other levels show the scale for that level. */
 export function EssayGrades({ mark }: { mark: EssayMark }) {
   return (
     <div className="space-y-2">
       <p className="text-sm font-semibold" data-testid="essay-grades">
-        {mark.grade91} on 9–1 · {mark.gradeAU} on A*/A/B/C/D/E/U · {mark.percent}%
+        {mark.scaleHeadline
+          ? `${mark.estimateLabel ? `${mark.estimateLabel}. ` : ''}${mark.scaleHeadline}${mark.showsPercentage === false ? '' : ` · ${mark.percent}%`}`
+          : `${mark.grade91} on 9–1 · ${mark.gradeAU} on A*/A/B/C/D/E/U · ${mark.percent}%`}
       </p>
+      {mark.scaleDetail ? <p className="text-sm text-muted-foreground">{mark.scaleDetail}</p> : null}
       <div className="grid grid-cols-3 gap-2">
         <Score label="Percentage" value={`${mark.percent}%`} />
         <Score label="9–1" value={mark.grade91} />

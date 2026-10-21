@@ -3,9 +3,9 @@
  * Decisions here are pure. Pages and the join API call them.
  */
 
-import { NAMED_LEVELS } from './example-courses';
+import { LEARNER_LEVELS } from './levels';
 
-export const JOIN_LEVELS = [...NAMED_LEVELS, 'Law', 'RISE'] as const;
+export const JOIN_LEVELS = [...LEARNER_LEVELS.map((level) => level.label), 'Law', 'RISE'] as const;
 
 export type JoinLevel = (typeof JOIN_LEVELS)[number];
 

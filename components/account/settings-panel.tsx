@@ -34,6 +34,8 @@ import {
 import type { ChildControls, PaymentMethod } from '@/lib/parent-controls';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LevelMenu } from '@/components/level-menu';
+import { levelLabel, resolveLevel } from '@/lib/levels';
 import { PROGRAMMES, canonicalProgramme, levelsForProgramme, toNamedLevel } from '@/lib/programmes';
 
 export interface SettingsSession {
@@ -89,13 +91,15 @@ function StudentPlacement({
   const programme = canonicalProgramme(draft.level);
   const years = levelsForProgramme(programme);
   const named = toNamedLevel(draft.yearGroup);
-  const year = years.includes(named) ? named : '';
+  const resolved = resolveLevel(draft.yearGroup);
+  const year = years.includes(named) ? named : resolved ? levelLabel(resolved) : '';
 
   useEffect(() => {
     if (!programme) return;
+    if (resolved && !years.includes(named)) return;
     if (draft.level === programme && draft.yearGroup === year) return;
     onChange({ ...draft, level: programme, yearGroup: year });
-  }, [programme, year, draft, onChange]);
+  }, [programme, year, draft, onChange, resolved, named]);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -116,16 +120,14 @@ function StudentPlacement({
         </select>
       </Field>
       <Field label="Level">
-        <select
-          aria-label="Level"
-          value={year}
-          disabled={!programme}
-          onChange={event => onChange({ ...draft, level: programme, yearGroup: event.target.value })}
-          className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-        >
-          <option value="">Choose a level</option>
-          {years.map(item => <option key={item} value={item}>{item}</option>)}
-        </select>
+        <LevelMenu
+          ariaLabel="Level"
+          value={draft.yearGroup || year}
+          valueKind="label"
+          allowEmpty
+          emptyLabel="Choose a level"
+          onChange={(next) => onChange({ ...draft, yearGroup: next })}
+        />
       </Field>
     </div>
   );

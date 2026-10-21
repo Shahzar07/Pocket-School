@@ -3,6 +3,9 @@
  * Grades reuse the school scales: 9–1 and A*–U, each with a percentage.
  */
 
+import { boardScaleHeadline, estimateInStyle, profileFor } from '@/lib/essay/board-styles';
+import { mapEssayScale } from '@/lib/essay/scale-config';
+import { resolveLevel } from '@/lib/levels';
 import { gradeOnScale, scaleById } from '@/lib/insights/report-cards';
 import {
   ENGLISH_ESSAY_COACHING,
@@ -32,6 +35,10 @@ export interface EssayMark {
   inline: InlineNote[];
   fixNext: string[];
   summary: string;
+  scaleHeadline?: string;
+  scaleDetail?: string;
+  estimateLabel?: string;
+  showsPercentage?: boolean;
 }
 
 const CRITERION_LABEL: Record<RubricCriterion, string> = {
@@ -54,7 +61,11 @@ const LEVEL_WORDS: Record<EssayLevel, number> = {
   'upper-secondary': 350,
   igcse: 400,
   'a-level': 600,
+  'pre-university': 700,
   undergraduate: 800,
+  masters: 2500,
+  phd: 2000,
+  professional: 800,
   independent: 350,
 };
 
@@ -135,7 +146,7 @@ function inlineNotes(body: string, prompt: string): InlineNote[] {
   return notes.slice(0, 4);
 }
 
-export function markEssay(input: { body: string; prompt: string; level: EssayLevel }): EssayMark {
+export function markEssay(input: { body: string; prompt: string; level: EssayLevel; board?: string }): EssayMark {
   const body = input.body.trim();
   const prompt = input.prompt.trim();
   const paragraphs = paragraphsOf(body);
@@ -184,13 +195,26 @@ export function markEssay(input: { body: string; prompt: string; level: EssayLev
   const weakest = [...rubric].sort((a, b) => a.score - b.score).slice(0, 3);
   const fixNext = weakest.map(item => FIX[item.criterion]);
   const level = essayLevelLabel(input.level);
+  const family = resolveLevel(input.level);
+  const scale = mapEssayScale(input.level, percent);
+  const board = input.board ? profileFor(input.level, input.board) : null;
+  const styled = board ? boardScaleHeadline(board, percent) : null;
+  const postgraduate = family === 'masters' || family === 'phd' || family === 'undergraduate' || family === 'professional' || family === 'pre-university' || family === 'a-level';
+  const scaleHeadline = styled?.headline ?? (postgraduate ? scale.headline : undefined);
+  const estimateLabel = board ? estimateInStyle(board.label) : (postgraduate ? scale.estimateLabel : undefined);
 
   return {
     ...grades,
     rubric,
     inline: inlineNotes(body, prompt),
     fixNext,
-    summary: `ET AI marked this at ${level}: ${grades.percent}%, grade ${grades.grade91} on 9–1 and ${grades.gradeAU} on A*–U.`,
+    summary: scaleHeadline
+      ? `${estimateLabel ?? scale.estimateLabel}. ${level}: ${scaleHeadline}.`
+      : `ET AI marked this at ${level}: ${grades.percent}%, grade ${grades.grade91} on 9–1 and ${grades.gradeAU} on A*–U.`,
+    scaleHeadline,
+    scaleDetail: styled?.detail ?? (postgraduate ? scale.detail : undefined),
+    estimateLabel,
+    showsPercentage: styled ? styled.showsPercentage : scale.showsPercentage,
   };
 }
 
@@ -259,5 +283,6 @@ export function coachingPrompt(): string {
 }
 
 export function levelFromUnknown(value: unknown): EssayLevel {
-  return typeof value === 'string' && isEssayLevel(value) ? value : 'igcse';
+  if (typeof value !== 'string') return 'igcse';
+  return resolveLevel(value) ?? 'igcse';
 }

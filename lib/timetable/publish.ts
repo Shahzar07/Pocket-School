@@ -1,6 +1,7 @@
 import type { CalendarItem } from '@/lib/insights/calendar';
 import type { PlannerEvent } from '@/lib/insights/planner';
-import { LEVELS, type AttendanceRow, type DeskState, type LevelName } from '@/lib/school-desk/model';
+import { type AttendanceRow, type DeskState, type LevelName } from '@/lib/school-desk/model';
+import { levelLabel, resolveLevel } from '@/lib/levels';
 import { addEnrolment, approveEnrolment, createClass } from '@/lib/school-desk/model';
 import type { Lesson, TimetableDoc, TimetableVersion, Weekday } from './types';
 
@@ -48,10 +49,10 @@ export function dateFor(anchorMonday: string, day: Weekday): string {
 }
 
 export function deskLevel(level: string): LevelName {
+  if (resolveLevel(level)) return levelLabel(level);
   if (level.toLowerCase().startsWith('primary')) return 'Primary';
   if (/lower secondary/i.test(level)) return 'Lower Secondary';
-  if (/a-level/i.test(level)) return 'A-Level';
-  if (LEVELS.includes(level as LevelName)) return level as LevelName;
+  if (/a-level|a level/i.test(level)) return 'A-Level';
   return 'IGCSE';
 }
 

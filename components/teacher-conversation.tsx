@@ -11,6 +11,7 @@ import {
   Mic, PenSquare, Phone, PhoneOff, Play, RotateCcw, Send, StickyNote, Video, Volume2, VolumeX, X,
 } from 'lucide-react';
 import type { LiveVoiceSessionProps } from '@/components/live-voice-session';
+import { LevelMenu } from '@/components/level-menu';
 import { MathMarkdown } from '@/components/math-markdown';
 import { ProblemCard, QuizCard } from '@/components/teacher-board';
 import { useAuthSTORE } from '@/hooks/use-auth';
@@ -672,13 +673,7 @@ export function TeacherConversation({
               <button type="button" onClick={() => setSkillsOpen(open => !open)} className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold" aria-expanded={skillsOpen}>Skills</button>
               <button type="button" aria-label="Read aloud" className="rounded-full border border-current/20 px-2.5 py-1.5 text-xs font-semibold" onClick={() => { const last = [...messages].reverse().find(message => message.role === 'model'); if (last) playReply(last.text); }}>Read aloud</button>
               <input value={subject} onChange={event => setSubject(event.target.value)} aria-label="Subject" placeholder="Subject" className="w-28 rounded-full border border-current/20 bg-transparent px-2.5 py-1.5 text-xs" />
-              <select value={level} onChange={event => setLevel(event.target.value)} aria-label="Level" className="rounded-full border border-current/20 bg-transparent px-2 py-1.5 text-xs">
-                <option value="">Level</option>
-                <option value="Primary">Primary</option>
-                <option value="Lower Secondary">Lower Secondary</option>
-                <option value="IGCSE">IGCSE</option>
-                <option value="A-Level">A-Level</option>
-              </select>
+              <LevelMenu ariaLabel="Level" value={level} valueKind="label" allowEmpty emptyLabel="Level" onChange={setLevel} className="w-44" />
               <select value={modeChoice} onChange={event => setModeChoice(event.target.value)} aria-label="Mode" className="rounded-full border border-current/20 bg-transparent px-2 py-1.5 text-xs">
                 <option value="">Mode</option>
                 <option value="k12">School</option>

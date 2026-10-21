@@ -3,6 +3,7 @@
  * Levels are named. A school year is never part of the question.
  */
 
+import { profileFor } from '@/lib/essay/board-styles';
 import { essayLevelLabel, type EssayLevel } from '@/lib/essays/coaching';
 
 export const ESSAY_TYPES = [
@@ -43,16 +44,6 @@ export const ESSAY_SUBJECTS = [
 ] as const;
 
 export const RECENT_QUESTIONS_KEY = 'poket-et-essay-questions';
-
-const GUIDE: Record<EssayLevel, { marks: number; min: number; max: number }> = {
-  primary: { marks: 10, min: 60, max: 120 },
-  'lower-secondary': { marks: 20, min: 150, max: 250 },
-  'upper-secondary': { marks: 25, min: 300, max: 450 },
-  igcse: { marks: 30, min: 350, max: 450 },
-  'a-level': { marks: 40, min: 500, max: 800 },
-  undergraduate: { marks: 100, min: 700, max: 1000 },
-  independent: { marks: 25, min: 300, max: 500 },
-};
 
 const STEMS: Record<EssayType, string[]> = {
   argumentative: [
@@ -108,21 +99,13 @@ const ANGLES = [
   ' The evidence may be incomplete.',
 ];
 
-const BOARD_CLOSE: Record<ExamBoard, string> = {
-  none: '',
-  cambridge: ' Give reasons for your view.',
-  edexcel: ' Evaluate this view.',
-  aqa: ' Consider more than one view.',
-  ocr: ' Use examples to support your answer.',
-};
-
 export interface GeneratedEssayQuestion {
   question: string;
   subject: string;
   level: EssayLevel;
   topics: string[];
   type: EssayType;
-  board: ExamBoard;
+  board: string;
   marks: number;
   wordMin: number;
   wordMax: number;
@@ -162,14 +145,14 @@ function fill(stem: string, subject: string, topics: string[]): string {
     .replaceAll('{topic}', topicPhrase(topics));
 }
 
-export function questionGuidance(level: EssayLevel): { marks: number; wordMin: number; wordMax: number; guidance: string } {
-  const guide = GUIDE[level];
+export function questionGuidance(level: EssayLevel, board?: string): { marks: number; wordMin: number; wordMax: number; guidance: string } {
+  const guide = profileFor(level, board);
   const name = essayLevelLabel(level);
   return {
     marks: guide.marks,
-    wordMin: guide.min,
-    wordMax: guide.max,
-    guidance: `Aim for ${guide.min}–${guide.max} words at ${name}. The question is marked out of ${guide.marks}.`,
+    wordMin: guide.wordMin,
+    wordMax: guide.wordMax,
+    guidance: `Aim for ${guide.wordMin}–${guide.wordMax} words at ${name}. The question is marked out of ${guide.marks}.`,
   };
 }
 
@@ -178,27 +161,28 @@ export function generateEssayQuestion(input: {
   level: EssayLevel;
   topics: string[];
   type: EssayType;
-  board: ExamBoard;
+  board: string;
   recent?: string[];
   nonce?: number;
 }): GeneratedEssayQuestion {
   const type = isEssayType(input.type) ? input.type : 'argumentative';
-  const board = isExamBoard(input.board) ? input.board : 'none';
+  const board = input.board || 'none';
+  const profile = profileFor(input.level, board);
   const stems = STEMS[type];
   const seen = new Set((input.recent ?? []).map(normalise));
   const pool: string[] = [];
   for (let index = 0; index < stems.length * ANGLES.length; index += 1) {
     const stem = stems[index % stems.length] ?? stems[0]!;
     const angle = ANGLES[Math.floor(index / stems.length) % ANGLES.length] ?? '';
-    const question = `${fill(stem, input.subject, input.topics)}${angle}${BOARD_CLOSE[board]}`.replace(/\s+/g, ' ').trim();
+    const question = `${fill(stem, input.subject, input.topics)}${angle} ${profile.command}`.replace(/\s+/g, ' ').trim();
     if (seen.has(normalise(question))) continue;
     if (!pool.includes(question)) pool.push(question);
   }
   const nonce = input.nonce ?? 0;
   const question = pool.length
     ? pool[Math.abs(nonce) % pool.length]!
-    : `${fill(stems[Math.abs(nonce) % stems.length] ?? stems[0]!, input.subject, input.topics)} Consider a fresh example.${BOARD_CLOSE[board]}`.replace(/\s+/g, ' ').trim();
-  const guide = questionGuidance(input.level);
+    : `${fill(stems[Math.abs(nonce) % stems.length] ?? stems[0]!, input.subject, input.topics)} Consider a fresh example. ${profile.command}`.replace(/\s+/g, ' ').trim();
+  const guide = questionGuidance(input.level, board);
   return {
     question,
     subject: input.subject.trim() || 'the subject',

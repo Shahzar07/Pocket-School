@@ -12,7 +12,9 @@ import { QuestionGenerator } from '@/components/essays/question-generator';
 import { importFile } from '@/components/editor/import-file';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { authedFetch } from '@/lib/api-client';
-import { ESSAY_LEVELS, essayLevelLabel, type EssayLevel } from '@/lib/essays/coaching';
+import { LevelMenu } from '@/components/level-menu';
+import { essayLevelLabel, type EssayLevel } from '@/lib/essays/coaching';
+import { resolveLevel } from '@/lib/levels';
 import { ESSAY_FLAG_MESSAGE, ESSAY_FLAG_STATUS } from '@/lib/essays/config';
 import { essayPdfLines, markEssay, placeNotes, type EssayMark } from '@/lib/essays/mark';
 import { guardPlan, planForPolicy, type EssayPlan } from '@/lib/essays/plan';
@@ -231,7 +233,7 @@ export function EssaysDesk() {
       };
     const review = reviewSubmission({ body: essayBody, signals, title, handwritten });
     if (review.flagged) {
-      const localMark = markEssay({ body: essayBody, prompt, level });
+      const localMark = markEssay({ body: essayBody, prompt, level, board: question?.board });
       const withheld = gradeIfClear(review, localMark);
       setMark(withheld);
       setStatus('flagged');
@@ -296,7 +298,7 @@ export function EssaysDesk() {
       return;
     }
 
-    const local = markEssay({ body: essayBody, prompt, level });
+    const local = markEssay({ body: essayBody, prompt, level, board: question?.board });
     setMark(local);
     setStatus('marked');
     setMessage(review.message);
@@ -366,7 +368,7 @@ export function EssaysDesk() {
     setTitle(item.title);
     setPrompt(item.prompt);
     setIdea(item.idea);
-    setLevel(item.level);
+    setLevel(resolveLevel(item.level) ?? 'igcse');
     setBody(item.body);
     setMark(item.status === 'flagged' ? null : item.mark);
     setPlan(item.plan);
@@ -388,9 +390,7 @@ export function EssaysDesk() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <label className="text-sm font-semibold">
           Level
-          <select aria-label="Level" value={level} onChange={event => setLevel(event.target.value as EssayLevel)} className="mt-1 block h-11 rounded-xl border border-border bg-background px-3 font-normal">
-            {ESSAY_LEVELS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
+          <LevelMenu ariaLabel="Level" value={level} onChange={next => setLevel((resolveLevel(next) ?? 'igcse') as EssayLevel)} className="mt-1 min-w-[16rem]" />
         </label>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-full border border-border p-1" role="tablist" aria-label="ET Essays">

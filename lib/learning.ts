@@ -3,6 +3,8 @@
  * Dates are YYYY-MM-DD so a streak does not depend on the clock inside a query.
  */
 
+import { sameLevel } from '@/lib/levels';
+
 export interface CatalogItem {
   id: string;
   title: string;
@@ -23,10 +25,10 @@ export interface CatalogQuery {
 export function filterCatalog<T extends CatalogItem>(items: readonly T[], query: CatalogQuery): T[] {
   const q = (query.q ?? '').trim().toLowerCase();
   const subject = (query.subject ?? '').trim().toLowerCase();
-  const level = (query.level ?? '').trim().toLowerCase();
+  const level = (query.level ?? '').trim();
   return items.filter(item => {
     if (subject && subject !== 'all' && (item.subject ?? '').toLowerCase() !== subject) return false;
-    if (level && level !== 'all' && !(item.level ?? '').toLowerCase().includes(level)) return false;
+    if (level && level.toLowerCase() !== 'all' && !sameLevel(item.level, level) && !(item.level ?? '').toLowerCase().includes(level.toLowerCase())) return false;
     if (typeof query.maxPrice === 'number' && (item.price ?? 0) > query.maxPrice) return false;
     if (!q) return true;
     const hay = `${item.title} ${item.description ?? ''} ${item.subject ?? ''} ${(item.tags ?? []).join(' ')}`.toLowerCase();
@@ -40,7 +42,7 @@ export function recommend<T extends CatalogItem>(items: readonly T[], current: T
     .filter(item => item.id !== current.id)
     .map(item => ({
       item,
-      score: (item.subject && item.subject === current.subject ? 2 : 0) + (item.level && item.level === current.level ? 1 : 0),
+      score: (item.subject && item.subject === current.subject ? 2 : 0) + (item.level && sameLevel(item.level, current.level) ? 1 : 0),
     }))
     .filter(row => row.score > 0)
     .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))

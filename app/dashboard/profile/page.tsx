@@ -313,10 +313,25 @@ export default function ProfilePage() {
     try {
       const patch = profilePatch(draft, sectionRole);
       if (sectionRole === 'student') {
-        await authedFetch('/api/account/placement', {
-          method: 'POST',
-          body: JSON.stringify({ programme: draft.level, year: draft.yearGroup }),
-        });
+        const { placementForLevel, resolveLevel } = await import('@/lib/levels');
+        const { assertPlacement } = await import('@/lib/programmes');
+        const mapped = placementForLevel(draft.yearGroup);
+        if (mapped) {
+          let placed: { level: string; yearGroup: string };
+          try {
+            placed = assertPlacement(draft.level, mapped.year);
+          } catch {
+            placed = assertPlacement(mapped.programme, mapped.year);
+          }
+          draft.level = placed.level;
+          draft.yearGroup = placed.yearGroup;
+          await authedFetch('/api/account/placement', {
+            method: 'POST',
+            body: JSON.stringify({ programme: placed.level, year: placed.yearGroup }),
+          });
+        } else if (resolveLevel(draft.yearGroup)) {
+          draft.level = draft.yearGroup;
+        }
       }
       await updateUser(user.uid, patch as Partial<UserProfile>);
       await authedFetch('/api/insights/sync', {

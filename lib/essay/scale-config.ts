@@ -4,23 +4,19 @@
  * These are ET AI working bands for an estimate. They are not Pearson,
  * Cambridge, a university, or any other board's published grade boundaries.
  */
+import { LEARNER_LEVELS, resolveLevel, levelLabel as sharedLevelLabel, type LevelId } from '@/lib/levels';
 import { gradeFromMark } from './scale';
 
 export const ESTIMATE_LABEL = 'ET AI estimate, not an official grade' as const;
 
-export const ESSAY_LEVELS = [
-  { id: 'primary', label: 'Primary' },
-  { id: 'lower-secondary', label: 'Lower Secondary' },
-  { id: 'igcse', label: 'IGCSE' },
-  { id: 'a-level', label: 'A-Level' },
-  { id: 'pre-university', label: 'Pre-University/Foundation' },
-  { id: 'degree', label: 'Degree (Undergraduate)' },
-  { id: 'masters', label: 'Masters' },
-  { id: 'phd', label: 'PhD/Doctoral' },
-  { id: 'professional', label: 'Professional' },
-] as const;
+export const ESSAY_LEVELS = LEARNER_LEVELS;
 
-export type EssayLevelId = (typeof ESSAY_LEVELS)[number]['id'];
+export type EssayLevelId = LevelId;
+
+/** Older writer rows stored `degree`. Marking treats that as undergraduate. */
+export function toEssayLevelId(value: string | null | undefined): EssayLevelId {
+  return resolveLevel(value) ?? 'igcse';
+}
 
 export const WRITING_TYPES = [
   { id: 'narrative', label: 'Narrative' },
@@ -46,13 +42,15 @@ export type WritingTypeId = (typeof WRITING_TYPES)[number]['id'];
 const TYPES_BY_LEVEL: Record<EssayLevelId, readonly WritingTypeId[]> = {
   primary: ['narrative', 'descriptive', 'persuasive', 'letter-article', 'report'],
   'lower-secondary': ['narrative', 'descriptive', 'persuasive', 'letter-article', 'report'],
+  'upper-secondary': ['narrative', 'descriptive', 'persuasive', 'letter-article', 'report', 'argumentative', 'discursive'],
   igcse: ['narrative', 'descriptive', 'persuasive', 'letter-article', 'report', 'argumentative', 'discursive', 'literature-analysis', 'extended-response'],
   'a-level': ['argumentative', 'discursive', 'literature-analysis', 'extended-response', 'report', 'lab-report', 'reflective'],
   'pre-university': ['argumentative', 'discursive', 'literature-analysis', 'extended-response', 'report', 'lab-report', 'reflective'],
-  degree: ['argumentative', 'report', 'literature-analysis', 'lab-report', 'case-study', 'research-essay', 'literature-review', 'reflective'],
+  undergraduate: ['argumentative', 'report', 'literature-analysis', 'lab-report', 'case-study', 'research-essay', 'literature-review', 'reflective'],
   masters: ['research-essay', 'literature-review', 'case-study', 'lab-report', 'reflective', 'dissertation', 'proposal'],
   phd: ['dissertation', 'proposal', 'literature-review', 'research-essay'],
   professional: ['report', 'case-study', 'reflective', 'letter-article', 'research-essay'],
+  independent: ['narrative', 'descriptive', 'persuasive', 'argumentative', 'report', 'reflective', 'letter-article'],
 };
 
 export const REFERENCING_STYLES = [
@@ -158,13 +156,15 @@ export const PROFESSIONAL_BANDS = [
 const WORD_TARGETS: Record<EssayLevelId, number> = {
   primary: 150,
   'lower-secondary': 250,
+  'upper-secondary': 350,
   igcse: 400,
   'a-level': 700,
   'pre-university': 800,
-  degree: 1500,
+  undergraduate: 1500,
   masters: 3000,
   phd: 2000,
   professional: 800,
+  independent: 400,
 };
 
 export type ScaleFamily = 'school' | 'igcse' | 'alevel' | 'degree' | 'masters' | 'phd' | 'professional';
@@ -183,12 +183,12 @@ export interface EssayScaleResult {
   letter: string;
 }
 
-export function isEssayLevel(value: string | null | undefined): value is EssayLevelId {
-  return ESSAY_LEVELS.some((level) => level.id === value);
+export function isEssayLevel(value: string | null | undefined): boolean {
+  return resolveLevel(value) !== null;
 }
 
 export function levelLabel(id: string | null | undefined): string {
-  return ESSAY_LEVELS.find((level) => level.id === id)?.label ?? '';
+  return sharedLevelLabel(id);
 }
 
 export function writingTypeLabel(id: string | null | undefined): string {
@@ -200,25 +200,27 @@ export function referencingLabel(id: string | null | undefined): string {
 }
 
 export function scaleFamily(levelId: EssayLevelId): ScaleFamily {
-  if (levelId === 'primary' || levelId === 'lower-secondary') return 'school';
+  if (levelId === 'primary' || levelId === 'lower-secondary' || levelId === 'upper-secondary') return 'school';
   if (levelId === 'igcse') return 'igcse';
   if (levelId === 'a-level' || levelId === 'pre-university') return 'alevel';
-  if (levelId === 'degree') return 'degree';
+  if (levelId === 'undergraduate') return 'degree';
   if (levelId === 'masters') return 'masters';
   if (levelId === 'phd') return 'phd';
+  if (levelId === 'independent') return 'professional';
   return 'professional';
 }
 
 export function referencingApplies(levelId: string | null | undefined): boolean {
-  return levelId === 'degree' || levelId === 'masters' || levelId === 'phd';
+  const id = toEssayLevelId(levelId);
+  return id === 'undergraduate' || id === 'masters' || id === 'phd';
 }
 
 export function defaultWordTarget(levelId: string | null | undefined): number {
-  return isEssayLevel(levelId) ? WORD_TARGETS[levelId] : WORD_TARGETS.igcse;
+  return WORD_TARGETS[toEssayLevelId(levelId)];
 }
 
 export function writingTypesFor(levelId: string | null | undefined): { id: WritingTypeId; label: string }[] {
-  const id = isEssayLevel(levelId) ? levelId : 'igcse';
+  const id = toEssayLevelId(levelId);
   return TYPES_BY_LEVEL[id].map((typeId) => {
     const type = WRITING_TYPES.find((item) => item.id === typeId);
     return { id: typeId, label: type?.label ?? typeId };
@@ -244,7 +246,7 @@ export function rubricCriteria(text: string | null | undefined): { id: string; l
 export function criteriaFor(levelId: string | null | undefined, rubric?: string | null): { id: string; label: string }[] {
   const custom = rubricCriteria(rubric);
   if (custom) return custom;
-  const id = isEssayLevel(levelId) ? levelId : 'igcse';
+  const id = toEssayLevelId(levelId);
   const family = scaleFamily(id);
   if (family === 'school' || family === 'igcse') return [...LOWER_CRITERIA];
   if (family === 'masters' || family === 'phd') return [...HIGHER_CRITERIA, ...RESEARCH_CRITERIA];
@@ -258,7 +260,7 @@ export function countWords(text: string): number {
 }
 
 export function scaleBlurb(levelId: string | null | undefined, degreeStyle: DegreeStyle = 'uk'): string {
-  const family = scaleFamily(isEssayLevel(levelId) ? levelId : 'igcse');
+  const family = scaleFamily(toEssayLevelId(levelId));
   if (family === 'school') return 'Working towards, expected, or greater depth, plus a percentage.';
   if (family === 'igcse') return '9 to 1, a percentage, and A* to U.';
   if (family === 'alevel') return 'A* to E, plus a percentage.';
@@ -283,7 +285,7 @@ export function mapEssayScale(
   raw: number,
   options?: { degreeStyle?: DegreeStyle },
 ): EssayScaleResult {
-  const id: EssayLevelId = isEssayLevel(levelId) ? levelId : 'igcse';
+  const id: EssayLevelId = toEssayLevelId(levelId);
   const family = scaleFamily(id);
   const percent = clampPercent(raw);
   const base = {

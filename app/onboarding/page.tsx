@@ -17,6 +17,8 @@ import { landingPath, readActiveMode } from '@/lib/account-modes';
 import { SIGNUP_GRANT } from '@/lib/sparks';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { Timestamp } from 'firebase/firestore';
+import { LevelMenu } from '@/components/level-menu';
+import { levelLabel, placementForLevel, resolveLevel } from '@/lib/levels';
 import { PROGRAMMES, NOT_APPLICABLE, assertPlacement, levelsForProgramme, toNamedLevel } from '@/lib/programmes';
 import { canonicalLevel } from '@/lib/year-groups';
 import { authedFetch } from '@/lib/api-client';
@@ -62,23 +64,37 @@ export default function OnboardingPage() {
   const yearChoices = levelsForProgramme(programme);
 
   const completeStudentOnboarding = async () => {
-    let placement;
-    try {
-      placement = assertPlacement(programme, yearGroup || yearChoices[0] || '');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Choose a programme and level.');
+    const resolved = resolveLevel(yearGroup);
+    const mapped = resolved ? placementForLevel(resolved) : null;
+    if (!resolved) {
+      toast.error('Choose a level.');
       return;
+    }
+    let placement: { level: string; yearGroup: string } | null = null;
+    if (mapped) {
+      try {
+        placement = assertPlacement(programme, mapped.year);
+      } catch {
+        try {
+          placement = assertPlacement(mapped.programme, mapped.year);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : 'Choose a programme and level.');
+          return;
+        }
+      }
     }
     try {
       setLoading(true);
-      await authedFetch('/api/account/placement', {
-        method: 'POST',
-        body: JSON.stringify({ programme: placement.level, year: yearGroup || yearChoices[0] || '' }),
-      });
+      if (placement) {
+        await authedFetch('/api/account/placement', {
+          method: 'POST',
+          body: JSON.stringify({ programme: placement.level, year: placement.yearGroup }),
+        });
+      }
       await updateDoc(doc(db, 'users', user.uid), {
-        level: placement.level,
+        level: placement?.level ?? levelLabel(resolved),
         learningStyle: learningStyle || null,
-        ...(placement.yearGroup ? { yearGroup: placement.yearGroup } : {}),
+        yearGroup: placement?.yearGroup ?? levelLabel(resolved),
         updatedAt: serverTimestamp(),
       });
       // The welcome Sparks grant and module enrolment are one-time only:
@@ -87,7 +103,7 @@ export default function OnboardingPage() {
       const freshProfile = await getUser(user.uid);
       const alreadyOnboarded = !!(freshProfile as (UserProfile & { onboardedAt?: unknown }) | null)?.onboardedAt;
       if (!alreadyOnboarded) {
-        if (placement.yearGroup) {
+        if (placement?.yearGroup) {
           await enrollInProgrammeModules(user.uid, placement.yearGroup);
         }
         // Every student gets the welcome grant. This used to sit inside the
@@ -273,21 +289,7 @@ export default function OnboardingPage() {
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which level are you on?</h1>
                 <p className="text-muted-foreground mt-2 text-base">Your level depends on {programme}.</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {yearChoices.map(yg => (
-                  <button
-                    key={yg}
-                    onClick={() => setYearGroup(yg)}
-                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-left font-semibold ${
-                      yearGroup === yg
-                        ? 'border-primary bg-primary/10 text-primary shadow-sm'
-                        : 'border-border hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    {yg}
-                  </button>
-                ))}
-              </div>
+              <LevelMenu ariaLabel="Level" value={yearGroup} onChange={setYearGroup} />
               <div className="mt-8 flex justify-between">
                 <Button variant="ghost" className="h-11 rounded-full px-6" onClick={() => setStep(1)}>Back</Button>
                 <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={!yearGroup} onClick={() => setStep(3)}>
