@@ -101,13 +101,13 @@ test('action centre lists a registration and assigns it', async ({ page }) => {
   await expect(page.getByText('Student registration').first()).toBeVisible();
   await page.getByRole('button', { name: 'Assign to me' }).first().click();
   await expect(page.locator('[data-task-status="claimed"]')).toBeVisible();
-  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/action-centre-dark.png', fullPage: true });
+  await page.screenshot({ path: 'docs/qa/action-centre/action-centre-dark.png', fullPage: true });
   await page.evaluate(() => window.localStorage.setItem('theme', 'light'));
   await page.reload({ waitUntil: 'domcontentloaded' });
   await dismissCookies(page);
   await expect(page.getByRole('heading', { name: 'Action Centre' })).toBeVisible();
   await expect(page.locator('html')).toHaveClass(/light/);
-  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/action-centre-light.png', fullPage: true });
+  await page.screenshot({ path: 'docs/qa/action-centre/action-centre-light.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/action-centre-light-mobile.png', fullPage: true });
+  await page.screenshot({ path: 'docs/qa/action-centre/action-centre-light-mobile.png', fullPage: true });
 });
