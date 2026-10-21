@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { publishedPosts } from '@/lib/blog/load';
+import { allowIndex } from '@/lib/blog/seo';
 
 const BASE_URL = 'https://poketschool.ai';
 
@@ -31,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency,
       priority,
     })),
-    ...posts.map((post) => ({
+    ...posts.filter(allowIndex).map((post) => ({
       url: `${BASE_URL}/blog/${post.slug}`,
       lastModified: new Date(post.updatedAt),
       changeFrequency: 'weekly' as const,
