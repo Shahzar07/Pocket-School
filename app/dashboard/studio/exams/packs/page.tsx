@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
-import { OfficialPacks } from '@/components/study/official-packs';
+import { OfficialFlow } from '@/components/study/official-flow-view';
 
-export default function OfficialExamsPage() {
+export default function Page() {
   return (
     <Suspense>
-      <OfficialPacks />
+      <OfficialFlow step="level" />
     </Suspense>
   );
 }

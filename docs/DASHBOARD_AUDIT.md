@@ -145,36 +145,117 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/studio/maths/packs`
 - **Audience:** everyone
-- **Purpose:** Redirects to the official exam packs filtered to Mathematics.
+- **Purpose:** Redirects to the mathematics step of the official exam flow.
 - **Overlaps:** ET Exams official packs.
-- **Decision:** Keep as the ET Maths shortcut. The catalogue lives under ET Exams.
+- **Decision:** Keep as the ET Maths shortcut. The flow lives under ET Exams.
 - **Owner keys:** None.
 
 ### Official exams
 
 - **Route:** `/dashboard/studio/exams/packs`
 - **Audience:** everyone
-- **Purpose:** Official exam packs for every subject, filtered by subject, level, and exam board.
+- **Purpose:** Choose a level. Each later step of the official exam flow has its own page.
 - **Overlaps:** The ET Maths shortcut and the admin exam pack desk.
-- **Decision:** Keep. This is the student home for official packs.
+- **Decision:** Keep. This is the first step. Saved exams are offered as quick picks.
+- **Owner keys:** Firestore collection exam_packs. A student’s saved exams live on their pack progress.
+
+### Choose an exam board
+
+- **Route:** `/dashboard/studio/exams/packs/board/[levelId]`
+- **Audience:** everyone
+- **Purpose:** Exam boards for the level the student picked. The list is the shared board list.
+- **Overlaps:** ET Essays board styles.
+- **Decision:** Keep. This step only offers boards that belong to the level.
+- **Owner keys:** None.
+
+### Choose a subject
+
+- **Route:** `/dashboard/studio/exams/packs/subject/[levelId]/[boardId]`
+- **Audience:** everyone
+- **Purpose:** Subjects for the chosen level and exam board.
+- **Overlaps:** The pack list.
+- **Decision:** Keep. Empty subjects stay on the next step as coming soon.
+- **Owner keys:** None.
+
+### Choose a pack
+
+- **Route:** `/dashboard/studio/exams/packs/browse/[levelId]/[boardId]/[subjectSlug]`
+- **Audience:** everyone
+- **Purpose:** Published packs for the chosen subject, level, and exam board.
+- **Overlaps:** The ET Maths shortcut.
+- **Decision:** Keep. A subject with no pack says coming soon.
 - **Owner keys:** Firestore collection exam_packs.
 
 ### Official exam pack
 
 - **Route:** `/dashboard/studio/exams/packs/[packId]`
 - **Audience:** everyone
-- **Purpose:** One official syllabus pack: topics, questions, LaTeX, figures, and mark schemes.
-- **Overlaps:** The official exam list.
+- **Purpose:** Pack overview: units, topic progress, the free first topic, an optional exam date, and where the student left off. Teachers can assign the pack, a topic, or the mock.
+- **Overlaps:** The official exam list and teacher assignments.
 - **Decision:** Keep.
-- **Owner keys:** Firestore collection exam_packs.
+- **Owner keys:** Firestore collection exam_packs. Progress is stored on the signed-in student.
+
+### Exam topic
+
+- **Route:** `/dashboard/studio/exams/packs/[packId]/topics/[topicId]`
+- **Audience:** everyone
+- **Purpose:** One topic. The first topic is free. A later topic offers an upgrade and a way back to the free topic.
+- **Overlaps:** Student billing.
+- **Decision:** Keep. The upgrade stays on this page.
+- **Owner keys:** None.
+
+### Topic practice
+
+- **Route:** `/dashboard/studio/exams/packs/[packId]/topics/[topicId]/practice`
+- **Audience:** everyone
+- **Purpose:** Exam-style questions one at a time, with a timer and step-by-step hints.
+- **Overlaps:** The marking step.
+- **Decision:** Keep. Hints do not reveal the final answer.
+- **Owner keys:** OPENROUTER_API_KEY when the pack has no authored questions.
+
+### Topic marking
+
+- **Route:** `/dashboard/studio/exams/packs/[packId]/topics/[topicId]/marking`
+- **Audience:** everyone
+- **Purpose:** Mark-scheme marks, the worked solution, and the examiner tip when the pack includes one.
+- **Overlaps:** Topic practice.
+- **Decision:** Keep. Method, accuracy, and communication marks appear only when the scheme names them.
+- **Owner keys:** None.
+
+### Topic results
+
+- **Route:** `/dashboard/studio/exams/packs/[packId]/topics/[topicId]/results`
+- **Audience:** everyone
+- **Purpose:** The topic score, weak questions, and the next step: retry, a similar or harder set, a lesson, the next topic, or the mock.
+- **Overlaps:** The mock and the lesson.
+- **Decision:** Keep.
+- **Owner keys:** None.
+
+### Mock exam
+
+- **Route:** `/dashboard/studio/exams/packs/[packId]/mock`
+- **Audience:** everyone
+- **Purpose:** A timed full or half paper using only the paper structure stored on the pack.
+- **Overlaps:** Topic practice.
+- **Decision:** Keep. A pack with no paper names does not invent a paper.
+- **Owner keys:** None.
+
+### Results and readiness
+
+- **Route:** `/dashboard/studio/exams/packs/[packId]/readiness`
+- **Audience:** everyone
+- **Purpose:** Topic mastery, an ET AI estimate on the pack’s grade scale, a revision plan to the exam date, and a save or share.
+- **Overlaps:** Academic Results.
+- **Decision:** Keep. The estimate is labelled ET AI estimate. The school transcript stays the academic record.
+- **Owner keys:** None. The estimate is saved on the student’s pack progress.
 
 ### Maths pack
 
 - **Route:** `/dashboard/studio/maths/packs/[packId]`
 - **Audience:** everyone
-- **Purpose:** One syllabus pack: topics and problems for that exam.
-- **Overlaps:** The pack list.
-- **Decision:** Keep.
+- **Purpose:** Redirects to the official pack overview.
+- **Overlaps:** The official exam pack.
+- **Decision:** Keep so older maths links still open.
 - **Owner keys:** None.
 
 ### ET Exams
@@ -793,10 +874,46 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 
 - **Route:** `/dashboard/admin/exam-packs`
 - **Audience:** admin
-- **Purpose:** Admins add, edit, and delete official exam packs for any subject. Signed-in students open published packs from ET Exams. Drafts stay on this desk.
-- **Overlaps:** The student maths pack list.
-- **Decision:** Keep. This is the only add, edit, and delete desk. The studio list is read-only.
+- **Purpose:** First step of the admin create flow: pack name, subject, level, and exam board. Drafts autosave. Admins can edit or delete a pack.
+- **Overlaps:** The student official exam flow.
+- **Decision:** Keep. This desk is platform-admin only. The studio flow is read-only.
 - **Owner keys:** Firestore collection exam_packs. Writes go through /api/admin/exam-packs.
+
+### Pack units and topics
+
+- **Route:** `/dashboard/admin/exam-packs/units`
+- **Audience:** admin
+- **Purpose:** Second step: units and topics for the draft pack.
+- **Overlaps:** The pack details step.
+- **Decision:** Keep.
+- **Owner keys:** Firestore collection exam_packs.
+
+### Pack questions
+
+- **Route:** `/dashboard/admin/exam-packs/questions`
+- **Audience:** admin
+- **Purpose:** Third step: question text, marks, worked solution, mark scheme, paper name, image, and examiner tip.
+- **Overlaps:** The units step.
+- **Decision:** Keep. Paper names are optional. The mock uses only names stored here.
+- **Owner keys:** Firestore collection exam_packs.
+
+### Pack preview
+
+- **Route:** `/dashboard/admin/exam-packs/preview`
+- **Audience:** admin
+- **Purpose:** Fourth step: read the draft before it is published.
+- **Overlaps:** The student pack overview.
+- **Decision:** Keep. Students do not see a draft.
+- **Owner keys:** None.
+
+### Publish exam pack
+
+- **Route:** `/dashboard/admin/exam-packs/publish`
+- **Audience:** admin
+- **Purpose:** Last step: save the draft or publish it for students.
+- **Overlaps:** The student official exam flow.
+- **Decision:** Keep.
+- **Owner keys:** Firestore collection exam_packs.
 
 ### Curriculum CMS
 

@@ -35,6 +35,7 @@ function cleanQuestion(raw: unknown): AuthoredQuestion | null {
   const paper = text(row.paper, 40);
   const image = text(row.image, 500);
   const safeImage = /^https:\/\/\S+$/i.test(image) ? image : '';
+  const examinerTip = text(row.examinerTip, 500);
   return {
     question,
     marks,
@@ -43,6 +44,7 @@ function cleanQuestion(raw: unknown): AuthoredQuestion | null {
     ...(answer ? { answer } : {}),
     ...(paper ? { paper } : {}),
     ...(safeImage ? { image: safeImage } : {}),
+    ...(examinerTip ? { examinerTip } : {}),
   };
 }
 

@@ -1,3 +1,10 @@
-'use client';
+import { Suspense } from 'react';
+import { OfficialFlow } from '@/components/study/official-flow-view';
 
-export { default } from '../../../maths/packs/[packId]/page';
+export default function Page() {
+  return (
+    <Suspense>
+      <OfficialFlow step="pack" />
+    </Suspense>
+  );
+}
