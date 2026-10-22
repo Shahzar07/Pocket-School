@@ -5,16 +5,16 @@ import type { WelcomeHue, WelcomeLessonView, WelcomeState } from '@/lib/onboardi
 
 const HUE: Record<WelcomeHue, { wash: string; chip: string; ink: string }> = {
   deep: { wash: 'bg-wash', chip: 'bg-blue-deep text-white', ink: 'text-ink' },
-  mid: { wash: 'bg-background', chip: 'bg-brand-primary text-white', ink: 'text-ink' },
-  bright: { wash: 'bg-wash', chip: 'bg-blue-bright text-ink', ink: 'text-ink' },
-  mist: { wash: 'bg-background', chip: 'bg-brand-primary text-white', ink: 'text-ink' },
+  mid: { wash: 'bg-card', chip: 'bg-brand-primary text-white', ink: 'text-foreground' },
+  bright: { wash: 'bg-wash', chip: 'bg-[#6FBBCE] text-[#203337]', ink: 'text-ink' },
+  mist: { wash: 'bg-card', chip: 'bg-brand-primary text-white', ink: 'text-foreground' },
 };
 
-export function WelcomeStars({ count, total }: { count: number; total: number }) {
+export function WelcomeStars({ count, total, className = 'text-ink' }: { count: number; total: number; className?: string }) {
   return (
-    <p className="flex flex-wrap items-center gap-1 text-sm font-semibold text-ink" aria-label={`${count} of ${total} stars`}>
+    <p className={`flex flex-wrap items-center gap-1 text-sm font-semibold ${className}`} aria-label={`${count} of ${total} stars`}>
       {Array.from({ length: total }, (_, index) => (
-        <span key={index} className={index < count ? 'text-blue-deep' : 'text-ink/20'} aria-hidden>
+        <span key={index} className={index < count ? 'text-current' : 'opacity-30'} aria-hidden>
           ★
         </span>
       ))}
@@ -34,18 +34,18 @@ export function WelcomeResumeCard({
 }) {
   const next = state.lessons.find((lesson) => !lesson.done) ?? state.lessons[0];
   return (
-    <section className="mb-4 overflow-hidden rounded-3xl border border-line bg-background text-ink shadow-[0_12px_40px_rgba(30,106,131,0.08)]">
+    <section className="mb-4 overflow-hidden rounded-3xl border border-border bg-card text-foreground shadow-[0_12px_40px_rgba(30,106,131,0.08)]">
       <div className="grid gap-4 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-deep">Welcome course · free</p>
-          <h2 className="mt-1 font-heading text-2xl">{state.trackTitle}</h2>
-          <p className="mt-1 max-w-xl text-sm text-ink/80">{state.blurb}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Welcome course · free</p>
+          <h2 className="mt-1 font-heading text-2xl text-foreground">{state.trackTitle}</h2>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">{state.blurb}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <WelcomeStars count={state.stars} total={state.total} />
-            <span className="rounded-full bg-blue-bright px-3 py-1 text-xs font-bold text-ink">
+            <WelcomeStars count={state.stars} total={state.total} className="text-foreground" />
+            <span className="rounded-full bg-[#6FBBCE] px-3 py-1 text-xs font-bold text-[#203337]">
               {state.streak} lesson streak
             </span>
-            {next && <span className="text-sm">Next: {next.title}</span>}
+            {next && <span className="text-sm text-foreground">Next: {next.title}</span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -53,7 +53,7 @@ export function WelcomeResumeCard({
             Continue
           </Link>
           {onSkip && (
-            <button type="button" onClick={onSkip} disabled={skipping} className="inline-flex h-11 items-center rounded-full border border-line px-4 text-sm font-semibold">
+            <button type="button" onClick={onSkip} disabled={skipping} className="inline-flex h-11 items-center rounded-full border border-border px-4 text-sm font-semibold text-foreground">
               {skipping ? 'Skipping…' : 'Skip for now'}
             </button>
           )}
@@ -85,12 +85,12 @@ export function WelcomeLessonCard({
         </span>
         {lesson.done && <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-ink">Star earned</span>}
       </div>
-      <h3 className="mt-3 font-heading text-3xl text-ink">{lesson.title}</h3>
+      <h3 className={`mt-3 font-heading text-3xl ${hue.ink}`}>{lesson.title}</h3>
       {lesson.body.split(/\n\n+/).map((paragraph) => (
-        <p key={paragraph.slice(0, 24)} className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/90">{paragraph}</p>
+        <p key={paragraph.slice(0, 24)} className={`mt-3 max-w-2xl text-sm leading-relaxed ${hue.ink}`}>{paragraph}</p>
       ))}
       <fieldset className="mt-5 space-y-2" disabled={pending || lesson.checkCorrect}>
-        <legend className="text-sm font-semibold text-ink">{lesson.question}</legend>
+        <legend className={`text-sm font-semibold ${hue.ink}`}>{lesson.question}</legend>
         {lesson.options.map((option, index) => {
           const picked = selected === index || (lesson.checkCorrect && selected === index);
           return (
@@ -98,7 +98,7 @@ export function WelcomeLessonCard({
               key={option}
               type="button"
               onClick={() => onSelect?.(index)}
-              className={`block w-full rounded-2xl border px-4 py-3 text-left text-sm font-medium ${picked ? 'border-blue-deep bg-white' : 'border-transparent bg-white/70 hover:bg-white'}`}
+              className={`block w-full rounded-2xl border px-4 py-3 text-left text-sm font-medium text-[#203337] ${picked ? 'border-[#1E6A83] bg-white' : 'border-transparent bg-white/70 hover:bg-white'}`}
               aria-pressed={picked}
             >
               {option}
@@ -106,7 +106,7 @@ export function WelcomeLessonCard({
           );
         })}
       </fieldset>
-      {note && <p className="mt-2 text-sm font-medium text-ink">{note}</p>}
+      {note && <p className={`mt-2 text-sm font-medium ${hue.ink}`}>{note}</p>}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/80 px-4 py-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-blue-deep">Do this in Poket School</p>

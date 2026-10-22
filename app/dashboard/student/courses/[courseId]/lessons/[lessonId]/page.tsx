@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { MathMarkdown } from '@/components/math-markdown';
@@ -28,6 +29,7 @@ import { rememberOfflineLesson } from '@/components/offline-banner';
 import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD } from '@/lib/sparks';
 import type { CertificateAward } from '@/lib/certificates';
 import { authedFetch } from '@/lib/api-client';
+import { roleHome } from '@/lib/dashboard/home';
 import { LessonFlow } from '@/components/flow/lesson-flow';
 import { FlowNav } from '@/components/flow/flow-nav';
 import { FlowTrail } from '@/components/flow/flow-trail';
@@ -66,6 +68,18 @@ import {
   Zap, ChevronLeft, ChevronRight, RotateCcw, Check, X, Lock,
   Video, Trophy, Timer, AlertTriangle, ArrowRight, ImageIcon, Calculator, Bookmark,
 } from 'lucide-react';
+
+function ContinueLesson() {
+  const fab = roleHome('student').fab;
+  return (
+    <Link
+      href={fab.href}
+      className="inline-flex h-11 max-w-full shrink-0 items-center justify-center rounded-full border border-border bg-card px-4 text-sm font-semibold text-foreground lg:hidden"
+    >
+      {fab.label}
+    </Link>
+  );
+}
 
 const fadeUp: Record<string, any> = {
   hidden: { opacity: 0, y: 20 },
@@ -1087,7 +1101,7 @@ export default function LessonPage() {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-28">
         <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-wrap items-center gap-3 mb-2">
           <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Button>
@@ -1101,6 +1115,7 @@ export default function LessonPage() {
               <CheckCircle2 className="w-3.5 h-3.5" /> {t('lesson.passed')}
             </Badge>
           )}
+          <ContinueLesson />
         </div>
         <LessonFlow courseId={courseId} lessonId={lessonId} lessons={unitLessons} />
         <VisualBlockView blocks={lesson.visualBlocks} />
@@ -1157,7 +1172,7 @@ export default function LessonPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-28">
+    <div className="max-w-6xl mx-auto px-4 pb-52 pt-6 sm:px-6 lg:pb-28">
       <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
       <LessonFlow courseId={courseId} lessonId={lessonId} lessons={unitLessons} />
       {/* Header */}
@@ -1176,20 +1191,21 @@ export default function LessonPage() {
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center gap-2 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-16 max-lg:z-30 max-lg:border-t max-lg:border-border max-lg:bg-card max-lg:px-3 max-lg:py-2 lg:static" data-lesson-actions="1">
           {studyStreak > 0 && (
             <span className="hidden sm:inline text-xs font-semibold text-[var(--ps-cyan-text)]">{studyStreak}-day streak</span>
           )}
           <Button
             size="sm"
             variant="outline"
-            className="rounded-full h-11 px-4 font-bold"
+            className="h-auto min-h-11 max-w-full rounded-full px-4 py-2 font-bold whitespace-normal"
             onClick={() => { void handleBookmark(); }}
             aria-pressed={bookmarked}
           >
             <Bookmark className={`w-3.5 h-3.5 mr-1.5 ${bookmarked ? 'fill-current' : ''}`} />
             {bookmarked ? 'Saved' : 'Bookmark'}
           </Button>
+          <ContinueLesson />
           {completed ? (
             <Badge className="bg-success/10 text-success border-success/20 rounded-full gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" /> Completed
@@ -1197,11 +1213,11 @@ export default function LessonPage() {
           ) : (
             <Button
               size="sm"
-              className="rounded-full h-11 px-5 font-bold bg-primary text-primary-foreground gap-1.5"
+              className="h-auto min-h-11 max-w-full whitespace-normal rounded-full px-5 py-2 text-center font-bold bg-primary text-primary-foreground gap-1.5"
               onClick={handleComplete}
               disabled={completing}
             >
-              <Zap className="w-3.5 h-3.5" />
+              <Zap className="w-3.5 h-3.5 shrink-0" />
               {completing ? 'Saving…' : isCurriculum ? `Mark Complete (+50 XP · ⚡${LESSON_COMPLETE_REWARD})` : 'Mark Complete (+50 XP)'}
             </Button>
           )}
