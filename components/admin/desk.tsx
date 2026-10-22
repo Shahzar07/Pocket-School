@@ -36,6 +36,7 @@ const TILES: { id: string; label: string; href: string; hint: string; category: 
   { id: 'users', label: 'People', href: '/dashboard/admin/users', hint: 'Roles, tiers, suspension', category: 'people' },
   { id: 'institutions', label: 'Institutions', href: '/dashboard/admin/institutions', hint: 'Schools and approvals', category: 'people' },
   { id: 'courses', label: 'Courses', href: '/dashboard/admin/courses', hint: 'ET AI and the catalogue', category: 'learning' },
+  { id: 'funnels', label: 'Landing pages', href: '/dashboard/admin/funnels', hint: 'Draft, preview, and publish', category: 'learning' },
   { id: 'payments', label: 'Payments', href: '/dashboard/admin/payments', hint: 'Subscriptions and pricing', category: 'payments' },
   { id: 'finance', label: 'Refunds', href: '/dashboard/admin/finance', hint: 'Family billing and refunds', category: 'payments' },
   { id: 'partners', label: 'Perks', href: '/dashboard/admin/partners', hint: 'Cards, student ID, merchants', category: 'payments' },

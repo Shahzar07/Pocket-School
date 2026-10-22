@@ -1611,6 +1611,15 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     ownerKeys: 'None.',
   },
   {
+    path: '/dashboard/admin/funnels',
+    title: 'Landing pages',
+    purpose: 'Admins draft a landing page from sections, preview it, and publish it at a public /p/[slug] address. Duplicate starts as a draft. Lead form submissions are listed here.',
+    audience: ['admin'],
+    overlaps: 'Public alumni records also use /p/[code]. A published landing page uses the slug. An unpublished slug does not show the draft.',
+    decision: 'Keep. Only a platform admin can write a page. Visitors can submit a lead on a published page.',
+    ownerKeys: 'None. Firestore writes use the admin SDK when FIREBASE_SERVICE_ACCOUNT or the Firestore emulator is set.',
+  },
+  {
     path: '/dashboard/admin/store/import',
     title: 'Store import',
     purpose: 'Admins and content editors dry-run a ZIP of creator-store products and save valid rows as drafts.',
