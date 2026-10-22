@@ -64,7 +64,7 @@ function readDismissed(): string | null {
   }
 }
 
-export function LanguageSwitcher({ tone = 'default', compact = false }: { tone?: 'default' | 'onDark'; compact?: boolean }) {
+export function LanguageSwitcher({ tone = 'default', compact = false, dense = false }: { tone?: 'default' | 'onDark'; compact?: boolean; dense?: boolean }) {
   const { t } = useTranslation();
   const { user, profile, setProfile } = useAuthSTORE();
   const [open, setOpen] = useState(false);
@@ -169,7 +169,7 @@ export function LanguageSwitcher({ tone = 'default', compact = false }: { tone?:
 
   return (
     <div ref={ref} className="relative flex items-center gap-1">
-      {!compact && shortcut && (
+      {!compact && !dense && shortcut && (
         <button
           type="button"
           data-lang-shortcut={shortcut.code}
@@ -196,7 +196,12 @@ export function LanguageSwitcher({ tone = 'default', compact = false }: { tone?:
         aria-expanded={open}
       >
         <Globe className="w-4 h-4" />
-        {compact ? <span className="sr-only">{current.label}</span> : (
+        {compact ? <span className="sr-only">{current.label}</span> : dense ? (
+          <>
+            <span className="sm:hidden">{current.flag}</span>
+            <span className="hidden sm:inline">{current.flag} {current.code.toUpperCase()}</span>
+          </>
+        ) : (
           <>
             <span className="hidden sm:inline">{current.flag} {current.label}</span>
             <span className="sm:hidden">{current.flag}</span>

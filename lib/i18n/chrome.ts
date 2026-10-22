@@ -2,6 +2,27 @@
  * Keys added after the human catalogs were written. Merged onto every
  * language. Human locales override the English source below.
  */
+import { extraNavEn, extraNavLocale, type ExtraNav } from './nav-labels';
+
+const { section: extraSection, ...extraNav } = extraNavEn;
+
+function mergeRecords(base: Record<string, unknown>, extra: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(extra)) {
+    const current = out[key];
+    out[key] = value && typeof value === 'object' && !Array.isArray(value)
+      && current && typeof current === 'object' && !Array.isArray(current)
+      ? mergeRecords(current as Record<string, unknown>, value as Record<string, unknown>)
+      : value;
+  }
+  return out;
+}
+
+function navPatch(labels: ExtraNav): Record<string, unknown> {
+  const { section, ...rest } = labels;
+  return { ...rest, section };
+}
+
 export const chromeEn = {
   header: {
     etMaths: 'ET Maths',
@@ -159,9 +180,11 @@ export const chromeEn = {
     merits: 'Merits',
     controls: 'Controls',
     moderation: 'Moderation',
+    ...extraNav,
     section: {
       community: 'Community',
       family: 'Family',
+      ...extraSection,
     },
   },
   switcher: {
@@ -527,5 +550,10 @@ const ta = {
 const HUMAN: Record<string, Record<string, unknown>> = { ms, zh, ta };
 
 export function chromeLocale(code: string): Record<string, unknown> | undefined {
-  return HUMAN[code];
+  const human = HUMAN[code];
+  const labels = extraNavLocale(code);
+  if (!labels) return human;
+  const patch = { nav: navPatch(labels) };
+  if (!human) return patch;
+  return mergeRecords(human, patch);
 }

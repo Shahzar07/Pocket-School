@@ -597,6 +597,15 @@ export function trackById(track: OnboardingTrack): OnboardingTrackDef {
   return found;
 }
 
+const STAFF_DESK = new Set(['admin', 'teacher', 'institution_admin', 'partner_merchant']);
+const LEARNER_TRACKS = new Set<OnboardingTrack>(['student', 'independent']);
+
+/** Learner welcome cards stay off admin and staff desks. Staff keep their own tracks. */
+export function showLearnerWelcomeBanner(role: string | null | undefined, track: string | null | undefined): boolean {
+  if (!role || !STAFF_DESK.has(role)) return true;
+  return !(track && LEARNER_TRACKS.has(track as OnboardingTrack));
+}
+
 export function trackForProfile(input: WelcomeProfile): OnboardingTrack {
   const mode = (input.mode || '').toLowerCase();
   const held = new Set(

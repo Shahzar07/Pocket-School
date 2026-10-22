@@ -308,7 +308,7 @@ const ms = {
     classNetwork: 'Rangkaian kelas',
     yearbook: 'Buku tahunan',
     career: 'Kerjaya',
-    references: 'Rujukan',
+    references: 'Surat rujukan',
     careerDesk: 'Meja kerjaya',
     partner: 'Portal rakan',
     activityLog: 'Log aktiviti',

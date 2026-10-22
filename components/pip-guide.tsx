@@ -351,7 +351,7 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
         className="relative flex items-center gap-2 h-9 pl-1 pr-3 rounded-full border border-border bg-card hover:bg-muted transition-colors group"
       >
         <PipCharacter size={28} mood="waving" />
-        <span className={compact ? 'sr-only' : 'text-xs font-bold text-foreground hidden sm:inline'}>Show me around</span>
+        <span className={compact ? 'sr-only' : 'text-xs font-bold text-foreground hidden @min-[1300px]/header:inline'}>Show me around</span>
         <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
 
