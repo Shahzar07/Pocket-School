@@ -77,7 +77,7 @@ export function DashboardSearch() {
   const total = results ? results.courses.length + results.announcements.length + results.resources.length + books.length : 0;
 
   return (
-    <div className="relative w-[min(420px,46vw)] max-md:fixed max-md:inset-x-4 max-md:top-20 max-md:z-50 max-md:w-auto max-md:opacity-0 max-md:pointer-events-none focus-within:opacity-100 focus-within:pointer-events-auto md:static md:opacity-100 md:pointer-events-auto" ref={wrapperRef}>
+    <div className="relative w-full min-w-0 max-w-[420px] max-md:fixed max-md:inset-x-4 max-md:top-20 max-md:z-50 max-md:w-auto max-md:opacity-0 max-md:pointer-events-none focus-within:opacity-100 focus-within:pointer-events-auto md:static md:opacity-100 md:pointer-events-auto" ref={wrapperRef}>
       <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
       {loading
         ? <Loader2 className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />

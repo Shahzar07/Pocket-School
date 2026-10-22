@@ -50,6 +50,7 @@ import { OfflineBanner } from '@/components/offline-banner';
 import { RoleChecklist } from '@/components/role-checklist';
 import { WelcomeResume } from '@/components/onboarding/welcome-session';
 import { PagePurpose } from '@/components/page-purpose';
+import { sidebarLabel } from '@/lib/dashboard-nav-label';
 import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { hasCmsAddon } from '@/lib/entitlements';
@@ -79,7 +80,7 @@ const NAV: Record<Role, NavGroup[]> = {
   student: [
     { items: [
       { href: '/dashboard/student', icon: Home, labelKey: 'nav.dashboard' },
-      { href: '/dashboard/student/perks', icon: Tag, labelKey: 'nav.marketplace', label: 'Perks' },
+      { href: '/dashboard/student/perks', icon: Tag, labelKey: 'nav.perks', label: 'Perks' },
       { href: '/dashboard/notes', icon: StickyNote, labelKey: 'nav.notes', label: 'Notes' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/ai-teachers', icon: Users, labelKey: 'nav.aiTeachers' },
@@ -108,10 +109,10 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { sectionKey: 'nav.section.finance', sectionLabel: 'Payments', items: [
       { href: '/dashboard/student/billing', icon: CreditCard, labelKey: 'nav.billing' },
-      { href: '/dashboard/student/academy', icon: GraduationCap, labelKey: 'nav.academy', label: 'My academy' },
-      { href: '/dashboard/student/network', icon: Users, labelKey: 'nav.academy', label: 'Class network' },
-      { href: '/dashboard/student/yearbook', icon: BookOpen, labelKey: 'nav.academy', label: 'Yearbook' },
-      { href: '/dashboard/student/career', icon: Award, labelKey: 'nav.academy', label: 'Career' },
+      { href: '/dashboard/student/academy', icon: GraduationCap, labelKey: 'nav.myAcademy', label: 'My academy' },
+      { href: '/dashboard/student/network', icon: Users, labelKey: 'nav.classNetwork', label: 'Class network' },
+      { href: '/dashboard/student/yearbook', icon: BookOpen, labelKey: 'nav.yearbook', label: 'Yearbook' },
+      { href: '/dashboard/student/career', icon: Award, labelKey: 'nav.career', label: 'Career' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
@@ -158,7 +159,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
       { href: '/dashboard/teacher/progress', icon: AlertTriangle, labelKey: 'nav.insights', label: 'Class risk' },
       { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
-      { href: '/dashboard/teacher/references', icon: Award, labelKey: 'nav.academy', label: 'References' },
+      { href: '/dashboard/teacher/references', icon: Award, labelKey: 'nav.references', label: 'References' },
     ]},
     { sectionKey: 'nav.section.academics', sectionLabel: 'Learning', items: [
       { href: '/dashboard/teacher/gradebook', icon: ClipboardList, labelKey: 'nav.gradebook' },
@@ -314,7 +315,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
       { href: '/dashboard/institution/join', icon: Users, labelKey: 'nav.join', label: 'Join settings' },
       { href: '/dashboard/institution/alumni', icon: Award, labelKey: 'nav.alumni', label: 'Alumni' },
-      { href: '/dashboard/institution/career', icon: Briefcase, labelKey: 'nav.academy', label: 'Career desk' },
+      { href: '/dashboard/institution/career', icon: Briefcase, labelKey: 'nav.careerDesk', label: 'Career desk' },
       { href: '/dashboard/institution/verify', icon: Camera, labelKey: 'nav.verifyStudent', label: 'Verify student' },
       { href: '/dashboard/institution/publishing', icon: Library, labelKey: 'nav.library', label: 'Course library' },
       { href: '/dashboard/institution/sparks', icon: Sparkles, labelKey: 'nav.sparks', label: 'Sparks pool' },
@@ -348,7 +349,7 @@ const NAV: Record<Role, NavGroup[]> = {
   ],
   partner_merchant: [
     { items: [
-      { href: '/dashboard/partner', icon: Tag, labelKey: 'nav.marketplace', label: 'Partner portal' },
+      { href: '/dashboard/partner', icon: Tag, labelKey: 'nav.partner', label: 'Partner portal' },
       { href: '/partner', icon: Store, labelKey: 'nav.onboarding', label: 'Onboarding' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
@@ -371,7 +372,7 @@ const NavItem = ({ entry, pathname, onClick, router, compact }: {
   const active = isNavActive(entry.href, pathname);
   const Icon = entry.icon;
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const label = entry.label && language.startsWith('en') ? entry.label : t(entry.labelKey);
+  const label = sidebarLabel(entry, language, t);
 
   return (
     <button
@@ -765,8 +766,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <AdminViewAsBanner />
         {fullBleed ? null : (
-        <header className="h-[72px] bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
-          <div className="flex items-center gap-3">
+        <header className="h-[72px] min-w-0 bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t('nav.toggleSidebar')} aria-expanded={sidebarOpen}>
               <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
@@ -779,24 +780,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Search className="h-4 w-4" />
             </button>
-            <span data-tour="search"><DashboardSearch /></span>
+            <span data-tour="search" className="min-w-0 flex-1"><DashboardSearch /></span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <ThemeToggle />
             {showModes && (
-              <ModeSwitch
-                modes={account.modes}
-                active={account.mode}
-                onSwitch={chooseMode}
-                onBecomeInstructor={become}
-              />
+              <span className="hidden xl:inline-flex">
+                <ModeSwitch
+                  modes={account.modes}
+                  active={account.mode}
+                  onSwitch={chooseMode}
+                  onBecomeInstructor={become}
+                />
+              </span>
             )}
-            <span data-tour="sparks"><SparksChip /></span>
+            <span className="hidden lg:inline-flex" data-tour="sparks"><SparksChip /></span>
             <span data-tour="language"><LanguageSwitcher /></span>
-            <CurrencySwitcher />
+            <span className="hidden lg:inline-flex"><CurrencySwitcher /></span>
             {actionCentre ? <TaskBell /> : null}
             <span data-tour="notifications"><NotificationsBell /></span>
-            <span className="ms-1" data-tour="profile">
+            <span className="ms-1 shrink-0" data-tour="profile" data-header-account>
               <AccountMenu
                 name={profile.displayName || profile.name || 'User'}
                 email={user.email || profile.email || ''}
@@ -843,7 +846,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
           )}
           <OfflineBanner />
-          <div className={fullBleed ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative px-4 pb-6 pt-1 lg:px-6 lg:pb-10'}>
+          <div className={fullBleed ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative px-4 pb-6 pt-4 lg:px-6 lg:pb-10'}>
             {pathwayDesk || (immersive && shellOwnsPage) ? children : immersive ? <ToolShell>{children}</ToolShell> : (
               <>
             {accessDenied && (

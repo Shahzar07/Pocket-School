@@ -167,10 +167,20 @@ test.describe('academic results', () => {
     expect(stranger.status()).toBe(403);
 
     await signIn(page, STUDENT);
+    await page.evaluate(() => {
+      localStorage.setItem('pocket-school-lang', 'ms');
+      localStorage.setItem('pocket-school-lang-source', 'user');
+    });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/dashboard/results', { waitUntil: 'domcontentloaded' });
     await dismissCookies(page);
     await expect(page.locator('[data-results-live="1"]')).toBeVisible({ timeout: 30_000 });
+    const account = await page.locator('[data-header-account]').boundingBox();
+    expect(account).toBeTruthy();
+    expect((account?.x ?? 0) + (account?.width ?? 0)).toBeLessThanOrEqual(1280);
+    expect(account?.x ?? 0).toBeGreaterThanOrEqual(0);
+    const sidebarText = await page.locator('aside').innerText();
+    expect(sidebarText).not.toMatch(/\bnav\./);
     await expect(page.getByText(DISCLAIMER).first()).toBeVisible();
     const desk = page.locator('[data-results-desk="1"]');
     await desk.getByRole('button', { name: 'Record a result' }).click();
