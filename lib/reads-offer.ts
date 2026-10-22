@@ -49,6 +49,15 @@ export function readsDailyUsd(sku: 'reads' | 'reads-family' = 'reads'): number {
 export const READS_OFFER_PATH = '/reads/offer';
 export const READS_OFFER_URL = `https://poketschool.ai${READS_OFFER_PATH}`;
 
+/**
+ * Whether search engines may index the sales letter.
+ * Off unless READS_OFFER_INDEXABLE is exactly "true". The page robots meta,
+ * sitemap, and robots.txt all read this. Set the variable and redeploy to flip it.
+ */
+export function readsOfferIndexable(): boolean {
+  return process.env.READS_OFFER_INDEXABLE === 'true';
+}
+
 /** Interface languages. A book is translated one title at a time, not all at once. */
 export const READS_OFFER_LANGUAGE_COUNT = LANGUAGES.length;
 

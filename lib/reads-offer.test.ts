@@ -24,6 +24,7 @@ import {
   ownOrReadLine,
   readsCheckoutHref,
   readsMonthlyUsd,
+  readsOfferIndexable,
   readsOfferJsonLd,
   readsYearlyUsd,
 } from './reads-offer';
@@ -149,19 +150,40 @@ test('sales-letter jackets use Poket blue and electric cyan', () => {
   assert.match(card, /var\(--ps-cyan\)/);
   assert.match(card, /var\(--ps-cyan-ink\)/);
   assert.equal(/#3FE0D0|#14B8A6|#E2AF4D|#1F8A70|#1A3C34|#C8922A/i.test(letter + card), false);
-  const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
-  const robots = readFileSync(new URL('../app/robots.ts', import.meta.url), 'utf8');
-  const page = readFileSync(new URL('../app/reads/offer/page.tsx', import.meta.url), 'utf8');
   const offerLetter = readFileSync(new URL('../components/reads-offer/letter.tsx', import.meta.url), 'utf8');
-  assert.match(sitemap, /path: '\/reads\/offer'/);
-  assert.equal(robots.includes("'/reads/offer'"), false);
-  assert.match(page, /index:\s*true/);
-  assert.match(page, /follow:\s*true/);
-  assert.equal(page.includes('noindex'), false);
   assert.equal(MARKET_LINKS.some(link => link.href === '/reads/offer' && link.label === 'Poket Reads'), true);
   assert.equal(FOOTER_COLUMNS.some(column => column.links.some(link => link.href === '/reads/offer')), true);
   const chrome = readFileSync(new URL('../components/app-chrome.tsx', import.meta.url), 'utf8');
   assert.match(chrome, /ThemeProvider/);
   assert.match(chrome, /pathname === '\/reads\/offer'/);
   assert.match(offerLetter, /ReadsOfferThemeToggle/);
+});
+
+test('the sales letter stays out of search until READS_OFFER_INDEXABLE is true', () => {
+  const previous = process.env.READS_OFFER_INDEXABLE;
+  try {
+    delete process.env.READS_OFFER_INDEXABLE;
+    assert.equal(readsOfferIndexable(), false);
+    process.env.READS_OFFER_INDEXABLE = 'false';
+    assert.equal(readsOfferIndexable(), false);
+    process.env.READS_OFFER_INDEXABLE = '1';
+    assert.equal(readsOfferIndexable(), false);
+    process.env.READS_OFFER_INDEXABLE = 'true';
+    assert.equal(readsOfferIndexable(), true);
+  } finally {
+    if (previous === undefined) delete process.env.READS_OFFER_INDEXABLE;
+    else process.env.READS_OFFER_INDEXABLE = previous;
+  }
+
+  const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
+  const robots = readFileSync(new URL('../app/robots.ts', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../app/reads/offer/page.tsx', import.meta.url), 'utf8');
+  for (const source of [sitemap, robots, page]) assert.match(source, /readsOfferIndexable/);
+  assert.match(sitemap, /path: '\/reads\/offer'/);
+  assert.match(sitemap, /route\.path !== READS_OFFER_PATH/);
+  assert.match(robots, /READS_OFFER_PATH/);
+  assert.match(page, /index: indexable/);
+  assert.match(page, /follow: indexable/);
+  assert.match(page, /canonical: READS_OFFER_PATH/);
+  assert.match(page, /\/reads\/offer\/og\.jpg/);
 });
