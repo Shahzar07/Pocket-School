@@ -95,6 +95,6 @@ export const HOME = {
   close: 'Start on the free preview. A school can register when it is ready.',
   teachersLabel: 'ET AI teachers',
   languagesLabel: 'Languages in the product',
-  levelsLabel: 'Primary to degree foundation',
-  formatsLabel: 'Lesson, quiz, audio, and the desk',
+  levelsLabel: 'Primary to PhD',
+  formatsLabel: 'Plus continuous professional development and independent learning',
 };
