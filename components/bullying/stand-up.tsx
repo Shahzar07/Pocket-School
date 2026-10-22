@@ -1,3 +1,4 @@
+import { MarketingHero } from '@/components/marketing/illustrations';
 import { GetInvolvedLink, SafetyDisclaimerFooter } from '@/components/safety/disclaimer';
 import { BRAND } from '@/lib/brand';
 import {
@@ -31,10 +32,14 @@ export function StandUp() {
   const join = bullyingJoinPath(SAMPLE_BULLYING_CODE);
   return (
     <main className="min-h-screen" style={{ background: '#f4f7f8', color: BRAND.ink }}>
-      <header className="px-6 py-12 text-white" style={{ background: BRAND.hero }}>
-        <p className="text-sm tracking-[0.2em]" style={{ color: BRAND.cyan }}>POKET SCHOOL</p>
-        <h1 className="mt-3 max-w-3xl text-4xl font-semibold">Stand up to bullying</h1>
-        <p className="mt-3 max-w-2xl text-lg">Free anti-bullying help for every person, including someone with no school.</p>
+      <header className="overflow-x-clip px-6 py-12 text-white" style={{ background: BRAND.hero }}>
+        <MarketingHero slug="stand-up">
+          <div className="min-w-0">
+            <p className="text-sm tracking-[0.2em]" style={{ color: BRAND.cyan }}>POKET SCHOOL</p>
+            <h1 className="mt-3 max-w-3xl text-4xl font-semibold">Stand up to bullying</h1>
+            <p className="mt-3 max-w-2xl text-lg">Free anti-bullying help for every person, including someone with no school.</p>
+          </div>
+        </MarketingHero>
       </header>
       <div className="mx-auto grid max-w-3xl gap-4 p-6">
         <article className="rounded-3xl border bg-white p-5">

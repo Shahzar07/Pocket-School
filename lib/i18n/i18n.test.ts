@@ -133,7 +133,20 @@ test('the language list covers the major world languages and rtl scripts', () =>
     const label = (catalogs as unknown as Record<string, { home: { v3: { levelsLabel: string } } }>)[code].home.v3.levelsLabel;
     assert.equal(label.includes('degree foundation'), false, code);
     assert.equal(label.includes('asas ijazah'), false, code);
+    const feature = (catalogs as unknown as Record<string, { home: { v3: { features: { body: string }[] } } }>)[code].home.v3.features[0]?.body ?? '';
+    assert.equal(feature.includes('degree foundation'), false, code);
+    assert.equal(feature.includes('asas ijazah'), false, code);
   }
+  const enFeature = (catalogs.en as unknown as { home: { v3: { features: { body: string }[] } } }).home.v3.features[0].body;
+  assert.match(enFeature, /Primary to A-Levels/);
+  assert.match(enFeature, /degree to Masters and PhD/);
+  assert.match(enFeature, /continuous professional development and independent learning/);
+  assert.match(enFeature, /The count on this page is the list in the product/);
+  const msFeature = (catalogs.ms as unknown as { home: { v3: { features: { body: string }[] } } }).home.v3.features[0].body;
+  assert.match(msFeature, /hingga A-Level/);
+  assert.match(msFeature, /Sarjana dan PhD/);
+  assert.match(msFeature, /pembangunan profesional berterusan dan pembelajaran kendiri/);
+  assert.match(msFeature, /Bilangan pada halaman ini ialah senarai dalam produk/);
   assert.equal(chromeCopy.en.home.v3.title, 'Learn your way.');
   assert.equal(chromeCopy.ms.home.v3.title, 'Belajar dengan cara anda.');
   assert.equal(chromeCopy.ms.home.v3.titleEm, 'Pergi lebih jauh dengan AI.');

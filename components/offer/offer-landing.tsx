@@ -10,6 +10,7 @@ import {
   PenLine,
   Users,
 } from 'lucide-react';
+import { MarketingHero } from '@/components/marketing/illustrations';
 import {
   OFFER_BUNDLE_EXTRAS,
   OFFER_ROUTES,
@@ -128,6 +129,8 @@ export function OfferLanding() {
       <main id="offer-main">
         <section className="text-white" style={{ background: 'var(--ps-hero)' }}>
           <div className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14">
+            <MarketingHero slug="offer">
+            <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/80">{offerCopy.hero.eyebrow}</p>
             <h1 className="mt-4 max-w-3xl font-heading text-4xl leading-[1.05] tracking-tight sm:text-6xl">
               {offerCopy.hero.headline}
@@ -146,6 +149,8 @@ export function OfferLanding() {
             </div>
             <p className="mt-4 text-sm text-white/80">{offerCopy.hero.micro}</p>
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-white/90">{offerCopy.hero.worth}</p>
+            </div>
+            </MarketingHero>
           </div>
         </section>
 
