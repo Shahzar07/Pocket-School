@@ -56,6 +56,7 @@ test('teacher and parent see their own week', async ({ page }) => {
   await page.goto('/preview/timetable?surface=institution');
   await page.evaluate(() => window.localStorage.removeItem('poket-timetable-v1'));
   await page.reload();
+  await expect(page.locator('[data-timetable="institution"]')).toBeVisible();
   await page.locator('[data-action="generate"]').click();
   await expect(page.locator('[data-lesson]').first()).toBeVisible();
   await page.locator('[data-tab="publish"]').click();
@@ -71,6 +72,7 @@ test('teacher and parent see their own week', async ({ page }) => {
   await expect(page.locator('[data-lesson]').first()).toBeVisible();
   await shot(page, 'timetable-parent');
   await page.goto('/preview/timetable?surface=personal');
+  await expect(page.locator('[data-timetable="personal"]')).toBeVisible();
   await page.locator('[data-action="generate"]').click();
   await expect(page.locator('[data-quality]')).toBeVisible();
   await shot(page, 'timetable-personal');
