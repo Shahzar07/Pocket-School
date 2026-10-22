@@ -1,9 +1,10 @@
 'use client';
+import { brandAccent } from '@/lib/dashboard/brand-accent';
 
 import { useState, type ReactNode } from 'react';
 import { Freshness, GlossaryTip, Heatmap } from '@/components/insights/boards';
 import { ChartPatternDefs, patternFill } from '@/components/charts/patterns';
-import { accentForIndex } from '@/lib/design/chart-colours';
+
 import { moodLabel, quadrantLabel, type BehaviourBoardModel } from '@/lib/insights/behaviour-board';
 import { behaviourChecks } from '@/lib/insights/behaviour-seed';
 import { MOOD_EMOJI, type Mood } from '@/lib/insights/behaviour';
@@ -57,7 +58,7 @@ function Bars({ rows }: { rows: { label: string; value: number }[] }) {
         <div key={row.label} className="grid grid-cols-[7rem_1fr_2rem] items-center gap-2 text-xs">
           <span>{row.label}</span>
           <span className="h-2.5 rounded-full bg-muted overflow-hidden">
-            <span className="block h-full" style={{ width: `${(row.value / max) * 100}%`, background: patternFill(accentForIndex(index)) }} />
+            <span className="block h-full" style={{ width: `${(row.value / max) * 100}%`, background: patternFill(brandAccent(index)) }} />
           </span>
           <span className="tabular-nums text-right">{row.value}</span>
         </div>

@@ -63,7 +63,7 @@ export function LinkedInCopy({ name, studentNumber, items }: { name: string; stu
 
 function CopyBlock({ title, text }: { title: string; text: string }) {
   return (
-    <div className="mt-4 rounded-2xl bg-[#F6F1E7] p-4">
+    <div className="mt-4 rounded-2xl bg-[#E9F7FA] p-4">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E6A83]">{title}</p>
       <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
     </div>
@@ -210,7 +210,7 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
             <h3 className="text-sm font-semibold">Verification requests</h3>
             <ul className="mt-2 space-y-2 text-sm">
               {requests.filter((item) => item.status === 'open').map((item) => (
-                <li key={item.id} className="rounded-xl bg-[#F6F1E7] px-3 py-2">
+                <li key={item.id} className="rounded-xl bg-[#E9F7FA] px-3 py-2">
                   <p>{item.itemTitle}</p>
                   <p>{item.note}{item.visitorLabel ? ` · ${item.visitorLabel}` : ''}</p>
                   <button type="button" className="mt-1 font-semibold" onClick={() => {

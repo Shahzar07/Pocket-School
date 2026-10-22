@@ -30,10 +30,10 @@ interface Thread {
 }
 
 const ROLE_COLOR: Record<string, string> = {
-  admin: 'from-violet-500 to-fuchsia-600',
+  admin: 'from-[#1E6A83] to-[#3FE0D0]',
   teacher: 'from-success to-teal-600',
   parent: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
-  student: 'from-blue-500 to-indigo-600',
+  student: 'from-blue-500 to-[#3FE0D0]',
 };
 
 function initials(name: string) {

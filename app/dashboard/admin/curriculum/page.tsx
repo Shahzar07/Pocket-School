@@ -492,7 +492,7 @@ export default function AdminCurriculumPage() {
       <Card className="p-0 rounded-2xl overflow-hidden border-border">
         <div className="px-5 py-4 border-b border-border flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3 min-w-0">
-            <span className="w-9 h-9 rounded-lg bg-violet-50 text-violet-700 flex items-center justify-center shrink-0">
+            <span className="w-9 h-9 rounded-lg bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] flex items-center justify-center shrink-0">
               <Wand2 className="w-4 h-4" />
             </span>
             <div className="min-w-0">
@@ -563,9 +563,9 @@ export default function AdminCurriculumPage() {
           )}
 
           {(archStep === 1 || archDesigning) && archDesigning && (
-            <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-6 text-center">
-              <Loader2 className="w-5 h-5 animate-spin mx-auto text-violet-600" />
-              <p className="text-sm text-violet-700 font-medium mt-2">
+            <div className="rounded-xl border border-dashed border-[var(--ps-cyan-border)] bg-[var(--ps-tile-wash)] px-4 py-6 text-center">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto text-[var(--ps-tile-ink)]" />
+              <p className="text-sm text-[var(--ps-tile-ink)] font-medium mt-2">
                 ET AI is planning {archWeeks || '—'} weeks of {archSubject || 'your subject'}…
               </p>
               <p className="text-xs text-muted-foreground mt-1">This usually takes 10-30 seconds.</p>
@@ -651,7 +651,7 @@ export default function AdminCurriculumPage() {
                   <div className="space-y-1.5">
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-violet-500 to-teal-500 transition-all duration-300"
+                        className="h-full bg-gradient-to-r from-[#1E6A83] to-teal-500 transition-all duration-300"
                         style={{ width: `${Math.round((archProgress.done / Math.max(1, archProgress.total)) * 100)}%` }}
                       />
                     </div>
@@ -713,7 +713,7 @@ export default function AdminCurriculumPage() {
         {showProgrammeForm && (
           <div className="mb-4 p-4 bg-muted/40 rounded-xl border border-dashed border-border space-y-3">
             {editingProgramme && (
-              <p className="text-xs font-semibold text-violet-700">
+              <p className="text-xs font-semibold text-[var(--ps-tile-ink)]">
                 Editing “{editingProgramme.name}”
               </p>
             )}
@@ -823,7 +823,7 @@ export default function AdminCurriculumPage() {
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
                     <Button size="sm" variant="ghost"
-                      className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-destructive"
+                      className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-[var(--ps-tile-ink)]"
                       title="Delete programme"
                       disabled={deletingProgramme === p.id}
                       onClick={() => handleDeleteProgramme(p)}>
@@ -995,7 +995,7 @@ export default function AdminCurriculumPage() {
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
                     <Button size="sm" variant="ghost"
-                      className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-[var(--ps-tile-ink)]"
                       title="Delete subject"
                       disabled={deletingSubject === m.id}
                       onClick={() => handleDeleteSubject(m)}>

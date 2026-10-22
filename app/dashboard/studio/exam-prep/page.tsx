@@ -115,7 +115,7 @@ function PrepCard({ prep, index }: { prep: ExamPrep; index: number }) {
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary truncate">{prep.subject || 'Exam'}</p>
             <p className="font-heading text-[20px] leading-tight text-foreground mt-1 line-clamp-2">{prep.title}</p>
           </div>
-          <span className={`shrink-0 text-[12px] font-bold px-2.5 py-1 rounded-full ${left < 0 ? 'bg-muted text-muted-foreground' : left <= 3 ? 'bg-rose-50 text-rose-700' : 'bg-primary/10 text-primary'}`}>
+          <span className={`shrink-0 text-[12px] font-bold px-2.5 py-1 rounded-full ${left < 0 ? 'bg-muted text-muted-foreground' : left <= 3 ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' : 'bg-primary/10 text-primary'}`}>
             {left < 0 ? 'Done' : left === 0 ? 'Today' : `${left}d`}
           </span>
         </div>
@@ -126,7 +126,7 @@ function PrepCard({ prep, index }: { prep: ExamPrep; index: number }) {
           </div>
           <div className="relative h-2 rounded-full bg-muted">
             <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${mastery}%` }} />
-            <span className="absolute -top-1 w-0.5 h-4 bg-rose-400 rounded" style={{ left: `${prep.targetScore}%` }} />
+            <span className="absolute -top-1 w-0.5 h-4 bg-[#1E6A83] rounded" style={{ left: `${prep.targetScore}%` }} />
           </div>
         </div>
         <div className="mt-4 flex items-center gap-4 text-[13px]">

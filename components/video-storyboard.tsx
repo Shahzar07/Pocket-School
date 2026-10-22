@@ -203,8 +203,8 @@ export function VideoStoryboard({ script, dark }: { script: string; dark?: boole
   const scenes = parseScenes(script);
 
   const cardBg = dark ? 'border-white/10' : 'border-border';
-  const headerBg = dark ? 'from-red-500/10 to-rose-500/5 border-white/10' : 'from-red-500/10 to-rose-500/5 border-border';
-  const numBg = dark ? 'bg-red-500/20 text-red-400' : 'bg-red-500/15 text-red-600';
+  const headerBg = dark ? 'from-[#6FBBCE] to-[#6FBBCE] border-white/10' : 'from-[#6FBBCE] to-[#6FBBCE] border-border';
+  const numBg = dark ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' : 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]';
   const titleColor = dark ? 'text-white' : 'text-foreground';
   const visualBg = dark ? 'bg-white/[0.02] border-white/5' : 'bg-muted/50 border-border/50';
   const visualLabel = dark ? 'text-[var(--ps-cyan)]' : 'text-[var(--ps-cyan-text)]';
@@ -217,7 +217,7 @@ export function VideoStoryboard({ script, dark }: { script: string; dark?: boole
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1E6A83] to-[#3FE0D0] flex items-center justify-center">
           <Video className="w-4 h-4 text-white" />
         </div>
         <div>

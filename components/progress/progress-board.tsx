@@ -9,9 +9,9 @@ import { DEFAULT_THRESHOLDS } from '@/lib/alerts/progress';
 
 const LIGHT: Record<AlertSeverity, string> = {
   low: 'bg-[var(--ps-cyan)]',
-  medium: 'bg-[var(--ps-coral-fill)]',
-  high: 'bg-[var(--ps-coral)]',
-  critical: 'bg-destructive',
+  medium: 'bg-[var(--ps-tile-ink)]',
+  high: 'bg-[var(--ps-tile-ink)]',
+  critical: 'bg-[#1E6A83]',
 };
 
 const WORD: Record<AlertSeverity, string> = {
@@ -76,7 +76,7 @@ export function ProgressBoard({
       <div data-progress-view={mode}>
         <DashHeader eyebrow={eyebrow} title={title} description={description} />
         {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>}
         {!loading && alerts.length === 0 && !error && (
           <Panel>
             <p className="text-sm text-muted-foreground">
@@ -386,7 +386,7 @@ function SettingsForm({ initial, onSave }: { initial: ProgressSettings; onSave: 
         <div className="sm:col-span-2">
           <button type="submit" className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground">Save settings</button>
           {saved && <span className="ml-3 text-sm text-muted-foreground">Saved.</span>}
-          {error && <span className="ml-3 text-sm text-destructive">{error}</span>}
+          {error && <span className="ml-3 text-sm text-[var(--ps-tile-ink)]">{error}</span>}
         </div>
       </form>
     </Panel>

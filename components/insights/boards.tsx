@@ -1,4 +1,5 @@
 'use client';
+import { brandAccent } from '@/lib/dashboard/brand-accent';
 
 import { metricById, METRICS } from '@/lib/insights/metrics';
 import { BLOOM_LABELS, type BloomLevel } from '@/lib/insights/analytics';
@@ -10,31 +11,31 @@ import { buildXlsx } from '@/lib/insights/xlsx';
 import type { AnalyticsSnapshot } from '@/lib/insights/aggregate';
 import type { DrillRecord, Kpi } from '@/lib/insights/reports';
 import { Info, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
-import { accentFillVar, accentForIndex, accentVar, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
+import { accentFillVar, accentVar, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
 
 const METRIC_TONE: Record<string, AccentId> = {
   study_time: 'teal',
   quiz_average: 'cyan',
-  mastery: 'violet',
+  mastery: 'teal',
   exam_readiness: 'sky',
-  understanding: 'violet',
+  understanding: 'teal',
   retention_forecast: 'sky',
   goal_completion: 'emerald',
-  sparks_earned: 'coral',
+  sparks_earned: 'sky',
   consistency: 'emerald',
   focus_adherence: 'teal',
-  cramming: 'coral',
+  cramming: 'sky',
   procrastination: 'cyan',
 };
 
 function toneForMetric(id: string, index: number): AccentId {
-  return METRIC_TONE[id] ?? accentForIndex(index);
+  return METRIC_TONE[id] ?? brandAccent(index);
 }
 
 function MetricTile({ id, index, value, trend }: { id: string; index: number; value: number | null; trend?: { direction: TrendDirection; label: string } }) {
   const tone = toneForMetric(id, index);
   const TrendIcon = trend?.direction === 'up' ? ArrowUpRight : trend?.direction === 'down' ? ArrowDownRight : Minus;
-  const trendColour = trend?.direction === 'up' ? 'var(--ps-emerald)' : trend?.direction === 'down' ? 'var(--ps-coral)' : 'var(--muted-foreground)';
+  const trendColour = trend?.direction === 'up' ? 'var(--ps-emerald)' : trend?.direction === 'down' ? 'var(--ps-tile-ink)' : 'var(--muted-foreground)';
   return (
     <div
       className="relative overflow-hidden rounded-2xl border border-border p-4"
@@ -194,7 +195,7 @@ export function AnalyticsBoard({ snapshot, live }: { snapshot: AnalyticsSnapshot
             <div key={row.level} className="flex items-center gap-2 mb-2">
               <span className="w-24 text-xs">{BLOOM_LABELS[row.level as BloomLevel]}</span>
               <span className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                <span className="block h-full" style={{ width: `${row.score ?? 0}%`, background: `var(${accentFillVar(accentForIndex(index))})` }} />
+                <span className="block h-full" style={{ width: `${row.score ?? 0}%`, background: `var(${accentFillVar(brandAccent(index))})` }} />
               </span>
               <span className="text-xs tabular-nums w-8">{row.score ?? '—'}</span>
             </div>

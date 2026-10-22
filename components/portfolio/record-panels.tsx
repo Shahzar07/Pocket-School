@@ -52,7 +52,7 @@ export function RecordPanels({
           {nudges.map((nudge) => <li key={nudge}>{nudge}</li>)}
         </ul>
       )}
-      <div className="mt-5 rounded-2xl bg-[#F6F1E7] p-4">
+      <div className="mt-5 rounded-2xl bg-[#E9F7FA] p-4">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E6A83]">ET AI draft</p>
         <p className="mt-2 text-sm leading-relaxed">{summary || 'ET AI writes from recorded achievements after you ask for a draft.'}</p>
         <ul className="mt-2 space-y-1 text-sm">

@@ -32,14 +32,14 @@ const fadeUp: Record<string, any> = {
 
 const STATUS_STYLES_SELECTED: Record<AttStatus, string> = {
   present: 'bg-success/10 text-success border-success/20',
-  absent: 'bg-red-500/10 text-red-600 border-red-500/20',
+  absent: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border-[var(--ps-cyan-border)]',
   late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   excused: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
 };
 
 const STATUS_BADGE_STYLES: Record<AttStatus, string> = {
   present: 'bg-success/10 text-success border-success/20',
-  absent: 'bg-red-500/10 text-red-600 border-red-500/20',
+  absent: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border-[var(--ps-cyan-border)]',
   late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   excused: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
 };
@@ -288,7 +288,7 @@ export default function TeacherAttendancePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <Badge className={`rounded-full text-[10px] border ${rate >= 80 ? 'bg-success/10 text-success border-success/20' : rate >= 60 ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
+                    <Badge className={`rounded-full text-[10px] border ${rate >= 80 ? 'bg-success/10 text-success border-success/20' : rate >= 60 ? 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20' : 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border-[var(--ps-cyan-border)]'}`}>
                       {rate}% present
                     </Badge>
                     {isExp ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}

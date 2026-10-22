@@ -35,7 +35,7 @@ export default function PaymentsAdminPage() {
       <DashHeader eyebrow="Super admin" title="Payments" description="Which checkouts are on. API keys are saved only in Integrations." />
       {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
       <div className="grid sm:grid-cols-3 gap-4">
-        <StatCard icon={Landmark} label="Stripe" value={String(data?.stripeMode ?? '…')} index={0} tone="violet" />
+        <StatCard icon={Landmark} label="Stripe" value={String(data?.stripeMode ?? '…')} index={0} tone="teal" />
         <StatCard icon={Landmark} label="Gateway" value={String(data?.gateway ?? 'billplz')} badge={String(data?.gatewayMode ?? '')} index={1} tone="sky" />
         <StatCard icon={Landmark} label="Webhook" value={String((data?.webhook as { ok?: boolean } | undefined)?.ok ? 'Healthy' : 'Waiting')} index={2} tone="emerald" trend={(data?.webhook as { ok?: boolean } | undefined)?.ok ? { direction: 'up', label: 'Healthy' } : { direction: 'flat', label: 'Waiting' }} />
       </div>

@@ -107,7 +107,7 @@ export function BookReaderPreview({ book }: { book: Book }) {
           ))}
         </div>
       </div>
-      <div className={`mx-auto overflow-hidden rounded-[28px] border border-border bg-[#F7F6F3] ${FRAME[device]}`}>
+      <div className={`mx-auto overflow-hidden rounded-[28px] border border-border bg-[#E9F7FA] ${FRAME[device]}`}>
         <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[12px] text-muted-foreground">
           <span>{page?.chapterTitle}</span>
           <span data-page-counter="1">{pageLabel(at, pages.length || 1)}</span>

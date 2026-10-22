@@ -7,7 +7,7 @@ export function BlogLivePreview({ post }: { post: BlogPost }) {
   const takeaways = (post.takeaways || []).map((item) => item.trim()).filter(Boolean);
   const steps = (post.howto || []).filter((step) => step.name.trim() && step.text.trim());
   return (
-    <div data-blog-preview="1" className="rounded-[2rem] bg-[#F8F4EE] text-[#203337]">
+    <div data-blog-preview="1" className="rounded-[2rem] bg-[#E9F7FA] text-[#203337]">
       <p className="px-4 pt-4 text-xs font-bold tracking-[0.18em] text-[#1E6A83] sm:px-6">Live preview · {post.status}</p>
       <div className="mt-4">
         <PostHero post={post} />

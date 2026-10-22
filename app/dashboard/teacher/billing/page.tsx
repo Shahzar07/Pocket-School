@@ -31,7 +31,7 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   sent: 'bg-blue-500/10 text-blue-700',
   paid: 'bg-success/10 text-success',
-  overdue: 'bg-red-500/10 text-red-700',
+  overdue: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
   cancelled: 'bg-muted text-muted-foreground/60',
 };
 
@@ -361,7 +361,7 @@ export default function TeacherBillingPage() {
                     <CheckCircle2 className="w-3.5 h-3.5 text-success" /> Mark Paid
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} className="text-red-500 hover:bg-red-500/10">
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} className="text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]">
                   <Trash2 className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => handlePrint(inv)} className="text-muted-foreground">

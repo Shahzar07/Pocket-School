@@ -239,7 +239,7 @@ export function SafetyDesk({
   const dangerForm = (
       <form id="danger-now" onSubmit={event => void onDanger(event)} className="rounded-2xl border border-border bg-card p-4 grid gap-3">
 
-        <p className="text-xs font-bold tracking-widest text-[#D0553F]">EMERGENCY</p>
+        <p className="text-xs font-bold tracking-widest text-[#1E6A83]">EMERGENCY</p>
         <p className="text-4xl font-extrabold">Call {number}</p>
         <p className="text-sm font-semibold">The Safety Desk does not replace emergency services.</p>
         <p className="text-sm text-muted-foreground">This is the emergency number for your country. Call it now if you can.</p>
@@ -274,7 +274,7 @@ export function SafetyDesk({
             <input className="min-h-12 rounded-xl border border-border px-3 font-normal" value={place} onChange={event => setPlace(event.target.value)} aria-label="Place to share once" placeholder="Classroom, gate, or bus stop" />
           </label>
         ) : null}
-        <button type="submit" disabled={busy} className="min-h-12 rounded-xl bg-[#D0553F] text-white font-bold inline-flex items-center justify-center gap-2">
+        <button type="submit" disabled={busy} className="min-h-12 rounded-xl bg-[#1E6A83] text-white font-bold inline-flex items-center justify-center gap-2">
           <Phone aria-hidden="true" />
           I&apos;m in danger now
         </button>

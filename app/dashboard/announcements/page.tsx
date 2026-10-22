@@ -25,14 +25,14 @@ const fadeUp: Record<string, any> = {
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
-  urgent: 'bg-destructive/10 text-destructive border border-destructive/20',
+  urgent: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border border-[var(--ps-cyan-border)]',
   high: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   normal: 'bg-primary/10 text-primary border border-primary/20',
   low: 'bg-muted text-muted-foreground',
 };
 
 const PRIORITY_BORDER: Record<string, string> = {
-  urgent: 'border-l-destructive',
+  urgent: 'border-l-[var(--ps-cyan-border)]',
   high: 'border-l-[var(--ps-cyan-border)]',
   normal: 'border-l-primary',
   low: 'border-l-border',
@@ -228,7 +228,7 @@ export default function AnnouncementsPage() {
                     <button onClick={() => togglePin(ann)} className={`p-1.5 rounded-lg hover:bg-muted transition-colors ${ann.pinned ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`}>
                       <Pin className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(ann.id!)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-destructive transition-colors">
+                    <button onClick={() => handleDelete(ann.id!)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-[var(--ps-tile-ink)] transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

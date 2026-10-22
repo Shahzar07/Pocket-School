@@ -202,7 +202,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
                   animate={speaking || listening ? { scale: [1, 1.35 + i * 0.12], opacity: [0.5, 0] } : { scale: 1, opacity: 0.15 }}
                   transition={{ repeat: speaking || listening ? Infinity : 0, duration: 1.6, delay: i * 0.4 }} />
               ))}
-              <span className={`absolute inset-0 rounded-full grid place-items-center text-3xl font-bold ${listening ? 'bg-rose-500 text-white' : 'bg-primary text-primary-foreground'}`}>
+              <span className={`absolute inset-0 rounded-full grid place-items-center text-3xl font-bold ${listening ? 'bg-[#1E6A83] text-white' : 'bg-primary text-primary-foreground'}`}>
                 {listening ? <Mic className="w-10 h-10" /> : speaking ? <Volume2 className="w-10 h-10" /> : live !== null ? <Loader2 className="w-10 h-10 animate-spin" /> : 'ET AI'}
               </span>
             </div>
@@ -213,7 +213,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
             {!typing ? (
               <div className="mt-6 flex flex-col items-center gap-3">
                 {listening ? (
-                  <button onClick={stopListening} className="h-12 px-6 rounded-full bg-rose-600 text-white font-semibold inline-flex items-center gap-2"><Square className="w-4 h-4" /> I&apos;ve finished my answer</button>
+                  <button onClick={stopListening} className="h-12 px-6 rounded-full bg-[#1E6A83] text-white font-semibold inline-flex items-center gap-2"><Square className="w-4 h-4" /> I&apos;ve finished my answer</button>
                 ) : (
                   <button onClick={listen} disabled={examinerBusy && !speaking} className="h-12 px-6 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center gap-2 disabled:opacity-40"><Mic className="w-4 h-4" /> {speaking ? 'Interrupt and answer' : 'Answer'}</button>
                 )}
@@ -294,7 +294,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
                   <ul className="space-y-1.5">{grade.strengths.map((s, i) => <li key={i} className="flex gap-2 text-[14px]"><CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />{s}</li>)}</ul>
                 </div>
                 <div>
-                  <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-rose-600 mb-2">Work on</p>
+                  <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--ps-tile-ink)] mb-2">Work on</p>
                   <ul className="space-y-2">{grade.gaps.map((g, i) => <li key={i} className="flex gap-2 text-[14px]"><AlertTriangle className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0 mt-0.5" /><span><span className="font-semibold">{g.topic}:</span> {g.fix}</span></li>)}</ul>
                 </div>
               </div>

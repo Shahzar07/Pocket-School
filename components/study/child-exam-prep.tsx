@@ -48,11 +48,11 @@ export function ChildExamPrep({ childId, name }: { childId: string; name?: strin
                   <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary truncate">{prep.subject || 'Exam'}</p>
                   <p className="font-semibold text-foreground leading-snug truncate">{prep.title}</p>
                 </div>
-                <span className={`shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full ${left <= 3 ? 'bg-rose-50 text-rose-700' : 'bg-primary/10 text-primary'}`}>{left === 0 ? 'Today' : `${left}d`}</span>
+                <span className={`shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full ${left <= 3 ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' : 'bg-primary/10 text-primary'}`}>{left === 0 ? 'Today' : `${left}d`}</span>
               </div>
               <div className="mt-3 relative h-2 rounded-full bg-muted">
                 <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${mastery}%` }} />
-                <span className="absolute -top-1 w-0.5 h-4 bg-rose-400 rounded" style={{ left: `${prep.targetScore}%` }} />
+                <span className="absolute -top-1 w-0.5 h-4 bg-[#1E6A83] rounded" style={{ left: `${prep.targetScore}%` }} />
               </div>
               <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-[12px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {mastery}% ready · aim {prep.targetGrade}</span>

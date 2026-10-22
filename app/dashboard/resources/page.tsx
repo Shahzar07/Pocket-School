@@ -20,15 +20,15 @@ const fadeUp: Record<string, any> = {
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   link: <Link2 className="w-4 h-4 text-primary" />,
-  video: <Film className="w-4 h-4 text-violet-600" />,
-  pdf: <FileText className="w-4 h-4 text-destructive" />,
+  video: <Film className="w-4 h-4 text-[var(--ps-tile-ink)]" />,
+  pdf: <FileText className="w-4 h-4 text-[var(--ps-tile-ink)]" />,
   doc: <BookOpen className="w-4 h-4 text-success" />,
 };
 
 const TYPE_BADGE: Record<string, string> = {
   link: 'bg-primary/10 text-primary border border-primary/20',
-  video: 'bg-violet-500/10 text-violet-600 border border-violet-500/20',
-  pdf: 'bg-destructive/10 text-destructive border border-destructive/20',
+  video: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border border-[var(--ps-cyan-border)]',
+  pdf: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border border-[var(--ps-cyan-border)]',
   doc: 'bg-success/10 text-success border border-success/20',
 };
 
@@ -202,7 +202,7 @@ export default function ResourcesPage() {
                   <Badge className={`rounded-full text-[10px] ${TYPE_BADGE[r.type]}`}>{r.type}</Badge>
                 </div>
                 {canCreate && (
-                  <button onClick={() => handleDelete(r.id!)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                  <button onClick={() => handleDelete(r.id!)} className="text-muted-foreground hover:text-[var(--ps-tile-ink)] transition-colors shrink-0">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}

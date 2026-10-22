@@ -20,7 +20,7 @@ import { isoDay } from '@/lib/study/schedule';
 import { recordStudyDay } from '@/lib/study/db';
 import { light } from '@/lib/design/tokens';
 
-const SERIES_COLORS = [light.primary, light.cyanText, '#8B5CF6', light.coral, light.good];
+const SERIES_COLORS = [light.primary, light.cyanText, '#1E6A83', light.cyan, light.good];
 const FunctionPlot = dynamic(() => import('@/components/study/function-plot').then(mod => mod.FunctionPlot), {
   loading: () => <div className="h-[280px] animate-pulse rounded-2xl bg-muted sm:h-[440px]" role="status" aria-label="Loading the graph" />,
 });
@@ -70,8 +70,8 @@ function GraphingCalculator() {
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: SERIES_COLORS[i % SERIES_COLORS.length] }} />
                 <span className="text-[13px] font-mono text-muted-foreground">y =</span>
                 <input value={f} onChange={e => setFns(a => a.map((x, k) => (k === i ? e.target.value : x)))} placeholder="e.g. 2x + 1"
-                  className={`flex-1 h-10 rounded-xl border bg-background px-3 font-mono text-[14px] outline-none focus:border-primary ${err ? 'border-rose-300' : 'border-border'}`} />
-                <button onClick={() => setFns(a => a.filter((_, k) => k !== i))} className="text-muted-foreground hover:text-rose-600" aria-label="Remove"><X className="w-4 h-4" /></button>
+                  className={`flex-1 h-10 rounded-xl border bg-background px-3 font-mono text-[14px] outline-none focus:border-primary ${err ? 'border-[var(--ps-cyan-border)]' : 'border-border'}`} />
+                <button onClick={() => setFns(a => a.filter((_, k) => k !== i))} className="text-muted-foreground hover:text-[var(--ps-tile-ink)]" aria-label="Remove"><X className="w-4 h-4" /></button>
               </div>
             );
           })}
@@ -133,7 +133,7 @@ function FunctionAnalysis() {
           </dl>
         ) : (
           analysis.error
-            ? <p className="mt-4 text-[13px] text-rose-600">{analysis.error}</p>
+            ? <p className="mt-4 text-[13px] text-[var(--ps-tile-ink)]">{analysis.error}</p>
             : null
         )}
       </Panel>

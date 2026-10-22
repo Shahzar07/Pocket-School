@@ -1315,7 +1315,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
                       {fmt && <span style={{ color: C.accent }}>{fmt.icon}</span>}
                       <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${C.dim}`}>{fmt?.label ?? item.type}</span>
                     </div>
-                    <button type="button" onClick={() => onDelete(item)} className={`${C.faint} hover:text-red-400 transition-colors`} aria-label="Delete from library">
+                    <button type="button" onClick={() => onDelete(item)} className={`${C.faint} hover:text-[var(--ps-tile-ink)] transition-colors`} aria-label="Delete from library">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

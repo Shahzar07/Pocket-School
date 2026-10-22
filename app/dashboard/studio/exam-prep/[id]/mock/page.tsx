@@ -136,7 +136,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
       {phase === 'setup' && (
         <div className="max-w-2xl mx-auto w-full">
           <Panel>
-            <span className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 grid place-items-center mb-4"><GraduationCap className="w-6 h-6" /></span>
+            <span className="w-12 h-12 rounded-2xl bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] grid place-items-center mb-4"><GraduationCap className="w-6 h-6" /></span>
             <h1 className="font-heading text-[30px] leading-tight tracking-[-0.03em]">Mock exam</h1>
             <p className="text-[14px] text-muted-foreground mt-1">A timed paper in the style of the real exam, built from your topics and material, then marked against a mark scheme — with method marks for good working.</p>
             <p className="text-[13px] font-semibold mt-6 mb-2">Length</p>
@@ -202,7 +202,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
           </Panel>
           <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-4">
             <Panel>
-              <div className={`flex items-center gap-2 font-heading text-[34px] tabular-nums ${remaining < 120 ? 'text-rose-600' : 'text-foreground'}`}><Clock className="w-6 h-6" /> {mm}:{ss}</div>
+              <div className={`flex items-center gap-2 font-heading text-[34px] tabular-nums ${remaining < 120 ? 'text-[var(--ps-tile-ink)]' : 'text-foreground'}`}><Clock className="w-6 h-6" /> {mm}:{ss}</div>
               <p className="text-[12px] text-muted-foreground">{answeredCount}/{questions.length} answered</p>
               <div className="grid grid-cols-5 gap-1.5 mt-4">
                 {questions.map((x, i) => (
@@ -237,7 +237,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                   <ul className="space-y-2">
                     {result.gaps.map((g, i) => (
                       <li key={i} className="rounded-xl border border-border p-3 flex gap-3">
-                        <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${g.severity === 'weakest' ? 'text-rose-500' : g.severity === 'attention' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
+                        <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${g.severity === 'weakest' ? 'text-[var(--ps-tile-ink)]' : g.severity === 'attention' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-[14px] font-semibold">{g.topic} <span className="text-[11px] font-bold uppercase text-muted-foreground ml-1">{g.severity === 'weakest' ? 'weakest area' : g.severity === 'attention' ? 'needs attention' : 'minor'}</span></p>
                           <p className="text-[13px] text-muted-foreground">{g.issue}</p>
@@ -262,7 +262,7 @@ export default function MockExamPage({ params }: { params: Promise<{ id: string 
                 return (
                   <li key={x.id} className="rounded-2xl border border-border">
                     <button onClick={() => setOpen(o => ({ ...o, [x.id]: !o[x.id] }))} className="w-full flex items-center gap-3 px-4 py-3 text-left">
-                      {full ? <CheckCircle2 className="w-5 h-5 text-success shrink-0" /> : zero ? <XCircle className="w-5 h-5 text-rose-500 shrink-0" /> : <span className="w-5 h-5 rounded-full border-2 border-[var(--ps-cyan-border)] shrink-0" />}
+                      {full ? <CheckCircle2 className="w-5 h-5 text-success shrink-0" /> : zero ? <XCircle className="w-5 h-5 text-[var(--ps-tile-ink)] shrink-0" /> : <span className="w-5 h-5 rounded-full border-2 border-[var(--ps-cyan-border)] shrink-0" />}
                       <span className="flex-1 min-w-0 text-[14px] line-clamp-1 [&_p]:inline [&_p]:my-0"><MathMarkdown>{`${i + 1}. ${x.question}`}</MathMarkdown></span>
                       <span className="text-[13px] font-bold tabular-nums">{m?.awarded ?? 0}/{x.marks}</span>
                       <ChevronDown className={`w-4 h-4 transition-transform ${open[x.id] ? 'rotate-180' : ''}`} />

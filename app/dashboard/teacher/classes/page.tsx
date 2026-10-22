@@ -226,7 +226,7 @@ export default function TeacherClassesPage() {
                             <Badge className={`rounded-full font-bold ${
                               attempt.percentage >= threshold
                                 ? 'bg-success/10 text-success border border-success/20'
-                                : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                : 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border border-[var(--ps-cyan-border)]'
                             }`}>
                               {attempt.percentage}%
                             </Badge>
@@ -254,7 +254,7 @@ export default function TeacherClassesPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-success" /> Passed mastery quiz
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Below pass mark
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1E6A83]" /> Below pass mark
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-border" /> Not attempted

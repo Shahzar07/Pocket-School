@@ -108,7 +108,7 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
           </div>
           {/* Back */}
           <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
-            className="bg-gradient-to-br from-primary/5 to-violet-500/5 border border-primary/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
+            className="bg-gradient-to-br from-primary/5 to-[#6FBBCE] border border-primary/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
           >
             <Badge className="mb-4 text-xs rounded-full bg-success/10 text-success border-success/20">Answer</Badge>
             <p className="text-base text-foreground leading-relaxed">{card.answer}</p>
@@ -122,7 +122,7 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
         </Button>
         {flipped && (
           <>
-            <Button onClick={markAgain} variant="outline" className="rounded-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10">
+            <Button onClick={markAgain} variant="outline" className="rounded-full gap-2 border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]">
               <X className="w-4 h-4" /> Again
             </Button>
             <Button onClick={markKnown} className="rounded-full gap-2 bg-success hover:bg-success text-white">
@@ -219,7 +219,7 @@ function QuizViewer({
                   className={`w-full text-start min-h-12 px-4 py-3 rounded-xl border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                     graded
                       ? isCorrect ? 'border-success/40 bg-success/10 text-success'
-                        : isWrong ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                        : isWrong ? 'border-[var(--ps-cyan-border)] bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'
                         : selected ? 'border-border bg-muted text-muted-foreground'
                         : 'border-border bg-background text-muted-foreground'
                       : selected
@@ -229,7 +229,7 @@ function QuizViewer({
                 >
                   {label}
                   {graded && isCorrect && <span className="float-right text-success">✓</span>}
-                  {graded && isWrong && <span className="float-right text-destructive">✗</span>}
+                  {graded && isWrong && <span className="float-right text-[var(--ps-tile-ink)]">✗</span>}
                 </button>
               );
             })}
@@ -504,7 +504,7 @@ function UnitQuizMode({
         <div className={`relative overflow-hidden rounded-3xl p-8 text-center border ${
           result.passed
             ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/20'
-            : 'bg-gradient-to-br from-[var(--ps-cyan)]/10 to-destructive/5 border-[var(--ps-cyan-border)]/20'
+            : 'bg-gradient-to-br from-[var(--ps-cyan)]/10 to-[#6FBBCE] border-[var(--ps-cyan-border)]/20'
         }`}>
           {result.passed
             ? <Trophy className="w-10 h-10 mx-auto mb-3 text-success" />
@@ -530,7 +530,7 @@ function UnitQuizMode({
                 return (
                   <div key={code} className="flex items-center gap-3">
                     <span className={`text-xs font-mono font-bold w-20 shrink-0 ${
-                      code === result.weakestObjective ? 'text-destructive' : 'text-muted-foreground'
+                      code === result.weakestObjective ? 'text-[var(--ps-tile-ink)]' : 'text-muted-foreground'
                     }`}>
                       {code}
                     </span>
@@ -541,7 +541,7 @@ function UnitQuizMode({
               })}
             </div>
             {result.weakestObjective && !result.passed && (
-              <p className="text-xs text-destructive mt-3">
+              <p className="text-xs text-[var(--ps-tile-ink)] mt-3">
                 Weakest objective: <strong>{result.weakestObjective}</strong>
               </p>
             )}
@@ -1378,8 +1378,8 @@ export default function LessonPage() {
                   {downloadFor('glossary', glossary, 'glossary')}
                   {glossary.map((g, i) => (
                     <motion.div key={i} initial="hidden" animate="visible" variants={fadeUp} custom={i} className="bg-card border border-border rounded-3xl p-5 flex gap-4 card-glow">
-                      <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
-                        <BookMarked className="w-4 h-4 text-violet-600" />
+                      <div className="w-8 h-8 rounded-xl bg-[var(--ps-tile-wash)] flex items-center justify-center shrink-0">
+                        <BookMarked className="w-4 h-4 text-[var(--ps-tile-ink)]" />
                       </div>
                       <div>
                         <p className="font-bold text-foreground">{g.term}</p>

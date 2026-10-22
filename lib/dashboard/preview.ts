@@ -101,7 +101,7 @@ const parent: PreviewHome = {
   listTitle: 'What you have done',
   children: [
     { id: 'mina', name: 'Mina', tone: 'cyan', level: 'Lower Secondary' },
-    { id: 'arun', name: 'Arun', tone: 'coral', level: 'IGCSE' },
+    { id: 'arun', name: 'Arun', tone: 'cyan', level: 'IGCSE' },
     { id: 'leila', name: 'Leila', tone: 'good', level: 'A-Level' },
   ],
   badges: [{ id: 'engaged', label: 'Engaged Parent', earned: true }],
@@ -178,7 +178,7 @@ const adminHome: PreviewHome = {
   ],
   alerts: [{
     id: 'mod',
-    tone: 'coral',
+    tone: 'cyan',
     title: 'Moderation has 4 items',
     detail: 'Community posts waiting for a decision.',
   }],

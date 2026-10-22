@@ -16,7 +16,7 @@ function inline(text: string, key: string): ReactNode[] {
     const id = `${key}-${index}`;
     index += 1;
     if (match[1] != null) {
-      nodes.push(<code key={id} className="rounded bg-[#E7E1D8] px-1">{match[1]}</code>);
+      nodes.push(<code key={id} className="rounded bg-[#E9F7FA] px-1">{match[1]}</code>);
     } else if (match[2] != null && match[3]) {
       nodes.push(<EssayImage key={id} alt={match[2]} src={match[3]} />);
     } else if (match[4]) {

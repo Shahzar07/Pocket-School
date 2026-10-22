@@ -15,7 +15,7 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus, type LucideIcon } from 'lucide-react';
-import { accentFillVar, accentForIndex, accentVar, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
+import { accentFillVar, accentVar, type AccentId, type TrendDirection } from '@/lib/design/chart-colours';
 
 /* ── Page frame ──────────────────────────────────────────────── */
 
@@ -100,7 +100,7 @@ export interface StatCardProps {
   index?: number;
   /** Accent from the shared dashboard palette. Defaults to a rotation by index. */
   tone?: AccentId;
-  /** Movement since the previous reading. The arrow colour is emerald, coral, or muted. */
+  /** Movement since the previous reading. The arrow colour is emerald, brand blue, or muted. */
   trend?: { direction: TrendDirection; label: string };
   /** Tighter padding for a dense grid. */
   size?: 'regular' | 'compact';
@@ -111,11 +111,12 @@ const TREND_ICON = { up: ArrowUpRight, down: ArrowDownRight, flat: Minus } as co
 export function StatCard({
   icon: Icon, label, value, badge, progress, progressLabel, href, hrefLabel, index = 0, tone, trend, size = 'regular',
 }: StatCardProps) {
-  const accent = tone ?? accentForIndex(index);
+  const brandTone = tone === 'coral' ? 'cyan' : tone === 'violet' ? 'teal' : tone;
+  const accent = brandTone ?? (['teal', 'cyan', 'emerald', 'sky'] as const)[index % 4];
   const ink = `var(${accentVar(accent)})`;
   const fill = `var(${accentFillVar(accent)})`;
   const TrendIcon = trend ? TREND_ICON[trend.direction] : null;
-  const trendColour = trend?.direction === 'up' ? 'var(--ps-emerald)' : trend?.direction === 'down' ? 'var(--ps-coral)' : 'var(--muted-foreground)';
+  const trendColour = trend?.direction === 'up' ? 'var(--ps-emerald)' : trend?.direction === 'down' ? 'var(--ps-tile-ink)' : 'var(--muted-foreground)';
   const compact = size === 'compact';
   return (
     <motion.div

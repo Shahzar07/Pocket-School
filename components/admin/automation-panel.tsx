@@ -49,7 +49,7 @@ export function AutomationPanel({
           </button>
         )}
       </section>
-      <aside className="rounded-3xl border border-[#203337]/10 bg-[#F6F1E7] p-5">
+      <aside className="rounded-3xl border border-[#203337]/10 bg-[#E9F7FA] p-5">
         <h2 className="font-heading text-xl text-[#203337]">Activity</h2>
         <p className="mt-1 text-xs text-[#203337]/70">Automatic steps, holds, and super-admin changes.</p>
         <ul className="mt-4 space-y-3">

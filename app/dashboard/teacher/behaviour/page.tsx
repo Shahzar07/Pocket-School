@@ -22,7 +22,7 @@ const TYPE_STYLES: Record<string, string> = {
   commendation: 'bg-blue-500/10 text-blue-700',
   note: 'bg-muted text-muted-foreground',
   warning: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
-  demerit: 'bg-red-500/10 text-red-700',
+  demerit: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
 };
 
 const TYPE_POINTS: Record<string, number> = { merit: 5, commendation: 10, note: 0, warning: -3, demerit: -5 };
@@ -202,7 +202,7 @@ export default function BehaviourPage() {
               >
                 <div className="bg-muted/50 px-5 py-3 border-b border-border flex items-center justify-between">
                   <p className="font-heading text-lg text-foreground">{d.name}</p>
-                  <Badge className={d.total >= 0 ? 'bg-success/10 text-success' : 'bg-red-500/10 text-red-700'}>
+                  <Badge className={d.total >= 0 ? 'bg-success/10 text-success' : 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'}>
                     {d.total >= 0 ? '+' : ''}{d.total} pts
                   </Badge>
                 </div>
@@ -216,7 +216,7 @@ export default function BehaviourPage() {
                           <p className="text-xs text-muted-foreground mt-0.5">{(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <span className={`text-sm font-bold shrink-0 ${r.points >= 0 ? 'text-success' : 'text-red-600'}`}>
+                      <span className={`text-sm font-bold shrink-0 ${r.points >= 0 ? 'text-success' : 'text-[var(--ps-tile-ink)]'}`}>
                         {r.points >= 0 ? '+' : ''}{r.points}
                       </span>
                     </div>

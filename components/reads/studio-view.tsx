@@ -934,7 +934,7 @@ export function StudioView() {
                   {t('reads.studio.ageCheck')}
                 </button>
                 {book.coverBrief?.ageNote && (
-                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-[var(--ps-cyan-text)]' : 'text-red-700'}`}>{book.coverBrief.ageNote}</p>
+                  <p className={`text-sm ${book.coverBrief.ageOk ? 'text-[var(--ps-cyan-text)]' : 'text-[var(--ps-tile-ink)]'}`}>{book.coverBrief.ageNote}</p>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">The author line is always ET AI. The picture itself has no lettering; the title is drawn on top.</p>
@@ -952,8 +952,8 @@ export function StudioView() {
         </section>
       </div>
       {studentPreview && (
-        <div className="fixed inset-0 z-50 overflow-auto bg-[#F7F6F3]" data-student-preview="1">
-          <div className="sticky top-0 z-10 flex items-center justify-end gap-2 bg-[#F7F6F3]/95 p-3">
+        <div className="fixed inset-0 z-50 overflow-auto bg-[#E9F7FA]" data-student-preview="1">
+          <div className="sticky top-0 z-10 flex items-center justify-end gap-2 bg-[#E9F7FA]/95 p-3">
             <button type="button" onClick={() => setStudentPreview(false)} className="h-11 rounded-full bg-[#1E6A83] px-4 text-sm font-bold text-white">{PREVIEW.closeStudent}</button>
           </div>
           <Reader key={book.id} bookId={book.id} preview />

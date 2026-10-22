@@ -26,7 +26,7 @@ const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
   clean: 'bg-success/10 text-success',
   suspicious: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
-  violation: 'bg-red-500/10 text-red-700',
+  violation: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
 };
 
 function ScoreBar({ value, color }: { value: number; color: string }) {
@@ -127,10 +127,10 @@ export default function IntegrityPage() {
         custom={1}
         className="grid grid-cols-2 md:grid-cols-4 gap-4"
       >
-        <StatCard icon={Shield} label="Total reports" value={stats.total} tone="violet" index={0} />
+        <StatCard icon={Shield} label="Total reports" value={stats.total} tone="teal" index={0} />
         <StatCard icon={ShieldCheck} label="Clean" value={stats.clean} tone="emerald" index={1} trend={stats.clean > 0 ? { direction: 'up', label: 'Clear work' } : { direction: 'flat', label: 'None yet' }} />
         <StatCard icon={AlertTriangle} label="Suspicious" value={stats.suspicious} tone="cyan" index={2} trend={stats.suspicious > 0 ? { direction: 'down', label: 'Needs a look' } : { direction: 'up', label: 'None waiting' }} />
-        <StatCard icon={AlertTriangle} label="Violations" value={stats.violation} tone="coral" index={3} trend={stats.violation > 0 ? { direction: 'down', label: 'Open' } : { direction: 'up', label: 'None open' }} />
+        <StatCard icon={AlertTriangle} label="Violations" value={stats.violation} tone="cyan" index={3} trend={stats.violation > 0 ? { direction: 'down', label: 'Open' } : { direction: 'up', label: 'None open' }} />
       </motion.div>
 
       {reports.length === 0 && (
@@ -170,17 +170,17 @@ export default function IntegrityPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{r.assignmentTitle ?? 'Unknown assignment'} · {(r.createdAt as any)?.toDate?.().toLocaleDateString()}</p>
               </div>
-              <AlertTriangle className={`w-5 h-5 shrink-0 ${r.status === 'violation' ? 'text-red-500' : r.status === 'suspicious' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
+              <AlertTriangle className={`w-5 h-5 shrink-0 ${r.status === 'violation' ? 'text-[var(--ps-tile-ink)]' : r.status === 'suspicious' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">AI Detection Score</p>
-                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-red-500' : r.aiScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
+                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-[#1E6A83]' : r.aiScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">Plagiarism Score</p>
-                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-red-500' : r.plagiarismScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
+                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-[#1E6A83]' : r.plagiarismScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
               </div>
             </div>
 

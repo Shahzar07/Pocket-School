@@ -46,7 +46,7 @@ export default function InstitutionActivityPage() {
       <Panel>
         {!institutionId && <p className="text-sm text-muted-foreground">This account is not attached to an institution.</p>}
         {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>}
         {!loading && institutionId && rows.length === 0 && !error && (
           <p className="text-sm text-muted-foreground">Nothing has been recorded for this institution yet.</p>
         )}

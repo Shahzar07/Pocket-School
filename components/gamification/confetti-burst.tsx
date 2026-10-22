@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { BRAND } from '@/lib/brand';
 
-const COLOURS = [BRAND.blueDeep, BRAND.primary, BRAND.blueBright, BRAND.amber, BRAND.coral, BRAND.good, BRAND.mint];
+const COLOURS = [BRAND.blueDeep, BRAND.primary, BRAND.blueBright, BRAND.amber, BRAND.cyan, BRAND.good, BRAND.mint];
 
 interface Bit {
   x: number;

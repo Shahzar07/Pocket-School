@@ -45,8 +45,8 @@ export default function ParentIntegrityPage() {
         description="Integrity checks and other concerns land here for each child. A flag asks for a person. It does not change a mark. Push waits during quiet hours."
       />
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-violet) 16%, var(--card)), var(--card))' }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-violet)' }}>Integrity</p>
+        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-tile-ink) 16%, var(--card)), var(--card))' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-tile-ink)' }}>Integrity</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{rows.filter(row => row.kind === 'integrity').length}</p>
         </div>
         <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-cyan-text) 16%, var(--card)), var(--card))' }}>

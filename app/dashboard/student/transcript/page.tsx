@@ -363,7 +363,7 @@ export default function TranscriptPage() {
                     <td className="px-4 py-4 text-muted-foreground">{r.course.subject}</td>
                     <td className="px-4 py-4 text-center">
                       {r.avg !== null ? (
-                        <span className={`font-bold text-lg ${r.avg >= 70 ? 'text-success' : r.avg >= 60 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>
+                        <span className={`font-bold text-lg ${r.avg >= 70 ? 'text-success' : r.avg >= 60 ? 'text-[var(--ps-cyan-text)]' : 'text-[var(--ps-tile-ink)]'}`}>
                           {toLetterGrade(r.avg)} <span className="text-sm text-muted-foreground">({r.avg}%)</span>
                         </span>
                       ) : <span className="text-muted-foreground">—</span>}

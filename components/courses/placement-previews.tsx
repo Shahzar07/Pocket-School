@@ -70,7 +70,7 @@ export function FeaturedPreview({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-4">
         <p className="text-sm text-muted-foreground">{PLACE.notFeatured}</p>
-        <Link href="/courses#featured" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+        <Link href="/courses#E9F7FAtured" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
       </div>
     );
   }
@@ -78,7 +78,7 @@ export function FeaturedPreview({
   return (
     <div className="space-y-2">
       <FeaturedCarousel slides={[slide]} variant="preview" />
-      <Link href="/courses#featured" className="inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+      <Link href="/courses#E9F7FAtured" className="inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
     </div>
   );
 }

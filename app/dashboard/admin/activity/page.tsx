@@ -127,7 +127,7 @@ export default function ActivityLogPage() {
   if (!allowed) {
     return (
       <div className="max-w-xl mx-auto pt-16 text-center">
-        <Shield className="w-10 h-10 mx-auto text-violet-600 mb-3" />
+        <Shield className="w-10 h-10 mx-auto text-[var(--ps-tile-ink)] mb-3" />
         <h1 className="text-3xl font-semibold">Activity log</h1>
         <p className="text-muted-foreground mt-2">Super admins can read the activity log.</p>
       </div>
@@ -137,7 +137,7 @@ export default function ActivityLogPage() {
   return (
     <div className="max-w-7xl mx-auto pb-12 space-y-6">
       <header>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-600">Super admin</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-tile-ink)]">Super admin</p>
         <h1 className="text-4xl font-semibold mt-2">Activity log</h1>
         <p className="text-muted-foreground mt-2">
           Sign-ins, role switches, content edits, publishes, deletes, admin actions, and view-as. The server writes every row. Clients cannot change or delete them.
@@ -180,7 +180,7 @@ export default function ActivityLogPage() {
       </div>
 
       {loading ? <div className="h-40 bg-muted animate-pulse rounded-3xl" /> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p> : null}
       {!loading && !error && (
         <div className="bg-card border border-border rounded-3xl overflow-x-auto">
           <table className="w-full text-sm min-w-[1100px]">

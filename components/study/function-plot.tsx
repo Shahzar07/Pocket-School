@@ -11,7 +11,7 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { compileFn, exprToTex, type CompiledFn } from '@/lib/study/math-expr';
 import { MathMarkdown } from '@/components/math-markdown';
 
-export const SERIES_COLORS = ['var(--ps-teal)', 'var(--ps-cyan-text)', 'var(--ps-violet)', 'var(--ps-coral)', 'var(--ps-emerald)', 'var(--ps-sky)'];
+export const SERIES_COLORS = ['var(--ps-teal)', 'var(--ps-cyan-text)', 'var(--ps-tile-ink)', 'var(--ps-tile-ink)', 'var(--ps-emerald)', 'var(--ps-sky)'];
 
 export interface PlotPoint { x: number; y: number; label?: string }
 
@@ -230,10 +230,10 @@ export function FunctionPlot({ functions, points = [], xMin = -10, xMax = 10, he
           {compiled.map(({ src, color, error }, i) => (
             <span key={i} className="inline-flex items-center gap-1.5 font-mono">
               <span className="w-3 h-0.5 rounded" style={{ background: color }} />
-              <span className={`[&_p]:my-0 font-sans ${error ? 'text-destructive' : 'text-foreground'}`}>
+              <span className={`[&_p]:my-0 font-sans ${error ? 'text-[var(--ps-tile-ink)]' : 'text-foreground'}`}>
                 {error ? `y = ${src}` : <MathMarkdown>{`$y = ${exprToTex(src)}$`}</MathMarkdown>}
               </span>
-              {error && <span className="text-destructive font-sans">— can&apos;t plot</span>}
+              {error && <span className="text-[var(--ps-tile-ink)] font-sans">— can&apos;t plot</span>}
             </span>
           ))}
         </div>

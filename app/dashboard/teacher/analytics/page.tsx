@@ -110,7 +110,7 @@ export default function TeacherAnalytics() {
       {/* Overview stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard icon={Users} label="Total students" value={totalStudents} tone="sky" index={0} />
-        <StatCard icon={ClipboardList} label="Submissions" value={totalSubmissions} tone="violet" index={1} trend={totalSubmissions > 0 ? { direction: 'up', label: 'Handed in' } : { direction: 'flat', label: 'None yet' }} />
+        <StatCard icon={ClipboardList} label="Submissions" value={totalSubmissions} tone="teal" index={1} trend={totalSubmissions > 0 ? { direction: 'up', label: 'Handed in' } : { direction: 'flat', label: 'None yet' }} />
         <StatCard icon={CheckCircle2} label="Graded" value={totalGraded} tone="emerald" index={2} trend={totalGraded > 0 ? { direction: 'up', label: 'Marked' } : { direction: 'flat', label: 'None yet' }} />
         <StatCard icon={BarChart3} label="Avg quiz score" value={overallAvg !== null ? `${overallAvg}%` : '—'} tone="cyan" index={3} trend={overallAvg != null && overallAvg >= 70 ? { direction: 'up', label: 'Strong' } : overallAvg != null ? { direction: 'down', label: 'Needs practice' } : { direction: 'flat', label: 'No quizzes' }} />
       </div>

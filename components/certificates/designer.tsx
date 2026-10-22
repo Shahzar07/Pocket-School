@@ -113,7 +113,7 @@ function ImageField({
         ) : null}
       </div>
       {uploaded ? <img src={value} alt="" className="mt-2 h-12 w-auto max-w-full object-contain" /> : null}
-      {error || fileError ? <p role="alert" className="mt-1 text-xs text-[#9B1C1C]">{error || fileError}</p> : null}
+      {error || fileError ? <p role="alert" className="mt-1 text-xs text-[#1E6A83]">{error || fileError}</p> : null}
     </div>
   );
 }
@@ -321,11 +321,11 @@ export function CertificateDesigner({
           ) : confirmDelete ? (
             <div role="alertdialog" aria-label="Delete template" className="flex flex-wrap items-center gap-2">
               <p className="text-sm">Delete {current.name}?</p>
-              <button type="button" onClick={() => void remove()} className="min-h-11 rounded-full border border-[#9B1C1C] px-3 text-xs font-semibold text-[#9B1C1C]">Delete</button>
+              <button type="button" onClick={() => void remove()} className="min-h-11 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83]">Delete</button>
               <button type="button" onClick={() => setConfirmDelete(false)} className="min-h-11 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">Cancel</button>
             </div>
           ) : (
-            <button type="button" onClick={() => setConfirmDelete(true)} disabled={designs.length < 2} className="min-h-11 rounded-full border border-[#9B1C1C] px-3 text-xs font-semibold text-[#9B1C1C] disabled:opacity-40">Delete</button>
+            <button type="button" onClick={() => setConfirmDelete(true)} disabled={designs.length < 2} className="min-h-11 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83] disabled:opacity-40">Delete</button>
           )}
         </div>
         <label className="block text-sm">Title

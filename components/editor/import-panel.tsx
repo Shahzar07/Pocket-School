@@ -66,7 +66,7 @@ export function ImportPanel({ onApply }: { onApply: (result: ImportResult) => vo
         </label>
         <p className="mt-2 text-xs text-muted-foreground">Headings become chapters. You can tidy the split before anything is kept. Bold, italic, lists, tables, and inline images are kept.</p>
       </div>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>}
       {draft && (
         <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">

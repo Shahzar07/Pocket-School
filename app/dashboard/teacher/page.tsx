@@ -27,7 +27,7 @@ const COURSE_GRADIENTS = [
   'from-success to-teal-600',
   'from-primary to-primary',
   'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
-  'from-rose-500 to-pink-600',
+  'from-[#1E6A83] to-[#3FE0D0]',
 ];
 
 function greeting() {
@@ -161,7 +161,7 @@ export default function TeacherDashboard() {
           href="/dashboard/teacher/courses" hrefLabel="Manage courses"
         />
         <StatCard
-          index={1} icon={ClipboardList} label="Awaiting marking" value={ungraded.length} tone="coral"
+          index={1} icon={ClipboardList} label="Awaiting marking" value={ungraded.length} tone="cyan"
           href="/dashboard/teacher/gradebook" hrefLabel="Open gradebook"
           trend={ungraded.length > 0 ? { direction: 'down', label: 'Needs a mark' } : { direction: 'up', label: 'All marked' }}
         />
@@ -178,7 +178,7 @@ export default function TeacherDashboard() {
 
       <SeeMore label="Enrolments, reviews, and questions">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} tone="violet" href="/dashboard/teacher/courses" hrefLabel="Courses" />
+        <StatCard index={4} icon={GraduationCap} label="Enrolments" value={insight.enrollments} tone="teal" href="/dashboard/teacher/courses" hrefLabel="Courses" />
         <StatCard index={5} icon={Wallet} label="Recorded revenue" value={revenueLabel} tone="cyan" href="/dashboard/teacher/courses" hrefLabel="Pricing" />
         <StatCard index={6} icon={Star} label="Rating" value={insight.average ?? '—'} tone="cyan" badge={insight.reviewCount ? `${insight.reviewCount} reviews` : undefined} />
         <StatCard index={7} icon={MessageSquare} label="Open questions" value={insight.openQuestions} tone="sky" href="/dashboard/teacher/courses" hrefLabel="Studio" trend={insight.openQuestions > 0 ? { direction: 'down', label: 'Waiting' } : { direction: 'up', label: 'Clear' }} />

@@ -82,7 +82,7 @@ const GOAL_STATUS_META: Record<string, { label: string; pill: string }> = {
   not_started: { label: 'Not started', pill: 'bg-muted text-muted-foreground' },
   in_progress: { label: 'In progress', pill: 'bg-primary/10 text-primary' },
   completed: { label: 'Completed', pill: 'bg-success/10 text-success' },
-  overdue: { label: 'Overdue', pill: 'bg-destructive/10 text-destructive' },
+  overdue: { label: 'Overdue', pill: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' },
   excused: { label: 'Excused', pill: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]' },
 };
 
@@ -370,7 +370,7 @@ export default function ParentDashboard() {
                     </div>
                     {total > 0 && (
                       <div className="text-right shrink-0">
-                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-success' : pct >= 50 ? 'text-[var(--ps-cyan-text)]' : 'text-destructive'}`}>{pct}%</p>
+                        <p className={`text-[26px] font-semibold tracking-[-0.03em] leading-none tabular-nums ${pct === 100 ? 'text-success' : pct >= 50 ? 'text-[var(--ps-cyan-text)]' : 'text-[var(--ps-tile-ink)]'}`}>{pct}%</p>
                       </div>
                     )}
                   </div>
@@ -396,12 +396,12 @@ export default function ParentDashboard() {
                             <div key={goal.id} className="bg-muted/50 border border-border rounded-xl p-3.5 flex flex-wrap items-center gap-x-3 gap-y-2">
                               {st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                                 : st === 'excused' ? <ShieldCheck className="w-4 h-4 text-[var(--ps-cyan-text)] shrink-0" />
-                                : <Clock className={`w-4 h-4 shrink-0 ${st === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`} />}
+                                : <Clock className={`w-4 h-4 shrink-0 ${st === 'overdue' ? 'text-[var(--ps-tile-ink)]' : 'text-muted-foreground'}`} />}
                               <p className="text-sm font-semibold text-foreground flex-1 min-w-[8rem] truncate">{goal.title}</p>
                               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${meta.pill}`}>
                                 {meta.label}
                               </span>
-                              <span className={`text-xs shrink-0 ${st === 'overdue' ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                              <span className={`text-xs shrink-0 ${st === 'overdue' ? 'text-[var(--ps-tile-ink)] font-semibold' : 'text-muted-foreground'}`}>
                                 {formatDeadline(goal.deadline)}
                                 {st !== 'completed' && st !== 'excused' && ` · ${formatCountdown(goal, goalsNow)}`}
                               </span>
@@ -544,7 +544,7 @@ export default function ParentDashboard() {
                             </p>
                             {cert.studentNumber ? <p className="font-mono text-[11px] text-foreground mt-1">{cert.studentNumber}</p> : null}
                             <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
-                            <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
+                            <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#1E6A83]' : 'text-[#0F6E56]'}`}>
                               {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
                             </p>
                           </div>

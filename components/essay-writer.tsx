@@ -261,7 +261,7 @@ export function EssayWriter({ purpose }: { purpose: string }) {
       <button type="button" disabled={busy} onClick={() => void grade()} className="h-11 px-5 rounded-full bg-foreground text-background text-sm font-bold">
         {busy ? essayCopy.reading : essayCopy.mark}
       </button>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>}
       {result && (
         <div data-essay-result="1" data-essay-scale={result.scaleId} data-essay-band={result.bandId} className="rounded-2xl border border-border bg-card p-4 space-y-4">
           <p data-essay-estimate className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ps-cyan-text)]">{result.estimateLabel}</p>

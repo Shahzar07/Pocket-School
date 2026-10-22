@@ -65,7 +65,7 @@ export function IllustrationPrompt({
       <button type="button" disabled={!prompt.trim() || busy} onClick={() => { if (confirmSparks) void confirmThenRun(); else setOpen(true); }} className="mt-3 h-9 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-3 text-sm font-bold text-[var(--ps-cyan-ink)] disabled:opacity-40">
         Generate · {sparksCost} Sparks
       </button>
-      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-2 text-sm text-[var(--ps-tile-ink)]">{error}</p>}
       {open && (
         <div className="mt-3 rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] p-3 text-sm text-[var(--ps-cyan-text)]">
           <p>This spends {sparksCost} Sparks to illustrate “{prompt.trim().slice(0, 140)}”.</p>

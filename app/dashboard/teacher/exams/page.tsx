@@ -206,7 +206,7 @@ export default function TeacherExamsPage() {
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => viewResults(e)} className="gap-1 rounded-full"><Eye className="w-3.5 h-3.5" /> Results</Button>
                   <Button variant="outline" size="sm" onClick={() => togglePublish(e)} className="rounded-full">{e.status === 'published' ? 'Unpublish' : 'Publish'}</Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)} className="text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)} className="text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]"><Trash2 className="w-4 h-4" /></Button>
                 </div>
               </motion.div>
             ))}
@@ -278,7 +278,7 @@ export default function TeacherExamsPage() {
                   <p className="font-bold text-lg text-foreground">{s.score}/{s.maxScore}</p>
                   <p className="text-xs text-muted-foreground">{Math.round((s.score / s.maxScore) * 100)}%</p>
                 </div>
-                <Badge className={s.passed ? 'bg-success/10 text-success' : 'bg-red-500/10 text-red-700'}>{s.passed ? 'PASSED' : 'FAILED'}</Badge>
+                <Badge className={s.passed ? 'bg-success/10 text-success' : 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'}>{s.passed ? 'PASSED' : 'FAILED'}</Badge>
               </div>
             </motion.div>
           ))}

@@ -161,8 +161,8 @@ export function JoinVerificationSettings({
             <button type="button" onClick={downloadPoster} className="inline-flex h-10 items-center rounded-full border border-[#203337]/15 px-4 text-sm font-semibold">Printable PDF</button>
           </div>
         </div>
-        <div className="flex h-[148px] w-[148px] items-center justify-center rounded-2xl border border-[#203337]/10 bg-[#F6F1E7] p-2">
-          <QRCodeSVG value={joinUrl} size={128} fgColor="#203337" bgColor="#F6F1E7" />
+        <div className="flex h-[148px] w-[148px] items-center justify-center rounded-2xl border border-[#203337]/10 bg-[#E9F7FA] p-2">
+          <QRCodeSVG value={joinUrl} size={128} fgColor="#203337" bgColor="#E9F7FA" />
         </div>
       </section>
 
@@ -247,7 +247,7 @@ export function JoinVerificationSettings({
           </button>
           <button
             type="button"
-            className="h-10 rounded-full border border-[#E36A4F] px-4 text-sm font-semibold text-[#E36A4F]"
+            className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]"
             onClick={() => {
               const ids = moveIds.split(/[\s,]+/).filter(Boolean);
               if (onOffboard) {

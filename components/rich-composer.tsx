@@ -75,7 +75,7 @@ export function RichComposer({
           {drafting ? 'Drafting…' : 'ET AI draft'}
         </Button>
       </div>
-      {draftError && <p className="text-xs text-destructive">{draftError}</p>}
+      {draftError && <p className="text-xs text-[var(--ps-tile-ink)]">{draftError}</p>}
       <div className="flex flex-wrap gap-3 text-sm">
         {(['in_app', 'email', 'push'] as const).map((channel) => (
           <label key={channel} className="inline-flex items-center gap-2">

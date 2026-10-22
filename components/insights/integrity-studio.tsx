@@ -42,7 +42,7 @@ export function IntegrityStudio({ side }: { side: DeskSide }) {
 
       {(side === 'student' || side === 'teacher') && <IntegrityNotice />}
 
-      <section className="rounded-3xl border border-border p-5 space-y-2" data-section="flag" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-violet) 14%, var(--card)), var(--card) 72%)' }}>
+      <section className="rounded-3xl border border-border p-5 space-y-2" data-section="flag" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-tile-ink) 14%, var(--card)), var(--card) 72%)' }}>
         <p className="font-semibold">Fractions essay · confidence {drafted.score}</p>
         <p className="text-sm">{drafted.studentSummary}</p>
         <ul className="text-sm space-y-1">

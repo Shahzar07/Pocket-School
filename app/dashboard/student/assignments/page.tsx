@@ -118,7 +118,7 @@ export default function StudentAssignmentsPage() {
   const STATUS_STYLES: Record<string, string> = {
     graded: 'bg-success/10 text-success',
     submitted: 'bg-primary/10 text-primary',
-    overdue: 'bg-destructive/10 text-destructive',
+    overdue: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
     pending: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   };
 
@@ -135,7 +135,7 @@ export default function StudentAssignmentsPage() {
   if (error) return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 pt-16 flex justify-center">
       <div className="bg-card border border-border rounded-3xl p-8 text-center max-w-md w-full card-glow">
-        <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-destructive" />
+        <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-[var(--ps-tile-ink)]" />
         <p className="font-heading text-xl text-foreground mb-2">Couldn&apos;t load this page.</p>
         <p className="text-sm text-muted-foreground mb-6 break-words">{error}</p>
         <Button onClick={load} className="rounded-full h-11 px-6 font-bold">Retry</Button>
@@ -206,7 +206,7 @@ export default function StudentAssignmentsPage() {
                       </Link>
                     )}
                     {due && (
-                      <div className={`flex items-center gap-1 text-xs mt-2 ${status === 'overdue' ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      <div className={`flex items-center gap-1 text-xs mt-2 ${status === 'overdue' ? 'text-[var(--ps-tile-ink)]' : 'text-muted-foreground'}`}>
                         {status === 'overdue' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                         Due: {due.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                       </div>

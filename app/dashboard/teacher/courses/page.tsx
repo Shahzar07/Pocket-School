@@ -289,7 +289,7 @@ export default function TeacherCourseMgmt() {
                             </Button>
                           </Link>
                         )}
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => onDelete(c)}>
+                        <Button variant="ghost" size="sm" className="text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)] hover:text-[var(--ps-tile-ink)]" onClick={() => onDelete(c)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

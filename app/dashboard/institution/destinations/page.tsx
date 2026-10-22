@@ -52,7 +52,7 @@ export default function DestinationsPage() {
           <h2 className="font-heading text-2xl">Verification requests</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {requests.map((item) => (
-              <li key={item.id} className="rounded-xl bg-[#F6F1E7] px-3 py-2">
+              <li key={item.id} className="rounded-xl bg-[#E9F7FA] px-3 py-2">
                 <p className="font-medium">{item.itemTitle}</p>
                 <p>{item.note}{item.visitorLabel ? ` · ${item.visitorLabel}` : ''}</p>
                 <button type="button" className="mt-1 font-semibold" onClick={() => {

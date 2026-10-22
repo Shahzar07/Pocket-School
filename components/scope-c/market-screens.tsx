@@ -379,7 +379,7 @@ export function SnapScreen({
             <Button type="button" variant={context === 'assessment' ? 'default' : 'outline'} className="rounded-xl" onClick={() => setContext('assessment')}>In an assessment</Button>
             <Button className="rounded-xl" onClick={() => onSolve?.(photo ? '' : text, context, photo || undefined)}><Camera className="w-4 h-4 mr-1" />Solve</Button>
           </div>
-          {blocked && <p className="text-sm text-destructive">{blocked}</p>}
+          {blocked && <p className="text-sm text-[var(--ps-tile-ink)]">{blocked}</p>}
           {result && (
             <div className="space-y-2">
               <p className="font-semibold">{result.answer}</p>

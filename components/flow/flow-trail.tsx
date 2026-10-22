@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { flowCopy } from '@/lib/flow/copy';
 import { flowIndex, type FlowStep } from '@/lib/flow/steps';
 
-const future = 'text-sm font-semibold text-[#203337]/45 dark:text-[#EDEAE4]/45';
+const future = 'text-sm font-semibold text-[#203337]/45 dark:text-[#E9F7FA]/45';
 const done = 'text-sm font-semibold text-[#1E6A83] underline-offset-4 hover:underline dark:text-[#3FE0D0]';
 const current = 'rounded-full bg-[#3FE0D0] px-3 py-1 text-sm font-semibold text-[#203337]';
 

@@ -16,8 +16,8 @@ export function MasteryBar({ value, target, initial = 'Me', label }: { value: nu
           initial={{ left: 0 }} animate={{ left: `${v}%` }} transition={{ type: 'spring', stiffness: 90, damping: 20 }}>
           {initial.slice(0, 2).toUpperCase()}
         </motion.span>
-        <span className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-rose-50 border-2 border-rose-400 grid place-items-center" style={{ left: `${t}%` }} title={`Target ${t}%`}>
-          <Target className="w-3.5 h-3.5 text-rose-500" />
+        <span className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-[var(--ps-tile-wash)] border-2 border-[var(--ps-cyan-border)] grid place-items-center" style={{ left: `${t}%` }} title={`Target ${t}%`}>
+          <Target className="w-3.5 h-3.5 text-[var(--ps-tile-ink)]" />
         </span>
       </div>
       {label && <p className="text-[12px] text-muted-foreground text-center">{label}</p>}

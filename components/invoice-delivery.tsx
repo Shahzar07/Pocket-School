@@ -81,7 +81,7 @@ export function InvoiceDelivery({
           </label>
           <textarea aria-label="Other email addresses" value={to} onChange={(event) => setTo(event.target.value)} rows={2} placeholder="Other addresses, separated by commas" className="w-full rounded-xl border border-border p-3 text-sm" />
           <textarea aria-label="Optional message" value={message} onChange={(event) => setMessage(event.target.value)} rows={3} placeholder="Optional message" className="w-full rounded-xl border border-border p-3 text-sm" />
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>}
           <div className="flex gap-2">
             <button type="button" className="h-10 px-4 rounded-full border border-border text-sm font-semibold" onClick={download}>Download PDF</button>
             <button type="button" disabled={busy || smtpConfigured === false} className="h-10 px-4 rounded-full bg-foreground text-background text-sm font-bold" onClick={() => void send()}>

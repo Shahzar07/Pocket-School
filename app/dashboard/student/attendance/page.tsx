@@ -18,7 +18,7 @@ type AttStatus = 'present' | 'absent' | 'late' | 'excused';
 
 const STATUS_STYLES: Record<AttStatus, string> = {
   present: 'bg-success/10 text-success',
-  absent: 'bg-destructive/10 text-destructive',
+  absent: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
   late: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   excused: 'bg-primary/10 text-primary',
 };
@@ -172,7 +172,7 @@ export default function StudentAttendancePage() {
           {courseMap.map((ca, i) => {
             const summary = summaryFor(ca);
             const rate = summary.rate ?? 0;
-            const rateTone: AccentId = rate >= 80 ? 'emerald' : rate >= 60 ? 'cyan' : 'coral';
+            const rateTone: AccentId = rate >= 80 ? 'emerald' : rate >= 60 ? 'cyan' : 'sky';
             return (
               <motion.div
                 key={ca.courseId}

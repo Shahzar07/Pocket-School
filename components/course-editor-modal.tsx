@@ -417,7 +417,7 @@ export default function CourseEditorModal({
                     </div>
                     <button
                       type="button"
-                      className="ml-auto w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors"
+                      className="ml-auto w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-[var(--ps-tile-wash)] hover:text-[var(--ps-tile-ink)] transition-colors"
                       onClick={e => { e.stopPropagation(); setWorkbookFile(null); setWorkbookFileName(''); setWorkbookUrl(''); }}
                     >
                       <X className="w-3.5 h-3.5" />
@@ -461,7 +461,7 @@ export default function CourseEditorModal({
                 <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-52 object-cover" />
               )}
               {!thumbnailPreview && (
-                <div className="w-full h-52 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                <div className="w-full h-52 bg-gradient-to-br from-blue-50 to-[#6FBBCE] flex items-center justify-center">
                   <ImageIcon className="w-14 h-14 text-blue-300" />
                 </div>
               )}

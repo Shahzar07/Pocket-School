@@ -14,7 +14,7 @@ import { Video, Plus, Calendar, Clock, Loader2, Radio, Link as LinkIcon } from '
 
 const STATUS_STYLES: Record<LiveClass['status'], string> = {
   scheduled: 'bg-blue-100 text-blue-700',
-  live: 'bg-red-100 text-red-700',
+  live: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
   ended: 'bg-gray-100 text-gray-600',
 };
 
@@ -169,7 +169,7 @@ export default function TeacherLiveClassesPage() {
                 className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${cls.status === 'live' ? 'bg-red-50 text-red-500' : 'bg-success/15 text-success'}`}>
+                  <div className={`p-2.5 rounded-xl shrink-0 ${cls.status === 'live' ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' : 'bg-success/15 text-success'}`}>
                     {cls.status === 'live' ? <Radio className="w-5 h-5 animate-pulse" /> : <Video className="w-5 h-5" />}
                   </div>
                   <div>
@@ -194,7 +194,7 @@ export default function TeacherLiveClassesPage() {
                   <Badge className={`rounded-full text-[10px] capitalize ${STATUS_STYLES[cls.status]}`}>{cls.status}</Badge>
                   {cls.status === 'scheduled' && (
                     <Button size="sm" onClick={() => handleStatusChange(cls, 'live')} disabled={updatingId === cls.id}
-                      className="rounded-full gap-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
+                      className="rounded-full gap-1.5 text-xs font-bold bg-[#1E6A83] hover:bg-[#1E6A83] text-white"
                     >
                       {updatingId === cls.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Radio className="w-3.5 h-3.5" />}
                       Go Live

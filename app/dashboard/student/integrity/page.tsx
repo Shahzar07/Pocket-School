@@ -29,8 +29,8 @@ export default function StudentIntegrityPage() {
       />
       <IntegrityNotice />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-violet) 16%, var(--card)), var(--card))' }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-violet)' }}>Open reviews</p>
+        <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-tile-ink) 16%, var(--card)), var(--card))' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ps-tile-ink)' }}>Open reviews</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{cases.length}</p>
         </div>
         <div className="rounded-2xl border border-border p-4" style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-emerald) 16%, var(--card)), var(--card))' }}>
