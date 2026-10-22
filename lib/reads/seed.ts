@@ -1,5 +1,5 @@
 import { proceduralArt } from '@/components/media/fallback-art';
-import { seedPricing } from '@/lib/pricing';
+import { seedPricing, snapToStorePricePoint } from '@/lib/pricing';
 import { storedBookPriceRM } from '@/lib/platform/pricing';
 import type { CoverBrief } from '@/lib/reads/cover';
 import { fullPageImage } from '@/lib/reads/picture-book';
@@ -30,6 +30,12 @@ const QUIET_SPOT: BookShowcase = { featured: false, priority: 0, from: '', until
 
 const DEFAULT_BOOK_USD = seedPricing().defaultBookUsd;
 const DEFAULT_BOOK_RM = storedBookPriceRM(DEFAULT_BOOK_USD);
+
+/** Sample catalogue prices, snapped onto Apple and Google .99 points. */
+function storePrice(usd: number): { priceUsd: number; priceRM: number } {
+  const priceUsd = snapToStorePricePoint(usd);
+  return { priceUsd, priceRM: storedBookPriceRM(priceUsd) };
+}
 
 const HARBOUR_1 = `The jetty smelled of rain and warm rope. Aisha stopped where the boards turned dark and watched the lighthouse take its turn: a slow white sweep, then nothing, then the sweep again. Behind her, the night market was packing up. Someone dropped a crate of mangoes and laughed. The sound did not reach the water.
 
@@ -351,8 +357,7 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 2,
-    priceUsd: 8,
-    priceRM: 36,
+    ...storePrice(8),
     licensable: true,
     sparksCost: 100,
     seats: { total: 40, used: 0 },
@@ -398,8 +403,7 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 1,
-    priceUsd: 4,
-    priceRM: 18,
+    ...storePrice(4),
     licensable: true,
     sparksCost: 60,
     seats: { total: 40, used: 0 },
@@ -432,8 +436,7 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 4,
-    priceUsd: 10,
-    priceRM: 49,
+    ...storePrice(10),
     licensable: true,
     sparksCost: 140,
     seats: { total: 30, used: 0 },
@@ -522,8 +525,7 @@ export const BOOKS: Book[] = [
     version: 1,
     accessMode: 'both',
     minTier: 1,
-    priceUsd: 5,
-    priceRM: 22,
+    ...storePrice(5),
     licensable: true,
     sparksCost: 70,
     seats: { total: 40, used: 0 },
