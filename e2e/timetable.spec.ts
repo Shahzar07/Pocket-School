@@ -57,6 +57,7 @@ test('teacher and parent see their own week', async ({ page }) => {
   await page.evaluate(() => window.localStorage.removeItem('poket-timetable-v1'));
   await page.reload();
   await page.locator('[data-action="generate"]').click();
+  await expect(page.locator('[data-lesson]').first()).toBeVisible();
   await page.locator('[data-tab="publish"]').click();
   await page.locator('[data-action="publish"]').click();
   await expect(page.locator('[data-feed="1"]')).toContainText(TIMETABLE_COPY.registers);
