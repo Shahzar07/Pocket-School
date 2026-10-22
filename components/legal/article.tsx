@@ -1,17 +1,17 @@
 import { LEGAL_DOCS, type LegalBlock } from '@/lib/legal-content';
 
 function Block({ block }: { block: LegalBlock }) {
-  if (block.type === 'p') return <p className="mb-3 text-sm leading-relaxed text-[#203337]/80">{block.text}</p>;
+  if (block.type === 'p') return <p className="mb-3 text-sm leading-relaxed text-foreground/80">{block.text}</p>;
   if (block.type === 'sub') return <h3 className="mb-2 mt-4 text-sm font-bold">{block.text}</h3>;
   if (block.type === 'ul' || block.type === 'ol') {
     const List = block.type === 'ul' ? 'ul' : 'ol';
     return (
-      <List className="mb-3 list-disc space-y-1 pl-5 text-sm text-[#203337]/80">
+      <List className="mb-3 list-disc space-y-1 pl-5 text-sm text-foreground/80">
         {block.items.map((item, index) => <li key={index}>{item}</li>)}
       </List>
     );
   }
-  if (block.type === 'callout') return <p className="mb-3 rounded-xl border border-[#1E6A83]/20 bg-[#F4FBFA] p-3 text-sm">{block.text}</p>;
+  if (block.type === 'callout') return <p className="mb-3 rounded-xl border border-border bg-muted p-3 text-sm text-foreground">{block.text}</p>;
   if (block.type === 'table') {
     return (
       <div className="mb-4 overflow-x-auto">
@@ -40,9 +40,9 @@ export function LegalArticle({ id }: { id: 'privacy' | 'terms' }) {
   const doc = LEGAL_DOCS.find((item) => item.id === id);
   if (!doc) return null;
   return (
-    <article className="mx-auto max-w-3xl px-6 py-12 text-[#203337]">
+    <article className="mx-auto max-w-3xl px-6 py-12 text-foreground" data-theme-surface="page">
       <h1 className="font-heading text-4xl">{doc.title}</h1>
-      <p className="mt-2 text-xs text-[#1E6A83]">{doc.meta}</p>
+      <p className="mt-2 text-xs text-primary">{doc.meta}</p>
       <div className="mt-8">
         {doc.intro ? <Block block={{ type: 'callout', tone: doc.intro.tone, text: doc.intro.text }} /> : null}
         {doc.sections.map((section) => (

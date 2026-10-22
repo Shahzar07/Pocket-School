@@ -156,7 +156,7 @@ export function ArticleBody({ post }: { post: BlogPost }) {
         index += 1;
       }
       blocks.push(
-        <blockquote key={key} className="border-l-4 border-[var(--ps-cyan-border)] pl-4 text-[#203337]/80">
+        <blockquote key={key} className="border-l-4 border-[var(--ps-cyan-border)] pl-4 text-foreground/80">
           {quote.map((part, quoteIndex) => <p key={`${key}-${quoteIndex}`}>{inline(part, `${key}-${quoteIndex}`)}</p>)}
         </blockquote>,
       );
@@ -196,13 +196,13 @@ export function ArticleBody({ post }: { post: BlogPost }) {
     blocks.push(<p key={key}>{inline(paragraph.join(' '), key)}</p>);
   }
 
-  return <div className="space-y-5 text-[17px] leading-8 text-[#203337]">{blocks}</div>;
+  return <div className="space-y-5 text-[17px] leading-8 text-foreground">{blocks}</div>;
 }
 
 export function AffiliateNote({ post }: { post: BlogPost }) {
   if (!post.affiliate && post.category !== 'Book Reviews') return null;
   return (
-    <p className="mt-6 rounded-2xl border border-[var(--ps-cyan-border)]/60 bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm leading-6 text-[#203337]">
+    <p className="mt-6 rounded-2xl border border-[var(--ps-cyan-border)]/60 bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm leading-6 text-foreground">
       <strong>Disclosure. </strong>{AFFILIATE_DISCLOSURE}
     </p>
   );

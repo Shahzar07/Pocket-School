@@ -69,7 +69,7 @@ export function HomeV3() {
   const plans = asList<Plan>(t('home.v3.plans', { returnObjects: true }), HOME.plans);
   return (
     <div className="bg-white text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2]" style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }} data-landing="v3">
-      <section className="bg-[linear-gradient(165deg,#0B1417_0%,#1E6A83_52%,#3FE0D0_130%)] px-6 py-16 text-white sm:py-24">
+      <section className="bg-[linear-gradient(165deg,#0B1417_0%,#1E6A83_52%,#3FE0D0_130%)] px-6 pb-16 pt-24 text-white sm:py-24">
         <div className="mx-auto max-w-5xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#3FE0D0]">{t('home.v3.eyebrow')}</p>
           <h1 className="mt-4 text-4xl leading-[1.05] sm:text-6xl" style={serif}>

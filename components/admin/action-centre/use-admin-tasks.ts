@@ -40,15 +40,20 @@ export function useAdminTasks() {
   }, []);
 
   const load = useCallback(() => {
+    const timer = window.setTimeout(() => setLoading(false), 8_000);
     return authedFetch('/api/admin/tasks')
       .then(data => {
         if (!live.current) applyTasks(asTasks(data.tasks));
         const next = asPrefs(data.prefs);
         if (next) setPrefs(next);
         if (data.setupNeeded) setNote(typeof data.message === 'string' ? data.message : '');
+        else setNote('');
       })
       .catch(error => setNote(error instanceof Error ? error.message : 'The Action Centre could not be loaded.'))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        window.clearTimeout(timer);
+        setLoading(false);
+      });
   }, [applyTasks]);
 
   useEffect(() => {
@@ -61,7 +66,11 @@ export function useAdminTasks() {
     let stopSnapshot = () => {};
     const stopAuth = onAuthStateChanged(auth, user => {
       stopSnapshot();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      void load();
       const staffRole = profile?.adminRole === 'super_admin' ? 'super_admin' : profile?.role === 'admin' ? 'admin' : '';
       const staffPost = typeof (profile as { staffPost?: string } | null)?.staffPost === 'string'
         ? (profile as { staffPost?: string }).staffPost
@@ -81,13 +90,14 @@ export function useAdminTasks() {
         setLoading(false);
       }, () => {
         live.current = false;
+        setLoading(false);
       });
     });
     return () => {
       stopAuth();
       stopSnapshot();
     };
-  }, [applyTasks, profile]);
+  }, [applyTasks, load, profile]);
 
   const act = async (body: { id: string; action: string; reason?: string; snoozedUntil?: number }) => {
     await authedFetch('/api/admin/tasks', { method: 'POST', body: JSON.stringify(body) });

@@ -243,7 +243,7 @@
 
 /* Pricing is a light canvas. Pin the light primary so dark mode does not
  * paint #6FBBCE onto white, which would drop under 4.5:1. */
-.pricing-page {
+html:not(.dark) .pricing-page {
     --primary: #1E6A83;
     --primary-foreground: #FFFFFF;
     --ring: #1E6A83;

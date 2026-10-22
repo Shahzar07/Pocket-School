@@ -69,24 +69,24 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const steps = (post.howto || []).filter((step) => step.name.trim() && step.text.trim());
 
   return (
-    <main id="content" className="min-h-screen bg-[#F8F4EE] text-[#203337]">
+    <main id="content" className="min-h-screen bg-background text-foreground" data-theme-surface="page">
       {blocks.map((block, index) => (
         <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(block) }} />
       ))}
       <PostHero post={post} />
       <article className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6">
-        <p className="text-xs font-bold tracking-[0.18em] text-[#1E6A83]">
+        <p className="text-xs font-bold tracking-[0.18em] text-primary">
           <Link href="/blog">Blog</Link>
           <span> · {post.category}</span>
         </p>
-        <p className="mt-4 text-sm text-[#203337]/65">
+        <p className="mt-4 text-sm text-foreground/65">
           {post.author}
           {when ? ` · ${when}` : ''}
           {` · ${readingMinutes(post.body)} ${BLOG_PUBLIC.minRead}`}
         </p>
         <AffiliateNote post={post} />
         {post.tldr ? <p className="mt-8 text-lg leading-8" data-blog-tldr="1">{post.tldr}</p> : null}
-        <p className="mt-8 text-lg leading-8 text-[#203337]/80">{post.excerpt}</p>
+        <p className="mt-8 text-lg leading-8 text-foreground/80">{post.excerpt}</p>
         {takeaways.length > 0 ? (
           <section className="mt-8" aria-labelledby="essay-takeaways">
             <h2 id="essay-takeaways" className="font-heading text-2xl">Key takeaways</h2>
@@ -101,7 +101,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         {post.tags.length > 0 ? (
           <ul className="mt-8 flex flex-wrap gap-2" aria-label="Tags">
             {post.tags.map((tag) => (
-              <li key={tag} className="rounded-full bg-white px-3 py-1 text-xs font-semibold">{tag}</li>
+              <li key={tag} className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-card-foreground">{tag}</li>
             ))}
           </ul>
         ) : null}
@@ -125,7 +125,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               {post.faq.map((item) => (
                 <div key={item.question}>
                   <dt className="font-semibold">{item.question}</dt>
-                  <dd className="mt-1 text-[#203337]/75">{item.answer}</dd>
+                  <dd className="mt-1 text-foreground/75">{item.answer}</dd>
                 </div>
               ))}
             </dl>

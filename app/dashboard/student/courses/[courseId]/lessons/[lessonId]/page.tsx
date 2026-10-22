@@ -1085,7 +1085,7 @@ export default function LessonPage() {
   // ── Unit mastery quiz takes over the whole page ──
   if (isUnitQuiz && unit) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-28">
         <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
         <div className="flex items-center gap-3 mb-2">
           <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/student/courses/${courseId}`)} className="shrink-0">
@@ -1157,7 +1157,7 @@ export default function LessonPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-28">
       <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
       <LessonFlow courseId={courseId} lessonId={lessonId} lessons={unitLessons} />
       {/* Header */}

@@ -404,6 +404,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 1023px)').matches) setSidebarOpen(false);
+  }, []);
   const [newDevice, setNewDevice] = useState(false);
   const [mfaCheckedUid, setMfaCheckedUid] = useState<string | null>(null);
   const [mfaHold, setMfaHold] = useState(false);
@@ -683,7 +686,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </a>
       {/* The signed-in Studio chat is the whole viewport. Other pages keep this sidebar. */}
       {fullBleed ? null : (
-      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex flex-col motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none shrink-0 max-lg:fixed max-lg:inset-y-0 max-lg:z-50 ${sidebarOpen ? 'w-[264px]' : 'lg:w-[76px] w-0 max-lg:overflow-hidden'}`}>
+      <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex-col motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none shrink-0 ${sidebarOpen ? 'flex w-[264px] max-lg:fixed max-lg:inset-y-0 max-lg:z-50' : 'hidden lg:flex lg:w-[76px]'}`}>
 
         {/* Who you are, at the top — the reference design leads with identity
             rather than a logo lockup. */}
