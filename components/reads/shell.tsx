@@ -17,6 +17,7 @@ const MODE_KEYS: Record<AccountMode, ReadsKey> = {
 
 const LINKS = [
   { href: '/reads', key: 'reads.nav.home' as const },
+  { href: '/reads/offer', key: 'reads.nav.subscribe' as const },
   { href: '/reads/library', key: 'reads.nav.library' as const },
   { href: '/reads/leaderboard', key: 'reads.nav.board' as const },
   { href: '/reads/studio', key: 'reads.nav.studio' as const },

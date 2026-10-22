@@ -20,6 +20,7 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
       { href: '/ai-studio', labelKey: 'footer.aiStudio' },
       { href: '/courses', labelKey: 'footer.marketplace' },
       { href: '/reads', labelKey: 'nav.books' },
+      { href: '/reads/offer', labelKey: 'footer.readsOffer' },
       { href: '/pricing', labelKey: 'footer.pricing' },
       { href: '/blog', labelKey: 'footer.blog' },
     ],

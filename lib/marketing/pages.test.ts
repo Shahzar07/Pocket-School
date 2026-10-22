@@ -1,14 +1,35 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import { MARKET_LINKS } from './nav';
 import { MARKET_PAGES } from './pages';
+
+/** A public route may sit in a route group, such as `app/reads/(shelf)/page.tsx`. */
+function pageExists(slug: string): boolean {
+  const segments = slug.split('/').filter(Boolean);
+  const walk = (dir: string, index: number): boolean => {
+    if (!existsSync(dir)) return false;
+    if (index === segments.length) {
+      if (existsSync(path.join(dir, 'page.tsx'))) return true;
+    } else {
+      const next = path.join(dir, segments[index]);
+      if (existsSync(next) && walk(next, index + 1)) return true;
+    }
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || !entry.name.startsWith('(')) continue;
+      if (walk(path.join(dir, entry.name), index)) return true;
+    }
+    return false;
+  };
+  return walk('app', 0);
+}
 
 test('every marketing link has a page', () => {
   for (const link of MARKET_LINKS) {
     if (link.href.startsWith('mailto:')) continue;
     const slug = link.href.split('?')[0].replace(/^\//, '');
-    assert.equal(existsSync(`app/${slug}/page.tsx`), true, link.href);
+    assert.equal(pageExists(slug), true, link.href);
   }
   assert.equal(MARKET_PAGES.length >= 12, true);
 });

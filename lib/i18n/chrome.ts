@@ -156,6 +156,7 @@ export const chromeEn = {
     etTeachers: 'ET AI Teachers',
     etStudio: 'ET AI Studio',
     reads: 'PoketReads',
+    readsOffer: 'Poket Reads',
     safeline: 'Poket SafeLine',
     studentId: 'Student ID card',
     primary: 'Primary',

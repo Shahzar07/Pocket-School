@@ -12,6 +12,7 @@ export const MARKET_LINKS: MarketLink[] = [
   { href: '/ai-teachers', label: 'ET AI Teachers' },
   { href: '/studio', label: 'ET AI Studio' },
   { href: '/reads', label: 'PoketReads' },
+  { href: '/reads/offer', label: 'Poket Reads' },
   { href: '/safeline', label: 'Poket SafeLine' },
   { href: '/id', label: 'Student ID card' },
   { href: '/primary', label: 'Primary' },

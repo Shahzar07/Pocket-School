@@ -42,7 +42,7 @@ export function ReadsOfferLetter() {
   const year = new Date().getFullYear();
 
   return (
-    <article id="top" className="bg-background text-foreground">
+    <main id="top" className="bg-background text-foreground [color-scheme:light] dark:[color-scheme:dark]">
       <a href="#letter" className={`sr-only top-3 left-3 z-50 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground focus:not-sr-only focus:absolute ${focus}`}>
         Skip to the letter
       </a>
@@ -180,7 +180,7 @@ export function ReadsOfferLetter() {
         </div>
         <ul className="mt-10 grid gap-8 lg:grid-cols-3">
           {OFFER_DEVICES.map(device => (
-            <li key={device.src}>
+            <li key={device.src} className="overflow-hidden rounded-3xl bg-[#F4F6F6] ring-1 ring-border">
               <OfferShot src={device.src} alt={device.alt} width={device.width} height={device.height} sizes="(min-width: 1024px) 30vw, 100vw" />
             </li>
           ))}
@@ -397,7 +397,7 @@ export function ReadsOfferLetter() {
           </nav>
         </div>
       </footer>
-    </article>
+    </main>
   );
 }
 
