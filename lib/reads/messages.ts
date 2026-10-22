@@ -8,6 +8,7 @@
 export const READS_EN = {
   'reads.brand': 'Poket Reads',
   'reads.nav.home': 'Home',
+  'reads.nav.subscribe': 'Subscribe',
   'reads.nav.library': 'My Library',
   'reads.nav.board': 'Board',
   'reads.nav.studio': 'Studio',
