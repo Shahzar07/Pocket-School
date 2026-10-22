@@ -45,6 +45,13 @@ function nearWhite(color: string): boolean {
   return Number(match[1]) > 235 && Number(match[2]) > 235 && Number(match[3]) > 235;
 }
 
+async function settled(page: Page) {
+  const shell = page.locator('[data-tool-shell="1"]');
+  if (await shell.count() === 0) return;
+  const dark = (await page.locator('html').getAttribute('class'))?.includes('dark') ?? false;
+  await expect(shell).toHaveAttribute('data-studio-theme', dark ? 'dark' : 'light');
+}
+
 async function paint(page: Page) {
   return page.evaluate(() => {
     const opaque = (start: Element | null) => {
@@ -103,8 +110,10 @@ test('public pages change background when the theme switches', async ({ page }) 
     const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
     expect(response?.status() ?? 0, route).toBeLessThan(400);
     await expect(page.locator('html')).not.toHaveClass(/dark/);
+    await settled(page);
     const light = await paint(page);
     await toDark(page);
+    await settled(page);
     const dark = await paint(page);
     expect(light.body, `${route} body`).not.toBe(dark.body);
     const changed = light.colors.some((color, index) => color !== dark.colors[index]);
