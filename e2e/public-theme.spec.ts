@@ -70,19 +70,26 @@ async function paint(page: Page) {
 }
 
 async function toDark(page: Page) {
-  const toggle = page.getByRole('button', { name: 'Switch to dark mode' });
-  if (await toggle.first().isVisible().catch(() => false)) {
-    await toggle.first().click();
-  } else {
-    // Some public doors hide the marketing header. The saved theme still
-    // has to restyle the page, which is what a visitor gets after switching
-    // on any other route.
-    await page.evaluate(() => {
-      window.name = 'e2e-dark';
-      localStorage.setItem('theme', 'dark');
-    });
-    await page.reload({ waitUntil: 'domcontentloaded' });
+  const toggle = page.getByRole('button', { name: 'Switch to dark mode' }).first();
+  const visible = await toggle.isVisible().catch(() => false);
+  if (visible) {
+    // The control is in the server HTML before hydration. A click in that
+    // gap does nothing, so keep clicking until the theme class lands.
+    await expect(async () => {
+      const klass = await page.locator('html').getAttribute('class');
+      if (!klass?.includes('dark')) await toggle.click();
+      await expect(page.locator('html')).toHaveClass(/dark/, { timeout: 1_500 });
+    }).toPass({ timeout: 15_000 });
+    return;
   }
+  // Some public doors hide the marketing header. The saved theme still
+  // has to restyle the page, which is what a visitor gets after switching
+  // on any other route.
+  await page.evaluate(() => {
+    window.name = 'e2e-dark';
+    localStorage.setItem('theme', 'dark');
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveClass(/dark/);
 }
 
