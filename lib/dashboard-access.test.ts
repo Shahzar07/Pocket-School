@@ -96,6 +96,17 @@ describe('dashboard role guard', () => {
     }).allowed, false);
   });
 
+  it('opens academic results to the learner, a parent, and a school, not a teacher', () => {
+    assert.equal(isRoleRestricted('/dashboard/results'), true);
+    assert.equal(decideDashboardAccess('/dashboard/results', student).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/results', parent, 'parent').allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/results', admin).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/results', superAdmin).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/results', school).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/results', teacher, 'teacher').allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/results', { role: 'partner_merchant' }).allowed, false);
+  });
+
   it('leaves shared pages open and rejects off-site next hops', () => {
     assert.equal(isRoleRestricted('/dashboard/profile'), false);
     assert.equal(isRoleRestricted('/dashboard/messages'), false);

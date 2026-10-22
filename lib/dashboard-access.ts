@@ -7,6 +7,7 @@ import {
 } from './account-modes';
 import { hasCmsAddon } from './entitlements';
 import { funnelDeskAllowed } from './funnels/model';
+import { resultsPageAllowed } from './results/access';
 import { isInstitutionAdmin, isSuperAdmin } from './roles';
 import { isPartnerMerchant } from './student-id/model';
 import { stripAcademyPath } from './tenant-host';
@@ -59,6 +60,7 @@ export function isRoleRestricted(pathname: string): boolean {
     || matches(path, '/dashboard/student')
     || matches(path, '/dashboard/institution')
     || matches(path, '/dashboard/partner')
+    || matches(path, '/dashboard/results')
   );
 }
 
@@ -167,6 +169,9 @@ export function decideDashboardAccess(
       || hasAccountRole(actor, 'parent')
       || isSuperAdmin(actor);
     return learner ? { allowed: true } : deny(actor, mode);
+  }
+  if (matches(path, '/dashboard/results')) {
+    return resultsPageAllowed(actor) ? { allowed: true } : deny(actor, mode);
   }
   return { allowed: true };
 }
