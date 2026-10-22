@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
 import { useFlowKeys } from '@/components/flow/use-flow-keys';
 import { flowCopy } from '@/lib/flow/copy';
 import { useTranslation } from 'react-i18next';
@@ -40,10 +41,10 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
     setPicked(null);
   };
   const jump = useCallback((nextIndex: number) => {
-    if (nextIndex > i && picked === null) return;
+    if (nextIndex < 0 || nextIndex >= questions.length) return;
     setI(nextIndex);
     setPicked(null);
-  }, [i, picked]);
+  }, [questions.length]);
   useFlowKeys(i, questions.length, jump, !finished);
 
   if (finished) {
@@ -59,8 +60,15 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
   }
 
   return (
-    <div className="max-w-2xl mx-auto" dir={translation.dir}>
+    <div className="max-w-2xl mx-auto" dir={translation.dir} data-flow-capture="quiz" data-quiz-flow="1">
       <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
+      <FlowTrail
+        steps={questions.map((_, step) => ({ id: String(step), label: String(step + 1) }))}
+        currentId={String(i)}
+        allowAhead
+        onSelect={(id) => jump(Number(id))}
+        label={flowCopy.question}
+      />
       <div className="flex items-center justify-between text-[12px] text-muted-foreground mb-3">
         <span className="tabular-nums">Question {i + 1} of {questions.length}</span>
         <span className="tabular-nums">{right} correct</span>
@@ -126,10 +134,10 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
   const it = display[i] ?? items[i];
   const source = items[i];
   const jump = useCallback((nextIndex: number) => {
-    if (nextIndex > i && picked === null) return;
+    if (nextIndex < 0 || nextIndex >= items.length) return;
     setI(nextIndex);
     setPicked(null);
-  }, [i, picked]);
+  }, [items.length]);
   useFlowKeys(i, items.length, jump, !finished && Boolean(it && source));
   if (!it || !source) {
     return <p className="text-sm text-muted-foreground text-center">No statements yet.</p>;
@@ -156,8 +164,15 @@ export function TrueFalseView({ items, onComplete }: { items: TrueFalseItem[]; o
     setPicked(null);
   };
   return (
-    <div className="max-w-xl mx-auto text-center" dir={translation.dir}>
+    <div className="max-w-xl mx-auto text-center" dir={translation.dir} data-flow-capture="quiz" data-quiz-flow="1">
       <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
+      <FlowTrail
+        steps={items.map((_, step) => ({ id: String(step), label: String(step + 1) }))}
+        currentId={String(i)}
+        allowAhead
+        onSelect={(id) => jump(Number(id))}
+        label={flowCopy.question}
+      />
       <p className="text-[12px] text-muted-foreground mb-4 tabular-nums">{i + 1} / {items.length}</p>
       <motion.div key={i} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
         className="rounded-3xl border border-border bg-card shadow-[var(--shadow-card)] p-8 min-h-[160px] grid place-items-center text-[18px] font-medium text-foreground [&_p]:my-0">

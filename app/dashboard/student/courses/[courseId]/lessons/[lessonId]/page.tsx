@@ -29,6 +29,10 @@ import { FORMAT_COSTS, FORMAT_LABELS, LESSON_COMPLETE_REWARD, UNIT_PASS_REWARD }
 import type { CertificateAward } from '@/lib/certificates';
 import { authedFetch } from '@/lib/api-client';
 import { LessonFlow } from '@/components/flow/lesson-flow';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
+import { useFlowKeys } from '@/components/flow/use-flow-keys';
+import { flowCopy } from '@/lib/flow/copy';
 import { CertificateCelebration } from '@/components/certificate-celebration';
 import { SmartAudioPlayer } from '@/components/smart-audio-player';
 import { VideoPlayer } from '@/components/video-player';
@@ -151,12 +155,22 @@ function QuizViewer({
 }) {
   const { i18n } = useTranslation();
   const { display, translation } = useQuizCopy(`course-quiz:${questions[0]?.question ?? 'quiz'}`, questions, i18n.language);
+  const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [graded, setGraded] = useState<Record<number, { correct: boolean; feedback: string }> | null>(null);
   const [loading, setLoading] = useState(false);
+  const steps = questions.map((_, step) => ({ id: String(step), label: String(step + 1) }));
+  const answered = Object.keys(answers).length;
+  const onLast = index >= questions.length - 1;
+
+  const jump = useCallback((nextIndex: number) => {
+    if (nextIndex < 0 || nextIndex >= questions.length) return;
+    setIndex(nextIndex);
+  }, [questions.length]);
+  useFlowKeys(index, questions.length, jump, !loading);
 
   const handleSubmit = () => {
-    if (Object.keys(answers).length < questions.length) {
+    if (answered < questions.length) {
       toast.error('Please answer all questions before submitting.');
       return;
     }
@@ -181,10 +195,19 @@ function QuizViewer({
   };
 
   const percentage = graded ? Math.round(Object.values(graded).filter(r => r.correct).length / questions.length * 100) : 0;
+  const question = questions[index];
+  const shown = question ? (display[index] ?? question) : null;
 
   return (
-    <div className="max-w-2xl mx-auto py-6 space-y-6" dir={translation.dir}>
+    <div className="max-w-2xl mx-auto py-6 space-y-4" dir={translation.dir} data-flow-capture="quiz" data-quiz-flow="1">
       <ContentLanguageBar status={translation.status} showOriginal={translation.showOriginal} notice={translation.notice} onToggle={translation.toggle} />
+      <FlowTrail
+        steps={steps}
+        currentId={String(index)}
+        allowAhead
+        onSelect={(id) => jump(Number(id))}
+        label={flowCopy.question}
+      />
       {graded && (
         <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-success/10 border-success/20' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]/20'}`}>
           <p className="text-3xl font-extrabold">{percentage}%</p>
@@ -195,27 +218,25 @@ function QuizViewer({
         </div>
       )}
 
-      {questions.map((q, i) => {
-        const shown = display[i] ?? q;
-        return (
-        <div key={i} className="bg-card border border-border rounded-3xl p-5">
+      {question && shown && (
+        <div className="bg-card border border-border rounded-3xl p-5" data-quiz-question={index}>
           <p className="font-semibold text-foreground mb-4 text-sm leading-relaxed">
-            <span className="text-primary font-bold">{i + 1}. </span>{shown.question}
+            <span className="text-primary font-bold">{index + 1}. </span>{shown.question}
           </p>
           <div className="space-y-2">
-            {q.options.map((opt, k) => {
+            {question.options.map((opt, k) => {
               const id = optionId(k);
               const label = shown.options[k] ?? opt;
-              const selected = answers[i] === id;
-              const isCorrect = graded ? answersMatch(id, q.answer, q.options) : null;
-              const isWrong = graded && selected && !graded[i]?.correct;
+              const selected = answers[index] === id;
+              const isCorrect = graded ? answersMatch(id, question.answer, question.options) : null;
+              const isWrong = graded && selected && !graded[index]?.correct;
               return (
                 <button
                   key={id}
                   type="button"
                   disabled={!!graded}
                   aria-pressed={selected}
-                  onClick={() => !graded && setAnswers(a => ({ ...a, [i]: id }))}
+                  onClick={() => !graded && setAnswers(a => ({ ...a, [index]: id }))}
                   className={`w-full text-start min-h-12 px-4 py-3 rounded-xl border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                     graded
                       ? isCorrect ? 'border-success/40 bg-success/10 text-success'
@@ -234,22 +255,21 @@ function QuizViewer({
               );
             })}
           </div>
-          {graded?.[i] && (
-            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[i].correct ? 'bg-success/10 text-success' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]'}`}>
-              {graded[i].feedback}
+          {graded?.[index] && (
+            <p className={`mt-3 text-xs px-3 py-2 rounded-lg ${graded[index].correct ? 'bg-success/10 text-success' : 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]'}`}>
+              {graded[index].feedback}
             </p>
           )}
         </div>
-      );
-      })}
-
-      {!graded && (
-        <Button onClick={handleSubmit} disabled={loading || Object.keys(answers).length < questions.length}
-          className="w-full h-11 rounded-full font-bold bg-primary text-primary-foreground"
-        >
-          {loading ? 'Checking answers…' : `Submit Quiz (${Object.keys(answers).length}/${questions.length})`}
-        </Button>
       )}
+
+      <FlowNav
+        onBack={() => jump(index - 1)}
+        onNext={() => { if (onLast) handleSubmit(); else jump(index + 1); }}
+        backDisabled={index === 0}
+        nextDisabled={loading || (onLast && answered < questions.length)}
+        nextLabel={onLast ? flowCopy.seeScore : flowCopy.next}
+      />
     </div>
   );
 }
@@ -1141,7 +1161,7 @@ export default function LessonPage() {
       <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
       <LessonFlow courseId={courseId} lessonId={lessonId} lessons={unitLessons} />
       {/* Header */}
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between mb-6">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={() => router.back()} className="shrink-0">
             <ArrowLeft className="w-4 h-4" />
@@ -1156,7 +1176,7 @@ export default function LessonPage() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           {studyStreak > 0 && (
             <span className="hidden sm:inline text-xs font-semibold text-[var(--ps-cyan-text)]">{studyStreak}-day streak</span>
           )}

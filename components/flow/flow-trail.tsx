@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { flowCopy } from '@/lib/flow/copy';
-import { flowIndex, type FlowStep } from '@/lib/flow/steps';
+import { flowIndex, flowStepOpen, type FlowStep } from '@/lib/flow/steps';
 
 const future = 'text-sm font-semibold text-[#203337]/45 dark:text-[#E9F7FA]/45';
 const done = 'text-sm font-semibold text-[#1E6A83] underline-offset-4 hover:underline dark:text-[#3FE0D0]';
@@ -30,7 +30,8 @@ export function FlowTrail({
         {steps.map((step, stepIndex) => {
           const active = stepIndex === index;
           const complete = stepIndex < index;
-          const href = complete && hrefFor ? hrefFor(step.id) : null;
+          const open = flowStepOpen(stepIndex, index, allowAhead);
+          const href = open && hrefFor ? hrefFor(step.id) : null;
           return (
             <li key={step.id} className="flex items-center gap-1">
               {stepIndex > 0 ? <span aria-hidden className="px-0.5 text-[#1E6A83] dark:text-[#3FE0D0]">→</span> : null}

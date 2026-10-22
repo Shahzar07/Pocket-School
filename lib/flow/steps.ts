@@ -14,6 +14,12 @@ export function flowNeighbor<T extends { id: string }>(steps: readonly T[], curr
   return steps[index] ?? null;
 }
 
+/** Earlier steps are always open. Later steps open only when the trail allows moving ahead. */
+export function flowStepOpen(stepIndex: number, currentIndex: number, allowAhead: boolean): boolean {
+  if (stepIndex < 0 || stepIndex === currentIndex) return false;
+  return stepIndex < currentIndex || allowAhead;
+}
+
 /** Arrow keys move between items unless the user is typing. */
 export function flowKeyTarget(
   event: { key: string; altKey: boolean; metaKey: boolean; ctrlKey: boolean; target: unknown },
