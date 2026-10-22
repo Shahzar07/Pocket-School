@@ -189,7 +189,7 @@ const LLB_YEAR_3: PathwaySubject[] = [
 
 const MEDICINE = 'et-medicine';
 
-const SCHOOL_BOARDS = ['Cambridge International', 'Pearson Edexcel', 'OxfordAQA'];
+export const SCHOOL_BOARDS = ['Cambridge International', 'Pearson Edexcel', 'OxfordAQA'] as const;
 const SCHOOL_BOARD_NOTE = 'These names describe syllabus alignment already used on the IGCSE page. Poket School does not award those grades.';
 
 export const PATHWAYS: readonly PathwayRecord[] = [

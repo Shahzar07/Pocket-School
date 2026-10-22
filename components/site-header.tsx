@@ -49,7 +49,9 @@ function hidesSiteChrome(pathname: string): boolean {
     pathname === "/offer" ||
     pathname.startsWith("/offer/") ||
     pathname === "/p" ||
-    pathname.startsWith("/p/")
+    pathname.startsWith("/p/") ||
+    pathname === "/results" ||
+    pathname.startsWith("/results/")
   );
 }
 

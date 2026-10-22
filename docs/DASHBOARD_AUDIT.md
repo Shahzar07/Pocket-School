@@ -51,6 +51,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. Surface achievements here and link to the single daily-goals page.
 - **Owner keys:** None.
 
+### Academic results
+
+- **Route:** `/dashboard/results`
+- **Audience:** student, parent, admin, institution
+- **Purpose:** Students record IGCSE and O-Level, A-Level, degree, Masters, and PhD results by subject, board, grade, and session. Exam boards award these grades. Poket School records them. Entries stay self-reported until a school or admin verifies them. An optional certificate stays private. A read-only portfolio link can be turned off. Parents can read a linked child. Progress is the list of subjects and grades in each session.
+- **Overlaps:** CV and portfolio, certificates, and parent progress. This page records exam-board grades. It does not award them.
+- **Decision:** Keep. The learner writes. A school or platform admin verifies. Teachers do not open this page.
+- **Owner keys:** None. Firestore writes use the admin SDK when FIREBASE_SERVICE_ACCOUNT or the Firestore emulator is set.
+
 ### Teacher home
 
 - **Route:** `/dashboard/teacher`

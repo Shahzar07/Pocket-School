@@ -41,6 +41,11 @@ export async function saveObject(path: string, bytes: Uint8Array, mime: string):
   });
 }
 
+export async function readObject(path: string): Promise<Buffer> {
+  const [bytes] = await bucket().file(path).download();
+  return bytes;
+}
+
 export async function signedRead(path: string): Promise<{ url: string; expiresAt: number }> {
   const expiresAt = Date.now() + TEN_MINUTES;
   const [url] = await bucket().file(path).getSignedUrl({ action: 'read', expires: expiresAt });
