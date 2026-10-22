@@ -63,7 +63,7 @@ export function NoteDock({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="z-30 mt-8 inline-flex items-center gap-2 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-3 text-sm font-semibold text-[#203337] shadow-[0_12px_30px_rgba(32,51,55,0.16)] max-lg:static lg:fixed lg:bottom-4 lg:end-4 lg:mt-0"
+        className="z-30 mt-8 inline-flex items-center gap-2 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-3 text-sm font-semibold text-[#203337] shadow-[0_12px_30px_rgba(32,51,55,0.16)] max-lg:static max-lg:scroll-mb-[calc(var(--ps-lesson-dock,8rem)+var(--ps-quiz-dock,4.75rem)+1rem)] lg:fixed lg:bottom-4 lg:end-4 lg:mt-0"
       >
         <Plus className="h-4 w-4" aria-hidden />
         Add note

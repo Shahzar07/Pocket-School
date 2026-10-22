@@ -32,6 +32,7 @@ import { authedFetch } from '@/lib/api-client';
 import { roleHome } from '@/lib/dashboard/home';
 import { LessonFlow } from '@/components/flow/lesson-flow';
 import { FlowNav } from '@/components/flow/flow-nav';
+import { useDockHeight } from '@/components/shell/dock-height';
 import { FlowTrail } from '@/components/flow/flow-trail';
 import { useFlowKeys } from '@/components/flow/use-flow-keys';
 import { flowCopy } from '@/lib/flow/copy';
@@ -278,6 +279,7 @@ function QuizViewer({
       )}
 
       <FlowNav
+        aboveActions
         onBack={() => jump(index - 1)}
         onNext={() => { if (onLast) handleSubmit(); else jump(index + 1); }}
         backDisabled={index === 0}
@@ -739,6 +741,7 @@ export default function LessonPage() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const { user, profile, fetchProfile } = useAuthSTORE();
   const { setLessonContext, clearLessonContext } = useTutorContext();
+  const lessonDockRef = useDockHeight('lesson');
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -1172,7 +1175,7 @@ export default function LessonPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pb-52 pt-6 sm:px-6 lg:pb-28">
+    <div className="max-w-6xl mx-auto px-4 pb-72 pt-6 sm:px-6 lg:pb-28">
       <CertificateCelebration award={celebration} onClose={() => setCelebration(null)} />
       <LessonFlow courseId={courseId} lessonId={lessonId} lessons={unitLessons} />
       {/* Header */}
@@ -1191,7 +1194,7 @@ export default function LessonPage() {
             )}
           </div>
         </div>
-        <div className="flex max-w-full flex-wrap items-center gap-2 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-16 max-lg:z-30 max-lg:border-t max-lg:border-border max-lg:bg-card max-lg:px-3 max-lg:py-2 lg:static" data-lesson-actions="1">
+        <div ref={lessonDockRef} className="flex max-w-full flex-wrap items-center gap-2 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom))] max-lg:z-30 max-lg:border-t max-lg:border-border max-lg:bg-card max-lg:px-3 max-lg:py-2 lg:static" data-lesson-actions="1">
           {studyStreak > 0 && (
             <span className="hidden sm:inline text-xs font-semibold text-[var(--ps-cyan-text)]">{studyStreak}-day streak</span>
           )}

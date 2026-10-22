@@ -93,6 +93,57 @@ function intersects(a: { x: number; y: number; width: number; height: number }, 
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
+async function phoneDockFits(page: Page) {
+  const view = page.viewportSize();
+  if (!view || view.width >= 1024) return;
+  const more = page.getByRole('button', { name: 'More' });
+  const et = page.getByRole('button', { name: 'Open ET AI' });
+  const nav = page.getByRole('navigation', { name: 'Primary' });
+  await expect(more).toBeVisible();
+  await expect(et).toBeVisible();
+  await expect(nav).toBeVisible();
+  await page.waitForFunction(() => {
+    const button = document.querySelector('[aria-label="Open ET AI"]');
+    if (!(button instanceof HTMLElement)) return false;
+    const box = button.getBoundingClientRect();
+    return box.width >= 44 && box.height >= 44;
+  });
+  const moreBox = await more.boundingBox();
+  const etBox = await et.boundingBox();
+  const navBox = await nav.boundingBox();
+  expect(moreBox && etBox && navBox).toBeTruthy();
+  expect(intersects(moreBox!, etBox!)).toBe(false);
+  expect(etBox!.y + etBox!.height).toBeLessThanOrEqual(navBox!.y + 1);
+  expect(etBox!.width).toBeGreaterThanOrEqual(44);
+  expect(etBox!.height).toBeGreaterThanOrEqual(44);
+
+  const actions = page.locator('[data-lesson-actions]');
+  const actionBox = await actions.boundingBox();
+  expect(actionBox).not.toBeNull();
+  expect(intersects(etBox!, actionBox!)).toBe(false);
+  expect(actionBox!.y + actionBox!.height).toBeLessThanOrEqual(navBox!.y + 1);
+
+  const flow = page.locator('[data-quiz-flow] [data-flow-nav]');
+  if (!(await flow.isVisible().catch(() => false))) return;
+  const back = flow.getByRole('button', { name: 'Back' });
+  const next = flow.getByRole('button', { name: /Next|See score/ });
+  for (const control of [back, next]) {
+    await expect(control).toBeVisible();
+    const item = await control.boundingBox();
+    expect(item).not.toBeNull();
+    expect(item!.width).toBeGreaterThanOrEqual(44);
+    expect(item!.height).toBeGreaterThanOrEqual(44);
+    expect(item!.x).toBeGreaterThanOrEqual(-1);
+    expect(item!.y).toBeGreaterThanOrEqual(-1);
+    expect(item!.x + item!.width).toBeLessThanOrEqual(view.width + 1);
+    expect(item!.y + item!.height).toBeLessThanOrEqual(navBox!.y + 1);
+    expect(intersects(item!, actionBox!)).toBe(false);
+    expect(intersects(item!, etBox!)).toBe(false);
+    expect(intersects(item!, moreBox!)).toBe(false);
+    expect(intersects(item!, navBox!)).toBe(false);
+  }
+}
+
 async function lessonFits(page: Page) {
   const heading = page.getByRole('heading', { level: 1 }).first();
   const box = await heading.boundingBox();
@@ -133,6 +184,7 @@ async function lessonFits(page: Page) {
         expect(intersects(boxes[i], boxes[j])).toBe(false);
       }
     }
+    await phoneDockFits(page);
     return;
   }
   for (const name of [/Bookmark|Saved/, /Mark Complete|Completed|Saving/]) {
