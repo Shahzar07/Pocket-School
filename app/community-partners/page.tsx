@@ -29,19 +29,19 @@ const notes: Record<string, string> = {
 
 export default function CommunityPartnersPage() {
   return (
-    <main className="min-h-screen" style={{ background: '#f4f7f8', color: BRAND.ink }}>
+    <main className="min-h-screen bg-background text-foreground" data-theme-surface="page">
       <header className="px-6 py-12 text-white" style={{ background: BRAND.hero }}>
         <p className="text-sm tracking-[0.2em]" style={{ color: BRAND.cyan }}>POKET SCHOOL</p>
         <h1 className="mt-3 max-w-3xl text-4xl font-semibold">Community partners</h1>
         <p className="mt-3 max-w-2xl text-lg">{COMMUNITY_PARTNERS_LINE}</p>
       </header>
       <div className="mx-auto grid max-w-3xl gap-4 p-6">
-        <article className="rounded-3xl border bg-white p-5">
-          <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Who can get involved</h2>
+        <article className="rounded-3xl border border-border bg-card p-5 text-card-foreground">
+          <h2 className="text-2xl font-semibold text-primary">Who can get involved</h2>
           <ul className="mt-3 grid gap-3">
             {PARTNER_TYPES.map(item => (
-              <li key={item.id} style={{ color: BRAND.ink }}>
-                <p className="font-semibold" style={{ color: BRAND.blueDeep }}>{item.label}</p>
+              <li key={item.id}>
+                <p className="font-semibold text-primary">{item.label}</p>
                 <p>{notes[item.id]}</p>
               </li>
             ))}

@@ -63,7 +63,7 @@ export function NoteDock({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-28 left-4 z-40 inline-flex items-center gap-2 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-3 text-sm font-semibold text-[#203337] shadow-[0_12px_30px_rgba(32,51,55,0.16)]"
+        className="z-30 mt-8 inline-flex items-center gap-2 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-3 text-sm font-semibold text-[#203337] shadow-[0_12px_30px_rgba(32,51,55,0.16)] max-lg:static lg:fixed lg:bottom-4 lg:end-4 lg:mt-0"
       >
         <Plus className="h-4 w-4" aria-hidden />
         Add note

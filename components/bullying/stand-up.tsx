@@ -31,7 +31,7 @@ const freeActions = [
 export function StandUp() {
   const join = bullyingJoinPath(SAMPLE_BULLYING_CODE);
   return (
-    <main className="min-h-screen" style={{ background: '#f4f7f8', color: BRAND.ink }}>
+    <main className="min-h-screen bg-background text-foreground" data-theme-surface="page">
       <header className="overflow-x-clip px-6 py-12 text-white" style={{ background: BRAND.hero }}>
         <MarketingHero slug="stand-up">
           <div className="min-w-0">
@@ -42,18 +42,18 @@ export function StandUp() {
         </MarketingHero>
       </header>
       <div className="mx-auto grid max-w-3xl gap-4 p-6">
-        <article className="rounded-3xl border bg-white p-5">
-          <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Free for everyone</h2>
-          <p className="mt-2" style={{ color: BRAND.ink }}>No school and no subscription are required. A report still reaches the Poket School Safety Desk.</p>
+        <article className="rounded-3xl border border-border bg-card p-5 text-card-foreground">
+          <h2 className="text-2xl font-semibold text-primary">Free for everyone</h2>
+          <p className="mt-2">No school and no subscription are required. A report still reaches the Poket School Safety Desk.</p>
           <ul className="mt-4 flex flex-wrap gap-2">
             {freeActions.map(action => (
               <li key={action} className="rounded-full px-3 py-1 text-sm font-semibold" style={cyanButton}>{action}</li>
             ))}
           </ul>
         </article>
-        <article className="rounded-3xl border bg-white p-5">
-          <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>If it happened somewhere else</h2>
-          <ol className="mt-3 grid list-decimal gap-2 pl-5" style={{ color: BRAND.ink }}>
+        <article className="rounded-3xl border border-border bg-card p-5 text-card-foreground">
+          <h2 className="text-2xl font-semibold text-primary">If it happened somewhere else</h2>
+          <ol className="mt-3 grid list-decimal gap-2 pl-5">
             {OFF_PLATFORM_STEPS.map(step => <li key={step}>{step}</li>)}
           </ol>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -62,25 +62,25 @@ export function StandUp() {
             ))}
           </div>
         </article>
-        <article className="rounded-3xl border bg-white p-5">
-          <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Official helplines</h2>
-          <p className="mt-2" style={{ color: BRAND.ink }}>{NOT_A_COUNSELLOR}</p>
+        <article className="rounded-3xl border border-border bg-card p-5 text-card-foreground">
+          <h2 className="text-2xl font-semibold text-primary">Official helplines</h2>
+          <p className="mt-2">{NOT_A_COUNSELLOR}</p>
           <ul className="mt-3 grid gap-3">
             {OFFICIAL_HELPLINES.map(line => (
-              <li key={line.name} className="rounded-2xl border p-3" style={{ color: BRAND.ink }}>
-                <p className="font-semibold" style={{ color: BRAND.blueDeep }}>{line.name}</p>
+              <li key={line.name} className="rounded-2xl border border-border p-3">
+                <p className="font-semibold text-primary">{line.name}</p>
                 <p>{line.number}</p>
                 <p>{line.note}</p>
-                <a href={line.sourceUrl} style={{ color: BRAND.blueDeep }}>Official source</a>
+                <a className="text-primary" href={line.sourceUrl}>Official source</a>
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-sm" style={{ color: BRAND.blueDeep }}>Other countries stay blank until an official page is checked. This page does not invent a number.</p>
+          <p className="mt-3 text-sm text-primary">Other countries stay blank until an official page is checked. This page does not invent a number.</p>
         </article>
         <a className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-bold" style={cyanButton} href={join}>{BULLYING_JOIN_CTA}</a>
         <GetInvolvedLink />
-        <p style={{ color: BRAND.ink }}>Referral code {SAMPLE_BULLYING_CODE}</p>
-        <p className="text-sm" style={{ color: BRAND.blueDeep }}>This page shows no reports, names, or evidence.</p>
+        <p>Referral code {SAMPLE_BULLYING_CODE}</p>
+        <p className="text-sm text-primary">This page shows no reports, names, or evidence.</p>
         <SafetyDisclaimerFooter emergencyNumber="999" />
       </div>
     </main>

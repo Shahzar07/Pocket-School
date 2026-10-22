@@ -15,18 +15,18 @@ function useUnder13(): boolean {
 export function SafetyDisclaimerFooter({ emergencyNumber = '999' }: { emergencyNumber?: string }) {
   const under13 = useUnder13();
   return (
-    <footer className="grid gap-2 text-sm" style={{ color: BRAND.blueDeep }} data-safety-disclaimer="footer">
+    <footer className="grid gap-2 text-sm text-foreground" data-safety-disclaimer="footer">
       {under13 ? (
-        <p style={{ color: BRAND.ink }}>{UNDER_13_DISCLAIMER}</p>
+        <p>{UNDER_13_DISCLAIMER}</p>
       ) : (
         <>
-          <p className="font-semibold" style={{ color: BRAND.ink }}>{shortHeadline(emergencyNumber)}</p>
-          <p style={{ color: BRAND.ink }}>{SHORT_BODY}</p>
+          <p className="font-semibold">{shortHeadline(emergencyNumber)}</p>
+          <p>{SHORT_BODY}</p>
         </>
       )}
-      <a href="/safety-terms" style={{ color: BRAND.blueDeep }}>Read the full terms</a>
-      <p style={{ color: BRAND.ink }}>{COMMUNITY_PARTNERS_LINE}</p>
-      <a href="/community-partners" style={{ color: BRAND.blueDeep }}>Get involved</a>
+      <a className="font-semibold text-primary" href="/safety-terms">Read the full terms</a>
+      <p>{COMMUNITY_PARTNERS_LINE}</p>
+      <a className="font-semibold text-primary" href="/community-partners">Get involved</a>
     </footer>
   );
 }
@@ -89,7 +89,7 @@ export function SafetyTermsNotice({
   };
 
   return (
-    <section className="grid gap-3 rounded-2xl border bg-white p-4" style={{ borderColor: '#D5E3E7', color: BRAND.ink }}>
+    <section className="grid gap-3 rounded-2xl border border-border bg-card p-4 text-card-foreground">
       <SafetyDisclaimerFooter emergencyNumber={emergencyNumber} />
       {needsAck ? (
         <button
@@ -120,7 +120,7 @@ export function SafetyTermsChildView() {
   if (!under13) return null;
   return (
     <>
-      <p className="text-lg font-semibold" style={{ color: '#203337' }}>{UNDER_13_DISCLAIMER}</p>
+      <p className="text-lg font-semibold text-foreground">{UNDER_13_DISCLAIMER}</p>
       <style>{'#safety-clauses{display:none}'}</style>
     </>
   );

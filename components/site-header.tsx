@@ -168,7 +168,7 @@ export function SiteHeader() {
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
             {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} className="ps-dir-icon" />
           </Link>
-          {!isLanding && <button
+          <button
             className={styles.menuButton}
             ref={menuButtonRef}
             type="button"
@@ -178,9 +178,9 @@ export function SiteHeader() {
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X /> : <Menu />}
-          </button>}
+          </button>
         </div>
-        {!isLanding && mobileOpen && (
+        {mobileOpen && (
           <nav
             className={styles.mobileNav}
             id="site-navigation"

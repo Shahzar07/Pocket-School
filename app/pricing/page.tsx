@@ -172,26 +172,26 @@ export default function PricingPage() {
 
   return (
     <div
-      className="pricing-page min-h-screen bg-white text-foreground overflow-x-hidden"
+      className="pricing-page min-h-screen bg-background text-foreground overflow-x-hidden"
       data-pricing-ready={ready ? '1' : '0'}
       data-display-currency={currency}
     >
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-white overflow-hidden">
+      <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-background overflow-hidden dark:from-[#0B1417] dark:via-[#121E22] dark:to-[#0B1417]">
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" aria-hidden />
         <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" aria-hidden />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.div variants={fadeUp} initial="hidden" animate="visible">
             <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">PLANS &amp; PRICING</p>
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#203337] leading-[0.98] mb-6">
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-foreground leading-[0.98] mb-6">
               Learn free.
               <br />
               <span className="bg-gradient-to-r from-primary via-[#1E3A8A] to-primary bg-clip-text text-transparent">
                 Upgrade when it earns it.
               </span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
               One price, everything included — ET AI for tutoring and study materials, and every
               format in between. No per-subject fees, no surprise add-ons.
             </p>
@@ -209,7 +209,7 @@ export default function PricingPage() {
             <div
               role="group"
               aria-label="Billing period"
-              className="inline-flex items-center p-1 rounded-full bg-white border border-slate-200 shadow-sm"
+              className="inline-flex items-center p-1 rounded-full bg-card border border-slate-200 shadow-sm"
             >
               {(['monthly', 'annual'] as const).map((b) => {
                 const active = billing === b;
@@ -220,7 +220,7 @@ export default function PricingPage() {
                     onClick={() => setBilling(b)}
                     aria-pressed={active}
                     className={`relative text-xs sm:text-sm font-bold px-5 sm:px-6 py-2.5 rounded-full transition-colors ${
-                      active ? 'text-white' : 'text-slate-600 hover:text-[#203337]'
+                      active ? 'text-white' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {active && (
@@ -248,7 +248,7 @@ export default function PricingPage() {
       </section>
 
       {/* ── Plans ──────────────────────────────────────────────── */}
-      <section className="bg-white pb-20 lg:pb-24">
+      <section className="bg-card pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 items-start">
             {PLANS.map((plan, i) => {
@@ -275,7 +275,7 @@ export default function PricingPage() {
             })}
           </div>
 
-          <p className="mt-8 text-center text-xs text-slate-500">
+          <p className="mt-8 text-center text-xs text-muted-foreground">
             Prices shown in {currency}, inclusive of applicable taxes. Cancel anytime.
             Regional pricing is available for Nigeria, Pakistan, Bangladesh and Ghana — contact us.
           </p>
@@ -283,14 +283,14 @@ export default function PricingPage() {
       </section>
 
       {/* ── Add-ons ────────────────────────────────────────────── */}
-      <section id="addons" className="bg-white pb-20 lg:pb-24 scroll-mt-24">
+      <section id="addons" className="bg-card pb-20 lg:pb-24 scroll-mt-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-8">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">Add-ons</p>
             <h2 className="font-heading text-3xl sm:text-4xl text-slate-900 tracking-tight mt-2">
               Bought on top of a plan
             </h2>
-            <p className="text-slate-600 mt-2 text-sm sm:text-base">
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
               Independent of your subscription — cancel either without touching the other.
             </p>
           </div>
@@ -301,23 +301,23 @@ export default function PricingPage() {
             return (
             <div
               key={a.id}
-              className="rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.4)]"
+              className="rounded-2xl border-2 border-slate-200 bg-card p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.4)]"
             >
               <div className="w-14 h-14 rounded-2xl bg-primary grid place-items-center shrink-0">
                 <Video className="w-7 h-7 text-primary-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-lg text-slate-900">{a.name}</h3>
-                <p className="text-sm text-slate-600 mt-1 leading-relaxed">{a.blurb}</p>
-                {a.requiresLabel ? <p className="text-xs text-slate-500 mt-2">{a.requiresLabel}</p> : (
-                <p className="text-xs text-slate-500 mt-2">
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{a.blurb}</p>
+                {a.requiresLabel ? <p className="text-xs text-muted-foreground mt-2">{a.requiresLabel}</p> : (
+                <p className="text-xs text-muted-foreground mt-2">
                   Requires the {TIERS.find(t => t.tier === a.requiresTier)?.name} plan or above.
                 </p>
                 )}
               </div>
               <div className="text-center sm:text-right shrink-0">
                 <p className="text-2xl font-extrabold text-slate-900">
-                  {a.priceNote ? a.priceNote : <>{addonQuoteAmount}<span className="text-sm font-medium text-slate-500">/mo</span></>}
+                  {a.priceNote ? a.priceNote : <>{addonQuoteAmount}<span className="text-sm font-medium text-muted-foreground">/mo</span></>}
                 </p>
                 <button
                   type="button"
@@ -335,7 +335,7 @@ export default function PricingPage() {
       </section>
 
       {/* ── Sparks explainer ───────────────────────────────────── */}
-      <section className="py-20 lg:py-28 bg-[#F4F6F6] border-y border-slate-100">
+      <section className="py-20 lg:py-28 bg-muted border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-start">
             <motion.div
@@ -345,19 +345,19 @@ export default function PricingPage() {
               viewport={{ once: true, margin: '-60px' }}
             >
               <p className="text-xs font-bold tracking-[0.2em] text-primary mb-4">THE SPARKS SYSTEM</p>
-              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05] mb-5">
+              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground leading-[1.05] mb-5">
                 What exactly is a{' '}
                 <span className="bg-gradient-to-r from-primary to-[#1E3A8A] bg-clip-text text-transparent">
                   Spark
                 </span>
                 ?
               </h2>
-              <p className="text-base text-slate-600 leading-relaxed mb-4">
+              <p className="text-base text-muted-foreground leading-relaxed mb-4">
                 Sparks are credits for the heavyweight AI work — the generations that take real compute
                 rather than a quick answer. Chatting with ET AI and making standard notes, flashcards or
                 quizzes with ET AI never touches them on a paid plan.
               </p>
-              <p className="text-base text-slate-600 leading-relaxed mb-8">
+              <p className="text-base text-muted-foreground leading-relaxed mb-8">
                 Every plan includes a monthly allowance that refreshes on your billing date. Run dry
                 before exams? Top-up packs are available from your dashboard at any time.
               </p>
@@ -373,16 +373,16 @@ export default function PricingPage() {
                 }).map((s) => (
                   <div
                     key={s.plan}
-                    className="rounded-2xl bg-white border border-slate-200 p-4 text-center shadow-sm"
+                    className="rounded-2xl bg-card border border-slate-200 p-4 text-center shadow-sm"
                   >
                     <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-slate-400 mb-1.5">
                       {s.plan}
                     </p>
-                    <p className="font-heading text-3xl text-[#203337] leading-none flex items-center justify-center gap-1.5">
+                    <p className="font-heading text-3xl text-foreground leading-none flex items-center justify-center gap-1.5">
                       <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
                       {s.amount}
                     </p>
-                    <p className="text-[11px] text-slate-500 mt-1.5">{s.note}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">{s.note}</p>
                   </div>
                 ))}
               </div>
@@ -396,23 +396,23 @@ export default function PricingPage() {
               custom={1}
               className="space-y-4"
             >
-              <p className="text-sm font-bold text-[#203337] mb-1">Sparks are spent on</p>
+              <p className="text-sm font-bold text-foreground mb-1">Sparks are spent on</p>
               {SPARK_USES.map((u) => (
                 <div
                   key={u.title}
-                  className="flex gap-4 rounded-2xl bg-white border border-slate-200 p-5 hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)] transition-all"
+                  className="flex gap-4 rounded-2xl bg-card border border-slate-200 p-5 hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)] transition-all"
                 >
                   <div className="w-10 h-10 shrink-0 rounded-xl bg-[var(--ps-cyan-soft)] flex items-center justify-center">
                     <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-[#203337] mb-1">{u.title}</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">{u.desc}</p>
+                    <h3 className="text-base font-extrabold text-foreground mb-1">{u.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{u.desc}</p>
                   </div>
                 </div>
               ))}
-              <div className="rounded-2xl border border-dashed border-primary/30 bg-[#E9F7FA] p-5">
-                <p className="text-sm text-[#1E3A8A] leading-relaxed">
+              <div className="rounded-2xl border border-dashed border-primary/30 bg-muted p-5">
+                <p className="text-sm text-foreground leading-relaxed">
                   <span className="font-bold">Never expire mid-cycle.</span> Unused monthly Sparks reset
                   each billing period, but purchased top-up Sparks roll over for as long as your account
                   is active.
@@ -496,7 +496,7 @@ export default function PricingPage() {
       <PricingFaq />
 
       {/* ── Closing CTA ────────────────────────────────────────── */}
-      <section className="pb-20 lg:pb-28 bg-white">
+      <section className="pb-20 lg:pb-28 bg-card">
         <div className="max-w-[1180px] mx-auto px-4 sm:px-6">
           <motion.div
             variants={fadeUp}
@@ -526,7 +526,7 @@ export default function PricingPage() {
             </Link>
           </motion.div>
 
-          <p className="mt-10 text-center text-xs text-slate-500 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-10 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Poket School is an independent learning platform. Not affiliated with or endorsed by any
             examination board.
           </p>
@@ -575,14 +575,14 @@ function PlanCard({
       custom={index}
       className={`relative flex flex-col rounded-2xl border transition-all h-full ${
         plan.popular
-          ? 'border-primary bg-white shadow-[0_30px_70px_-30px_rgba(30,106,131,0.55)] lg:-mt-4 lg:mb-4'
-          : 'border-slate-200 bg-white hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)]'
+          ? 'border-primary bg-card shadow-[0_30px_70px_-30px_rgba(30,106,131,0.55)] lg:-mt-4 lg:mb-4'
+          : 'border-slate-200 bg-card hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)]'
       }`}
     >
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#1E6A83] bg-[#3FE0D0] text-[#203337] text-[10px] font-bold tracking-[0.15em]">
-            <Sparkles className="w-3 h-3 text-[#203337]" />
+            <Sparkles className="w-3 h-3 text-foreground" />
             MOST POPULAR
           </span>
         </div>
@@ -591,21 +591,21 @@ function PlanCard({
       <div className={`p-7 sm:p-8 ${plan.popular ? 'pt-9 sm:pt-10' : ''}`}>
         <div className="flex items-center gap-2 mb-2">
           <GraduationCap className={`w-4 h-4 ${plan.popular ? 'text-primary' : 'text-slate-400'}`} />
-          <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-[#203337]">{plan.name}</h2>
+          <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-foreground">{plan.name}</h2>
         </div>
-        <p className="text-sm text-slate-600 leading-relaxed min-h-[3.25rem]">{plan.tagline}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed min-h-[3.25rem]">{plan.tagline}</p>
 
         <div className="mt-6 flex items-end gap-2">
           <span
             data-plan-price={plan.id}
-            className="font-heading text-4xl sm:text-5xl leading-none text-[#203337] tracking-tight tabular-nums"
+            className="font-heading text-4xl sm:text-5xl leading-none text-foreground tracking-tight tabular-nums"
           >
             {shown}
           </span>
-          <span className="text-sm font-semibold text-slate-500 pb-2">{suffix}</span>
+          <span className="text-sm font-semibold text-muted-foreground pb-2">{suffix}</span>
         </div>
         {conversion && (
-          <p data-local-conversion={plan.id} className="mt-1 text-xs text-slate-500">
+          <p data-local-conversion={plan.id} className="mt-1 text-xs text-muted-foreground">
             ≈ {conversion}
           </p>
         )}
@@ -617,12 +617,12 @@ function PlanCard({
             </p>
           )}
           {!isFree && !priceUnset && billing === 'monthly' && annual != null && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               or {annualLabel}/year
             </p>
           )}
-          {isFree && <p className="text-xs text-slate-500">No card required</p>}
-          {priceUnset && <p className="text-xs text-slate-500">A super admin has not set this price</p>}
+          {isFree && <p className="text-xs text-muted-foreground">No card required</p>}
+          {priceUnset && <p className="text-xs text-muted-foreground">A super admin has not set this price</p>}
         </div>
 
         {isFree ? (
@@ -690,7 +690,7 @@ function PricingFaq() {
   const count = LANGUAGES.length;
 
   return (
-    <section id="pricing-faq" className="py-20 lg:py-24 bg-white">
+    <section id="pricing-faq" className="py-20 lg:py-24 bg-card">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <motion.div
           variants={fadeUp}
@@ -700,7 +700,7 @@ function PricingFaq() {
           className="text-center mb-10"
         >
           <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-4">{t('landing.faq.pricingEyebrow')}</p>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05]">
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground leading-[1.05]">
             {t('landing.faq.pricingTitle')}
           </h2>
         </motion.div>
@@ -712,7 +712,7 @@ function PricingFaq() {
             return (
               <div
                 key={id}
-                className="bg-white border rounded-xl transition-all duration-200 hover:border-[#eaeaea]"
+                className="bg-card border rounded-xl transition-all duration-200 hover:border-[#eaeaea]"
                 style={{
                   borderColor: open ? '#eaeaea' : '#f0f0f0',
                   boxShadow: open ? '0 4px 12px rgba(0,0,0,0.04)' : '0 2px 8px rgba(0,0,0,0.02)',
@@ -722,7 +722,7 @@ function PricingFaq() {
                   type="button"
                   onClick={() => setActive(open ? null : i)}
                   aria-expanded={open}
-                  className="w-full text-left flex justify-between items-center gap-3 font-semibold text-[0.95rem] text-[#203337] px-5 py-[18px] cursor-pointer"
+                  className="w-full text-left flex justify-between items-center gap-3 font-semibold text-[0.95rem] text-foreground px-5 py-[18px] cursor-pointer"
                 >
                   <span className="flex-1">{question}</span>
                   {open ? (
@@ -732,7 +732,7 @@ function PricingFaq() {
                   )}
                 </button>
                 {open && (
-                  <div className="px-5 pb-5 -mt-1 text-[0.9rem] text-slate-600 leading-[1.65]">
+                  <div className="px-5 pb-5 -mt-1 text-[0.9rem] text-muted-foreground leading-[1.65]">
                     {t(`landing.faq.a${id}`, { count })}
                   </div>
                 )}

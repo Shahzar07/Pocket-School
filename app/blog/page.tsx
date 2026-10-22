@@ -50,12 +50,12 @@ export default async function BlogIndex({
   };
 
   return (
-    <main id="content" className="min-h-screen bg-[#F8F4EE] text-[#203337]">
+    <main id="content" className="min-h-screen bg-background text-foreground" data-theme-surface="page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(blogLd) }} />
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6">
         <p className="text-xs font-bold tracking-[0.22em] text-primary">POKET SCHOOL</p>
         <h1 className="mt-3 max-w-3xl font-heading text-4xl tracking-tight sm:text-6xl">The journal</h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-[#203337]/75">
+        <p className="mt-4 max-w-2xl text-base leading-7 text-foreground/75">
           Notes on learning with ET AI. Pathways stay named Primary, Secondary, IGCSE, and A-Level.
         </p>
 
@@ -66,7 +66,7 @@ export default async function BlogIndex({
             name="q"
             defaultValue={query}
             placeholder="Search essays"
-            className="min-h-12 flex-1 rounded-full border border-[#203337]/15 bg-white px-5 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            className="min-h-12 flex-1 rounded-full border border-border bg-card px-5 text-sm text-foreground outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           />
           {category !== 'All' ? <input type="hidden" name="category" value={category} /> : null}
           <button type="submit" className="min-h-12 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground">
@@ -83,7 +83,7 @@ export default async function BlogIndex({
                 key={name}
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${active ? 'bg-[#203337] text-white' : 'bg-white text-[#203337]/80'}`}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${active ? 'bg-foreground text-background' : 'bg-card text-foreground/80'}`}
               >
                 {name}
               </Link>
@@ -92,7 +92,7 @@ export default async function BlogIndex({
         </nav>
 
         {featured ? (
-          <article className="mt-8 overflow-hidden rounded-[2rem] bg-white shadow-[0_24px_60px_-36px_rgba(32,51,55,0.45)]">
+          <article className="mt-8 overflow-hidden rounded-[2rem] bg-card text-card-foreground shadow-[0_24px_60px_-36px_rgba(32,51,55,0.45)]">
             <Link href={`/blog/${featured.slug}`}>
               <CardThumb post={featured} className="h-56 sm:h-72" />
             </Link>
@@ -101,18 +101,18 @@ export default async function BlogIndex({
               <h2 className="mt-2 font-heading text-3xl tracking-tight sm:text-4xl">
                 <Link href={`/blog/${featured.slug}`}>{featured.title}</Link>
               </h2>
-              <p className="mt-3 max-w-2xl text-[#203337]/75">{featured.excerpt}</p>
-              <p className="mt-3 text-sm text-[#203337]/60">{essayMeta(featured)}</p>
+              <p className="mt-3 max-w-2xl text-foreground/75">{featured.excerpt}</p>
+              <p className="mt-3 text-sm text-foreground/60">{essayMeta(featured)}</p>
               <Link href={`/blog/${featured.slug}`} className="mt-5 inline-flex min-h-11 items-center text-sm font-bold text-primary">
                 {BLOG_PUBLIC.read}
               </Link>
             </div>
           </article>
         ) : (
-          <section className="mt-8 rounded-[2rem] border border-dashed border-[#203337]/20 bg-white/70 px-6 py-10 sm:px-10">
+          <section className="mt-8 rounded-[2rem] border border-dashed border-border bg-card/70 px-6 py-10 sm:px-10">
             <p className="text-xs font-bold tracking-[0.18em] text-[var(--ps-cyan-text)]">FEATURED</p>
             <h2 className="mt-2 font-heading text-3xl tracking-tight">The next essay is still on the desk</h2>
-            <p className="mt-3 max-w-xl text-[#203337]/75">
+            <p className="mt-3 max-w-xl text-foreground/75">
               Published essays will appear here. The six drafts on the admin desk stay unpublished until a super admin publishes them.
             </p>
           </section>
@@ -121,7 +121,7 @@ export default async function BlogIndex({
         <ul className="mt-8 grid gap-4 sm:grid-cols-2" data-blog-grid="1">
           {rest.map((post) => (
             <li key={post.slug}>
-              <article className="h-full overflow-hidden rounded-3xl bg-white">
+              <article className="h-full overflow-hidden rounded-3xl bg-card text-card-foreground">
                 <Link href={`/blog/${post.slug}`}>
                   <CardThumb post={post} className="h-44" />
                 </Link>
@@ -130,19 +130,19 @@ export default async function BlogIndex({
                   <h2 className="mt-2 font-heading text-2xl tracking-tight">
                     <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                   </h2>
-                  <p className="mt-2 text-sm leading-6 text-[#203337]/70">{post.excerpt}</p>
-                  <p className="mt-3 text-sm text-[#203337]/60">{essayMeta(post)}</p>
+                  <p className="mt-2 text-sm leading-6 text-foreground/70">{post.excerpt}</p>
+                  <p className="mt-3 text-sm text-foreground/60">{essayMeta(post)}</p>
                 </div>
               </article>
             </li>
           ))}
         </ul>
         {posts.length > 0 && matching.length === 0 ? (
-          <p className="mt-8 text-sm text-[#203337]/70">No published essay matches that search.</p>
+          <p className="mt-8 text-sm text-foreground/70">No published essay matches that search.</p>
         ) : null}
         <p className="mt-10 text-sm">
           <Link href="/blog/feed.xml" className="font-semibold text-primary">RSS</Link>
-          <span className="text-[#203337]/50"> · </span>
+          <span className="text-foreground/50"> · </span>
           <Link href="/offer" className="font-semibold text-primary">The offer</Link>
         </p>
       </section>

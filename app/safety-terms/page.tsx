@@ -23,19 +23,19 @@ export const metadata: Metadata = {
 
 export default function SafetyTermsPage() {
   return (
-    <main className="min-h-screen" style={{ background: '#f4f7f8', color: BRAND.ink }}>
+    <main className="min-h-screen bg-background text-foreground" data-theme-surface="page">
       <header className="px-6 py-12 text-white" style={{ background: BRAND.hero }}>
         <p className="text-sm tracking-[0.2em]" style={{ color: BRAND.cyan }}>POKET SCHOOL</p>
         <h1 className="mt-3 max-w-3xl text-3xl font-semibold">{SAFETY_TERMS_TITLE}</h1>
       </header>
       <div className="mx-auto grid max-w-3xl gap-4 p-6">
-        <p className="font-semibold" style={{ color: BRAND.blueDeep }}>{SAFETY_TERMS_STATUS}</p>
-        <p style={{ color: BRAND.blueDeep }}>{PENDING_LEGAL_REVIEW}</p>
-        <p style={{ color: BRAND.ink }}>{COMMUNITY_PARTNERS_LINE} <a href="/community-partners" style={{ color: BRAND.blueDeep }}>Get involved</a></p>
+        <p className="font-semibold text-primary">{SAFETY_TERMS_STATUS}</p>
+        <p className="text-primary">{PENDING_LEGAL_REVIEW}</p>
+        <p>{COMMUNITY_PARTNERS_LINE} <a className="font-semibold text-primary" href="/community-partners">Get involved</a></p>
         <SafetyTermsChildView />
-        <article id="safety-clauses" className="grid gap-4 rounded-3xl border bg-white p-5">
+        <article id="safety-clauses" className="grid gap-4 rounded-3xl border border-border bg-card p-5 text-card-foreground">
           {FULL_CLAUSES.map(clause => (
-            <p key={clause.slice(0, 12)} style={{ color: BRAND.ink }}>{clause}</p>
+            <p key={clause.slice(0, 12)}>{clause}</p>
           ))}
         </article>
       </div>

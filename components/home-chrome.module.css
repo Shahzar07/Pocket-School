@@ -297,7 +297,7 @@
 }
 @media (max-width: 800px) {
   .header {
-    padding: 15px 20px;
+    padding: 12px;
   }
   .headerInner {
     gap: 12px;
@@ -316,10 +316,20 @@
   .headerTools {
     display: none;
   }
+  .headerSign {
+    display: none;
+  }
+  .headerInner {
+    flex-wrap: nowrap;
+  }
   .headerCta {
     margin-inline-start: auto;
-    font-size: 10px;
-    gap: 5px;
+    font-size: 12px;
+    gap: 4px;
+    padding: 8px 12px;
+  }
+  .brand small {
+    display: none;
   }
   .menuButton {
     flex-shrink: 0;
@@ -361,13 +371,6 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  .headerFlow .headerTools {
-    display: flex;
-  }
-  .headerFlow .headerInner {
-    flex-wrap: wrap;
-    row-gap: 8px;
-  }
   .contactCard {
     grid-column: span 2;
   }
@@ -399,7 +402,10 @@
     min-height: 44px;
   }
   .headerCta {
-    min-height: 44px;
+    min-height: 40px;
+  }
+  .headerCta svg {
+    display: none;
   }
   .mobileNav {
     max-height: calc(100svh - 110px);

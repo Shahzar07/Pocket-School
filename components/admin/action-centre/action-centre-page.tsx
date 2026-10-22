@@ -130,7 +130,7 @@ export function ActionCentrePage() {
       )}
       <section className="rounded-[24px] border border-border bg-card p-4" aria-label="Push preferences">
         <h2 className="font-heading text-xl text-foreground">Push preferences</h2>
-        <p className="mt-1 text-sm text-[#1E6A83]">Stored at users/&#123;uid&#125;/notificationPrefs/admin. Quiet hours never mute emergency.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Stored at users/&#123;uid&#125;/notificationPrefs/admin. Quiet hours never mute emergency.</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-semibold text-foreground">
             Mode

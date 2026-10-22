@@ -8,7 +8,7 @@ import { MARKET_BRAND } from '@/lib/marketing/nav';
 export function ProductView({ page }: { page: MarketPage }) {
   const showPathway = PATHWAY_STEPS.some((step) => step.id === page.slug);
   return (
-    <article className="bg-white text-[#203337]" style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }}>
+    <article className="bg-background text-foreground" data-theme-surface="page" style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }}>
       <header className="overflow-x-clip bg-[linear-gradient(160deg,#0B1417_0%,#1E6A83_58%,#3FE0D0_140%)] px-6 py-16 text-white">
         <MarketingHero slug={page.slug}>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3FE0D0]">{MARKET_BRAND}</p>
@@ -21,8 +21,8 @@ export function ProductView({ page }: { page: MarketPage }) {
         {page.sections.map((section) => (
           <section key={section.heading}>
             <h2 className="text-2xl" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif' }}>{section.heading}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-[#203337]/85">{section.body}</p>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#1E6A83]">
+            <p className="mt-3 text-sm leading-relaxed text-foreground/85">{section.body}</p>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-primary">
               {section.points.map((point) => <li key={point}>{point}</li>)}
             </ul>
           </section>

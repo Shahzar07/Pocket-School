@@ -42,38 +42,38 @@ export function PartnersForm() {
   };
 
   return (
-    <form onSubmit={event => void submit(event)} className="grid gap-3 rounded-3xl border bg-white p-5">
-      <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Tell us about your organisation</h2>
+    <form onSubmit={event => void submit(event)} className="grid gap-3 rounded-3xl border border-border bg-card p-5 text-card-foreground">
+      <h2 className="text-2xl font-semibold text-primary">Tell us about your organisation</h2>
       <label className="grid gap-1 text-sm font-semibold">Organisation
-        <input className={field} style={{ borderColor: '#D5E3E7' }} value={orgName} onChange={event => setOrgName(event.target.value)} aria-label="Organisation" />
+        <input className={`${field} border-border bg-background text-foreground`} value={orgName} onChange={event => setOrgName(event.target.value)} aria-label="Organisation" />
       </label>
       <label className="grid gap-1 text-sm font-semibold">Partner type
-        <select className={field} style={{ borderColor: '#D5E3E7' }} value={type} onChange={event => setType(event.target.value)} aria-label="Partner type">
+        <select className={`${field} border-border bg-background text-foreground`} value={type} onChange={event => setType(event.target.value)} aria-label="Partner type">
           {PARTNER_TYPES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select>
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold">Country
-          <input className={field} style={{ borderColor: '#D5E3E7' }} value={country} onChange={event => setCountry(event.target.value)} aria-label="Country" />
+          <input className={`${field} border-border bg-background text-foreground`} value={country} onChange={event => setCountry(event.target.value)} aria-label="Country" />
         </label>
         <label className="grid gap-1 text-sm font-semibold">Region
-          <input className={field} style={{ borderColor: '#D5E3E7' }} value={region} onChange={event => setRegion(event.target.value)} aria-label="Region" />
+          <input className={`${field} border-border bg-background text-foreground`} value={region} onChange={event => setRegion(event.target.value)} aria-label="Region" />
         </label>
       </div>
       <label className="grid gap-1 text-sm font-semibold">Contact name
-        <input className={field} style={{ borderColor: '#D5E3E7' }} value={contactName} onChange={event => setContactName(event.target.value)} aria-label="Contact name" />
+        <input className={`${field} border-border bg-background text-foreground`} value={contactName} onChange={event => setContactName(event.target.value)} aria-label="Contact name" />
       </label>
       <label className="grid gap-1 text-sm font-semibold">Email
-        <input className={field} style={{ borderColor: '#D5E3E7' }} type="email" value={email} onChange={event => setEmail(event.target.value)} aria-label="Email" />
+        <input className={`${field} border-border bg-background text-foreground`} type="email" value={email} onChange={event => setEmail(event.target.value)} aria-label="Email" />
       </label>
       <label className="grid gap-1 text-sm font-semibold">Phone
-        <input className={field} style={{ borderColor: '#D5E3E7' }} value={phone} onChange={event => setPhone(event.target.value)} aria-label="Phone" />
+        <input className={`${field} border-border bg-background text-foreground`} value={phone} onChange={event => setPhone(event.target.value)} aria-label="Phone" />
       </label>
       <label className="grid gap-1 text-sm font-semibold">Website
-        <input className={field} style={{ borderColor: '#D5E3E7' }} value={website} onChange={event => setWebsite(event.target.value)} aria-label="Website" placeholder="https://" />
+        <input className={`${field} border-border bg-background text-foreground`} value={website} onChange={event => setWebsite(event.target.value)} aria-label="Website" placeholder="https://" />
       </label>
       <label className="grid gap-1 text-sm font-semibold">Message
-        <textarea className="min-h-24 rounded-xl border p-3 font-normal" style={{ borderColor: '#D5E3E7' }} value={message} onChange={event => setMessage(event.target.value)} aria-label="Message" />
+        <textarea className="min-h-24 rounded-xl border border-border bg-background p-3 font-normal text-foreground" value={message} onChange={event => setMessage(event.target.value)} aria-label="Message" />
       </label>
       <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px' }}>
         <input tabIndex={-1} autoComplete="off" value={companyFax} onChange={event => setCompanyFax(event.target.value)} />
@@ -81,8 +81,8 @@ export function PartnersForm() {
       <button type="submit" disabled={busy} className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 font-semibold" style={{ background: BRAND.cyan, color: BRAND.ink, border: `1px solid ${BRAND.blueDeep}` }}>
         Send application
       </button>
-      <p className="text-sm" style={{ color: BRAND.blueDeep }}>Applying grants nothing until an admin verifies the organisation.</p>
-      {note ? <p className="text-sm font-semibold" style={{ color: BRAND.ink }}>{note}</p> : null}
+      <p className="text-sm text-primary">Applying grants nothing until an admin verifies the organisation.</p>
+      {note ? <p className="text-sm font-semibold">{note}</p> : null}
     </form>
   );
 }

@@ -89,6 +89,32 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: false });
 }
 
+function intersects(a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+async function lessonFits(page: Page) {
+  const heading = page.getByRole('heading', { level: 1 }).first();
+  const box = await heading.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(8);
+  const sidebar = page.locator('[data-tour="sidebar"]');
+  if (await sidebar.isVisible().catch(() => false)) {
+    const side = await sidebar.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual((side?.x ?? 0) + (side?.width ?? 0) - 1);
+  }
+  const note = page.getByRole('button', { name: 'Add note' });
+  const noteBox = await note.boundingBox();
+  if (!noteBox) return;
+  for (const name of [/Bookmark|Saved/, /Mark Complete|Completed|Saving/]) {
+    const control = page.getByRole('button', { name }).first();
+    if (!(await control.isVisible().catch(() => false))) continue;
+    const other = await control.boundingBox();
+    if (!other) continue;
+    expect(intersects(noteBox, other)).toBe(false);
+  }
+}
+
 test.describe('lesson and quiz arrows', () => {
   test.skip(!LIVE, 'Set E2E_EMULATOR=1 and E2E_PREVIEW_PASSWORD to open the sample lesson.');
 
@@ -128,8 +154,10 @@ test.describe('lesson and quiz arrows', () => {
     await shot(page, 'lesson-desktop-dark');
     await page.setViewportSize({ width: 390, height: 844 });
     await closeSidebar(page);
+    await lessonFits(page);
     await shot(page, 'lesson-390-dark');
     await theme(page, 'light');
+    await lessonFits(page);
     await shot(page, 'lesson-390-light');
     await page.setViewportSize({ width: 1280, height: 900 });
 
@@ -154,8 +182,10 @@ test.describe('lesson and quiz arrows', () => {
     await shot(page, 'quiz-desktop-dark');
     await page.setViewportSize({ width: 390, height: 844 });
     await closeSidebar(page);
+    await lessonFits(page);
     await shot(page, 'quiz-390-dark');
     await theme(page, 'light');
+    await lessonFits(page);
     await shot(page, 'quiz-390-light');
 
     await quiz.locator('[data-flow-step="0"]').click();

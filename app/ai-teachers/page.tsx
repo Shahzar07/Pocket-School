@@ -72,7 +72,7 @@ export default function AiTeachersPage() {
     <PublicToolShell>
     <div className="min-h-full bg-transparent">
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-[#F8F4EE] overflow-hidden">
+      <section className="relative pt-14 lg:pt-20 pb-12 bg-gradient-to-b from-secondary via-background to-background dark:from-[#0B1417] dark:via-[#121E22] dark:to-[#0B1417] overflow-hidden">
         <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" />
 
@@ -83,29 +83,29 @@ export default function AiTeachersPage() {
             <Link href="/" className="text-sm font-semibold text-[#1E6A83]">Home</Link>
           </p>
           <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">AI TEACHERS LIBRARY</p>
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#203337] leading-[0.95] mb-6 max-w-4xl mx-auto lg:mx-0">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-foreground leading-[0.95] mb-6 max-w-4xl mx-auto lg:mx-0">
             Your 24/7 Faculty.
             <br />
             <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#1E3A8A] to-[var(--ps-primary)] bg-clip-text text-transparent">
               Always Available.
             </span>
           </h1>
-          <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl mx-auto lg:mx-0 mb-8">
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0 mb-8">
             Talk face-to-face with AI educators trained on the curricula that matter. No appointments. No waiting. Just learning.
           </p>
-          <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-[#203337]">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
+          <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-foreground">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-black/[0.04]">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
               </span>
               30+ AVAILABLE NOW
             </span>
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-black/[0.04]">
               <Sparkles className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" />
               30+ SUBJECTS
             </span>
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-black/[0.04]">
               <Mic className="w-3.5 h-3.5 text-primary" />
               VOICE + TEXT
             </span>
@@ -116,16 +116,16 @@ export default function AiTeachersPage() {
       </section>
 
       {/* ── Filter + grid ─────────────────────────────────────── */}
-      <section className="bg-[#F4F6F6] py-16 lg:py-20 border-t border-slate-100">
+      <section className="bg-background py-16 lg:py-20 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="mb-10 flex items-end justify-between flex-wrap gap-4">
             <div>
               <p className="text-xs font-bold tracking-[0.2em] text-primary mb-3">EXPLORE THE FACULTY</p>
-              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] leading-[1.05]">
+              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground leading-[1.05]">
                 Meet every teacher on the bench.
               </h2>
             </div>
-            <p className="text-sm font-semibold text-slate-500">
+            <p className="text-sm font-semibold text-muted-foreground">
               Showing {visible.length} of 30+
             </p>
           </div>
@@ -141,7 +141,7 @@ export default function AiTeachersPage() {
                   className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
                     active
                       ? 'bg-[#203337] text-white shadow-md'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:border-primary hover:text-primary'
+                      : 'bg-card text-muted-foreground border border-slate-200 hover:border-primary hover:text-primary'
                   }`}
                 >
                   {c}
@@ -160,7 +160,7 @@ export default function AiTeachersPage() {
           </div>
 
           {showCefr && (
-            <div className="mt-8 rounded-3xl border border-primary/20 bg-white px-5 py-5 sm:px-7">
+            <div className="mt-8 rounded-3xl border border-primary/20 bg-card px-5 py-5 sm:px-7">
               <p className="text-xs font-bold tracking-[0.18em] text-primary mb-3">CEFR · LANGUAGES</p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {CEFR_LEVELS.map((level) => (
@@ -170,23 +170,23 @@ export default function AiTeachersPage() {
                   </span>
                 ))}
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">{CEFR_BANNER}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{CEFR_BANNER}</p>
             </div>
           )}
 
           {visible.length === 0 && (
             <div className="text-center py-20">
-              <p className="text-sm text-slate-500">No teachers in this category yet.</p>
+              <p className="text-sm text-muted-foreground">No teachers in this category yet.</p>
             </div>
           )}
         </div>
       </section>
 
-      <section className="bg-white py-16 lg:py-20" id="beyond">
+      <section className="bg-background py-16 lg:py-20" id="beyond">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-xs font-bold tracking-[0.2em] text-[#1E6A83] mb-3">BEYOND A-LEVEL</p>
-          <h2 className="font-heading text-3xl sm:text-4xl tracking-tight text-[#203337]">Degrees and professional routes.</h2>
-          <p className="mt-4 text-sm leading-relaxed text-slate-600">
+          <p className="text-xs font-bold tracking-[0.2em] text-primary mb-3">BEYOND A-LEVEL</p>
+          <h2 className="font-heading text-3xl sm:text-4xl tracking-tight text-foreground">Degrees and professional routes.</h2>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
             Law, medicine, engineering, and nursing teachers stay on the same bench. The work is preparation. It is not an award from a university or an exam board.
           </p>
         </div>
@@ -253,7 +253,7 @@ function TeacherCard({
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.04 }}
       whileHover={{ y: -4 }}
       onClick={onOpen}
-      className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_color-mix(in_srgb,var(--ps-primary)_25%,transparent)] transition-all flex flex-col"
+      className="group text-left bg-card border border-slate-200 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_color-mix(in_srgb,var(--ps-primary)_25%,transparent)] transition-all flex flex-col"
     >
       {/* Portrait pane — a full-bleed illustration rather than a small tile */}
       <div className="relative h-64 overflow-hidden">
@@ -283,8 +283,8 @@ function TeacherCard({
 
       {/* Body */}
       <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-heading text-lg text-[#203337] leading-tight mb-1">{teacher.name}</h3>
-        <p className="text-xs text-slate-500 leading-snug mb-3 line-clamp-2">{teacher.title}</p>
+        <h3 className="font-heading text-lg text-foreground leading-tight mb-1">{teacher.name}</h3>
+        <p className="text-xs text-muted-foreground leading-snug mb-3 line-clamp-2">{teacher.title}</p>
 
         <div className="flex flex-wrap gap-1 mb-4">
           {teacher.subjects.slice(0, 3).map((s) => (
@@ -298,9 +298,9 @@ function TeacherCard({
           ))}
         </div>
 
-        <p className="text-xs text-slate-600 leading-relaxed mb-4 flex-1 line-clamp-2">{teacher.tagline}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-2">{teacher.tagline}</p>
 
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#203337] group-hover:text-primary transition-colors">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground group-hover:text-primary transition-colors">
           {isLive ? 'Start conversation' : 'See details'}
           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
