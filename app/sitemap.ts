@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { publishedPosts } from '@/lib/blog/load';
 import { allowIndex } from '@/lib/blog/seo';
+import { READS_OFFER_PATH, readsOfferIndexable } from '@/lib/reads-offer';
 
 const BASE_URL = 'https://poketschool.ai';
 
@@ -31,9 +32,10 @@ const ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[number]['ch
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
   const posts = await publishedPosts();
+  const routes = readsOfferIndexable() ? ROUTES : ROUTES.filter(route => route.path !== READS_OFFER_PATH);
 
   return [
-    ...ROUTES.map(({ path, changeFrequency, priority }) => ({
+    ...routes.map(({ path, changeFrequency, priority }) => ({
       url: `${BASE_URL}${path}`,
       lastModified,
       changeFrequency,
