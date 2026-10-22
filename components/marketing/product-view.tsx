@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PathwayFlow } from '@/components/flow/pathway-flow';
+import { MarketingHero } from '@/components/marketing/illustrations';
 import type { MarketPage } from '@/lib/marketing/pages';
 import { PATHWAY_STEPS } from '@/lib/flow/pathways';
 import { MARKET_BRAND } from '@/lib/marketing/nav';
@@ -8,12 +9,12 @@ export function ProductView({ page }: { page: MarketPage }) {
   const showPathway = PATHWAY_STEPS.some((step) => step.id === page.slug);
   return (
     <article className="bg-white text-[#203337]" style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }}>
-      <header className="bg-[linear-gradient(160deg,#0B1417_0%,#1E6A83_58%,#3FE0D0_140%)] px-6 py-16 text-white">
-        <div className="mx-auto max-w-3xl">
+      <header className="overflow-x-clip bg-[linear-gradient(160deg,#0B1417_0%,#1E6A83_58%,#3FE0D0_140%)] px-6 py-16 text-white">
+        <MarketingHero slug={page.slug}>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3FE0D0]">{MARKET_BRAND}</p>
           <h1 className="mt-3 text-4xl leading-tight sm:text-5xl" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif' }}>{page.title}</h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85">{page.lede}</p>
-        </div>
+        </MarketingHero>
       </header>
       <div className="mx-auto max-w-3xl space-y-10 px-6 py-12">
         {showPathway ? <PathwayFlow currentId={page.slug} /> : null}

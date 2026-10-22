@@ -56,7 +56,7 @@ export const HOME = {
   featuresTag: 'On this login',
   featuresTitle: 'Teachers, a studio, a desk, and a planner.',
   features: [
-    { href: '/ai-teachers', title: 'ET AI teachers', body: 'A named teacher per subject, from Primary through degree foundation. The count on this page is the list in the product.' },
+    { href: '/ai-teachers', title: 'ET AI teachers', body: 'A named teacher per subject, from Primary to A-Levels, and from degree to Masters and PhD, plus continuous professional development and independent learning. The count on this page is the list in the product.' },
     { href: '/studio', title: 'ET AI Studio', body: 'Lessons, quizzes, essays, and AI Book Creator. A new course waits for the teacher’s copyright signature.' },
     { href: '/reads', title: 'PoketReads', body: 'Books a learner can open, with the studio path for staff who write one.' },
     { href: '/safeline', title: 'Poket SafeLine', body: 'A reporting line. Alerts go to the desk, not to the class wall.' },

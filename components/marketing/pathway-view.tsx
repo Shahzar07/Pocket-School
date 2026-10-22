@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PathwayFlow } from '@/components/flow/pathway-flow';
+import { MarketingHero } from '@/components/marketing/illustrations';
 import { pathwayFaqJsonLd, pathwayTeacher, type PathwayRecord } from '@/lib/pathways/catalog';
 
 const serif = { fontFamily: 'var(--font-dm-serif), Georgia, serif' } as const;
@@ -9,8 +10,8 @@ export function PathwayView({ pathway }: { pathway: PathwayRecord }) {
   return (
     <article className="bg-background text-foreground" data-pathway={pathway.slug} style={{ fontFamily: 'var(--font-dm-sans), var(--font-sans), sans-serif' }}>
       <script type="application/ld+json" data-faq-jsonld="1" dangerouslySetInnerHTML={{ __html: jsonLd }} />
-      <header className="bg-[linear-gradient(160deg,#0B1417_0%,#1E6A83_58%,#3FE0D0_140%)] px-5 py-14 text-white sm:px-6 sm:py-16">
-        <div className="mx-auto max-w-3xl">
+      <header className="overflow-x-clip bg-[linear-gradient(160deg,#0B1417_0%,#1E6A83_58%,#3FE0D0_140%)] px-5 py-14 text-white sm:px-6 sm:py-16">
+        <MarketingHero slug={pathway.slug}>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3FE0D0]">Pathways</p>
           <h1 className="mt-3 text-4xl leading-tight sm:text-5xl" style={serif}>{pathway.title}</h1>
           <p className="mt-4 text-sm font-semibold text-white" data-pathway-price={pathway.priceLabel}>{pathway.priceLabel}</p>
@@ -18,7 +19,7 @@ export function PathwayView({ pathway }: { pathway: PathwayRecord }) {
           {pathway.disclaimer ? (
             <p className="mt-4 max-w-2xl text-sm font-semibold text-[#3FE0D0]" data-pathway-disclaimer="1">{pathway.disclaimer}</p>
           ) : null}
-        </div>
+        </MarketingHero>
       </header>
       <div className="mx-auto max-w-3xl px-5 pt-6 sm:px-6">
         <PathwayFlow currentId={pathway.slug} />

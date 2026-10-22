@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AiTeacherModal } from '@/components/ai-teacher-modal';
+import { MarketingHero } from '@/components/marketing/illustrations';
 import { PublicToolShell } from '@/components/studio/tool-shell';
 import { portraitAlt, teacherPortrait } from '@/lib/teacher-portrait';
 import Image from 'next/image';
@@ -75,22 +76,24 @@ export default function AiTeachersPage() {
         <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+          <MarketingHero slug="ai-teachers">
+          <div className="min-w-0 text-center lg:text-left">
           <p className="mb-4">
             <Link href="/" className="text-sm font-semibold text-[#1E6A83]">Home</Link>
           </p>
           <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">AI TEACHERS LIBRARY</p>
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-[#203337] leading-[0.95] mb-6 max-w-4xl mx-auto">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-[#203337] leading-[0.95] mb-6 max-w-4xl mx-auto lg:mx-0">
             Your 24/7 Faculty.
             <br />
             <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#1E3A8A] to-[var(--ps-primary)] bg-clip-text text-transparent">
               Always Available.
             </span>
           </h1>
-          <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl mx-auto mb-8">
+          <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl mx-auto lg:mx-0 mb-8">
             Talk face-to-face with AI educators trained on the curricula that matter. No appointments. No waiting. Just learning.
           </p>
-          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-[#203337]">
+          <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-[#203337]">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md border border-black/[0.04]">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
@@ -107,6 +110,8 @@ export default function AiTeachersPage() {
               VOICE + TEXT
             </span>
           </div>
+          </div>
+          </MarketingHero>
         </div>
       </section>
 

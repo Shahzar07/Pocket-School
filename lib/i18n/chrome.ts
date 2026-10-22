@@ -90,7 +90,7 @@ export const chromeEn = {
         { problem: 'A different app for every job', answer: 'Student, parent, and teacher use one account.' },
       ],
       features: [
-        { href: '/ai-teachers', title: 'ET AI teachers', body: 'A named teacher per subject, from Primary through degree foundation. The count on this page is the list in the product.' },
+        { href: '/ai-teachers', title: 'ET AI teachers', body: 'A named teacher per subject, from Primary to A-Levels, and from degree to Masters and PhD, plus continuous professional development and independent learning. The count on this page is the list in the product.' },
         { href: '/studio', title: 'ET AI Studio', body: 'Lessons, quizzes, essays, and AI Book Creator. A new course waits for the teacher’s copyright signature.' },
         { href: '/reads', title: 'PoketReads', body: 'Books a learner can open, with the studio path for staff who write one.' },
         { href: '/safeline', title: 'Poket SafeLine', body: 'A reporting line. Alerts go to the desk, not to the class wall.' },
@@ -267,7 +267,7 @@ const ms = {
         { problem: 'Aplikasi berbeza untuk setiap kerja', answer: 'Pelajar, ibu bapa, dan guru menggunakan satu akaun.' },
       ],
       features: [
-        { href: '/ai-teachers', title: 'Guru ET AI', body: 'Seorang guru bernama bagi setiap mata pelajaran, dari sekolah rendah hingga asas ijazah. Bilangan pada halaman ini ialah senarai dalam produk.' },
+        { href: '/ai-teachers', title: 'Guru ET AI', body: 'Seorang guru bernama bagi setiap mata pelajaran, dari sekolah rendah hingga A-Level, dan dari ijazah hingga Sarjana dan PhD, termasuk pembangunan profesional berterusan dan pembelajaran kendiri. Bilangan pada halaman ini ialah senarai dalam produk.' },
         { href: '/studio', title: 'ET AI Studio', body: 'Pelajaran, kuiz, esei, dan Pencipta Buku AI. Kursus baharu menunggu tandatangan hak cipta guru.' },
         { href: '/reads', title: 'PoketReads', body: 'Buku yang pelajar boleh buka, dengan laluan studio untuk kakitangan yang menulisnya.' },
         { href: '/safeline', title: 'Poket SafeLine', body: 'Talian laporan. Makluman pergi ke meja, bukan ke dinding kelas.' },
