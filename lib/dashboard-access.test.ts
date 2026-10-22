@@ -64,6 +64,18 @@ describe('dashboard role guard', () => {
     assert.equal(decideDashboardAccess('/dashboard/admin/help', parent, 'parent').allowed, false);
   });
 
+  it('keeps landing pages to platform admins', () => {
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', admin).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', superAdmin).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', { role: 'admin', adminRole: 'support' }).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', { role: 'admin', adminRole: 'finance' }).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', { role: 'admin', adminRole: 'content_editor' }).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', student).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', teacher).allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', parent, 'parent').allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/admin/funnels', school).allowed, false);
+  });
+
   it('keeps the exam pack desk to platform admins', () => {
     assert.equal(decideDashboardAccess('/dashboard/admin/exam-packs', admin).allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/admin/exam-packs', student).allowed, false);

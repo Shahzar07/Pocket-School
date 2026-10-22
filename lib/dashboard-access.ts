@@ -6,6 +6,7 @@ import {
   type AccountMode,
 } from './account-modes';
 import { hasCmsAddon } from './entitlements';
+import { funnelDeskAllowed } from './funnels/model';
 import { isInstitutionAdmin, isSuperAdmin } from './roles';
 import { isPartnerMerchant } from './student-id/model';
 import { stripAcademyPath } from './tenant-host';
@@ -140,6 +141,9 @@ export function decideDashboardAccess(
       adminRole: actor.adminRole,
     });
     return can(staff, 'content') ? { allowed: true } : deny(actor, mode);
+  }
+  if (matches(path, '/dashboard/admin/funnels')) {
+    return funnelDeskAllowed(actor) ? { allowed: true } : deny(actor, mode);
   }
   if (matches(path, '/dashboard/admin')) {
     return isSuperAdmin(actor) ? { allowed: true } : deny(actor, mode);

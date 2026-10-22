@@ -1626,6 +1626,15 @@ Firestore rules already allow extra fields on announcements, support tickets, an
 - **Decision:** Keep. A saved page replaces the catalogue copy for that pathway.
 - **Owner keys:** None.
 
+### Landing pages
+
+- **Route:** `/dashboard/admin/funnels`
+- **Audience:** admin
+- **Purpose:** Admins draft a landing page from sections, preview it, and publish it at a public /p/[slug] address. Duplicate starts as a draft. Lead form submissions are listed here.
+- **Overlaps:** Public alumni records also use /p/[code]. A published landing page uses the slug. An unpublished slug does not show the draft.
+- **Decision:** Keep. Only a platform admin can write a page. Visitors can submit a lead on a published page.
+- **Owner keys:** None. Firestore writes use the admin SDK when FIREBASE_SERVICE_ACCOUNT or the Firestore emulator is set.
+
 ### Store import
 
 - **Route:** `/dashboard/admin/store/import`
