@@ -881,7 +881,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {fullBleed ? null : <MobileNav role={role} onMore={() => setSidebarOpen(true)} />}
-      {fullBleed ? null : <DashFab role={role} />}
+      {fullBleed || pathname.includes('/lessons/') ? null : <DashFab role={role} />}
       <CommandPalette role={dashRole} />
       {viewAs || fullBleed ? null : <AITutor />}
       {searchOpen && !fullBleed && typeof document !== 'undefined' ? createPortal(

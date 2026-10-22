@@ -141,10 +141,10 @@ export function WelcomeHelpLink() {
   const { state, send } = useWelcome();
   const [busy, setBusy] = useState(false);
   return (
-    <section className="rounded-3xl border border-line bg-background p-5 text-ink">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-deep">Welcome course</p>
-      <h2 className="mt-1 font-heading text-2xl">Pick the welcome course back up</h2>
-      <p className="mt-1 text-sm text-ink/80">
+    <section className="rounded-3xl border border-border bg-card p-5 text-foreground">
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Welcome course</p>
+      <h2 className="mt-1 font-heading text-2xl text-foreground">Pick the welcome course back up</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
         {state?.complete
           ? 'You already earned the Welcome star. Open the course any time to read a lesson again.'
           : 'Skip hides the card on your dashboard. It does not delete the lessons.'}
@@ -240,8 +240,8 @@ export function WelcomePlayer() {
       <ol className="grid gap-2 sm:grid-cols-2">
         {state.lessons.map((lesson, index) => (
           <li key={lesson.id} className="flex items-center justify-between rounded-2xl border border-border bg-card px-3 py-2 text-sm">
-            <span className={lesson.done ? 'font-semibold text-ink' : 'text-muted-foreground'}>{index + 1}. {lesson.title}</span>
-            <span className={lesson.done ? 'text-blue-deep' : 'text-ink/25'} aria-hidden>★</span>
+            <span className={lesson.done ? 'font-semibold text-foreground' : 'text-muted-foreground'}>{index + 1}. {lesson.title}</span>
+            <span className={lesson.done ? 'text-primary' : 'text-muted-foreground'} aria-hidden>★</span>
           </li>
         ))}
       </ol>

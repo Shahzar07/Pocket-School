@@ -104,14 +104,51 @@ async function lessonFits(page: Page) {
     expect(box!.x).toBeGreaterThanOrEqual((side?.x ?? 0) + (side?.width ?? 0) - 1);
   }
   const note = page.getByRole('button', { name: 'Add note' });
+  await note.scrollIntoViewIfNeeded();
   const noteBox = await note.boundingBox();
-  if (!noteBox) return;
+  expect(noteBox).not.toBeNull();
+  const view = page.viewportSize();
+  if (view && view.width < 1024) {
+    const actions = page.locator('[data-lesson-actions]');
+    await expect(actions).toBeVisible();
+    const controls = [
+      page.getByRole('button', { name: /Bookmark|Saved/ }).first(),
+      page.getByRole('button', { name: /Mark Complete|Completed|Saving/ }).first(),
+      page.getByRole('link', { name: 'Continue lesson' }).first(),
+      note,
+    ];
+    const boxes = [];
+    for (const control of controls) {
+      await expect(control).toBeVisible();
+      const item = await control.boundingBox();
+      expect(item).not.toBeNull();
+      expect(item!.x).toBeGreaterThanOrEqual(-1);
+      expect(item!.y).toBeGreaterThanOrEqual(-1);
+      expect(item!.x + item!.width).toBeLessThanOrEqual(view.width + 1);
+      expect(item!.y + item!.height).toBeLessThanOrEqual(view.height - 60);
+      boxes.push(item!);
+    }
+    for (let i = 0; i < boxes.length; i += 1) {
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        expect(intersects(boxes[i], boxes[j])).toBe(false);
+      }
+    }
+    return;
+  }
   for (const name of [/Bookmark|Saved/, /Mark Complete|Completed|Saving/]) {
     const control = page.getByRole('button', { name }).first();
     if (!(await control.isVisible().catch(() => false))) continue;
     const other = await control.boundingBox();
-    if (!other) continue;
+    if (!other || !noteBox) continue;
     expect(intersects(noteBox, other)).toBe(false);
+  }
+}
+
+async function narrowLesson(page: Page) {
+  for (const width of [360, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await closeSidebar(page);
+    await lessonFits(page);
   }
 }
 
@@ -152,12 +189,12 @@ test.describe('lesson and quiz arrows', () => {
     await expect(page.getByRole('heading', { name: 'Animal cells' })).toBeVisible({ timeout: 30_000 });
     await theme(page, 'dark');
     await shot(page, 'lesson-desktop-dark');
+    await narrowLesson(page);
     await page.setViewportSize({ width: 390, height: 844 });
-    await closeSidebar(page);
-    await lessonFits(page);
     await shot(page, 'lesson-390-dark');
     await theme(page, 'light');
-    await lessonFits(page);
+    await narrowLesson(page);
+    await page.setViewportSize({ width: 390, height: 844 });
     await shot(page, 'lesson-390-light');
     await page.setViewportSize({ width: 1280, height: 900 });
 
@@ -180,12 +217,12 @@ test.describe('lesson and quiz arrows', () => {
 
     await theme(page, 'dark');
     await shot(page, 'quiz-desktop-dark');
+    await narrowLesson(page);
     await page.setViewportSize({ width: 390, height: 844 });
-    await closeSidebar(page);
-    await lessonFits(page);
     await shot(page, 'quiz-390-dark');
     await theme(page, 'light');
-    await lessonFits(page);
+    await narrowLesson(page);
+    await page.setViewportSize({ width: 390, height: 844 });
     await shot(page, 'quiz-390-light');
 
     await quiz.locator('[data-flow-step="0"]').click();
