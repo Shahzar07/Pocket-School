@@ -20,7 +20,7 @@ interface SearchResults {
   books?: BookHit[];
 }
 
-export function DashboardSearch() {
+export function DashboardSearch({ autoFocus = false, inputId = 'dashboard-search' }: { autoFocus?: boolean; inputId?: string }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
@@ -31,6 +31,10 @@ export function DashboardSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // The "/" hint in the field has to actually do something.
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -77,19 +81,19 @@ export function DashboardSearch() {
   const total = results ? results.courses.length + results.announcements.length + results.resources.length + books.length : 0;
 
   return (
-    <div className="relative w-full min-w-0 max-w-[420px] max-md:fixed max-md:inset-x-4 max-md:top-20 max-md:z-50 max-md:w-auto max-md:opacity-0 max-md:pointer-events-none focus-within:opacity-100 focus-within:pointer-events-auto md:static md:opacity-100 md:pointer-events-auto" ref={wrapperRef}>
+    <div className="relative w-full min-w-[22rem] max-w-[420px] @container/search" ref={wrapperRef} data-dashboard-search>
       <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
       {loading
         ? <Loader2 className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
         : (
           /* Keyboard hint, as in the reference topbar. */
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden h-6 items-center rounded-md border border-border bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground pointer-events-none sm:flex">
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden h-6 items-center rounded-md border border-border bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground pointer-events-none @min-[400px]/search:flex">
             ⌘K
           </kbd>
         )}
       <Input
         ref={inputRef}
-        id="dashboard-search"
+        id={inputId}
         aria-label="Search courses, books, and school updates"
         placeholder="Search courses, books, announcements"
         className="pl-11 pr-11 h-11 bg-card border-border rounded-2xl text-[13.5px] shadow-[var(--shadow-card)] focus-visible:ring-primary/30"

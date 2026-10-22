@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { authedFetch } from '@/lib/api-client';
 import { useAccountMode } from '@/hooks/use-account-mode';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { isOnboardingTrack, readWelcomeHue, type WelcomeState } from '@/lib/onboarding-course';
+import { isOnboardingTrack, readWelcomeHue, showLearnerWelcomeBanner, type WelcomeState } from '@/lib/onboarding-course';
 import { WelcomeFinish, WelcomeLessonCard, WelcomeResumeCard, WelcomeStars } from '@/components/onboarding/welcome-board';
 import { useContentTranslation } from '@/hooks/use-content-translation';
 import { readLanguage } from '@/lib/languages';
@@ -102,7 +102,7 @@ function useWelcome() {
   return { state, setState, send };
 }
 
-export function WelcomeResume() {
+export function WelcomeResume({ role }: { role: string }) {
   const pathname = usePathname();
   const { state, setState, send } = useWelcome();
   const [skipping, setSkipping] = useState(false);
@@ -123,6 +123,7 @@ export function WelcomeResume() {
   }, [pathname, state?.track, setState]);
 
   if (!state?.showCard || pathname.startsWith('/dashboard/welcome')) return null;
+  if (!showLearnerWelcomeBanner(role, state.track)) return null;
 
   return (
     <WelcomeResumeCard

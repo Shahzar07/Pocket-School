@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Loader2, Menu, Home, BookOpen, Clock, Activity, MessageSquare,
   ClipboardList, Presentation, Shield, BarChart, Settings, FileText, KeyRound, ChevronsUpDown, Target,
@@ -55,7 +56,6 @@ import dynamic from 'next/dynamic';
 import type { TourRole } from '@/lib/tour-steps';
 import { hasCmsAddon } from '@/lib/entitlements';
 import { SIGNUP_SCHOOL } from '@/lib/institutions/signup-copy';
-import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
@@ -97,12 +97,12 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/student/exams', icon: PenSquare, labelKey: 'nav.exams' },
       { href: '/dashboard/student/transcript', icon: GraduationCap, labelKey: 'nav.transcript' },
       { href: '/dashboard/student/attendance', icon: ClipboardCheck, labelKey: 'nav.attendance' },
-      { href: '/dashboard/student/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
+      { href: '/dashboard/student/timetable', icon: Calendar, labelKey: 'nav.timetabler', label: 'ET AI Timetabler' },
       { href: '/dashboard/student/certificates', icon: Award, labelKey: 'nav.certificates' },
-      { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.dailyGoals', label: 'Tasks' },
+      { href: '/dashboard/student/tasks', icon: ListTodo, labelKey: 'nav.tasks', label: 'Tasks' },
       { href: '/dashboard/student/goals', icon: ListTodo, labelKey: 'nav.dailyGoals' },
       { href: '/dashboard/student/analytics', icon: Activity, labelKey: 'nav.insights' },
-      { href: '/dashboard/student/progress', icon: Activity, labelKey: 'nav.insights', label: 'My progress' },
+      { href: '/dashboard/student/progress', icon: Activity, labelKey: 'nav.myProgress', label: 'My progress' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/student/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
@@ -116,28 +116,28 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionKey: 'nav.section.community', sectionLabel: 'Community', items: [
+    { sectionKey: 'nav.section.groups', sectionLabel: 'Groups', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
-      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.network', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
     ]},
-    { sectionKey: 'nav.aiStudio', sectionLabel: 'AI Studio', items: [
-      { href: '/dashboard/studio/et', icon: Sparkles, labelKey: 'nav.aiStudio', label: 'ET AI' },
-      { href: '/dashboard/studio/teachers', icon: Users, labelKey: 'nav.aiTeachers', label: 'AI Teachers' },
-      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths', flag: 'snapAndSolve' },
-      { href: '/dashboard/studio/exam-prep', icon: PenSquare, labelKey: 'nav.exams', label: 'ET Exams' },
-      { href: '/dashboard/studio/essays', icon: PenSquare, labelKey: 'nav.aiStudio', label: 'ET Essays' },
+    { sectionKey: 'nav.section.studio', sectionLabel: 'Studio tools', items: [
+      { href: '/dashboard/studio/et', icon: Sparkles, labelKey: 'nav.etAi', label: 'ET AI' },
+      { href: '/dashboard/studio/teachers', icon: Users, labelKey: 'nav.studioTeachers', label: 'AI Teachers' },
+      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.etMaths', label: 'ET Maths', flag: 'snapAndSolve' },
+      { href: '/dashboard/studio/exam-prep', icon: PenSquare, labelKey: 'nav.etExams', label: 'ET Exams' },
+      { href: '/dashboard/studio/essays', icon: PenSquare, labelKey: 'nav.etEssays', label: 'ET Essays' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', label: 'Creator Store', flag: 'creatorStore' },
     ]},
-    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendarTerms', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
-      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.memberCard', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -146,7 +146,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher', icon: Home, labelKey: 'nav.overview' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/teacher/classes', icon: GraduationCap, labelKey: 'nav.myClasses' },
-      { href: '/dashboard/teacher/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
+      { href: '/dashboard/teacher/timetable', icon: Calendar, labelKey: 'nav.timetabler', label: 'ET AI Timetabler' },
       { href: '/dashboard/teacher/courses', icon: Presentation, labelKey: 'nav.coursesProducts' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
@@ -154,10 +154,10 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
-      { href: '/dashboard/teacher/hotline', icon: Phone, labelKey: 'nav.messages', label: 'Poket SafeLine' },
+      { href: '/dashboard/teacher/hotline', icon: Phone, labelKey: 'nav.safeLine', label: 'Poket SafeLine' },
       { href: '/dashboard/teacher/analytics', icon: Activity, labelKey: 'nav.analytics' },
       { href: '/dashboard/teacher/insights', icon: BarChart, labelKey: 'nav.insights' },
-      { href: '/dashboard/teacher/progress', icon: AlertTriangle, labelKey: 'nav.insights', label: 'Class risk' },
+      { href: '/dashboard/teacher/progress', icon: AlertTriangle, labelKey: 'nav.classRisk', label: 'Class risk' },
       { href: '/dashboard/teacher/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/teacher/references', icon: Award, labelKey: 'nav.references', label: 'References' },
     ]},
@@ -176,28 +176,28 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/teacher/behaviour', icon: Star, labelKey: 'nav.merits' },
     ]},
     // Billing and Helpdesk are institution-admin responsibilities, not teachers'.
-    { sectionKey: 'nav.section.community', sectionLabel: 'Community', items: [
+    { sectionKey: 'nav.section.groups', sectionLabel: 'Groups', items: [
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
-      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.network', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/exam-centre', icon: PenSquare, labelKey: 'nav.examCentre', flag: 'examCentre' },
     ]},
-    { sectionKey: 'nav.aiStudio', sectionLabel: 'AI Studio', items: [
-      { href: '/dashboard/studio/et', icon: Sparkles, labelKey: 'nav.aiStudio', label: 'ET AI' },
-      { href: '/dashboard/studio/timetable', icon: Calendar, labelKey: 'nav.aiStudio', label: TIMETABLE_COPY.studioTab },
-      { href: '/dashboard/studio/teachers', icon: Users, labelKey: 'nav.aiTeachers', label: 'AI Teachers' },
-      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.snapSolve', label: 'ET Maths' },
-      { href: '/dashboard/studio/exam-prep', icon: PenSquare, labelKey: 'nav.exams', label: 'ET Exams' },
-      { href: '/dashboard/studio/essays', icon: PenSquare, labelKey: 'nav.aiStudio', label: 'ET Essays' },
+    { sectionKey: 'nav.section.studio', sectionLabel: 'Studio tools', items: [
+      { href: '/dashboard/studio/et', icon: Sparkles, labelKey: 'nav.etAi', label: 'ET AI' },
+      { href: '/dashboard/studio/timetable', icon: Calendar, labelKey: 'nav.timetableStudio', label: 'Timetabler' },
+      { href: '/dashboard/studio/teachers', icon: Users, labelKey: 'nav.studioTeachers', label: 'AI Teachers' },
+      { href: '/dashboard/studio/maths', icon: Camera, labelKey: 'nav.etMaths', label: 'ET Maths' },
+      { href: '/dashboard/studio/exam-prep', icon: PenSquare, labelKey: 'nav.etExams', label: 'ET Exams' },
+      { href: '/dashboard/studio/essays', icon: PenSquare, labelKey: 'nav.etEssays', label: 'ET Essays' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', label: 'Creator Store', flag: 'creatorStore' },
     ]},
-    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendarTerms', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
-      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.memberCard', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -209,15 +209,15 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
-      { href: '/dashboard/parent/hotline', icon: Phone, labelKey: 'nav.mailbox', label: 'Poket SafeLine' },
+      { href: '/dashboard/parent/hotline', icon: Phone, labelKey: 'nav.safeLine', label: 'Poket SafeLine' },
       { href: '/dashboard/parent/communications', icon: Mail, labelKey: 'nav.mailbox' },
       { href: '/dashboard/parent/duedates', icon: Clock, labelKey: 'nav.dueDates' },
-      { href: '/dashboard/parent/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
+      { href: '/dashboard/parent/timetable', icon: Calendar, labelKey: 'nav.timetabler', label: 'ET AI Timetabler' },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
       { href: '/dashboard/parent/goals', icon: Target, labelKey: 'nav.goals' },
       { href: '/dashboard/parent/analytics', icon: Activity, labelKey: 'nav.insights' },
-      { href: '/dashboard/parent/progress', icon: Activity, labelKey: 'nav.insights', label: 'Child progress' },
+      { href: '/dashboard/parent/progress', icon: Activity, labelKey: 'nav.childDetail', label: 'Learning progress' },
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/parent/integrity', icon: Shield, labelKey: 'nav.integrity' },
       { href: '/dashboard/parent/reports', icon: FileBarChart, labelKey: 'nav.reportCards' },
@@ -226,13 +226,13 @@ const NAV: Record<Role, NavGroup[]> = {
     { sectionKey: 'nav.section.family', sectionLabel: 'Safety', items: [
       { href: '/dashboard/parent/controls', icon: Shield, labelKey: 'nav.controls', flag: 'community' },
     ]},
-    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendarTerms', label: 'Calendar & terms' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
-      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.memberCard', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -240,78 +240,77 @@ const NAV: Record<Role, NavGroup[]> = {
     { items: [
       { href: '/dashboard/admin', icon: BarChart, labelKey: 'nav.analytics' },
       { href: '/dashboard/admin/books', icon: BookOpen, labelKey: 'nav.aiBookCreator', label: 'AI Book Creator' },
-      { href: '/dashboard/admin/store/import', icon: Library, labelKey: 'nav.creatorStore', label: 'Store import', contentOnly: true },
-      { href: '/dashboard/admin/queues', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Queues' },
-      { href: '/dashboard/admin/tasks', icon: ListTodo, labelKey: 'nav.dashboard', label: 'Action Centre' },
-      { href: '/dashboard/admin/platform', icon: Settings, labelKey: 'nav.systemSettings', label: 'Platform tools' },
-      { href: '/dashboard/admin/pulse', icon: Activity, labelKey: 'nav.insights', label: 'Pulse' },
-      { href: '/dashboard/admin/safety-desk', icon: Shield, labelKey: 'nav.moderation', label: 'Safety Desk' },
+      { href: '/dashboard/admin/store/import', icon: Library, labelKey: 'nav.storeImport', label: 'Store import', contentOnly: true },
+      { href: '/dashboard/admin/queues', icon: ClipboardList, labelKey: 'nav.queues', label: 'Queues' },
+      { href: '/dashboard/admin/tasks', icon: ListTodo, labelKey: 'nav.actionCentre', label: 'Action Centre' },
+      { href: '/dashboard/admin/platform', icon: Settings, labelKey: 'nav.platformTools', label: 'Platform tools' },
+      { href: '/dashboard/admin/pulse', icon: Activity, labelKey: 'nav.pulse', label: 'Pulse' },
+      { href: '/dashboard/admin/safety-desk', icon: Shield, labelKey: 'nav.safetyDesk', label: 'Safety Desk' },
       { href: '/dashboard/admin/blog', icon: Newspaper, labelKey: 'nav.blog', label: 'Blog', superOnly: true },
-      { href: '/dashboard/admin/pathways', icon: Route, labelKey: 'nav.curriculumCms', label: 'Pathways' },
+      { href: '/dashboard/admin/pathways', icon: Route, labelKey: 'nav.pathways', label: 'Pathways' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
-      { href: '/dashboard/studio/timetable', icon: Calendar, labelKey: 'nav.aiStudio', label: TIMETABLE_COPY.studioTab },
+      { href: '/dashboard/studio/timetable', icon: Calendar, labelKey: 'nav.timetableStudio', label: 'Timetabler' },
       { href: '/dashboard/admin/courses', icon: Presentation, labelKey: 'nav.allCourses' },
       { href: '/dashboard/admin/placement', icon: Layers, labelKey: 'nav.placement', label: 'Course placement', superOnly: true },
       { href: '/dashboard/admin/help', icon: HelpCircle, labelKey: 'nav.helpArticles', label: 'Admin help' },
     ]},
-    { sectionKey: 'nav.curriculumCms', sectionLabel: 'Curriculum', items: [
+    { sectionKey: 'nav.section.curriculum', sectionLabel: 'Curriculum', items: [
       { href: '/dashboard/admin/curriculum', icon: Layers, labelKey: 'nav.curriculumCms' },
-      { href: '/dashboard/admin/exam-packs', icon: BookMarked, labelKey: 'nav.curriculumCms', label: 'Exam pack desk' },
+      { href: '/dashboard/admin/exam-packs', icon: BookMarked, labelKey: 'nav.examPacks', label: 'Exam pack desk' },
     ]},
     { items: [
-      { href: '/dashboard/admin/planner', icon: Target, labelKey: 'nav.goals', label: 'Study planner', superOnly: true },
-      { href: '/dashboard/admin/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
-      { href: '/dashboard/admin/signatures', icon: ShieldCheck, labelKey: 'nav.verifications', label: 'Copyright signatures', superOnly: true },
+      { href: '/dashboard/admin/planner', icon: Target, labelKey: 'nav.studyPlanner', label: 'Study planner', superOnly: true },
+      { href: '/dashboard/admin/timetable', icon: Calendar, labelKey: 'nav.timetabler', label: 'ET AI Timetabler' },
+      { href: '/dashboard/admin/signatures', icon: ShieldCheck, labelKey: 'nav.copyrightSignatures', label: 'Copyright signatures', superOnly: true },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/admin/users', icon: UserCog, labelKey: 'nav.usersSparks' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
-      { href: '/dashboard/admin/schools', icon: GraduationCap, labelKey: 'nav.institutions', label: 'School leads', superOnly: true },
-      { href: '/dashboard/admin/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights', superOnly: true },
-      { href: '/dashboard/admin/automation', icon: Sparkles, labelKey: 'nav.dashboard', label: 'Automation', superOnly: true },
+      { href: '/dashboard/admin/schools', icon: GraduationCap, labelKey: 'nav.schoolLeads', label: 'School leads', superOnly: true },
+      { href: '/dashboard/admin/automation', icon: Sparkles, labelKey: 'nav.automation', label: 'Automation', superOnly: true },
       { href: '/dashboard/admin/access', icon: Shield, labelKey: 'nav.accessConfig' },
       { href: '/dashboard/admin/allocations', icon: KeyRound, labelKey: 'nav.allocations' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
       { href: '/dashboard/admin/settings', icon: Settings, labelKey: 'nav.systemSettings' },
       { href: '/dashboard/admin/verifications', icon: ShieldCheck, labelKey: 'nav.verifications' },
-      { href: '/dashboard/admin/partners', icon: Tag, labelKey: 'nav.verifications', label: 'Partner perks' },
-      { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.dashboard', label: 'Activity log', superOnly: true },
+      { href: '/dashboard/admin/partners', icon: Tag, labelKey: 'nav.partnerPerks', label: 'Partner perks' },
+      { href: '/dashboard/admin/activity', icon: ClipboardList, labelKey: 'nav.activityLog', label: 'Activity log', superOnly: true },
       { href: '/dashboard/admin/insights', icon: Activity, labelKey: 'nav.insights', label: 'Insights' },
       { href: '/dashboard/admin/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
-      { href: '/dashboard/admin/badges', icon: Award, labelKey: 'nav.certificates', label: 'Badges', superOnly: true },
+      { href: '/dashboard/admin/badges', icon: Award, labelKey: 'nav.badges', label: 'Badges', superOnly: true },
       { href: '/dashboard/reports', icon: FileBarChart, labelKey: 'nav.reports' },
-      { href: '/dashboard/admin/hotline', icon: Phone, labelKey: 'nav.moderation', label: 'Poket SafeLine' },
-      { href: '/dashboard/admin/emergency', icon: Siren, labelKey: 'nav.moderation', label: 'Emergency alerts' },
+      { href: '/dashboard/admin/hotline', icon: Phone, labelKey: 'nav.safeLine', label: 'Poket SafeLine' },
+      { href: '/dashboard/admin/emergency', icon: Siren, labelKey: 'nav.emergencyAlerts', label: 'Emergency alerts' },
       { href: '/dashboard/admin/moderation', icon: Shield, labelKey: 'nav.moderation', flag: 'community' },
       { href: '/dashboard/community', icon: Compass, labelKey: 'nav.community', flag: 'community' },
-      { href: '/dashboard/network', icon: Users, labelKey: 'nav.community', label: 'Network' },
+      { href: '/dashboard/network', icon: Users, labelKey: 'nav.network', label: 'Network' },
       { href: '/dashboard/tutors', icon: Users, labelKey: 'nav.tutors', flag: 'tutorMarketplace' },
       { href: '/dashboard/store', icon: Library, labelKey: 'nav.creatorStore', flag: 'creatorStore' },
     ]},
-    { sectionKey: 'nav.section.money', sectionLabel: 'Payments', items: [
+    { sectionKey: 'nav.section.money', sectionLabel: 'Money', items: [
       { href: '/dashboard/admin/payments', icon: Landmark, labelKey: 'nav.payments', superOnly: true },
       { href: '/dashboard/admin/integrations', icon: Plug, labelKey: 'nav.integrations', superOnly: true },
       { href: '/dashboard/admin/finance', icon: PieChart, labelKey: 'nav.finance', superOnly: true },
       { href: '/dashboard/wallet', icon: Wallet, labelKey: 'nav.wallet' },
       { href: '/dashboard/referrals', icon: Gift, labelKey: 'nav.referrals' },
     ]},
-    { sectionKey: 'nav.section.platform', sectionLabel: 'Settings', items: [
+    { sectionKey: 'nav.section.platform', sectionLabel: 'Platform', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendarTerms', label: 'Calendar & terms' },
       { href: '/dashboard/resources', icon: Library, labelKey: 'nav.resources' },
       { href: '/dashboard/teacher/billing', icon: CreditCard, labelKey: 'nav.billing' },
       { href: '/dashboard/helpdesk', icon: HelpCircle, labelKey: 'nav.helpdesk' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
-      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.memberCard', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
   institution_admin: [
     { items: [
       { href: '/dashboard/institution', icon: GraduationCap, labelKey: 'nav.myClasses' },
-      { href: '/dashboard/institution/timetable', icon: Calendar, labelKey: 'nav.calendar', label: TIMETABLE_COPY.nav },
-      { href: '/dashboard/institution/insights', icon: PieChart, labelKey: 'nav.analytics', label: 'Insights' },
+      { href: '/dashboard/institution/timetable', icon: Calendar, labelKey: 'nav.timetabler', label: 'ET AI Timetabler' },
+      { href: '/dashboard/institution/insights', icon: PieChart, labelKey: 'nav.insights', label: 'Insights' },
       { href: '/dashboard/institution/approvals', icon: ShieldCheck, labelKey: 'nav.approvals', label: 'Approvals' },
       { href: '/dashboard/institution/join', icon: Users, labelKey: 'nav.join', label: 'Join settings' },
       { href: '/dashboard/institution/alumni', icon: Award, labelKey: 'nav.alumni', label: 'Alumni' },
@@ -324,7 +323,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/institution/onboarding', icon: ClipboardList, labelKey: 'nav.onboarding', label: 'Onboarding' },
       { href: '/dashboard/admin/institutions', icon: Users, labelKey: 'nav.institutions' },
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
-      { href: '/dashboard/studio/timetable', icon: Calendar, labelKey: 'nav.aiStudio', label: TIMETABLE_COPY.studioTab },
+      { href: '/dashboard/studio/timetable', icon: Calendar, labelKey: 'nav.timetableStudio', label: 'Timetabler' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },
       { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'nav.messages' },
@@ -332,18 +331,18 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/behaviour', icon: Star, labelKey: 'nav.behaviour' },
       { href: '/dashboard/institution/templates', icon: FileText, labelKey: 'nav.reportStudio' },
       { href: '/dashboard/institution/activity', icon: Activity, labelKey: 'nav.activityLog', label: 'Activity log' },
-      { href: '/dashboard/institution/progress', icon: AlertTriangle, labelKey: 'nav.insights', label: 'At-risk learners' },
-      { href: '/dashboard/institution/goals', icon: Target, labelKey: 'nav.goals', label: 'Goal adherence' },
+      { href: '/dashboard/institution/progress', icon: AlertTriangle, labelKey: 'nav.atRisk', label: 'At-risk learners' },
+      { href: '/dashboard/institution/goals', icon: Target, labelKey: 'nav.goalAdherence', label: 'Goal adherence' },
       { href: '/dashboard/institution/certificates', icon: Award, labelKey: 'nav.certificates', label: 'Certificates' },
-      { href: '/dashboard/institution/hotline', icon: Phone, labelKey: 'nav.moderation', label: 'Poket SafeLine' },
-      { href: '/dashboard/institution/emergency', icon: Siren, labelKey: 'nav.moderation', label: 'Emergency alerts' },
+      { href: '/dashboard/institution/hotline', icon: Phone, labelKey: 'nav.safeLine', label: 'Poket SafeLine' },
+      { href: '/dashboard/institution/emergency', icon: Siren, labelKey: 'nav.emergencyAlerts', label: 'Emergency alerts' },
     ]},
-    { sectionKey: 'nav.section.school', sectionLabel: 'Messages', items: [
+    { sectionKey: 'nav.section.school', sectionLabel: 'School', items: [
       { href: '/dashboard/announcements', icon: Megaphone, labelKey: 'nav.announcements' },
-      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendar', label: 'Calendar & terms' },
+      { href: '/dashboard/calendar', icon: Calendar, labelKey: 'nav.calendarTerms', label: 'Calendar & terms' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
-      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.memberCard', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -353,7 +352,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/partner', icon: Store, labelKey: 'nav.onboarding', label: 'Onboarding' },
     ]},
     { sectionKey: 'nav.section.account', sectionLabel: 'Settings', items: [
-      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.myProfile', label: 'Member card' },
+      { href: '/dashboard/card', icon: IdCard, labelKey: 'nav.memberCard', label: 'Member card' },
       { href: '/dashboard/profile', icon: UserCircle, labelKey: 'nav.myProfile' },
     ]},
   ],
@@ -409,10 +408,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mfaCheckedUid, setMfaCheckedUid] = useState<string | null>(null);
   const [mfaHold, setMfaHold] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSearchOpen(false);
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [searchOpen]);
 
   useEffect(() => {
     if (!user) return;
@@ -766,7 +775,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <AdminViewAsBanner />
         {fullBleed ? null : (
-        <header className="h-[72px] min-w-0 bg-background/80 backdrop-blur-xl flex items-center justify-between gap-4 px-4 lg:px-6 shrink-0 z-10">
+        <header className="relative @container/header h-[72px] min-w-0 bg-background/80 backdrop-blur-xl flex items-center justify-between gap-3 px-4 lg:px-6 shrink-0 z-10">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button variant="ghost" size="icon" className="rounded-xl shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t('nav.toggleSidebar')} aria-expanded={sidebarOpen}>
               <Menu className="w-5 h-5 text-muted-foreground" />
@@ -774,18 +783,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <PipGuide role={role as TourRole} />
             <button
               type="button"
-              className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden"
+              data-search-toggle
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted @min-[680px]/header:hidden"
               aria-label="Search"
-              onClick={() => document.getElementById('dashboard-search')?.focus()}
+              aria-expanded={searchOpen}
+              onClick={() => setSearchOpen(true)}
             >
               <Search className="h-4 w-4" />
             </button>
-            <span data-tour="search" className="min-w-0 flex-1"><DashboardSearch /></span>
+            <span data-tour="search" className="hidden min-w-[22rem] flex-1 @min-[680px]/header:block"><DashboardSearch /></span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <ThemeToggle />
             {showModes && (
-              <span className="hidden xl:inline-flex">
+              <span className="hidden @min-[1100px]/header:inline-flex">
                 <ModeSwitch
                   modes={account.modes}
                   active={account.mode}
@@ -794,9 +805,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 />
               </span>
             )}
-            <span className="hidden lg:inline-flex" data-tour="sparks"><SparksChip /></span>
-            <span data-tour="language"><LanguageSwitcher /></span>
-            <span className="hidden lg:inline-flex"><CurrencySwitcher /></span>
+            <span className="hidden @min-[900px]/header:inline-flex" data-tour="sparks"><SparksChip /></span>
+            <span data-tour="language"><LanguageSwitcher dense /></span>
+            <span className="hidden @min-[1100px]/header:inline-flex"><CurrencySwitcher /></span>
             {actionCentre ? <TaskBell /> : null}
             <span data-tour="notifications"><NotificationsBell /></span>
             <span className="ms-1 shrink-0" data-tour="profile" data-header-account>
@@ -854,7 +865,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {ACCESS_DENIED_MESSAGE}
               </div>
             )}
-            <WelcomeResume />
+            <WelcomeResume role={role} />
             <RoleChecklist role={role} />
             <PagePurpose pathname={pathname} />
             {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
@@ -870,6 +881,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {fullBleed ? null : <DashFab role={role} />}
       <CommandPalette role={dashRole} />
       {viewAs || fullBleed ? null : <AITutor />}
+      {searchOpen && !fullBleed && typeof document !== 'undefined' ? createPortal(
+        <div data-search-overlay>
+          <button type="button" className="fixed inset-0 z-[70] bg-background/40 lg:hidden" aria-label="Close" onClick={() => setSearchOpen(false)} />
+          <div className="fixed inset-x-4 top-20 z-[80] lg:hidden">
+            <DashboardSearch autoFocus inputId="dashboard-search-overlay" />
+          </div>
+        </div>,
+        document.body,
+      ) : null}
     </div>
   );
 }
