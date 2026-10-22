@@ -27,7 +27,7 @@ export function FlowNav({
   const showBackLink = Boolean(backHref) && !backDisabled;
   const showNextLink = Boolean(nextHref) && !nextDisabled;
   return (
-    <div data-flow-nav className="sticky bottom-0 z-30 mt-auto flex items-center justify-between gap-3 border-t border-border bg-[var(--studio-bg,#F4FBFC)]/95 px-1 py-3 backdrop-blur dark:bg-[#1A1918]/95">
+    <div data-flow-nav className="sticky bottom-0 z-30 mt-auto flex w-full max-w-full flex-wrap items-center justify-between gap-3 border-t border-border bg-[var(--studio-bg,#F4FBFC)]/95 px-1 py-3 backdrop-blur dark:bg-[#121E22]/95">
       {showBackLink ? (
         <Link href={backHref!} className={backClass} aria-label={backLabel} onClick={onBack}>← {backLabel}</Link>
       ) : (

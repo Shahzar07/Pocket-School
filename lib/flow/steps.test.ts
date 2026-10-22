@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { flowIndex, flowKeyTarget, flowNeighbor } from './steps';
+import { flowIndex, flowKeyTarget, flowNeighbor, flowStepOpen } from './steps';
 import { PATHWAY_STEPS, pathwayHref } from './pathways';
 
 const steps = [
@@ -16,6 +16,13 @@ test('flow index and neighbours stay inside the trail', () => {
   assert.equal(flowNeighbor(steps, 'plan', 1)?.id, 'write');
   assert.equal(flowNeighbor(steps, 'question', -1), null);
   assert.equal(flowNeighbor(steps, 'write', 1), null);
+});
+
+test('later trail steps open only when moving ahead is allowed', () => {
+  assert.equal(flowStepOpen(0, 1, false), true);
+  assert.equal(flowStepOpen(1, 1, true), false);
+  assert.equal(flowStepOpen(2, 1, false), false);
+  assert.equal(flowStepOpen(2, 1, true), true);
 });
 
 test('arrow keys skip typing and stop at the ends', () => {
