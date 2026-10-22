@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { OfferCta } from '@/components/reads-offer/cta';
+import { ReadsOfferThemeToggle } from '@/components/reads-offer/theme';
 import { OfferCurrencySelect, OfferMoney } from '@/components/reads-offer/money';
 import { OfferShot } from '@/components/reads-offer/shot';
 import { readsOfferExcerpts } from '@/lib/reads-offer-excerpts';
@@ -54,6 +55,7 @@ export function ReadsOfferLetter() {
           <nav aria-label="On this page" className="ml-auto flex items-center gap-2 sm:gap-3">
             <a href="#price" className={`hidden text-sm font-semibold text-foreground sm:inline ${focus}`}>Price</a>
             <a href="#read" className={`hidden text-sm font-semibold text-foreground md:inline ${focus}`}>Read a page</a>
+            <ReadsOfferThemeToggle />
             <OfferCurrencySelect />
             <OfferCta href={readsCheckoutHref('reads', 'month')} id="header-subscribe">Subscribe</OfferCta>
           </nav>

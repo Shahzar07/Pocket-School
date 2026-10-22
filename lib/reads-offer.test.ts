@@ -152,6 +152,7 @@ test('sales-letter jackets use Poket blue and electric cyan', () => {
   const sitemap = readFileSync(new URL('../app/sitemap.ts', import.meta.url), 'utf8');
   const robots = readFileSync(new URL('../app/robots.ts', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../app/reads/offer/page.tsx', import.meta.url), 'utf8');
+  const offerLetter = readFileSync(new URL('../components/reads-offer/letter.tsx', import.meta.url), 'utf8');
   assert.match(sitemap, /path: '\/reads\/offer'/);
   assert.equal(robots.includes("'/reads/offer'"), false);
   assert.match(page, /index:\s*true/);
@@ -162,4 +163,5 @@ test('sales-letter jackets use Poket blue and electric cyan', () => {
   const chrome = readFileSync(new URL('../components/app-chrome.tsx', import.meta.url), 'utf8');
   assert.match(chrome, /ThemeProvider/);
   assert.match(chrome, /pathname === '\/reads\/offer'/);
+  assert.match(offerLetter, /ReadsOfferThemeToggle/);
 });
