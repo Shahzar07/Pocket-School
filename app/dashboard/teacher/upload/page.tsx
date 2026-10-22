@@ -734,7 +734,7 @@ export default function UploadPage() {
               return (
                 <div key={f.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${
                   status === 'done' ? 'bg-success/10 border border-success/20 text-success' :
-                  status === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-600' :
+                  status === 'error' ? 'bg-[var(--ps-tile-wash)] border border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)]' :
                   status === 'pending' ? 'bg-sky-500/10 border border-sky-500/20 text-sky-600 animate-pulse' :
                   'bg-muted border border-border text-muted-foreground'
                 }`}>
@@ -918,10 +918,10 @@ export default function UploadPage() {
       {/* ── Request to Admin ── */}
       <motion.div
         variants={fadeUp} initial="hidden" animate="visible" custom={6}
-        className="bg-card border border-violet-200/60 rounded-3xl p-5 sm:p-6 space-y-4 card-glow"
+        className="bg-card border border-[var(--ps-cyan-border)] rounded-3xl p-5 sm:p-6 space-y-4 card-glow"
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-md shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1E6A83] to-[#3FE0D0] flex items-center justify-center shadow-md shrink-0">
             <HelpCircle className="w-4.5 h-4.5 text-white" />
           </div>
           <div>
@@ -961,7 +961,7 @@ export default function UploadPage() {
           <Button
             onClick={handleAdminRequest}
             disabled={reqSending || !reqMessage.trim()}
-            className="rounded-full h-10 px-5 font-bold gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:shadow-lg hover:shadow-violet-600/25 transition-all"
+            className="rounded-full h-10 px-5 font-bold gap-2 bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] text-white hover:shadow-lg hover:shadow-[var(--ps-tile-wash)] transition-all"
           >
             {reqSent ? <CheckCircle2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
             {reqSending ? 'Sending…' : reqSent ? 'Sent ✓' : 'Send Request'}

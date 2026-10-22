@@ -18,7 +18,7 @@ const WorldMap = dynamic(() => import('@/components/insights/world-map').then((m
   loading: () => <div className="h-72 animate-pulse rounded-2xl bg-[#203337]" aria-hidden />,
 });
 
-const COLOURS = ['#203337', '#1E6A83', '#E36A4F', '#3C8DFF', '#2F6F62', '#7DCEA0'];
+const COLOURS = ['#203337', '#1E6A83', '#1E6A83', '#3C8DFF', '#2F6F62', '#7DCEA0'];
 
 function download(name: string, csv: string) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -179,7 +179,7 @@ export function CensusPanel({
             {[
               ['People', shown.population, '#203337'],
               ['Daily active', shown.active.dau, '#1E6A83'],
-              ['Weekly active', shown.active.wau, '#E36A4F'],
+              ['Weekly active', shown.active.wau, '#1E6A83'],
               ['Monthly active', shown.active.mau, '#3C8DFF'],
             ].map(([label, value, colour]) => (
               <article key={String(label)} className="rounded-3xl p-4 text-white" style={{ background: String(colour) }}>
@@ -203,7 +203,7 @@ export function CensusPanel({
             <div className="mt-4 h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stateRows}>
-                  <CartesianGrid stroke="#F6F1E7" />
+                  <CartesianGrid stroke="#E9F7FA" />
                   <XAxis dataKey="name" tick={{ fill: '#203337', fontSize: 11 }} />
                   <YAxis tick={{ fill: '#203337', fontSize: 11 }} allowDecimals={false} />
                   <Tooltip />
@@ -222,7 +222,7 @@ export function CensusPanel({
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={[{ name: 'Female', value: shown.gender.female }, { name: 'Male', value: shown.gender.male }]} dataKey="value" nameKey="name" innerRadius={48} outerRadius={80}>
-                      <Cell fill="#E36A4F" />
+                      <Cell fill="#1E6A83" />
                       <Cell fill="#3C8DFF" />
                     </Pie>
                     <Legend />
@@ -235,7 +235,7 @@ export function CensusPanel({
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={shown.levels}>
-                    <CartesianGrid stroke="#F6F1E7" />
+                    <CartesianGrid stroke="#E9F7FA" />
                     <XAxis dataKey="name" tick={{ fill: '#203337', fontSize: 11 }} interval={0} angle={-20} height={50} />
                     <YAxis tick={{ fill: '#203337', fontSize: 11 }} allowDecimals={false} />
                     <Tooltip />
@@ -250,7 +250,7 @@ export function CensusPanel({
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={shown.ageBands}>
-                    <CartesianGrid stroke="#F6F1E7" />
+                    <CartesianGrid stroke="#E9F7FA" />
                     <XAxis dataKey="band" tick={{ fill: '#203337', fontSize: 11 }} />
                     <YAxis allowDecimals={false} tick={{ fill: '#203337', fontSize: 11 }} />
                     <Tooltip />
@@ -272,10 +272,10 @@ export function CensusPanel({
               ]}
             >
               <ul className="grid grid-cols-2 gap-2 text-sm text-[#203337]">
-                <li className="rounded-2xl bg-[#F6F1E7] px-3 py-3">Students <strong className="block text-xl">{shown.roles.student}</strong></li>
+                <li className="rounded-2xl bg-[#E9F7FA] px-3 py-3">Students <strong className="block text-xl">{shown.roles.student}</strong></li>
                 <li className="rounded-2xl bg-[#E9F7FA] px-3 py-3">Parents <strong className="block text-xl">{shown.roles.parent}</strong></li>
                 <li className="rounded-2xl bg-[#E7F0FF] px-3 py-3">Teachers <strong className="block text-xl">{shown.roles.teacher}</strong></li>
-                <li className="rounded-2xl bg-[#FDE8E3] px-3 py-3">Independent <strong className="block text-xl">{shown.membership.independent}</strong></li>
+                <li className="rounded-2xl bg-[#E9F7FA] px-3 py-3">Independent <strong className="block text-xl">{shown.membership.independent}</strong></li>
                 <li className="col-span-2 rounded-2xl bg-[#203337] px-3 py-3 text-[#E9F7FA]">Institution students <strong className="block text-xl">{shown.membership.institution}</strong></li>
               </ul>
             </Card>
@@ -318,7 +318,7 @@ export function CensusPanel({
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={shown.cities}>
-                  <CartesianGrid stroke="#F6F1E7" />
+                  <CartesianGrid stroke="#E9F7FA" />
                   <XAxis dataKey="name" tick={{ fill: '#203337', fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fill: '#203337', fontSize: 11 }} />
                   <Tooltip />
@@ -337,7 +337,7 @@ export function CensusPanel({
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={shown.series}>
-                  <CartesianGrid stroke="#F6F1E7" />
+                  <CartesianGrid stroke="#E9F7FA" />
                   <XAxis dataKey="day" tick={{ fill: '#203337', fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fill: '#203337', fontSize: 11 }} />
                   <Tooltip />
@@ -346,7 +346,7 @@ export function CensusPanel({
                   <Line type="monotone" dataKey="active" stroke="#203337" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="enrolments" stroke="#3C8DFF" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="sparksIssued" stroke="#2F6F62" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="sparksSpent" stroke="#E36A4F" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="sparksSpent" stroke="#1E6A83" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -361,7 +361,7 @@ export function CensusPanel({
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={shown.retention}>
-                  <CartesianGrid stroke="#F6F1E7" />
+                  <CartesianGrid stroke="#E9F7FA" />
                   <XAxis dataKey="cohort" tick={{ fill: '#203337', fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fill: '#203337', fontSize: 11 }} />
                   <Tooltip />

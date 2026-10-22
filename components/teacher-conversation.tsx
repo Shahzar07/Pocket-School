@@ -508,7 +508,7 @@ export function TeacherConversation({
   if (!teacher) return null;
   if (requireAuth && (loading || !user)) {
     return (
-      <div className="h-full min-h-[240px] grid place-items-center bg-[#07070E] text-white">
+      <div className="h-full min-h-[240px] grid place-items-center bg-[#121E22] text-white">
         <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
@@ -525,7 +525,7 @@ export function TeacherConversation({
   };
 
   return (
-    <div className={`${frame} overflow-hidden flex flex-col ${lightChat ? 'bg-[#F7FBFC] text-[#203337]' : 'bg-[#07070E] text-white'}`} data-teacher-theme={lightChat ? 'light' : 'dark'} dir={textDirection(lang)}>
+    <div className={`${frame} overflow-hidden flex flex-col ${lightChat ? 'bg-[#F7FBFC] text-[#203337]' : 'bg-[#121E22] text-white'}`} data-teacher-theme={lightChat ? 'light' : 'dark'} dir={textDirection(lang)}>
       <AnimatePresence>
         {livePrompt && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/70 grid place-items-center p-4" onClick={() => setLivePrompt(false)}>
@@ -547,7 +547,7 @@ export function TeacherConversation({
         )}
       </AnimatePresence>
 
-      <header className="min-h-12 px-2 py-1 flex flex-wrap items-center justify-between gap-1 border-b border-white/10 shrink-0 bg-[#0D0D18]">
+      <header className="min-h-12 px-2 py-1 flex flex-wrap items-center justify-between gap-1 border-b border-white/10 shrink-0 bg-[#121E22]">
         {variant === 'dock' ? <span className="text-sm font-semibold">{teacher.name}</span> : (
           <Link href={backHref} className="min-h-11 px-2 inline-flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white rounded-full">
             <Image src={teacher.avatarUrl} alt={portraitAlt(teacher.name)} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
@@ -695,7 +695,7 @@ export function TeacherConversation({
               <button type="button" onClick={() => fileRef.current?.click()} className="w-11 h-11 rounded-full border border-white/15 grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Attach a photo"><Camera className="w-4 h-4" /></button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label="Photo upload" data-photo-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
               <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" aria-label="Camera photo" data-camera-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
-              <button type="button" data-mic="1" onClick={() => void startRecording()} aria-pressed={recording} className={`w-11 h-11 rounded-full grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${recording ? 'bg-red-500' : 'border border-white/15'}`} aria-label={recording ? 'Stop and send voice note' : 'Record a voice note'}>
+              <button type="button" data-mic="1" onClick={() => void startRecording()} aria-pressed={recording} className={`w-11 h-11 rounded-full grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${recording ? 'bg-[#1E6A83]' : 'border border-white/15'}`} aria-label={recording ? 'Stop and send voice note' : 'Record a voice note'}>
                 {recording ? <PhoneOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
               <label htmlFor={`teacher-reply-${teacher.id}`} className="text-[11px] text-white/60 self-center shrink-0">

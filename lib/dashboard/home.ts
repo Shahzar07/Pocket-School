@@ -44,23 +44,23 @@ export interface CategoryStyle {
 }
 
 export const CATEGORY_STYLE: Record<DashCategory, CategoryStyle> = {
-  learning: { label: 'Learning', icon: 'book-open', wash: 'var(--ps-wash)', ink: 'var(--ps-blue-deep)' },
-  progress: { label: 'Progress', icon: 'activity', wash: 'var(--ps-amber-soft)', ink: 'var(--ps-on-amber)' },
-  messages: { label: 'Messages', icon: 'message-square', wash: 'var(--ps-wash)', ink: 'var(--ps-blue-deep)' },
-  community: { label: 'Community', icon: 'users', wash: 'var(--ps-coral-soft)', ink: 'var(--ps-coral)' },
-  careers: { label: 'Careers', icon: 'briefcase', wash: 'var(--ps-amber-soft)', ink: 'var(--ps-on-amber)' },
-  payments: { label: 'Payments', icon: 'credit-card', wash: 'var(--ps-wash)', ink: 'var(--ps-blue-deep)' },
-  safety: { label: 'Safety', icon: 'shield', wash: 'var(--ps-coral-soft)', ink: 'var(--ps-coral)' },
-  settings: { label: 'Settings', icon: 'settings', wash: 'var(--ps-wash)', ink: 'var(--ps-blue-deep)' },
-  insights: { label: 'Insights', icon: 'bar-chart-3', wash: 'var(--ps-amber-soft)', ink: 'var(--ps-on-amber)' },
-  people: { label: 'People', icon: 'users-round', wash: 'var(--ps-coral-soft)', ink: 'var(--ps-coral)' },
+  learning: { label: 'Learning', icon: 'book-open', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  progress: { label: 'Progress', icon: 'activity', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  messages: { label: 'Messages', icon: 'message-square', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  community: { label: 'Community', icon: 'users', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  careers: { label: 'Careers', icon: 'briefcase', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  payments: { label: 'Payments', icon: 'credit-card', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  safety: { label: 'Safety', icon: 'shield', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  settings: { label: 'Settings', icon: 'settings', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  insights: { label: 'Insights', icon: 'bar-chart-3', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  people: { label: 'People', icon: 'users-round', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
 };
 
 export const ALERT_TONE: Record<AlertTone, { label: string; wash: string; ink: string }> = {
   good: { label: 'On track', wash: 'var(--ps-mint)', ink: 'var(--ps-good)' },
   cyan: { label: 'Needs a look', wash: 'var(--ps-cyan-soft)', ink: 'var(--ps-cyan-text)' },
-  coral: { label: 'Needs care', wash: 'var(--ps-coral-soft)', ink: 'var(--ps-coral)' },
-  critical: { label: 'Urgent', wash: 'var(--destructive)', ink: 'var(--destructive-foreground)' },
+  coral: { label: 'Needs care', wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)' },
+  critical: { label: 'Urgent', wash: 'var(--ps-urgent-wash)', ink: 'var(--ps-urgent-ink)' },
 };
 
 /** Push categories the bell groups by. Matches lib/push.ts. */

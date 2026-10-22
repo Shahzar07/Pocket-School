@@ -205,14 +205,14 @@ export default function NewExamPrepPage() {
                         <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
                         <p className="text-[12px] text-muted-foreground">
                           {f.status === 'reading' ? `Reading… ${f.progress ?? ''}`
-                            : f.status === 'error' ? <span className="text-rose-600">{f.error}</span>
+                            : f.status === 'error' ? <span className="text-[var(--ps-tile-ink)]">{f.error}</span>
                             : f.file?.kind === 'pdf' ? `${f.file.pages} pages · ${(f.file.text?.length ?? 0).toLocaleString()} characters${f.file.pageImages?.length ? ` · ${f.file.pageImages.length} scanned pages` : ''}`
                             : f.file?.kind === 'image' ? 'Photo — ET AI will read it' : `${(f.file?.text?.length ?? 0).toLocaleString()} characters`}
                         </p>
                       </div>
                       {f.status === 'reading' ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         : f.status === 'ready' ? <CheckCircle2 className="w-4 h-4 text-success" /> : null}
-                      <button onClick={() => setFiles(prev => prev.filter(x => x.key !== f.key))} className="text-muted-foreground hover:text-rose-600" aria-label="Remove"><X className="w-4 h-4" /></button>
+                      <button onClick={() => setFiles(prev => prev.filter(x => x.key !== f.key))} className="text-muted-foreground hover:text-[var(--ps-tile-ink)]" aria-label="Remove"><X className="w-4 h-4" /></button>
                     </li>
                   ))}
                 </ul>
@@ -335,7 +335,7 @@ export default function NewExamPrepPage() {
                         </button>
                       ))}
                     </span>
-                    <button onClick={() => setTopics(ts => ts.filter(x => x.id !== t.id))} className="text-muted-foreground hover:text-rose-600 pt-1.5" aria-label="Remove topic"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => setTopics(ts => ts.filter(x => x.id !== t.id))} className="text-muted-foreground hover:text-[var(--ps-tile-ink)] pt-1.5" aria-label="Remove topic"><Trash2 className="w-4 h-4" /></button>
                   </motion.li>
                 ))}
               </ul>

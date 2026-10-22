@@ -19,7 +19,7 @@ export function QuizCard({ item, accent, onAnswer }: { item: QuizItem; accent: s
         <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Quiz</span>
         {answered && (picked === answerIdx
           ? <span className="text-[10px] font-bold text-success flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Correct</span>
-          : <span className="text-[10px] font-bold text-red-300 flex items-center gap-1"><XCircle className="w-3 h-3" /> Not quite</span>)}
+          : <span className="text-[10px] font-bold text-[var(--ps-tile-ink)] flex items-center gap-1"><XCircle className="w-3 h-3" /> Not quite</span>)}
       </div>
       <div className="prose prose-sm prose-invert max-w-none prose-p:my-1 mb-3"><MathMarkdown>{item.question}</MathMarkdown></div>
       <div className="space-y-1.5" role="group" aria-label="Quiz options">
@@ -32,7 +32,7 @@ export function QuizCard({ item, accent, onAnswer }: { item: QuizItem; accent: s
               aria-pressed={chosen}
               className={`w-full text-start min-h-11 text-sm rounded-xl px-3 py-2 border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${
                 showState
-                  ? right ? 'border-success/60 bg-success/10 text-success' : 'border-red-400/60 bg-red-500/10 text-red-200'
+                  ? right ? 'border-success/60 bg-success/10 text-success' : 'border-[var(--ps-cyan-border)] bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'
                   : 'border-white/10 bg-white/[0.02] text-white/80 hover:border-white/30'
               }`}>
               {String.fromCharCode(65 + index)}. {option}

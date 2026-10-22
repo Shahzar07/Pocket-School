@@ -31,14 +31,14 @@ export default function SparksPage() {
       <p className="text-muted-foreground">{SPARKS_EXPLAINER.summary}</p>
       <div
         className="rounded-3xl border border-border p-6"
-        style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-coral) 18%, var(--card)), color-mix(in srgb, var(--ps-cyan-text) 10%, var(--card)) 70%)' }}
+        style={{ background: 'linear-gradient(160deg, color-mix(in srgb, var(--ps-tile-ink) 18%, var(--card)), color-mix(in srgb, var(--ps-cyan-text) 10%, var(--card)) 70%)' }}
       >
         <p className="text-sm text-muted-foreground" data-learner-sparks>
           {hasAccountRole(profile, 'teacher') || hasAccountRole(profile, 'parent')
             ? 'Your learning balance. Class spending and a child\'s limit are separate.'
             : 'Your balance'}
         </p>
-        <p className="text-4xl font-bold" style={{ color: 'var(--ps-coral)' }}>⚡{profile?.sparksBalance ?? 0}</p>
+        <p className="text-4xl font-bold" style={{ color: 'var(--ps-tile-ink)' }}>⚡{profile?.sparksBalance ?? 0}</p>
         <p className="text-sm mt-2 inline-flex items-center gap-1 font-semibold" style={{ color: 'var(--ps-cyan-text)' }}>↑ This plan adds ⚡{allowance} each month.</p>
       </div>
       <ul className="space-y-2 text-sm">

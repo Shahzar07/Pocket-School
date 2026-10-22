@@ -175,7 +175,7 @@ export function OfficialFlow({ step }: { step: OfficialScreen }) {
 function LevelStep({ saved }: { saved: SavedExam[] }) {
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#EDEAE4]">{copy.choose}</h1>
+      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{copy.choose}</h1>
       {saved.length ? (
         <div className="mt-6">
           <h2 className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{copy.myExams}</h2>
@@ -210,7 +210,7 @@ function BoardStep({ level }: { level: string }) {
   const boards = level === 'all' ? BOARD_STYLES : boardsForLevel(level);
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#EDEAE4]">{copy.board}</h1>
+      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{copy.board}</h1>
       <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{levelLabel(level) || level}</p>
       <div className="mt-4" data-board-list>
         {boards.map((item) => (
@@ -225,7 +225,7 @@ function SubjectStep({ level, board }: { level: string; board: string }) {
   const label = BOARD_STYLES.find((item) => item.id === board)?.label || board;
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#EDEAE4]">{copy.subject}</h1>
+      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{copy.subject}</h1>
       <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{label}</p>
       <div className="mt-4" data-subject-list>
         {officialSubjectOptions().map((item) => (
@@ -245,7 +245,7 @@ function BrowseStep({ packs, level, board, subject }: { packs: ExamPack[]; level
   const label = officialSubjectOptions().find((item) => item.slug === subjectSlug(subject))?.label || subject;
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#EDEAE4]">{label}</h1>
+      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{label}</h1>
       {visible.length === 0 ? (
         <div data-coming-soon className="mt-6 rounded-2xl border border-border px-6 py-12 text-center">
           <p className="font-heading text-2xl">{copy.comingSoon}</p>
@@ -276,7 +276,7 @@ function PackStep({
   const last = progress.lastTopic && topics.some((topic) => topic.id === progress.lastTopic) ? progress.lastTopic : topics[0]?.id;
   return (
     <section className="mt-6" data-pack-overview>
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#EDEAE4]">{pack.name}</h1>
+      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{pack.name}</h1>
       <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{pack.blurb}</p>
       <label className="mt-4 block text-sm font-semibold">
         {copy.examDate}
@@ -385,7 +385,7 @@ function TopicStep({ pack, topicId, progress }: { pack: ExamPack; topicId: strin
   const first = pack.units[0]?.topics[0]?.id ?? '';
   return (
     <section className="mt-6" data-topic-step>
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#EDEAE4]">{topic.title}</h1>
+      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{topic.title}</h1>
       <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{topic.unit} · {locked ? copy.locked : copy.unlocked}</p>
       {progress.mastery[topicId] !== undefined ? <p className="mt-2 text-sm">{progress.mastery[topicId]}%</p> : null}
       {locked ? (
@@ -469,7 +469,7 @@ function PracticeStep({ pack, topicId, difficulty }: { pack: ExamPack; topicId: 
   }
   return (
     <section className="mt-6" data-practice>
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#EDEAE4]">{topic?.title}</h1>
+      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{topic?.title}</h1>
       <button type="button" className="mt-3 h-11 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0] dark:text-[#3FE0D0]" aria-pressed={timer} aria-label={copy.timer} onClick={() => setTimer((value) => !value)}>{copy.timer} {timer ? seconds : ''}</button>
       {!attempt ? (
         <div className="mt-6">

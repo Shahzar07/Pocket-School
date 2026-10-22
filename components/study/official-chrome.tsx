@@ -76,7 +76,7 @@ export function OfficialNav({
 
 export function FlowRow({ href, title, meta, trailing }: { href: string; title: string; meta?: string; trailing?: string }) {
   return (
-    <Link href={href} className="flex items-center justify-between gap-3 border-b border-border px-1 py-3 text-[#203337] hover:bg-[#3FE0D0]/10 dark:text-[#EDEAE4]">
+    <Link href={href} className="flex items-center justify-between gap-3 border-b border-border px-1 py-3 text-[#203337] hover:bg-[#3FE0D0]/10 dark:text-[#E9F7FA]">
       <span className="min-w-0">
         <span className="block font-semibold">{title}</span>
         {meta ? <span className="block text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{meta}</span> : null}

@@ -68,7 +68,7 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash:
   student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-[var(--ps-blue-bright)]', wash: 'var(--ps-role-student)' },
   teacher: { icon: 'text-[var(--ps-emerald)]', bar: 'bg-[var(--ps-emerald)]', chip: 'from-[var(--ps-mint-ink)] to-[var(--ps-emerald)]', wash: 'var(--ps-role-teacher)' },
   parent:  { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-parent)' },
-  admin:   { icon: 'text-[var(--ps-violet)]', bar: 'bg-[var(--ps-violet)]', chip: 'from-[var(--ps-violet)] to-[var(--ps-sky)]', wash: 'var(--ps-role-admin)' },
+  admin:   { icon: 'text-[var(--ps-tile-ink)]', bar: 'bg-[#1E6A83]', chip: 'from-[#1E6A83] to-[#3FE0D0]', wash: 'var(--ps-role-admin)' },
   institution_admin: { icon: 'text-[var(--ps-sky)]', bar: 'bg-[var(--ps-sky)]', chip: 'from-[var(--ps-sky)] to-[var(--ps-teal)]', wash: 'var(--ps-role-admin)' },
   partner_merchant: { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-student)' },
 };
@@ -601,8 +601,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-md w-full bg-card border border-border rounded-3xl p-8 text-center card-glow">
-          <div className="w-12 h-12 rounded-2xl bg-destructive/10 grid place-items-center mx-auto mb-4">
-            <ShieldCheck className="w-6 h-6 text-destructive" />
+          <div className="w-12 h-12 rounded-2xl bg-[var(--ps-tile-wash)] grid place-items-center mx-auto mb-4">
+            <ShieldCheck className="w-6 h-6 text-[var(--ps-tile-ink)]" />
           </div>
           <h1 className="font-heading text-2xl text-foreground">
             {closed ? 'This account is closed' : t('account.suspendedTitle')}
@@ -763,7 +763,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 });
               });
             }}
-            className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            className="w-full flex items-center gap-3 px-3 h-9 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-[var(--ps-tile-wash)] hover:text-[var(--ps-tile-ink)] transition-colors"
           >
             <LogOut className="h-6 w-6 shrink-0" /> {compactNav ? <span className="sr-only">{t('nav.signOut')}</span> : t('nav.signOut')}
           </button>
@@ -861,7 +861,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {pathwayDesk || (immersive && shellOwnsPage) ? children : immersive ? <ToolShell>{children}</ToolShell> : (
               <>
             {accessDenied && (
-              <div role="alert" className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <div role="alert" className="mb-4 rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-tile-wash)] px-4 py-3 text-sm text-[var(--ps-tile-ink)]">
                 {ACCESS_DENIED_MESSAGE}
               </div>
             )}

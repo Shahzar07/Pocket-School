@@ -246,7 +246,7 @@ const CSS = `
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #D0553F;
+  background: #1E6A83;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -338,7 +338,7 @@ const CSS = `
   min-width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: #D0553F;
+  background: #1E6A83;
   color: #fff;
   font-size: 12px;
   font-weight: 700;

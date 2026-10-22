@@ -669,7 +669,7 @@ export function SettingsPanel({
         <Button
           type="button"
           variant="outline"
-          className="rounded-full text-destructive"
+          className="rounded-full text-[var(--ps-tile-ink)]"
           disabled={deleteConfirm.trim().toLowerCase() !== view.email.trim().toLowerCase()}
           onClick={() => void onRequestDeletion()}
         >

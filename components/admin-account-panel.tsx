@@ -94,7 +94,7 @@ export function AdminAccountPanel({
       <aside className="w-full max-w-md h-full bg-card border-l border-border overflow-y-auto p-5 space-y-5" onClick={event => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-600">Profile</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--ps-tile-ink)]">Profile</p>
             <h2 className="text-2xl font-semibold">{row.data.name}</h2>
             <p className="text-sm text-muted-foreground">{row.data.email}</p>
           </div>

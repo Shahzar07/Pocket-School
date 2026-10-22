@@ -29,7 +29,7 @@ const STATUS_STYLES: Record<string, string> = {
   open: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
   pending: 'bg-primary/10 text-primary border border-primary/20',
   in_progress: 'bg-primary/10 text-primary border border-primary/20',
-  kiv: 'bg-violet-500/10 text-violet-700 border border-violet-500/20',
+  kiv: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border border-[var(--ps-cyan-border)]',
   solved: 'bg-success/10 text-success border border-success/20',
   resolved: 'bg-success/10 text-success border border-success/20',
   closed: 'bg-muted text-muted-foreground',
@@ -54,7 +54,7 @@ const PRIORITY_STYLES: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
   normal: 'bg-primary/10 text-primary border border-primary/20',
   high: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border border-[var(--ps-cyan-border)]/20',
-  urgent: 'bg-destructive/10 text-destructive border border-destructive/20',
+  urgent: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border border-[var(--ps-cyan-border)]',
 };
 
 export default function HelpdeskPage() {

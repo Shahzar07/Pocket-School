@@ -201,7 +201,7 @@ function TopicInner({ params }: { params: Promise<{ id: string; topicId: string 
                 <span className="w-14 h-14 rounded-2xl bg-primary/10 text-primary grid place-items-center mx-auto mb-4"><meta.icon className="w-6 h-6" /></span>
                 <p className="font-heading text-xl text-foreground">{meta.label}</p>
                 <p className="text-[14px] text-muted-foreground mt-1.5">{meta.blurb}</p>
-                {error && <p className="mt-3 text-[13px] text-rose-600">{error}</p>}
+                {error && <p className="mt-3 text-[13px] text-[var(--ps-tile-ink)]">{error}</p>}
                 <button onClick={generate} className="mt-5 h-11 px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm inline-flex items-center gap-2">
                   <Sparkles className="w-4 h-4" /> {error ? 'Try again' : `Create ${meta.label.toLowerCase()}`}
                   <span className="text-[12px] opacity-80 inline-flex items-center gap-0.5"><Zap className="w-3 h-3" />{STUDY_COSTS[tab as keyof typeof STUDY_COSTS]}</span>

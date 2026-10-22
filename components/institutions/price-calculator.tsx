@@ -218,7 +218,7 @@ export function PriceCalculator({
             </ul>
             <p className="mt-4 text-sm text-white/80">Subtotal {quote.currency} {quote.subtotal.toFixed(2)} · tax {quote.currency} {quote.tax.toFixed(2)} · {quote.sparks.toLocaleString('en')} Sparks</p>
             {quote.notices.map((notice) => (
-              <p key={notice} className="mt-3 rounded-2xl bg-[#E36A4F] px-3 py-2 text-sm">{notice}</p>
+              <p key={notice} className="mt-3 rounded-2xl bg-[#1E6A83] px-3 py-2 text-sm">{notice}</p>
             ))}
             {seats >= catalogue.quoteMinSeats && (
               <div className="mt-4 flex flex-wrap gap-2">

@@ -91,8 +91,8 @@ export function DesignDesk({ role }: { role: ShellRole }) {
             />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatCard icon={Target} label="Today" value={role === 'teacher' ? 3 : 1} tone="teal" index={0} trend={{ direction: 'up', label: 'On track' }} />
-              <StatCard icon={Flame} label="Streak" value={role === 'student' ? '6d' : '—'} tone="coral" index={1} trend={{ direction: 'up', label: 'Keep going' }} />
-              <StatCard icon={BookOpen} label="Courses" value={role === 'admin' ? 42 : 4} tone="violet" index={2} />
+              <StatCard icon={Flame} label="Streak" value={role === 'student' ? '6d' : '—'} tone="cyan" index={1} trend={{ direction: 'up', label: 'Keep going' }} />
+              <StatCard icon={BookOpen} label="Courses" value={role === 'admin' ? 42 : 4} tone="teal" index={2} />
               <StatCard icon={Users} label="People" value={role === 'institution_admin' ? 128 : 18} tone="sky" index={3} trend={{ direction: 'up', label: 'Active' }} />
             </div>
             <Panel>

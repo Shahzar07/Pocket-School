@@ -9,7 +9,7 @@ import { CertificateDocument } from '@/components/certificate-document';
 import type { CertificateAward } from '@/lib/certificates';
 
 const CONFETTI = [
-  'bg-primary', 'bg-[#F2C14E]', 'bg-[#E07A5F]', 'bg-[#81B29A]', 'bg-[#1E6A83]', 'bg-white',
+  'bg-primary', 'bg-[#1E6A83]', 'bg-[#1E6A83]', 'bg-[#81B29A]', 'bg-[#1E6A83]', 'bg-white',
 ];
 
 export function CertificateCelebration({

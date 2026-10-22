@@ -125,7 +125,7 @@ export function ProfilePhoto({
           </div>
         </div>
       )}
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>}
     </div>
   );
 }

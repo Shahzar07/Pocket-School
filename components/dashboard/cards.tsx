@@ -85,15 +85,14 @@ export function StatCard({
 
 export function AlertCard({ tone, title, detail }: { tone: AlertTone; title: string; detail: string }) {
   const style = ALERT_TONE[tone];
-  const onCritical = tone === 'critical';
   return (
     <article
       className="rounded-[18px] px-4 py-3"
-      style={{ background: style.wash, color: onCritical ? 'var(--destructive-foreground)' : style.ink }}
+      style={{ background: style.wash, color: style.ink }}
     >
       <p className="text-[11px] font-bold uppercase tracking-[0.14em]">{style.label}</p>
       <h3 className="mt-1 text-base font-semibold">{title}</h3>
-      <p className={`mt-1 text-sm ${onCritical ? '' : 'text-foreground/80'}`}>{detail}</p>
+      <p className="mt-1 text-sm">{detail}</p>
     </article>
   );
 }
@@ -208,7 +207,7 @@ export function InsightMap() {
         <path d="M40 90 C70 40 120 30 160 55 C200 80 250 40 290 70" fill="none" stroke="var(--chart-1)" strokeWidth="8" strokeLinecap="round" />
         <circle cx="92" cy="58" r="7" fill="var(--chart-2)" />
         <circle cx="168" cy="62" r="9" fill="var(--chart-5)" />
-        <circle cx="236" cy="54" r="6" fill="var(--chart-3)" />
+        <circle cx="236" cy="54" r="6" fill="var(--chart-5)" />
       </svg>
     </section>
   );

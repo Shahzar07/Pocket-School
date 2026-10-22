@@ -48,9 +48,9 @@ const COURSE_GRADIENTS = [
   'from-primary to-primary',
   'from-success to-teal-600',
   'from-[var(--ps-cyan)] to-[var(--ps-cyan-border)]',
-  'from-rose-500 to-pink-600',
+  'from-[#1E6A83] to-[#3FE0D0]',
   'from-cyan-500 to-blue-600',
-  'from-violet-500 to-fuchsia-600',
+  'from-[#1E6A83] to-[#3FE0D0]',
 ];
 
 function greeting() {
@@ -321,7 +321,7 @@ export default function StudentDashboard() {
           trend={completed.length > 0 ? { direction: 'up', label: 'Finished' } : { direction: 'flat', label: 'None yet' }}
         />
         <StatCard
-          index={3} icon={Zap} label="Level" value={rank.name} tone="coral"
+          index={3} icon={Zap} label="Level" value={rank.name} tone="cyan"
           progress={rank.progress} progressLabel={`${xp.toLocaleString()} XP`}
           trend={studyStreak > 0 ? { direction: 'up', label: `${studyStreak} day streak` } : { direction: 'flat', label: 'Start a streak' }}
         />

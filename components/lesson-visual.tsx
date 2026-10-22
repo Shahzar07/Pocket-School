@@ -164,7 +164,7 @@ export function VisualBlock({
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />} Upload
         </Button>
         {!confirming ? (
-          <Button type="button" size="sm" className="rounded-xl gap-1.5 h-8 text-xs bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={busy} onClick={() => setConfirming(true)}>
+          <Button type="button" size="sm" className="rounded-xl gap-1.5 h-8 text-xs bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] text-white" disabled={busy} onClick={() => setConfirming(true)}>
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             Generate with ET AI
             <span className="text-[var(--ps-cyan-text)] font-bold">{cost} ⚡</span>

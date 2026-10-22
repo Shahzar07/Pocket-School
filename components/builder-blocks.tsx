@@ -108,7 +108,7 @@ export function BlockShell({
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{def.label}</span>
         {bloom && (
           <span
-            className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-bold whitespace-nowrap"
+            className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] font-bold whitespace-nowrap"
             title={`Bloom's level: ${bloom}`}
           >
             {bloom}
@@ -118,7 +118,7 @@ export function BlockShell({
         {onRegenerate && (
           <button
             onClick={e => { e.stopPropagation(); onRegenerate(); }}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-violet-600 hover:bg-violet-50"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]"
             title="AI regenerate"
             disabled={regenerating}
           >
@@ -136,7 +136,7 @@ export function BlockShell({
         {onMoveDown && (
           <button onClick={e => { e.stopPropagation(); onMoveDown(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-bold" title="Move down">↓</button>
         )}
-        <button onClick={e => { e.stopPropagation(); onDelete(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50" title="Remove block">
+        <button onClick={e => { e.stopPropagation(); onDelete(); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]" title="Remove block">
           <X className="w-3.5 h-3.5" />
         </button>
         </span>
@@ -167,7 +167,7 @@ export function ObjectivesBlock({ value, onChange, onSuggest, suggesting }: {
           <select
             value={o.bloom}
             onChange={e => update(i, { bloom: e.target.value })}
-            className="text-[11px] font-semibold rounded-lg border border-violet-200 bg-violet-50 text-violet-700 px-2 py-2 shrink-0 w-28"
+            className="text-[11px] font-semibold rounded-lg border border-[var(--ps-cyan-border)] bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] px-2 py-2 shrink-0 w-28"
             title="Bloom's level"
           >
             {BLOOMS.map(b => <option key={b} value={b}>{b}</option>)}
@@ -178,7 +178,7 @@ export function ObjectivesBlock({ value, onChange, onSuggest, suggesting }: {
             placeholder="Students will be able to…"
             className="h-9 rounded-xl text-sm"
           />
-          <button onClick={() => onChange(rows.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-red-600 shrink-0" title="Remove">
+          <button onClick={() => onChange(rows.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-[var(--ps-tile-ink)] shrink-0" title="Remove">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -194,7 +194,7 @@ export function ObjectivesBlock({ value, onChange, onSuggest, suggesting }: {
           <Plus className="w-3 h-3" /> Add Objective
         </Button>
         {onSuggest && (
-          <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-50"
+          <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-8 text-xs border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]"
             disabled={suggesting} onClick={onSuggest}>
             {suggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             Suggest with ET AI
@@ -323,7 +323,7 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
               placeholder='e.g. "Explain atomic structure with animated diagrams aimed at IGCSE students"'
               className="h-10 rounded-xl text-sm"
             />
-            <Button className="rounded-xl gap-1.5 shrink-0 bg-gradient-to-r from-red-500 to-rose-600 text-white" disabled={busy}
+            <Button className="rounded-xl gap-1.5 shrink-0 bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] text-white" disabled={busy}
               onClick={run}>
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {script ? 'Regenerate script' : 'Generate'}
@@ -377,7 +377,7 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
   const words = value.trim() ? value.trim().split(/\s+/).length : 0;
   return (
     <div className="space-y-3">
-      <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[11px] text-red-700 flex items-start gap-2">
+      <div className="rounded-lg bg-[var(--ps-tile-wash)] border border-[var(--ps-cyan-border)] px-3 py-2 text-[11px] text-[var(--ps-tile-ink)] flex items-start gap-2">
         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
         Don’t paste copyrighted textbook content. Write original material or use licensed sources — AI checks flag verbatim textbook passages.
       </div>
@@ -395,11 +395,11 @@ export function LessonTextBlock({ value, onChange, ai, generating, onImprove, im
         <span className="flex-1" />
         {onImprove && value.trim() ? (
           <>
-            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-violet-200 text-violet-700 hover:bg-violet-50" disabled={improving}
+            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]" disabled={improving}
               onClick={() => onImprove('Expand this lesson text with more depth, worked examples and clearer explanations. Keep the same structure and headings.')}>
               {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ET AI Expand
             </Button>
-            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-violet-200 text-violet-700 hover:bg-violet-50" disabled={improving}
+            <Button size="sm" variant="outline" className="rounded-xl h-7 text-[11px] gap-1 border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]" disabled={improving}
               onClick={() => onImprove('Simplify this lesson text for a younger reading level while keeping every key fact and all worked examples.')}>
               {improving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ET AI Simplify
             </Button>
@@ -435,7 +435,7 @@ export function VocabularyBlock({ value, onChange }: {
         <div key={i} className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
           <Input value={v.term} onChange={e => update(i, { term: e.target.value })} placeholder="Term" className="h-9 rounded-xl text-sm font-semibold" />
           <Input value={v.definition} onChange={e => update(i, { definition: e.target.value })} placeholder="Definition" className="h-9 rounded-xl text-sm" />
-          <button onClick={() => onChange(value.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-red-600" title="Remove">
+          <button onClick={() => onChange(value.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-[var(--ps-tile-ink)]" title="Remove">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -536,7 +536,7 @@ export function QuizBlock({ value, onChange, ai, generating, settings, onSetting
           <div className="flex items-start gap-2">
             <span className="text-xs font-bold text-muted-foreground mt-2 shrink-0">Q{i + 1}</span>
             <Textarea value={q.question} onChange={e => update(i, { question: e.target.value })} className="min-h-9 rounded-lg text-sm" placeholder="Question text" />
-            <button onClick={() => onChange(value.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-red-600 mt-2 shrink-0" title="Delete question">
+            <button onClick={() => onChange(value.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-[var(--ps-tile-ink)] mt-2 shrink-0" title="Delete question">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -637,7 +637,7 @@ export function AssignmentBlock({ value, onChange }: {
             <select value={r.bloom ?? 'Apply'} onChange={e => updateRubric(i, { bloom: e.target.value })} className="h-8 rounded-lg border border-border bg-card px-1 text-[11px]" title="Bloom's level">
               {BLOOMS.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
-            <button onClick={() => onChange({ ...value, rubric: rubric.filter((_, j) => j !== i) })} className="text-muted-foreground hover:text-red-600" title="Remove">
+            <button onClick={() => onChange({ ...value, rubric: rubric.filter((_, j) => j !== i) })} className="text-muted-foreground hover:text-[var(--ps-tile-ink)]" title="Remove">
               <Trash2 className="w-3 h-3" />
             </button>
           </div>
@@ -707,7 +707,7 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
               placeholder="Section description" className="h-8 rounded-lg text-xs" />
             <Input type="number" value={s.marks} onChange={e => onChange({ ...value, sections: sections.map((x, j) => j === i ? { ...x, marks: Number(e.target.value) || 0 } : x) })}
               className="h-8 rounded-lg text-xs" />
-            <button onClick={() => onChange({ ...value, sections: sections.filter((_, j) => j !== i) })} className="text-muted-foreground hover:text-red-600" title="Remove">
+            <button onClick={() => onChange({ ...value, sections: sections.filter((_, j) => j !== i) })} className="text-muted-foreground hover:text-[var(--ps-tile-ink)]" title="Remove">
               <Trash2 className="w-3 h-3" />
             </button>
             <Textarea value={s.markScheme ?? ''} onChange={e => onChange({ ...value, sections: sections.map((x, j) => j === i ? { ...x, markScheme: e.target.value } : x) })}
@@ -726,7 +726,7 @@ export function AssessmentBlock({ value, onChange, ai, generating, onDraftSectio
             <Plus className="w-3 h-3" /> Add Manually
           </Button>
           {onDraftSections && (
-            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-7 text-[11px] border-violet-200 text-violet-700 hover:bg-violet-50"
+            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 h-7 text-[11px] border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]"
               disabled={draftingSections} onClick={onDraftSections}>
               {draftingSections ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Draft Sections with ET AI
             </Button>
@@ -765,12 +765,12 @@ export function AudioBlock({
           <p className="text-sm text-muted-foreground">
             {writing ? 'The audio script is being written.' : scriptStatus === 'failed' ? 'The audio script failed. Try again.' : 'No audio summary yet.'}
           </p>
-          <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white" disabled={writing} onClick={run}>
+          <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] text-white" disabled={writing} onClick={run}>
             {writing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             {writing ? 'Writing the audio script…' : 'Generate Audio Script'}
           </Button>
         </div>
-        {writing && <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full w-2/3 bg-violet-500 animate-pulse" /></div>}
+        {writing && <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full w-2/3 bg-[#1E6A83] animate-pulse" /></div>}
       </div>
     );
   }

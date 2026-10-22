@@ -208,7 +208,7 @@ export default function StudentExamsPage() {
             <div className="mt-3"><IntegrityNotice /></div>
           </div>
           {timeLeft !== null && (
-            <div className={`flex items-center gap-2 font-bold text-lg px-5 py-2.5 rounded-full ${timeLeft < 60 ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+            <div className={`flex items-center gap-2 font-bold text-lg px-5 py-2.5 rounded-full ${timeLeft < 60 ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' : 'bg-primary/10 text-primary'}`}>
               <Clock className="w-5 h-5" />{formatTime(timeLeft)}
             </div>
           )}
@@ -398,7 +398,7 @@ export default function StudentExamsPage() {
                     <Trophy className={`w-5 h-5 shrink-0 ${passed ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`} />
                     <div>
                       <p className="font-semibold text-foreground">{item.exam.title}</p>
-                      <Badge className={`rounded-full text-[10px] mt-1 ${passed ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                      <Badge className={`rounded-full text-[10px] mt-1 ${passed ? 'bg-success/10 text-success' : 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'}`}>
                         {passed ? 'Passed' : 'Failed'}
                       </Badge>
                     </div>

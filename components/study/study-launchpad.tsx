@@ -49,7 +49,7 @@ export function StudyLaunchpad() {
             </div>
             <div className="mt-4 relative h-2 rounded-full bg-white/15">
               <div className="absolute inset-y-0 left-0 rounded-full bg-white" style={{ width: `${mastery}%` }} />
-              <span className="absolute -top-1 w-0.5 h-4 bg-rose-300 rounded" style={{ left: `${next.targetScore}%` }} />
+              <span className="absolute -top-1 w-0.5 h-4 bg-[#1E6A83] rounded" style={{ left: `${next.targetScore}%` }} />
             </div>
             <p className="text-[12px] text-white/60 mt-1.5">{mastery}% mastered · target {next.targetGrade}</p>
             <Link href={`/dashboard/studio/exam-prep/${next.id}`} className="mt-4 inline-flex h-10 px-4 rounded-full bg-white text-[#0f2f3a] text-[13px] font-semibold items-center gap-1.5 hover:bg-white/90">

@@ -82,12 +82,12 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
             <p className="text-[10px] text-muted-foreground">Last attempt</p>
           </div>
           <div className="bg-muted/40 rounded-xl p-2.5">
-            <RotateCcw className="w-3.5 h-3.5 mx-auto mb-1 text-violet-500" />
+            <RotateCcw className="w-3.5 h-3.5 mx-auto mb-1 text-[var(--ps-tile-ink)]" />
             <p className="text-sm font-bold text-foreground">{attempts.length}</p>
             <p className="text-[10px] text-muted-foreground">Attempt{attempts.length === 1 ? '' : 's'}</p>
           </div>
           <div className="bg-muted/40 rounded-xl p-2.5">
-            <Target className="w-3.5 h-3.5 mx-auto mb-1 text-red-500" />
+            <Target className="w-3.5 h-3.5 mx-auto mb-1 text-[var(--ps-tile-ink)]" />
             <p className="text-sm font-bold text-foreground font-mono">{latest.weakestObjective ?? '—'}</p>
             <p className="text-[10px] text-muted-foreground">Weakest objective</p>
           </div>

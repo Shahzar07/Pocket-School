@@ -139,7 +139,7 @@ export function DashboardSearch({ autoFocus = false, inputId = 'dashboard-search
                   {results.announcements.slice(0, 2).map(a => (
                     <button key={a.id} onClick={() => { router.push('/dashboard/announcements'); setOpen(false); setQuery(''); }}
                       className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted text-left">
-                      <Megaphone className="w-4 h-4 text-purple-500 shrink-0" />
+                      <Megaphone className="w-4 h-4 text-[var(--ps-tile-ink)] shrink-0" />
                       <p className="text-sm text-foreground truncate">{a.title}</p>
                     </button>
                   ))}

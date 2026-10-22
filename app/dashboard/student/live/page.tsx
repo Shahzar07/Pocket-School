@@ -81,13 +81,13 @@ export default function StudentLiveClasses() {
               <motion.div key={cls.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
                 <Card className="p-6 rounded-2xl border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl shrink-0 ${cls.status === 'live' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+                    <div className={`p-3 rounded-xl shrink-0 ${cls.status === 'live' ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' : 'bg-blue-50 text-blue-500'}`}>
                       {cls.status === 'live' ? <Radio className="w-6 h-6 animate-pulse" /> : <Video className="w-6 h-6" />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-bold text-foreground text-lg">{cls.title}</h3>
-                        {cls.status === 'live' && <Badge className="bg-red-100 text-red-700 rounded-full">LIVE NOW</Badge>}
+                        {cls.status === 'live' && <Badge className="bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] rounded-full">LIVE NOW</Badge>}
                       </div>
                       <div className="flex flex-wrap items-center gap-3 mt-1.5 text-sm text-muted-foreground">
                         {date && (
@@ -102,7 +102,7 @@ export default function StudentLiveClasses() {
                   </div>
                   <Button
                     onClick={() => handleJoin(cls)}
-                    className={`shrink-0 ${cls.status === 'live' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
+                    className={`shrink-0 ${cls.status === 'live' ? 'bg-[#1E6A83] hover:bg-[#1E6A83] text-white' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
                   >
                     {cls.status === 'live' ? 'Join Now' : 'Join Class'}
                   </Button>

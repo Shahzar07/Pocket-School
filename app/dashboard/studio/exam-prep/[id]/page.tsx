@@ -118,7 +118,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                 className="h-10 rounded-xl border border-border bg-background px-3 text-sm" />
             </label>
             <p className="text-[12px] text-muted-foreground flex-1 min-w-[200px]">Rescheduling rebuilds the calendar; everything you&apos;ve completed stays completed.</p>
-            <button onClick={remove} className="h-10 px-4 rounded-full border border-rose-200 text-rose-700 text-sm font-semibold inline-flex items-center gap-1.5 hover:bg-rose-50"><Trash2 className="w-4 h-4" /> Delete</button>
+            <button onClick={remove} className="h-10 px-4 rounded-full border border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)] text-sm font-semibold inline-flex items-center gap-1.5 hover:bg-[var(--ps-tile-wash)]"><Trash2 className="w-4 h-4" /> Delete</button>
           </div>
         </Panel>
       )}
@@ -131,7 +131,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">{prep.subject || 'Exam prep'}</p>
             <h1 className="font-heading text-[30px] sm:text-[36px] leading-[1.08] tracking-[-0.04em] text-foreground mt-1">{prep.title}</h1>
             <p className="text-[14px] text-muted-foreground mt-1.5">
-              {stats.left > 0 ? <>Exam in <span className="font-semibold text-foreground">{stats.left} day{stats.left === 1 ? '' : 's'}</span> · {examDay}</> : stats.left === 0 ? <span className="font-semibold text-rose-600">Exam day — you&apos;ve got this.</span> : 'Exam finished'}
+              {stats.left > 0 ? <>Exam in <span className="font-semibold text-foreground">{stats.left} day{stats.left === 1 ? '' : 's'}</span> · {examDay}</> : stats.left === 0 ? <span className="font-semibold text-[var(--ps-tile-ink)]">Exam day — you&apos;ve got this.</span> : 'Exam finished'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                   return (
                     <motion.li key={it.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                       <Link href={itemHref(prep.id, it)} className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors ${done ? 'border-success/40 bg-success/50' : 'border-border hover:border-primary/40 hover:bg-primary/[0.03]'}`}>
-                        <span className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${done ? 'bg-success/15 text-success' : it.kind === 'mock' ? 'bg-rose-50 text-rose-600' : 'bg-primary/10 text-primary'}`}><Icon className="w-5 h-5" /></span>
+                        <span className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${done ? 'bg-success/15 text-success' : it.kind === 'mock' ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]' : 'bg-primary/10 text-primary'}`}><Icon className="w-5 h-5" /></span>
                         <span className="flex-1 min-w-0">
                           <span className={`block font-semibold text-[15px] truncate ${done ? 'text-success' : 'text-foreground'}`}>{it.title}</span>
                           <span className="text-[12px] text-muted-foreground capitalize">{it.kind} · {it.minutes} min</span>
@@ -250,7 +250,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                     <span className="text-[12px] font-semibold tabular-nums">{m}%</span>
                     <div className="col-span-2 relative h-2 rounded-full bg-muted mt-1">
                       <motion.div className={`absolute inset-y-0 left-0 rounded-full ${m >= prep.targetScore ? 'bg-success' : 'bg-primary'}`} initial={{ width: 0 }} animate={{ width: `${m}%` }} />
-                      <span className="absolute -top-0.5 w-0.5 h-3 bg-rose-400" style={{ left: `${prep.targetScore}%` }} />
+                      <span className="absolute -top-0.5 w-0.5 h-3 bg-[#1E6A83]" style={{ left: `${prep.targetScore}%` }} />
                     </div>
                   </li>
                 );
@@ -286,7 +286,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
               <ul className="space-y-2">
                 {attempts.map(a => (
                   <li key={a.id} className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5">
-                    <span className={`w-9 h-9 rounded-xl grid place-items-center ${a.kind === 'oral' ? 'bg-primary/10 text-primary' : 'bg-rose-50 text-rose-600'}`}>{a.kind === 'oral' ? <Mic className="w-4 h-4" /> : <Trophy className="w-4 h-4" />}</span>
+                    <span className={`w-9 h-9 rounded-xl grid place-items-center ${a.kind === 'oral' ? 'bg-primary/10 text-primary' : 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'}`}>{a.kind === 'oral' ? <Mic className="w-4 h-4" /> : <Trophy className="w-4 h-4" />}</span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-[14px] font-semibold capitalize">{a.kind} exam</span>
                       <span className="text-[12px] text-muted-foreground">{a.createdAt?.toDate?.().toLocaleDateString() ?? ''} · {a.score}/{a.max}</span>
@@ -303,7 +303,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                   {attempts[0].gaps!.slice(0, 3).map((g, i) => (
                     <li key={i}>
                       <Link href={`/dashboard/studio/exam-prep/${prep.id}/topic/${g.topicId}`} className="block rounded-xl border border-border px-3 py-2 hover:border-primary/40">
-                        <span className={`text-[11px] font-bold uppercase ${g.severity === 'weakest' ? 'text-rose-600' : g.severity === 'attention' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`}>{g.severity === 'weakest' ? 'Weakest area' : g.severity === 'attention' ? 'Needs attention' : 'Minor gap'}</span>
+                        <span className={`text-[11px] font-bold uppercase ${g.severity === 'weakest' ? 'text-[var(--ps-tile-ink)]' : g.severity === 'attention' ? 'text-[var(--ps-cyan-text)]' : 'text-muted-foreground'}`}>{g.severity === 'weakest' ? 'Weakest area' : g.severity === 'attention' ? 'Needs attention' : 'Minor gap'}</span>
                         <span className="block text-[14px] font-semibold text-foreground">{g.topic}</span>
                         <span className="block text-[12px] text-muted-foreground">{g.fix}</span>
                       </Link>
@@ -322,7 +322,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
 }
 
 function Pill({ icon: I, value, label, tone }: { icon: typeof Flame; value: string | number; label: string; tone: 'orange' | 'rose' | 'primary' }) {
-  const cls = tone === 'orange' ? 'text-[var(--ps-cyan-text)]' : tone === 'rose' ? 'text-rose-500' : 'text-primary';
+  const cls = tone === 'orange' ? 'text-[var(--ps-cyan-text)]' : tone === 'rose' ? 'text-[var(--ps-tile-ink)]' : 'text-primary';
   return (
     <div className="rounded-2xl border border-border bg-card px-3.5 py-2 text-center min-w-[78px]">
       <p className="font-heading text-[22px] leading-none text-foreground inline-flex items-center gap-1"><I className={`w-4 h-4 ${cls}`} />{value}</p>
@@ -353,7 +353,7 @@ function StudyCalendar({ days, examDate }: { days: string[]; examDate: string })
       <div className="grid grid-rows-7 grid-flow-col gap-1 w-max">
         {cells.map(d => (
           <span key={d} title={d}
-            className={`w-3.5 h-3.5 rounded-[4px] ${d === examDate ? 'bg-rose-400' : set.has(d) ? 'bg-primary' : d > today ? 'bg-transparent' : 'bg-muted'}`} />
+            className={`w-3.5 h-3.5 rounded-[4px] ${d === examDate ? 'bg-[#1E6A83]' : set.has(d) ? 'bg-primary' : d > today ? 'bg-transparent' : 'bg-muted'}`} />
         ))}
       </div>
     </div>

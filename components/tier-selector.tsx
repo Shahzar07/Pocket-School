@@ -177,9 +177,9 @@ export function TierSelector({
 export function TierBadge({ selection, className = '' }: { selection: TierSelection; className?: string }) {
   const tone: Record<TierId, string> = {
     tier1: 'bg-sky-100 text-sky-700',
-    tier2: 'bg-violet-100 text-violet-700',
+    tier2: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
     tier3: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
-    tier4: 'bg-rose-100 text-rose-700',
+    tier4: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
   };
   return (
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${tone[selection.tier] ?? tone.tier1} ${className}`}>

@@ -53,9 +53,9 @@ function cachedChapterMarkdown(
 }
 
 const THEMES = {
-  light: { bg: '#F7F6F3', fg: '#1C2422', muted: '#5E6B68', paper: '#FFFFFF' },
-  sepia: { bg: '#F3E6D0', fg: '#3E2F1C', muted: '#7A6550', paper: '#F8F0E2' },
-  dark: { bg: '#14181C', fg: '#E7E1D6', muted: '#A39B90', paper: '#1C2228' },
+  light: { bg: '#E9F7FA', fg: '#1C2422', muted: '#5E6B68', paper: '#FFFFFF' },
+  sepia: { bg: '#E9F7FA', fg: '#121E22', muted: '#1E6A83', paper: '#E9F7FA' },
+  dark: { bg: '#14181C', fg: '#E9F7FA', muted: '#A39B90', paper: '#1C2228' },
 } as const;
 
 export function Reader({ bookId, initialLang, preview = false }: { bookId: string; initialLang?: string; preview?: boolean }) {
@@ -552,7 +552,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
                                 type="button"
                                 onClick={() => setQuizPick(s => ({ ...s, [qi]: option }))}
                                 className="rounded-xl border px-3 py-2 text-left text-sm"
-                                style={{ borderColor: right ? '#1F7A4D' : wrong ? '#A33B32' : theme.muted }}
+                                style={{ borderColor: right ? '#1F7A4D' : wrong ? '#1E6A83' : theme.muted }}
                               >
                                 {option}
                               </button>

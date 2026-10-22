@@ -35,11 +35,11 @@ interface InfographicDoc {
 /* ─── Accent palette (works on light + dark surfaces) ──────── */
 
 const ACCENTS = [
-  { grad: 'from-blue-500 to-indigo-600', on: 'text-white', text: 'text-blue-500', soft: 'bg-blue-500/10', border: 'border-blue-500/25', frame: '' },
+  { grad: 'from-blue-500 to-[#3FE0D0]', on: 'text-white', text: 'text-blue-500', soft: 'bg-blue-500/10', border: 'border-blue-500/25', frame: '' },
   { grad: 'from-success to-teal-600', on: 'text-white', text: 'text-success', soft: 'bg-success/10', border: 'border-success/25', frame: '' },
-  { grad: 'from-violet-500 to-purple-600', on: 'text-white', text: 'text-violet-500', soft: 'bg-violet-500/10', border: 'border-violet-500/25', frame: '' },
+  { grad: 'from-[#1E6A83] to-[#3FE0D0]', on: 'text-white', text: 'text-[var(--ps-tile-ink)]', soft: 'bg-[var(--ps-tile-wash)]', border: 'border-[var(--ps-cyan-border)]', frame: '' },
   { grad: 'from-[var(--ps-cyan)] to-[var(--ps-cyan)]', on: 'text-[var(--ps-cyan-ink)]', text: 'text-[var(--ps-cyan-text)]', soft: 'bg-[var(--ps-cyan-soft)]', border: 'border-[var(--ps-cyan-border)]/25', frame: 'border border-[var(--ps-cyan-border)]' },
-  { grad: 'from-rose-500 to-pink-600', on: 'text-white', text: 'text-rose-500', soft: 'bg-rose-500/10', border: 'border-rose-500/25', frame: '' },
+  { grad: 'from-[#1E6A83] to-[#3FE0D0]', on: 'text-white', text: 'text-[var(--ps-tile-ink)]', soft: 'bg-[var(--ps-tile-wash)]', border: 'border-[var(--ps-cyan-border)]', frame: '' },
   { grad: 'from-[#1E6A83] to-[#1E6A83]', on: 'text-white', text: 'text-[var(--ps-cyan-text)]', soft: 'bg-[var(--ps-wash)]', border: 'border-[var(--ps-cyan-border)]/25', frame: '' },
 ];
 
@@ -236,12 +236,12 @@ function markdownToHtml(md: string): string {
 const DOC_STYLES = `
   * { box-sizing: border-box; }
   body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #16181d; margin: 0; padding: 36px 40px; line-height: 1.6; }
-  .ps-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 3px solid #4f46e5; padding-bottom: 10px; margin-bottom: 26px; }
-  .ps-mark { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: #4f46e5; }
+  .ps-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 3px solid #1E6A83; padding-bottom: 10px; margin-bottom: 26px; }
+  .ps-mark { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: #1E6A83; }
   .ps-mark span { color: #16181d; }
   .ps-kind { font-size: 11px; text-transform: uppercase; letter-spacing: .18em; color: #6b7280; }
   h1 { font-size: 26px; margin: 0 0 18px; letter-spacing: -0.02em; }
-  h2 { font-size: 19px; margin: 26px 0 8px; color: #1f2937; border-left: 4px solid #4f46e5; padding-left: 10px; }
+  h2 { font-size: 19px; margin: 26px 0 8px; color: #1f2937; border-left: 4px solid #1E6A83; padding-left: 10px; }
   h3, h4, h5, h6 { font-size: 15px; margin: 18px 0 6px; color: #374151; }
   p { margin: 0 0 10px; font-size: 13.5px; }
   ul { margin: 0 0 12px; padding-left: 20px; }
@@ -483,7 +483,7 @@ export function InfographicRenderer({ content, dark = false }: InfographicRender
         <h2 className={`text-2xl sm:text-3xl font-bold leading-tight tracking-tight ${dark ? 'text-white' : 'text-foreground'}`}>
           {doc.title}
         </h2>
-        <div className="mt-3 h-1 w-20 rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500" />
+        <div className="mt-3 h-1 w-20 rounded-full bg-gradient-to-r from-[#1E6A83] via-[#3FE0D0] to-[#3FE0D0]" />
       </div>
 
       {/* Lead paragraphs */}

@@ -473,7 +473,7 @@ export default function TeacherAssignmentsPage() {
                 <Button variant="outline" size="sm" onClick={() => handleViewSubmissions(a)} className="gap-1 rounded-full">
                   <Eye className="w-3.5 h-3.5" /> Submissions
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)} className="text-red-500 hover:bg-red-500/10 rounded-full">
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)} className="text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)] rounded-full">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>

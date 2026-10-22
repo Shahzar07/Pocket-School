@@ -35,7 +35,7 @@ const CSS = `
   gap: 8px; padding: 0 16px; font-weight: 700; font-size: 15px; text-decoration: none; border: 0; cursor: pointer;
 }
 .sf-shield { background: #17343C; color: #fff; }
-.sf-danger { background: #D0553F; color: #fff; width: 100%; }
+.sf-danger { background: #1E6A83; color: #fff; width: 100%; }
 .sf-chip { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
 .sf-btn { background: #3FE0D0; color: #203337; border: 1px solid #1E6A83; }
 .sf-btn.ghost { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
@@ -124,7 +124,7 @@ export function DangerCard({
   const number = emergencyNumber(country);
   return (
     <section className="sf-card" aria-label="I'm in danger now">
-      <p className="sf-kicker" style={{ color: '#D0553F' }}>Emergency</p>
+      <p className="sf-kicker" style={{ color: '#1E6A83' }}>Emergency</p>
       <p className="sf-call">Call {number}</p>
       <p className="sf-note">The Safety Desk does not replace emergency services.</p>
       <p className="sf-note">This is the emergency number for your country. Call it now if you can. Poket School is not a replacement for emergency services.</p>

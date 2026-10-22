@@ -46,8 +46,8 @@ const ROLE_FILTERS: (Role | 'all')[] = ['all', 'student', 'teacher', 'parent', '
 const STATUS_FILTERS: (AccountStatus | 'all')[] = ['all', 'active', 'suspended', 'pending', 'inactive', 'banned', 'deleted'];
 
 const ROLE_BADGE: Record<string, string> = {
-  admin: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
-  institution_admin: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+  admin: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border-[var(--ps-cyan-border)]',
+  institution_admin: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border-[var(--ps-cyan-border)]',
   teacher: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   student: 'bg-success/10 text-success border-success/20',
   parent: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
@@ -55,10 +55,10 @@ const ROLE_BADGE: Record<string, string> = {
 
 const STATUS_BADGE: Record<AccountStatus, string> = {
   active: 'bg-success/10 text-success border-success/20',
-  suspended: 'bg-red-500/10 text-red-600 border-red-500/20',
+  suspended: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border-[var(--ps-cyan-border)]',
   pending: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] border-[var(--ps-cyan-border)]/20',
   inactive: 'bg-muted text-muted-foreground border-border',
-  banned: 'bg-red-500/10 text-red-700 border-red-500/20',
+  banned: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)] border-[var(--ps-cyan-border)]',
   deleted: 'bg-muted text-muted-foreground border-border',
 };
 
@@ -344,7 +344,7 @@ export default function AdminUsersPage() {
       <motion.header initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-600">Platform</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-tile-ink)]">Platform</p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-2">
             User <span className="gradient-text italic">management</span>
           </h1>
@@ -370,7 +370,7 @@ export default function AdminUsersPage() {
         {[
           { label: 'Total users', value: stats.total, accent: 'bg-primary' },
           { label: 'Students', value: stats.students, accent: 'bg-success' },
-          { label: 'Suspended', value: stats.suspended, accent: 'bg-red-500' },
+          { label: 'Suspended', value: stats.suspended, accent: 'bg-[#1E6A83]' },
           { label: 'Sparks in circulation', value: stats.sparks.toLocaleString(), accent: 'bg-[var(--ps-cyan)]' },
         ].map(s => (
           <div key={s.label} className="bg-card border border-border rounded-3xl p-5 relative overflow-hidden card-glow">
@@ -399,8 +399,8 @@ export default function AdminUsersPage() {
       )}
 
       {selected.size > 0 && can(actor, 'moderate') && (
-        <div className="flex flex-wrap items-center gap-2 bg-violet-50 border border-violet-200 rounded-2xl px-4 py-3">
-          <span className="text-sm font-bold text-violet-700">{selected.size} selected</span>
+        <div className="flex flex-wrap items-center gap-2 bg-[var(--ps-tile-wash)] border border-[var(--ps-cyan-border)] rounded-2xl px-4 py-3">
+          <span className="text-sm font-bold text-[var(--ps-tile-ink)]">{selected.size} selected</span>
           <Input value={bulkReason} onChange={event => setBulkReason(event.target.value)}
             placeholder="Reason" aria-label="Bulk reason" className="rounded-full h-9 max-w-[220px]" />
           <span className="flex-1" />
@@ -418,7 +418,7 @@ export default function AdminUsersPage() {
           </Button>
           <Button size="sm" variant="outline" disabled={busy === 'bulk'}
             onClick={() => bulkStatus('deleted')}
-            className="rounded-full h-9 px-4 font-semibold text-destructive hover:bg-destructive/10">
+            className="rounded-full h-9 px-4 font-semibold text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]">
             Soft-delete
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}
@@ -530,7 +530,7 @@ export default function AdminUsersPage() {
                 const status = accountStatusOf(r.data);
                 const role = (r.data.role ?? 'student') as Role;
                 return (
-                  <tr key={r.id} className={selected.has(r.id) ? 'bg-violet-50/50' : undefined}>
+                  <tr key={r.id} className={selected.has(r.id) ? 'bg-[var(--ps-tile-wash)]' : undefined}>
                     <td className="px-4 py-3">
                       <input type="checkbox" className="w-4 h-4" checked={selected.has(r.id)}
                         aria-label={`Select ${r.data.name}`}
@@ -542,7 +542,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 grid place-items-center text-white text-xs font-bold shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-[#3FE0D0] grid place-items-center text-white text-xs font-bold shrink-0">
                           {(r.data.name ?? 'U').charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">

@@ -343,7 +343,7 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
                         onClick={() => revoke(p)}
                         disabled={saving === p}
                         title="Revoke"
-                        className="text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-50"
+                        className="text-muted-foreground hover:text-[var(--ps-tile-ink)] shrink-0 disabled:opacity-50"
                       >
                         {saving === p ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                       </button>
@@ -569,7 +569,7 @@ function CouponPanel({ courses, adminName }: { courses: Course[]; adminName: str
                         </button>
                         <button
                           onClick={() => remove(c)} disabled={busy === c.code}
-                          className="text-muted-foreground hover:text-destructive px-1.5 disabled:opacity-50"
+                          className="text-muted-foreground hover:text-[var(--ps-tile-ink)] px-1.5 disabled:opacity-50"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />

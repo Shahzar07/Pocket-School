@@ -52,7 +52,7 @@ function RankChange({ delta }: { delta: number }) {
         initial={{ y: -6, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="inline-flex items-center gap-0.5 text-[11px] font-bold"
-        style={{ color: 'var(--ps-coral)' }}
+        style={{ color: 'var(--ps-tile-ink)' }}
         title={`Down ${places} ${places === 1 ? 'place' : 'places'}`}
       >
         <TrendingDown className="h-3.5 w-3.5" aria-hidden />
@@ -71,7 +71,7 @@ function RankChange({ delta }: { delta: number }) {
 function StreakFlame({ days }: { days: number }) {
   if (days < 3) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-bold" style={{ color: 'var(--ps-coral)' }} title={`${days} day streak`}>
+    <span className="inline-flex items-center gap-1 text-[11px] font-bold" style={{ color: 'var(--ps-tile-ink)' }} title={`${days} day streak`}>
       <FlameIcon className="ps-flame h-3.5 w-3.5" aria-hidden />
       {days} day streak
     </span>

@@ -73,12 +73,12 @@ export function JoinByCode({
         {scanning && <CodeScanner onCode={submit} onClose={() => setScanning(false)} />}
         {message && <p className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm text-[#203337]">{message}</p>}
         {card && (
-          <article className="flex items-center gap-4 rounded-2xl border border-[#3C8DFF]/30 bg-gradient-to-br from-[#E8F2FF] to-[#FFF6E4] p-4">
+          <article className="flex items-center gap-4 rounded-2xl border border-[#3C8DFF]/30 bg-gradient-to-br from-[#E8F2FF] to-[#E9F7FA] p-4">
             {card.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={card.photoUrl} alt="" className="h-16 w-16 rounded-2xl object-cover" />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E36A4F] text-xl font-bold text-white">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1E6A83] text-xl font-bold text-white">
                 {card.name.slice(0, 1).toUpperCase()}
               </div>
             )}

@@ -12,10 +12,10 @@ import { cleanNarration, parseScenes, type Scene } from '@/components/video-stor
 import { LANGUAGES, readLanguage } from '@/lib/languages';
 
 const SCENE_THEMES = [
-  'from-indigo-950 via-blue-900 to-slate-950',
-  'from-purple-950 via-fuchsia-900 to-slate-950',
+  'from-[#1E6A83] via-blue-900 to-slate-950',
+  'from-[#1E6A83] via-[#3FE0D0] to-slate-950',
   'from-teal-950 via-cyan-900 to-slate-950',
-  'from-rose-950 via-red-900 to-slate-950',
+  'from-[#1E6A83] via-[#3FE0D0] to-slate-950',
   'from-[#0B1417] via-[#17282D] to-slate-950',
   'from-success via-success to-slate-950',
 ];

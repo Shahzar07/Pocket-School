@@ -132,7 +132,7 @@ export function AccountMenu({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10"
+            className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold text-[var(--ps-tile-ink)] hover:bg-[var(--ps-tile-wash)]"
             onClick={leave}
           >
             <LogOut className="h-4 w-4" /> Sign out

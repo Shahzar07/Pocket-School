@@ -58,7 +58,7 @@ export function AITutor() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 right-6 z-50 w-[420px] h-[min(720px,calc(100dvh-3rem))] max-w-[calc(100vw-2rem)] rounded-3xl shadow-2xl border border-border overflow-hidden flex flex-col bg-[#07070E]"
+            className="fixed bottom-6 right-6 z-50 w-[420px] h-[min(720px,calc(100dvh-3rem))] max-w-[calc(100vw-2rem)] rounded-3xl shadow-2xl border border-border overflow-hidden flex flex-col bg-[#121E22]"
           >
             <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between shrink-0">
               <span className="font-bold">ET AI</span>

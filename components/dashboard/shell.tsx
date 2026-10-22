@@ -43,8 +43,8 @@ export function DashboardShell({ role, hour = 9 }: { role: DashRole; hour?: numb
             <span
               className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] text-sm font-bold"
               style={{
-                background: role === 'parent' ? 'var(--ps-amber-soft)' : role === 'teacher' ? 'var(--ps-coral-soft)' : 'var(--ps-wash)',
-                color: role === 'parent' ? 'var(--ps-on-amber)' : role === 'teacher' ? 'var(--ps-coral)' : 'var(--ps-blue-deep)',
+                background: 'var(--ps-tile-wash)',
+                color: 'var(--ps-tile-ink)',
               }}
             >
               {preview.name.slice(0, 1)}

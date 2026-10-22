@@ -65,7 +65,7 @@ export function TeacherPackView({ pack }: { pack: TeacherPack }) {
   return (
     <div className="space-y-4" data-testid="teacher-pack">
       <header>
-        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#C45C26]">{pack.subject} · {pack.level}</p>
+        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1E6A83]">{pack.subject} · {pack.level}</p>
         <h2 className="font-heading text-2xl text-foreground">{pack.title}</h2>
       </header>
       <Section title="Objectives" items={pack.objectives} />
@@ -82,7 +82,7 @@ export function TeacherPackView({ pack }: { pack: TeacherPack }) {
         <p className="mt-2 text-sm text-foreground">{pack.worksheet.instructions}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{pack.worksheet.tasks.map(item => <li key={item}>{item}</li>)}</ul>
       </section>
-      <section className="rounded-2xl border border-[#C45C26]/30 bg-[#FBF0E8] p-4 text-[#3A2418] dark:bg-[#2A1C14] dark:text-[#F0C2A4]">
+      <section className="rounded-2xl border border-[#1E6A83]/30 bg-[#E9F7FA] p-4 text-[#121E22] dark:bg-[#121E22] dark:text-[#E9F7FA]">
         <h3 className="font-semibold">Same task, three versions</h3>
         <p className="mt-2 text-sm">{pack.differentiated.task}</p>
         <p className="mt-3 text-sm"><span className="font-semibold">Support, including SEN. </span>{pack.differentiated.support}</p>
@@ -250,7 +250,7 @@ export function TeacherToolkitPanel({ sample = false }: { sample?: boolean }) {
           </select>
         </label>
         <p className="text-sm text-muted-foreground sm:col-span-2">{sparksCostLine(deskSparkCost('teacher-toolkit'), profile?.sparksBalance)}</p>
-        <button type="submit" disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#C45C26] px-4 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-2 sm:w-fit">
+        <button type="submit" disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-2 sm:w-fit">
           {busy && <Loader2 className="h-4 w-4 animate-spin" />} Make the pack
         </button>
       </form>
@@ -279,7 +279,7 @@ export function TeacherToolkitPanel({ sample = false }: { sample?: boolean }) {
 export function ParentExplainerView({ note }: { note: ParentExplainer }) {
   return (
     <div className="space-y-4" data-testid="parent-explainer">
-      <section className="rounded-2xl border border-[#8B3A62]/30 bg-[#F8EEF3] p-4 dark:bg-[#2A1822]">
+      <section className="rounded-2xl border border-[#1E6A83]/30 bg-[#E9F7FA] p-4 dark:bg-[#121E22]">
         <h2 className="font-heading text-2xl text-foreground">What {note.childName} learned</h2>
         <p className="mt-2 text-sm leading-relaxed text-foreground">{note.learned}</p>
       </section>
@@ -382,7 +382,7 @@ export function ParentExplainerPanel({ sample = false }: { sample?: boolean }) {
             </select>
           </label>
           <p className="text-sm text-muted-foreground">{sparksCostLine(deskSparkCost('parent-explainer'), profile?.sparksBalance)} An empty week is free, and ET AI will not invent one.</p>
-          <button type="submit" disabled={busy || !childId} className="inline-flex h-10 w-fit items-center gap-2 rounded-full bg-[#8B3A62] px-4 text-sm font-semibold text-white disabled:opacity-60">
+          <button type="submit" disabled={busy || !childId} className="inline-flex h-10 w-fit items-center gap-2 rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white disabled:opacity-60">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />} Explain this week
           </button>
         </form>

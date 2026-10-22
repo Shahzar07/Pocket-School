@@ -55,7 +55,7 @@ const SOLVING_STAGES = ['Reading the question', 'Choosing a method', 'Working it
 const VERDICT_STYLE: Record<Exclude<Verdict, 'none'>, { label: string; cls: string; icon: typeof CheckCircle2 }> = {
   correct: { label: 'Correct', cls: 'text-success bg-success/15 border-success/40', icon: CheckCircle2 },
   partly: { label: 'Nearly', cls: 'text-[var(--ps-cyan-text)] bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]', icon: CircleDot },
-  wrong: { label: 'Not quite', cls: 'text-rose-700 bg-rose-50 border-rose-200', icon: XCircle },
+  wrong: { label: 'Not quite', cls: 'text-[var(--ps-tile-ink)] bg-[var(--ps-tile-wash)] border-[var(--ps-cyan-border)]', icon: XCircle },
 };
 
 export default function MathsTutorPage() {
@@ -386,7 +386,7 @@ export default function MathsTutorPage() {
                     placeholder="e.g. Solve 3x² − 12 = 0, or paste a word problem…"
                   />
                   {solveError && (
-                    <p className="mt-3 text-[13px] rounded-xl bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2">{solveError}</p>
+                    <p className="mt-3 text-[13px] rounded-xl bg-[var(--ps-tile-wash)] border border-[var(--ps-cyan-border)] text-[var(--ps-tile-ink)] px-3 py-2">{solveError}</p>
                   )}
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-1.5">
@@ -720,7 +720,7 @@ export default function MathsTutorPage() {
                     </button>
                     {h.solved ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <CircleDot className="w-4 h-4 text-muted-foreground shrink-0" />}
                     <button aria-label="Delete" onClick={async () => { if (uid) { await deleteMathSession(uid, h.id).catch(() => {}); loadHistory(); } }}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-rose-600 transition-opacity">
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-[var(--ps-tile-ink)] transition-opacity">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </li>

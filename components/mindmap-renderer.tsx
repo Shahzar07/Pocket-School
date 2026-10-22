@@ -68,7 +68,7 @@ export function MindmapRenderer({ content, dark = false, compact = false }: Mind
     if (pointers.current.size < 2) pinch.current = null;
   };
 
-  const panel = dark ? 'border-white/10 bg-[#1c1915]' : 'border-border bg-[#f7f4ee]';
+  const panel = dark ? 'border-white/10 bg-[#1c1915]' : 'border-border bg-[#E9F7FA]';
   const button = dark
     ? 'border-white/15 text-slate-200 hover:bg-white/10'
     : 'border-border bg-white/80 text-foreground hover:bg-white';
@@ -103,7 +103,7 @@ export function MindmapRenderer({ content, dark = false, compact = false }: Mind
           className="h-full w-full"
           style={{ transform: `translate(${origin.x}px, ${origin.y}px) scale(${scale})`, transformOrigin: 'center' }}
         >
-          <rect width={layout.width} height={layout.height} fill="#f7f4ee" />
+          <rect width={layout.width} height={layout.height} fill="#E9F7FA" />
           {layout.ribbons.map((ribbon, index) => (
             <g key={`${index}-${ribbon.keyword}`}>
               <path d={ribbon.path} fill={ribbon.color} />

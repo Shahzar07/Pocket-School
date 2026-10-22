@@ -28,9 +28,9 @@ const STYLE: Record<CareerCategory, { wash: string; ink: string; icon: LucideIco
   progress: { wash: 'var(--ps-mint)', ink: 'var(--ps-mint-ink)', icon: Activity },
   careers: { wash: 'var(--ps-cyan-soft)', ink: 'var(--ps-cyan-text)', icon: Briefcase },
   payments: { wash: 'var(--ps-cyan-soft)', ink: 'var(--ps-cyan-text)', icon: CreditCard },
-  community: { wash: 'var(--ps-wash)', ink: 'var(--ps-violet)', icon: Users },
+  community: { wash: 'var(--ps-wash)', ink: 'var(--ps-tile-ink)', icon: Users },
   people: { wash: 'var(--ps-wash)', ink: 'var(--ps-blue-deep)', icon: UsersRound },
-  safety: { wash: 'var(--ps-coral-soft)', ink: 'var(--ps-coral)', icon: Shield },
+  safety: { wash: 'var(--ps-tile-wash)', ink: 'var(--ps-tile-ink)', icon: Shield },
   insights: { wash: 'var(--ps-mint)', ink: 'var(--ps-mint-ink)', icon: BarChart3 },
 };
 

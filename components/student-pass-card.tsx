@@ -38,7 +38,7 @@ export function StudentPassCard({
 
   return (
     <section className="relative overflow-hidden rounded-3xl border border-[#1E6A83]/50 bg-[#203337] text-white shadow-[0_18px_40px_-24px_rgba(26,60,52,0.8)]">
-      <div className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-[#E36A4F]/40 blur-2xl" aria-hidden />
+      <div className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-[#1E6A83]/40 blur-2xl" aria-hidden />
       <div className="pointer-events-none absolute -left-8 bottom-0 h-28 w-28 rounded-full bg-[#3C8DFF]/30 blur-2xl" aria-hidden />
       <div className="relative grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
         <div>

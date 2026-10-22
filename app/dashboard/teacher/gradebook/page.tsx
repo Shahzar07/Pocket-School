@@ -236,7 +236,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
                   className={`p-4 rounded-2xl border ${
                     a.correct
                       ? 'bg-success/10 border-success/20'
-                      : 'bg-red-500/10 border-red-500/20'
+                      : 'bg-[var(--ps-tile-wash)] border-[var(--ps-cyan-border)]'
                   }`}
                 >
                   <p className="text-sm font-semibold text-foreground mb-1">

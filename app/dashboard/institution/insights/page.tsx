@@ -32,7 +32,7 @@ export default function InstitutionInsightsPage() {
             <h2 className="font-heading text-2xl">{stats.alumni} alumni · {stats.seatsFreed} seats freed · {stats.certificates} certificates</h2>
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               {stats.byYear.map((row) => (
-                <span key={row.year} className="rounded-full bg-[#F6F1E7] px-3 py-1">{row.year}: {row.graduates} graduate{row.graduates === 1 ? '' : 's'} · {row.seatsFreed} seat{row.seatsFreed === 1 ? '' : 's'} freed</span>
+                <span key={row.year} className="rounded-full bg-[#E9F7FA] px-3 py-1">{row.year}: {row.graduates} graduate{row.graduates === 1 ? '' : 's'} · {row.seatsFreed} seat{row.seatsFreed === 1 ? '' : 's'} freed</span>
               ))}
             </div>
           </div>

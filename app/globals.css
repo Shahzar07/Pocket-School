@@ -153,6 +153,11 @@
     --ps-on-amber: #203337;
     --ps-amber-fill: #3FE0D0;
     --ps-amber-soft: rgba(63, 224, 208, 0.15);
+    /* Dashboard tiles. Light is a cyan wash. Dark is the card surface. */
+    --ps-tile-wash: rgba(63, 224, 208, 0.18);
+    --ps-tile-ink: #1E6A83;
+    --ps-urgent-wash: #1E6A83;
+    --ps-urgent-ink: #FFFFFF;
     --ps-glow: rgba(63, 224, 208, 0.45);
     --ps-blob: rgba(111, 187, 206, 0.55);
     --ps-blob-warm: rgba(63, 224, 208, 0.40);
@@ -283,6 +288,10 @@
     --ps-on-amber: #203337;
     --ps-amber-fill: #3FE0D0;
     --ps-amber-soft: rgba(63, 224, 208, 0.15);
+    --ps-tile-wash: #121E22;
+    --ps-tile-ink: #3FE0D0;
+    --ps-urgent-wash: #3FE0D0;
+    --ps-urgent-ink: #203337;
     --ps-glow: rgba(111, 187, 206, 0.55);
     --ps-blob: rgba(39, 134, 164, 0.65);
     --ps-blob-warm: rgba(63, 224, 208, 0.32);

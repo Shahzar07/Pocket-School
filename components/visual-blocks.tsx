@@ -37,13 +37,13 @@ function AltField({ value, onChange, label }: { value: string; onChange: (value:
   const missing = !value.trim();
   return (
     <label className="block text-xs text-muted-foreground">
-      {label} <span className="text-red-600">Required</span>
+      {label} <span className="text-[var(--ps-tile-ink)]">Required</span>
       <Textarea
         data-alt-text="1"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Describe the image or sound for someone who cannot see or hear it."
-        className={`mt-1 min-h-16 rounded-xl text-sm ${missing ? 'border-red-400' : ''}`}
+        className={`mt-1 min-h-16 rounded-xl text-sm ${missing ? 'border-[var(--ps-cyan-border)]' : ''}`}
       />
     </label>
   );

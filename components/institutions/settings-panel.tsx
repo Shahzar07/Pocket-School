@@ -165,7 +165,7 @@ export function InstitutionSettings({
           <label className="text-sm">Subdomain
             <Input value={slug} onChange={(event) => setSlug(event.target.value)} className="mt-1 h-11 rounded-xl" />
           </label>
-          {slugNote && <p className="text-xs text-destructive">{slugNote}</p>}
+          {slugNote && <p className="text-xs text-[var(--ps-tile-ink)]">{slugNote}</p>}
           <p className="text-xs text-muted-foreground">Reserved names such as www, api, login, and courses stay with Poket School. Renaming keeps the previous address as a redirect, so the old slug stays taken.</p>
           {previousSubdomains.length > 0 && <p className="text-xs">Redirects: {previousSubdomains.join(', ')}</p>}
           <label className="text-sm">Custom domain

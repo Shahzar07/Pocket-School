@@ -85,7 +85,7 @@ export function ImageLibrary({
         <ImagePlus className="h-4 w-4" /> Drop, paste, or choose images
         <input type="file" accept="image/*" multiple className="sr-only" onChange={event => { void addFiles([...(event.target.files ?? [])]); event.target.value = ''; }} />
       </label>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>}
       {reusable.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-muted-foreground">Saved in this library</p>

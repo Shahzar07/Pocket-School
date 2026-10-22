@@ -65,7 +65,7 @@ export function WorldMap({
   const path = useMemo(() => geoPath(projection), [projection]);
 
   if (failed) {
-    return <p className="rounded-2xl bg-[#F6F1E7] px-4 py-8 text-sm text-[#203337]">The map could not load. Country totals are in the table below.</p>;
+    return <p className="rounded-2xl bg-[#E9F7FA] px-4 py-8 text-sm text-[#203337]">The map could not load. Country totals are in the table below.</p>;
   }
 
   return (

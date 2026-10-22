@@ -102,7 +102,7 @@ export default function ParentDueDates() {
                 <div className="bg-card border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-glow">
                   <div className="flex items-center gap-4">
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-md ${
-                      u === 'high' ? 'bg-gradient-to-br from-red-500 to-rose-600' :
+                      u === 'high' ? 'bg-gradient-to-br from-[#1E6A83] to-[#3FE0D0]' :
                       u === 'medium' ? 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]' :
                       'bg-gradient-to-br from-success to-teal-600'
                     }`}>

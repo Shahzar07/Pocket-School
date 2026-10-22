@@ -15,10 +15,10 @@ import { groupNotices } from '@/lib/dashboard/home';
 const TYPE_COLORS: Record<string, string> = {
   grade: 'bg-success/15 text-success',
   assignment: 'bg-blue-100 text-blue-700',
-  announcement: 'bg-purple-100 text-purple-700',
+  announcement: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
   exam: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   payment: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
-  integrity: 'bg-red-100 text-red-700',
+  integrity: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
   message: 'bg-teal-100 text-teal-700',
   general: 'bg-gray-100 text-gray-700',
 };
@@ -73,13 +73,13 @@ export function NotificationsBell({ tone = 'default' }: { tone?: 'default' | 'on
       <Button
         variant="ghost"
         size="icon"
-        className={`relative ${tone === 'onDark' ? 'text-[#EDEAE4] hover:bg-white/10' : 'text-gray-600'}`}
+        className={`relative ${tone === 'onDark' ? 'text-[#E9F7FA] hover:bg-white/10' : 'text-gray-600'}`}
         aria-label="Notifications"
         onClick={() => setOpen(o => !o)}
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#1E6A83] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

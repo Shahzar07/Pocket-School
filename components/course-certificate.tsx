@@ -46,7 +46,7 @@ export function CourseCertificateCard({
           <dd className="font-mono text-xs text-foreground break-all">{certificate.id}</dd>
         </div>
       </dl>
-      <p className={`mt-4 text-[11px] font-bold uppercase tracking-wider ${revoked ? 'text-[#9B1C1C]' : 'text-[#0F6E56]'}`}>
+      <p className={`mt-4 text-[11px] font-bold uppercase tracking-wider ${revoked ? 'text-[#1E6A83]' : 'text-[#0F6E56]'}`}>
         {revoked ? 'Revoked' : 'Valid'}
       </p>
       <div className="mt-4 flex flex-wrap gap-4 text-sm font-bold">

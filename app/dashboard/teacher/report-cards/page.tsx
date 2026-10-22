@@ -39,7 +39,7 @@ const GRADE_COLORS: Record<string, string> = {
   B: 'bg-sky-500/10 text-sky-600',
   C: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
   D: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)]',
-  F: 'bg-red-500/10 text-red-600',
+  F: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
 };
 
 const fadeUp: Record<string, any> = {

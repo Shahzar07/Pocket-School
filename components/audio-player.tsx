@@ -98,7 +98,7 @@ export function AudioPlayer({ script, title }: { script: string; title?: string 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={handlePlayPause} className="rounded-xl gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+        <Button onClick={handlePlayPause} className="rounded-xl gap-2 bg-gradient-to-r from-blue-600 to-[#3FE0D0] text-white">
           {!playing || paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
           {!playing ? 'Play' : paused ? 'Resume' : 'Pause'}
         </Button>

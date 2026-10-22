@@ -40,13 +40,13 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   sent: 'bg-primary/10 text-primary',
   paid: 'bg-success/10 text-success',
-  overdue: 'bg-destructive/10 text-destructive',
+  overdue: 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]',
   cancelled: 'bg-muted text-muted-foreground',
 };
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   paid: <CheckCircle2 className="w-4 h-4 text-success" />,
-  overdue: <AlertCircle className="w-4 h-4 text-destructive" />,
+  overdue: <AlertCircle className="w-4 h-4 text-[var(--ps-tile-ink)]" />,
   sent: <Clock className="w-4 h-4 text-primary" />,
 };
 

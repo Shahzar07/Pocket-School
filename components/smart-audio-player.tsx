@@ -139,7 +139,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
       <div className={`rounded-2xl border p-5 ${border} ${panel}`}>
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1E6A83] to-[#3FE0D0] flex items-center justify-center">
               <Headphones className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -158,7 +158,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
         </div>
 
         {state === 'idle' && script.trim() && (
-          <Button onClick={() => generate()} className="rounded-xl gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white w-full sm:w-auto">
+          <Button onClick={() => generate()} className="rounded-xl gap-2 bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] text-white w-full sm:w-auto">
             <Mic className="w-4 h-4" /> Generate Audio
           </Button>
         )}
@@ -170,7 +170,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
               Voicing the audio… {progress}%
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full bg-violet-500 transition-all" style={{ width: `${progress}%` }} />
+              <div className="h-full bg-[#1E6A83] transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
         )}
@@ -201,7 +201,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
             <div className="flex items-center gap-3">
               <button
                 onClick={togglePlay}
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shrink-0 hover:opacity-90 transition-opacity"
+                className="w-11 h-11 rounded-full bg-gradient-to-br from-[#1E6A83] to-[#3FE0D0] flex items-center justify-center text-white shrink-0 hover:opacity-90 transition-opacity"
               >
                 {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
               </button>
@@ -213,7 +213,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
                 step={0.1}
                 value={time}
                 onChange={seek}
-                className="flex-1 accent-violet-500 h-1.5"
+                className="flex-1 accent-[#1E6A83] h-1.5"
               />
               <span className={`text-[11px] tabular-nums ${subtle}`}>{fmtTime(duration)}</span>
             </div>
@@ -225,7 +225,7 @@ export function SmartAudioPlayer({ script, title, dark }: { script: string; titl
                     onClick={() => changeRate(r)}
                     className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors ${
                       rate === r
-                        ? 'bg-violet-500/20 text-violet-500'
+                        ? 'bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'
                         : `${subtle} hover:${dark ? 'bg-white/5' : 'bg-muted'}`
                     }`}
                   >

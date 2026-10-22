@@ -301,7 +301,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose, camera = false
     : 'Starting…';
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#07070E]/95 backdrop-blur-md px-6">
+    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#121E22]/95 backdrop-blur-md px-6">
       {/* Orb */}
       <div className="relative mb-8">
         {/* Reactive rings — expand with mic level while listening */}
@@ -353,9 +353,9 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose, camera = false
         <AnimatePresence mode="wait">
           {error ? (
             <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-200">{error}</p>
+              className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-tile-wash)] px-4 py-3 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-[var(--ps-tile-ink)] shrink-0 mt-0.5" />
+              <p className="text-sm text-[var(--ps-tile-ink)]">{error}</p>
             </motion.div>
           ) : interim ? (
             <motion.p key="interim" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
@@ -402,7 +402,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose, camera = false
         </button>
         <button
           onClick={() => { activeRef.current = false; abortRef.current?.abort(); speakerRef.current?.stop(); onClose(); }}
-          className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-105 transition-transform"
+          className="w-14 h-14 rounded-full bg-[#1E6A83] text-white flex items-center justify-center hover:scale-105 transition-transform"
           title="End voice call"
         >
           <PhoneOff className="w-6 h-6" />
