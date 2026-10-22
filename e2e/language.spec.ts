@@ -13,6 +13,29 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   const hero = page.getByRole('heading', { level: 1 });
   await expect(hero).toContainText('Learn your way.');
   await expect(hero).toContainText('Go further with AI.');
+  const stats = page.locator('[data-hero-stats="1"]');
+  await expect(stats).toContainText('Primary to PhD');
+  await expect(stats).toContainText('Plus continuous professional development and independent learning');
+  await expect(stats).not.toContainText('degree foundation');
+  const statColor = await stats.locator('dt').first().evaluate((el) => getComputedStyle(el).color);
+  expect(statColor).toBe('rgb(255, 255, 255)');
+  const captionColor = await stats.locator('dd').first().evaluate((el) => getComputedStyle(el).color);
+  expect(captionColor).toBe('rgb(255, 255, 255)');
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  const darkValue = await stats.locator('dt').nth(3).evaluate((el) => getComputedStyle(el).color);
+  const darkCaption = await stats.locator('dd').nth(3).evaluate((el) => getComputedStyle(el).color);
+  expect(darkValue).toBe('rgb(255, 255, 255)');
+  expect(darkCaption).toBe('rgb(255, 255, 255)');
+  await page.evaluate(() => document.documentElement.classList.remove('dark'));
+  for (const width of [390, 1024, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const overflow = await stats.evaluate((el) => Math.ceil(el.scrollWidth - el.clientWidth));
+    expect(overflow).toBeLessThanOrEqual(1);
+    const cells = await stats.locator(':scope > div').evaluateAll((nodes) => nodes.map((node) => Math.ceil(node.scrollWidth - node.clientWidth)));
+    expect(cells).toHaveLength(4);
+    for (const extra of cells) expect(extra).toBeLessThanOrEqual(1);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Start for free' })).toBeVisible();
   await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
@@ -39,6 +62,9 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   await expect(page.locator('html')).toHaveAttribute('lang', 'ms-MY');
   await expect(hero).toContainText('Belajar dengan cara anda.');
   await expect(hero).toContainText('Pergi lebih jauh dengan AI.');
+  await expect(stats).toContainText('Sekolah rendah hingga PhD');
+  await expect(stats).toContainText('Termasuk pembangunan profesional berterusan dan pembelajaran kendiri');
+  await expect(stats).not.toContainText('asas ijazah');
   await expect(hero).not.toContainText('Learn your way.');
   await expect(page.getByRole('banner').getByRole('link', { name: 'Mula percuma' })).toBeVisible();
   await expect(page.locator('#content').getByRole('link', { name: 'Mula percuma' }).first()).toBeVisible();

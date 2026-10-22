@@ -113,6 +113,27 @@ test('the language list covers the major world languages and rtl scripts', () =>
     home: { v3: { title: string; titleEm: string } };
     header: { home: string; programmes: string; forSchools: string };
   }>;
+  assert.equal(
+    (catalogs.en as unknown as { home: { v3: { levelsLabel: string; formatsLabel: string } } }).home.v3.levelsLabel,
+    'Primary to PhD',
+  );
+  assert.equal(
+    (catalogs.en as unknown as { home: { v3: { formatsLabel: string } } }).home.v3.formatsLabel,
+    'Plus continuous professional development and independent learning',
+  );
+  assert.equal(
+    (catalogs.ms as unknown as { home: { v3: { levelsLabel: string; formatsLabel: string } } }).home.v3.levelsLabel,
+    'Sekolah rendah hingga PhD',
+  );
+  assert.equal(
+    (catalogs.ms as unknown as { home: { v3: { formatsLabel: string } } }).home.v3.formatsLabel,
+    'Termasuk pembangunan profesional berterusan dan pembelajaran kendiri',
+  );
+  for (const code of Object.keys(catalogs)) {
+    const label = (catalogs as unknown as Record<string, { home: { v3: { levelsLabel: string } } }>)[code].home.v3.levelsLabel;
+    assert.equal(label.includes('degree foundation'), false, code);
+    assert.equal(label.includes('asas ijazah'), false, code);
+  }
   assert.equal(chromeCopy.en.home.v3.title, 'Learn your way.');
   assert.equal(chromeCopy.ms.home.v3.title, 'Belajar dengan cara anda.');
   assert.equal(chromeCopy.ms.home.v3.titleEm, 'Pergi lebih jauh dengan AI.');

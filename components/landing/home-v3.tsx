@@ -83,11 +83,23 @@ export function HomeV3() {
             <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="/institutions/register">{t('home.v3.schools')}</Link>
             <Link className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold" href="/demo">{t('home.v3.demo')}</Link>
           </div>
-          <dl className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div><dt className="text-2xl font-semibold" style={serif}>{t('home.v3.levelsLabel')}</dt><dd className="text-xs text-white/70">{t('home.v3.formatsLabel')}</dd></div>
-            <div><dt className="text-2xl font-semibold" style={serif}>{teachers}</dt><dd className="text-xs text-white/70">{t('home.v3.teachersLabel')}</dd></div>
-            <div><dt className="text-2xl font-semibold" style={serif}>{languages}</dt><dd className="text-xs text-white/70">{t('home.v3.languagesLabel')}</dd></div>
-            <div><dt className="text-2xl font-semibold" style={serif}>{t('home.v3.annual')}</dt><dd className="text-xs text-white/70">{t('home.v3.priceTag')}</dd></div>
+          <dl data-hero-stats="1" className="not-prose mt-10 grid grid-cols-2 items-start gap-x-4 gap-y-5 sm:grid-cols-4">
+            <div className="min-w-0">
+              <dt className="text-2xl font-bold leading-tight text-white">{t('home.v3.levelsLabel')}</dt>
+              <dd className="mt-1 text-xs leading-snug text-white">{t('home.v3.formatsLabel')}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-2xl font-semibold leading-tight text-white [-webkit-text-stroke:0.45px_#fff]" style={serif}>{teachers}</dt>
+              <dd className="mt-1 text-xs leading-snug text-white">{t('home.v3.teachersLabel')}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-2xl font-semibold leading-tight text-white [-webkit-text-stroke:0.45px_#fff]" style={serif}>{languages}</dt>
+              <dd className="mt-1 text-xs leading-snug text-white">{t('home.v3.languagesLabel')}</dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="text-2xl font-semibold leading-tight text-white [-webkit-text-stroke:0.45px_#fff]" style={serif}>{t('home.v3.annual')}</dt>
+              <dd className="mt-1 text-xs leading-snug text-white">{t('home.v3.priceTag')}</dd>
+            </div>
           </dl>
         </div>
       </section>
