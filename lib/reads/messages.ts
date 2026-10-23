@@ -29,7 +29,7 @@ export const READS_EN = {
   'reads.mode.admin': 'Admin',
 
   'reads.home.continue': 'Continue reading',
-  'reads.home.trending': 'Trending in Malaysia',
+  'reads.home.trending': 'Trending now',
   'reads.home.because': 'Because you read {{title}}',
   'reads.home.new': 'New releases',
   'reads.home.top': 'Top 10 this week',

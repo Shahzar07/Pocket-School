@@ -28,7 +28,7 @@ import {
   TABLET_WIDTH,
 } from '../lib/reads-offer-media';
 import { CYAN, light } from '../lib/design/tokens';
-import { ownOrReadLine } from '../lib/reads-offer';
+import { READS_OFFER_HEADLINE_LINES, ownOrReadLine } from '../lib/reads-offer';
 import { publishedBooks } from '../lib/reads/seed';
 
 const ROOT = path.join(process.cwd(), 'public/reads/offer');
@@ -242,9 +242,9 @@ async function og(covers: Buffer[]): Promise<Buffer> {
   <rect width="1200" height="630" fill="url(#og)"/>
   <rect x="72" y="164" width="84" height="8" rx="4" fill="${CYAN.fill}"/>
   <text x="72" y="210" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="22" font-weight="700" letter-spacing="3">POKET READS</text>
-  <text x="72" y="300" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">Books you can</text>
-  <text x="72" y="376" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">subscribe to</text>
-  <text x="72" y="452" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">from Malaysia.</text>
+  <text x="72" y="300" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">${escapeXml(READS_OFFER_HEADLINE_LINES[0])}</text>
+  <text x="72" y="376" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">${escapeXml(READS_OFFER_HEADLINE_LINES[1])}</text>
+  <text x="72" y="452" fill="#ffffff" font-family="Liberation Serif, DejaVu Serif, serif" font-size="64" font-weight="700">${escapeXml(READS_OFFER_HEADLINE_LINES[2])}</text>
   <text x="72" y="516" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="24">${escapeXml(ownOrReadLine().split(', ')[0])},</text>
   <text x="72" y="550" fill="#ffffff" font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="24">${escapeXml(ownOrReadLine().split(', ')[1] ?? '')}.</text>
 </svg>`);
@@ -330,6 +330,13 @@ async function devices() {
 }
 
 async function main() {
+  if (process.argv.includes('--og-only')) {
+    const covers = await Promise.all(ORDER.slice(0, 4).map(id => sharp(path.join(ROOT, 'covers', `${id}.webp`)).png().toBuffer()));
+    const poster = await og(covers);
+    await sharp(poster).jpeg({ quality: 82 }).toFile(path.join(ROOT, 'og.jpg'));
+    console.log('OG written.');
+    return;
+  }
   await mkdir(path.join(ROOT, 'covers'), { recursive: true });
   await mkdir(path.join(ROOT, 'mockups'), { recursive: true });
   const covers: Buffer[] = [];

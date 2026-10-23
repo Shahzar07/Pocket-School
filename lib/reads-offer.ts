@@ -47,6 +47,10 @@ export function readsDailyUsd(sku: 'reads' | 'reads-family' = 'reads'): number {
 
 /** Public sales letter. Separate from the Poket School plan ladder at /offer. */
 export const READS_OFFER_PATH = '/reads/offer';
+
+/** Hero, document title, and share image. Three lines join back into this sentence. */
+export const READS_OFFER_HEADLINE = 'Books you can read to enrich your mind.';
+export const READS_OFFER_HEADLINE_LINES = ['Books you can', 'read to enrich', 'your mind.'] as const;
 export const READS_OFFER_URL = `https://poketschool.ai${READS_OFFER_PATH}`;
 
 /**
@@ -173,7 +177,7 @@ export const READS_OFFER_FAQ: OfferFaq[] = [
   },
   {
     question: 'Why mention Kindle Unlimited and Amazon Kids+?',
-    answer: 'Neither service is sold in Malaysia. Poket Reads is a shelf you can pay for from here. Checkout can take a card, FPX, GrabPay, Touch \'n Go, Boost, ShopeePay or DuitNow when that method is offered for your country and currency.',
+    answer: 'Neither service is sold here. Poket Reads is a shelf you can pay for. Checkout can take a card, FPX, GrabPay, Touch \'n Go, Boost, ShopeePay or DuitNow when that method is offered for your country and currency.',
   },
   {
     question: 'What does the monthly Reads price include?',
@@ -214,7 +218,7 @@ export const READS_OFFER_FOUNDER = {
   role: 'Founder, Poket School',
   paragraphs: [
     'I am Harry Seggu, founder of Poket School.',
-    'Poket Reads is a shelf we sell on its own, from Malaysia. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. A household can subscribe, or buy one published book and keep it.',
+    'Poket Reads is a shelf we sell on its own. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. A household can subscribe, or buy one published book and keep it.',
     `The figures on this page are the prices in the product. The shelf price for a book is ${readsUsdWords(READS_BOOK_USD)} to buy and keep. A title that stores its own price uses that figure. Reads is ${readsUsdWords(readsMonthlyUsd('reads'))} a month, or ${readsUsdWords(readsYearlyUsd('reads'))} for the year. Reads Family is ${readsUsdWords(readsMonthlyUsd('reads-family'))} a month, or ${readsUsdWords(readsYearlyUsd('reads-family'))} for the year. ${booksVersusUnlimitedLine()}. The subscription opens Primary and Lower Secondary, plus general fiction, non-fiction and children’s stories on that shelf. IGCSE, A-Level and LLB titles can be sampled and bought. They are not included in that monthly price.`,
     'The lines under Read a page are the openings of published chapters. I have not put a customer’s words on this page. We do not have them yet.',
   ],

@@ -16,6 +16,8 @@ import {
   READS_OFFER_CHECKOUTS,
   READS_OFFER_FAQ,
   READS_OFFER_FOUNDER,
+  READS_OFFER_HEADLINE,
+  READS_OFFER_HEADLINE_LINES,
   READS_OFFER_LANGUAGE_COUNT,
   READS_OFFER_TESTIMONIALS,
   bookCheckoutHref,
@@ -157,6 +159,26 @@ test('sales-letter jackets use Poket blue and electric cyan', () => {
   assert.match(chrome, /ThemeProvider/);
   assert.match(chrome, /pathname === '\/reads\/offer'/);
   assert.match(offerLetter, /ReadsOfferThemeToggle/);
+});
+
+test('sales copy does not target Malaysia', () => {
+  assert.equal(READS_OFFER_HEADLINE_LINES.join(' '), READS_OFFER_HEADLINE);
+  const files = [
+    'components/reads-offer/letter.tsx',
+    'app/reads/offer/page.tsx',
+    'lib/reads-offer.ts',
+    'lib/reads/messages.ts',
+    'lib/offer.ts',
+    'scripts/build-reads-offer-assets.ts',
+  ];
+  for (const file of files) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+    assert.equal(/\bMalaysia\b|\bMalaysian\b|Kuala Lumpur/.test(source), false, file);
+  }
+  assert.match(readFileSync(new URL('../components/reads-offer/letter.tsx', import.meta.url), 'utf8'), /READS_OFFER_HEADLINE/);
+  assert.match(readFileSync(new URL('../lib/reads/messages.ts', import.meta.url), 'utf8'), /Trending now/);
+  assert.match(READS_OFFER_FAQ.map(item => item.answer).join(' '), /FPX/);
+  assert.match(readFileSync(new URL('../lib/reads/seed.ts', import.meta.url), 'utf8'), /A Short History of Malacca|Malacca/);
 });
 
 test('the sales letter stays out of search until READS_OFFER_INDEXABLE is true', () => {

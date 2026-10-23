@@ -19,6 +19,7 @@ import {
   READS_OFFER_ENTITY,
   READS_OFFER_FAQ,
   READS_OFFER_FOUNDER,
+  READS_OFFER_HEADLINE,
   READS_OFFER_LANGUAGE_COUNT,
   READS_OFFER_REVIEW_MAIL,
   READS_OFFER_TESTIMONIALS,
@@ -63,12 +64,12 @@ export function ReadsOfferLetter() {
       </header>
 
       <div id="letter" className="mx-auto max-w-3xl px-4 pt-14 pb-4 sm:px-6 sm:pt-20">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">A shelf you can pay for from Malaysia</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">A shelf you can subscribe to</p>
         <h1 className="mt-4 font-heading text-[2.6rem] leading-[0.98] tracking-[-0.045em] text-foreground sm:text-6xl">
-          Kindle Unlimited will not take your money in Malaysia.
+          {READS_OFFER_HEADLINE}
         </h1>
         <p className="mt-6 text-xl leading-snug text-foreground sm:text-2xl">
-          Amazon Kids+ will not either. Poket Reads is the shelf you subscribe to from here, or the single book you buy once and keep.
+          Poket Reads is the shelf you subscribe to, or the single book you buy once and keep. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here.
         </p>
         <p className="mt-6 text-[17px] leading-[1.7] text-muted-foreground">
           {ownOrReadLine()} ({readsMoneyWords(readsYearlyUsd('reads'))} a year).
@@ -88,7 +89,7 @@ export function ReadsOfferLetter() {
             You have the reading list. A novel someone actually wants to finish. A biology title the syllabus named. A picture book for the youngest, and a contract chapter that has to sound like English rather than a statute.
           </p>
           <p>
-            Then you open the service everyone else seems to use, and the subscription is not offered in Malaysia. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. The bookshop may have a copy, at a price that makes a weekly shop look gentle. Or it may not have it at all.
+            Then you open the service everyone else seems to use, and the subscription is not offered. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. The bookshop may have a copy, at a price that makes a weekly shop look gentle. Or it may not have it at all.
           </p>
           <p>
             The frustrating part is not the desire to read. The frustrating part is paying.
@@ -102,19 +103,19 @@ export function ReadsOfferLetter() {
       <section className="bg-card" aria-labelledby="story-title">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">How this started</p>
-          <h2 id="story-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">A parent, a student, and a checkout that stopped at the border.</h2>
+          <h2 id="story-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">A parent, a student, and a checkout that would not take the payment.</h2>
           <div className="mt-6 space-y-5 text-[17px] leading-[1.7]">
             <p>
-              Picture a parent in Malaysia trying to put the right books in front of a child without turning the month into a pile of imports. The child is not short of curiosity. The student, a little older, already knows the story they want. They found it on a shelf that will not take a Malaysian card for the subscription.
+              Picture a parent trying to put the right books in front of a child without turning the month into a pile of imports. The child is not short of curiosity. The student, a little older, already knows the story they want. They found it on a shelf that will not take their card for the subscription.
             </p>
             <p>
               So the evening goes the way these evenings go. One tab for the syllabus. One tab for a novel. One tab for a children’s book that does not talk down. And a price, when there is a price, that belongs to a different country. The parent is not failing at reading. The student is not failing at wanting a book. The vehicle is wrong.
             </p>
             <p>
-              The moment it became obvious was small. The books existed. The household was willing to pay. The service that rented those books to the rest of the world simply did not sell that rental here. A cheaper coupon for a shop that will not serve you is not a plan. A shelf that is actually sold here is a different opportunity.
+              The moment it became obvious was small. The books existed. The household was willing to pay. The service that rented those books to the rest of the world simply did not sell that rental. A cheaper coupon for a shop that will not serve you is not a plan. A shelf that is actually for sale is a different opportunity.
             </p>
             <p>
-              That is Poket Reads. Not a code for Kindle. A shelf of our own: stories, general non-fiction, and academic books tagged for the paths students here actually walk. You subscribe for the reading shelf, or you buy one book and keep it. You pay by card, or by FPX, GrabPay, Touch &apos;n Go, Boost, ShopeePay or DuitNow, when checkout offers that method for your country and currency.
+              That is Poket Reads. Not a code for Kindle. A shelf of our own: stories, general non-fiction, and academic books tagged for the paths students actually walk. You subscribe for the reading shelf, or you buy one book and keep it. You pay by card, or by FPX, GrabPay, Touch &apos;n Go, Boost, ShopeePay or DuitNow, when checkout offers that method for your country and currency.
             </p>
           </div>
         </div>
@@ -122,13 +123,13 @@ export function ReadsOfferLetter() {
 
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="opportunity-title">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">The new opportunity</p>
-        <h2 id="opportunity-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">Stop waiting for someone else’s library to open in Kuala Lumpur.</h2>
+        <h2 id="opportunity-title" className="mt-3 font-heading text-4xl tracking-[-0.04em] sm:text-5xl">Stop waiting for someone else’s library to open.</h2>
         <div className="mt-6 space-y-5 text-[17px] leading-[1.7]">
           <p>
             The old opportunity was “join the big subscription, if it is sold in your country”. It is not. Treating that as a personal failure, or as a reason to give up on a reading habit, misses what actually broke.
           </p>
           <p>
-            The new opportunity is a local shelf. Poket Reads is a Netflix-style subscription for books, and it is also a bookshop for the titles you would rather own. Academic books are tagged Primary, Lower Secondary, IGCSE, A-Level and LLB. Beside them sit novels, general non-fiction and children’s stories.
+            The new opportunity is a shelf of our own. Poket Reads is a Netflix-style subscription for books, and it is also a bookshop for the titles you would rather own. Academic books are tagged Primary, Lower Secondary, IGCSE, A-Level and LLB. Beside them sit novels, general non-fiction and children’s stories.
           </p>
           <p>
             Be precise about what the subscription opens. Poket Reads, at the price on this page, is the Primary and Lower Secondary shelf, plus general fiction and non-fiction on that shelf. IGCSE, A-Level and LLB books live on the same shelf so you can sample the first chapter and buy the ones you want to keep. They are not quietly bundled into the nine-dollar month. Poket School’s own IGCSE and A-Level plan is a different product, with a different checkout.
@@ -148,7 +149,7 @@ export function ReadsOfferLetter() {
               <p className="text-sm font-bold text-primary">Secret one. The vehicle.</p>
               <h3 className="mt-2 font-heading text-3xl tracking-[-0.03em]">“A reading subscription is an American product, so it will never work for us.”</h3>
               <p className="mt-4 text-[17px] leading-[1.7]">
-                That belief felt true because the famous vehicle does not sell here. The desire was fine. The shop was closed. Poket Reads is sold as its own product, in the currency this site already uses, through the same checkout as the rest of Poket. You are not borrowing someone else’s membership. You are joining a shelf that expects a Malaysian payment.
+                That belief felt true because the famous vehicle does not sell everywhere. The desire was fine. The shop was closed. Poket Reads is sold as its own product, in the currency this site already uses, through the same checkout as the rest of Poket. You are not borrowing someone else’s membership. You are joining a shelf that takes the payment methods this checkout already offers.
               </p>
             </li>
             <li>
@@ -162,7 +163,7 @@ export function ReadsOfferLetter() {
               <p className="text-sm font-bold text-primary">Secret three. The outside world.</p>
               <h3 className="mt-2 font-heading text-3xl tracking-[-0.03em]">“The books we need are not on any service I can join.”</h3>
               <p className="mt-4 text-[17px] leading-[1.7]">
-                This one was partly true, and it is the reason the page exists. Kindle Unlimited and Amazon Kids+ are not sold in Malaysia, so “just subscribe” was never an instruction you could follow. Poket Reads publishes into that gap. New titles are reviewed by a person before they go on the shelf. The interface speaks {READS_OFFER_LANGUAGE_COUNT} languages, and a book can be translated instead of being swapped for a different book. The titles below are ones you can open today, not a promise of a catalogue we have not printed.
+                This one was partly true, and it is the reason the page exists. Kindle Unlimited and Amazon Kids+ are not sold here, so “just subscribe” was never an instruction you could follow. Poket Reads publishes into that gap. New titles are reviewed by a person before they go on the shelf. The interface speaks {READS_OFFER_LANGUAGE_COUNT} languages, and a book can be translated instead of being swapped for a different book. The titles below are ones you can open today, not a promise of a catalogue we have not printed.
               </p>
             </li>
           </ol>
@@ -371,7 +372,7 @@ export function ReadsOfferLetter() {
       </section>
 
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20" aria-labelledby="close-title">
-        <h2 id="close-title" className="font-heading text-4xl tracking-[-0.04em] sm:text-5xl">The border is still there. The shelf is on this side of it.</h2>
+        <h2 id="close-title" className="font-heading text-4xl tracking-[-0.04em] sm:text-5xl">The other subscription is still closed. This shelf is open.</h2>
         <p className="mt-4 text-[17px] leading-[1.7]">
           If you wanted a subscription and the button was missing, you were not imagining the gap. Poket Reads is the thing you can start tonight: one reader, or a household, or a single book you keep.
         </p>
@@ -381,7 +382,7 @@ export function ReadsOfferLetter() {
           <OfferCta href="/reads" id="close-shelf" variant="quiet">Browse the shelf</OfferCta>
         </div>
         <p className="mt-10 text-[17px] leading-[1.7]">
-          <strong>P.S.</strong> Kindle Unlimited and Amazon Kids+ are still not sold in Malaysia. The yearly price on this page is not a launch timer. It is the yearly price on the card.
+          <strong>P.S.</strong> Kindle Unlimited and Amazon Kids+ are still not sold here. The yearly price on this page is not a launch timer. It is the yearly price on the card.
         </p>
         <p className="mt-4 text-[17px] leading-[1.7]">
           <strong>P.P.S.</strong> A book you buy stays after the subscription ends. The first chapter of a published book is free to read before you pay anyone.

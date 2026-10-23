@@ -1,21 +1,21 @@
 import type { Metadata } from 'next';
 import { OfferCurrencyProvider } from '@/components/reads-offer/money';
 import { ReadsOfferLetter } from '@/components/reads-offer/letter';
-import { READS_OFFER_PATH, ownOrReadLine, readsOfferIndexable, readsOfferJsonLd } from '@/lib/reads-offer';
+import { READS_OFFER_HEADLINE, READS_OFFER_PATH, ownOrReadLine, readsOfferIndexable, readsOfferJsonLd } from '@/lib/reads-offer';
 import { jsonLdScript } from '@/lib/seo';
 
 export const revalidate = 86400;
 
 const indexable = readsOfferIndexable();
 
-const TITLE = 'Poket Reads — a bookshelf you can subscribe to from Malaysia';
-const DESCRIPTION = `Poket Reads is sold on its own. ${ownOrReadLine()}. Academic titles and stories, Ask ET, and Malaysian payment methods. Kindle Unlimited is not sold here.`;
+const TITLE = `Poket Reads — ${READS_OFFER_HEADLINE.replace(/\.$/, '')}`;
+const DESCRIPTION = `${READS_OFFER_HEADLINE} Poket Reads is sold on its own. ${ownOrReadLine()}. Academic titles and stories, and Ask ET. Kindle Unlimited is not sold here.`;
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: READS_OFFER_PATH },
-  keywords: ['Poket Reads', 'books Malaysia', 'IGCSE books', 'children\'s books', 'reading subscription'],
+  keywords: ['Poket Reads', 'books', 'IGCSE books', 'children\'s books', 'reading subscription'],
   openGraph: {
     type: 'website',
     url: READS_OFFER_PATH,
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
       url: '/reads/offer/og.jpg',
       width: 1200,
       height: 630,
-      alt: 'Poket Reads, a bookshelf you can subscribe to from Malaysia',
+      alt: `Poket Reads, ${READS_OFFER_HEADLINE.charAt(0).toLowerCase()}${READS_OFFER_HEADLINE.slice(1)}`,
     }],
   },
   twitter: {
