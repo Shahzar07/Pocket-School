@@ -107,8 +107,8 @@ test('the language list covers the major world languages and rtl scripts', () =>
   for (const code of ['ar', 'he', 'ur', 'fa', 'ps']) {
     assert.equal(isRtl(code), true, code);
   }
-  assert.equal(catalogs.en.landing.hero.title, 'Learn your way. Go further with AI.');
-  assert.equal(catalogs.ms.landing.hero.title, 'Belajar dengan cara anda. Pergi lebih jauh dengan AI.');
+  assert.equal(catalogs.en.landing.hero.title, 'Learn your way & Go further with AI.');
+  assert.equal(catalogs.ms.landing.hero.title, 'Belajar dengan cara anda & Pergi lebih jauh dengan AI.');
   const chromeCopy = catalogs as unknown as Record<string, {
     home: { v3: { title: string; titleEm: string } };
     header: { home: string; programmes: string; forSchools: string };
@@ -136,19 +136,27 @@ test('the language list covers the major world languages and rtl scripts', () =>
     const feature = (catalogs as unknown as Record<string, { home: { v3: { features: { body: string }[] } } }>)[code].home.v3.features[0]?.body ?? '';
     assert.equal(feature.includes('degree foundation'), false, code);
     assert.equal(feature.includes('asas ijazah'), false, code);
+    assert.equal(/named teacher|guru bernama|有名字的|பெயருள்ள/i.test(feature), false, code);
+    const cred = (catalogs as unknown as Record<string, { home: { v3: { cred: string; rochfords: string; title: string; titleEm: string } } }>)[code].home.v3;
+    assert.equal(cred.rochfords, cred.cred, code);
+    assert.match(cred.cred, /Ipoh,/, code);
+    assert.equal(cred.title.includes(' & '), false, code);
+    assert.equal(`${cred.title} & ${cred.titleEm}`.includes(' & '), true, code);
   }
-  const enFeature = (catalogs.en as unknown as { home: { v3: { features: { body: string }[] } } }).home.v3.features[0].body;
-  assert.match(enFeature, /Primary to A-Levels/);
-  assert.match(enFeature, /degree to Masters and PhD/);
-  assert.match(enFeature, /continuous professional development and independent learning/);
-  assert.match(enFeature, /The count on this page is the list in the product/);
+  const enFeature = (catalogs.en as unknown as { home: { v3: { features: { body: string; points: string[] }[] } } }).home.v3.features[0];
+  assert.match(enFeature.body, /One ET AI teacher for every subject/);
+  assert.match(enFeature.body, /Primary to A-Levels/);
+  assert.match(enFeature.body, /degree to Masters and PhD/);
+  assert.match(enFeature.body, /continuous professional development and independent learning/);
+  assert.equal(enFeature.body.includes('The count on this page'), false);
+  assert.match(enFeature.points.join(' '), /70%/);
   const msFeature = (catalogs.ms as unknown as { home: { v3: { features: { body: string }[] } } }).home.v3.features[0].body;
   assert.match(msFeature, /hingga A-Level/);
   assert.match(msFeature, /Sarjana dan PhD/);
   assert.match(msFeature, /pembangunan profesional berterusan dan pembelajaran kendiri/);
-  assert.match(msFeature, /Bilangan pada halaman ini ialah senarai dalam produk/);
-  assert.equal(chromeCopy.en.home.v3.title, 'Learn your way.');
-  assert.equal(chromeCopy.ms.home.v3.title, 'Belajar dengan cara anda.');
+  assert.equal(msFeature.includes('Bilangan pada halaman ini'), false);
+  assert.equal(chromeCopy.en.home.v3.title, 'Learn your way');
+  assert.equal(chromeCopy.ms.home.v3.title, 'Belajar dengan cara anda');
   assert.equal(chromeCopy.ms.home.v3.titleEm, 'Pergi lebih jauh dengan AI.');
   assert.equal(
     (catalogs.ms as unknown as { home: { v3: { solveTitle: string; priceTitle: string } } }).home.v3.solveTitle,
@@ -161,7 +169,7 @@ test('the language list covers the major world languages and rtl scripts', () =>
   assert.notEqual(chromeCopy.ms.header.home, chromeCopy.en.header.home);
   assert.equal(chromeCopy.ms.header.programmes, 'Program dan produk');
   assert.notEqual(chromeCopy.ms.header.forSchools, chromeCopy.en.header.forSchools);
-  assert.equal(catalogs.ar.landing.hero.title, 'تعلّم بطريقتك. امضِ أبعد مع الذكاء الاصطناعي.');
+  assert.equal(catalogs.ar.landing.hero.title, 'تعلّم بطريقتك & امضِ أبعد مع الذكاء الاصطناعي.');
   assert.equal(catalogs.en.landing.degrees.title, 'Beyond A-Level.');
   assert.equal(catalogs.en.landing.newFeatures.label, 'New features');
   assert.equal(catalogs.en.landing.pricing.igcse7, 'ET AI Essay Writer — AI-graded 9-1 / A*-U');

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import {
-  BookOpen, Building2, Compass, GraduationCap, IdCard, Landmark, Languages,
+  ArrowRight, BookOpen, Building2, Check, Compass, GraduationCap, IdCard, Landmark, Languages,
   Library, Scale, School, Shield, Sparkles, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -17,7 +17,7 @@ import { TeachSection } from '@/components/landing/teach-section';
 const serif = { fontFamily: 'var(--font-dm-serif), Georgia, serif' } as const;
 
 type Problem = { problem: string; answer: string };
-type Feature = { href: string; title: string; body: string };
+type Feature = { href: string; title: string; body: string; points?: string[] };
 type Level = { href: string; title: string; price: string; body: string };
 type Plan = { name: string; amount: string; period: string; body: string; href: string; cta: string };
 
@@ -72,8 +72,9 @@ export function HomeV3() {
       <section className="bg-[linear-gradient(165deg,#0B1417_0%,#1E6A83_52%,#3FE0D0_130%)] px-6 pb-16 pt-24 text-white sm:py-24">
         <div className="mx-auto max-w-5xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#3FE0D0]">{t('home.v3.eyebrow')}</p>
-          <h1 className="mt-4 text-4xl leading-[1.05] sm:text-6xl" style={serif}>
-            {t('home.v3.title')}<br />
+          <h1 className="mt-4 max-w-4xl text-balance text-4xl leading-[1.05] sm:text-6xl" style={serif}>
+            {t('home.v3.title')}
+            {'\u00a0&\u00a0'}
             <em className="text-[#3FE0D0]">{t('home.v3.titleEm')}</em>
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/85">{t('home.v3.lede')}</p>
@@ -150,14 +151,28 @@ export function HomeV3() {
             </li>
           ))}
         </ul>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((item) => {
             const Icon = FEATURE_ICONS[item.href] ?? Sparkles;
+            const points = Array.isArray(item.points) ? item.points : [];
             return (
-              <Link key={item.href} href={item.href} className="rounded-2xl bg-[#F4FBFA] p-5 hover:bg-[#3FE0D0]/25 dark:bg-[#122226] dark:hover:bg-[#1E6A83]/40">
+              <Link key={item.href} href={item.href} className="flex h-full flex-col rounded-2xl bg-[#F4FBFA] p-5 hover:bg-[#3FE0D0]/25 dark:bg-[#122226] dark:hover:bg-[#1E6A83]/40">
                 <DuoIcon icon={Icon} />
-                <h3 className="mt-3 text-xl" style={serif}>{item.title}</h3>
+                <h3 className="mt-3 text-xl text-[#203337] dark:text-[#E7F4F2]" style={serif}>{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#203337]/80 dark:text-[#E7F4F2]/80">{item.body}</p>
+                {points.length > 0 ? (
+                  <ul className="mt-3 flex-1 space-y-2">
+                    {points.map((point) => (
+                      <li key={point} className="flex gap-2 text-sm leading-relaxed text-[#203337] dark:text-[#E7F4F2]">
+                        <Check aria-hidden className="mt-0.5 shrink-0 text-[#3FE0D0]" size={16} />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">
+                  {t('home.v3.learnMore')} <ArrowRight aria-hidden size={14} />
+                </span>
               </Link>
             );
           })}

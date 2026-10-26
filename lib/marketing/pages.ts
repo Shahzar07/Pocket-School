@@ -335,7 +335,7 @@ export const MARKET_PAGES: MarketPage[] = [
         body: 'Named ET AI teachers for Primary, IGCSE, A-Level, LLB, MBBS foundation, and independent study. A studio for lessons and books. A desk for real classes, including private classrooms. A parent view that shows grades and goals when the accounts are linked.',
         points: [
           'One login for the learner, the parent, and the teacher.',
-          'Built with Rochford’s International School in Ipoh.',
+          'Built with Rochford’s International School in Ipoh, Malaysia.',
           'Exam-board names describe alignment. They are not a partnership claim.',
         ],
       },
