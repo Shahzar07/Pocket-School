@@ -7,7 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { authedFetch } from '@/lib/api-client';
 import { auth, db } from '@/lib/firebase';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { ADMIN_TASKS, parseAdminTask, presentTask, sortTasks, type AdminPushPrefs, type AdminTask } from '@/lib/admin/tasks';
+import { ADMIN_TASKS, parseAdminTask, presentTask, readAdminPushPrefs, sortTasks, type AdminPushPrefs, type AdminTask } from '@/lib/admin/tasks';
 
 function asTasks(value: unknown): AdminTask[] {
   return Array.isArray(value) ? value as AdminTask[] : [];
@@ -15,7 +15,7 @@ function asTasks(value: unknown): AdminTask[] {
 
 function asPrefs(value: unknown): AdminPushPrefs | null {
   if (!value || typeof value !== 'object') return null;
-  return value as AdminPushPrefs;
+  return readAdminPushPrefs(value);
 }
 
 export function useAdminTasks() {

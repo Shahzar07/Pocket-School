@@ -32,6 +32,11 @@ describe('dashboard role guard', () => {
     assert.equal(decideDashboardAccess('/dashboard/student/courses', student, 'student').allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/teacher/gradebook', teacher, 'teacher').allowed, true);
     assert.equal(decideDashboardAccess('/dashboard/institution', teacher, 'teacher').allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/institution/timetable', teacher, 'teacher').allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/institution/timetable', { role: 'teacher', permissions: ['timetable:edit'] }, 'teacher').allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/institution/timetable', school).allowed, true);
+    assert.equal(decideDashboardAccess('/dashboard/institution/timetable', student, 'student').allowed, false);
+    assert.equal(decideDashboardAccess('/dashboard/institution/billing', teacher, 'teacher').allowed, false);
     assert.equal(decideDashboardAccess('/dashboard/partner', student, 'student').allowed, false);
     assert.equal(decideDashboardAccess('/dashboard/partner', { role: 'partner_merchant' }).allowed, true);
   });

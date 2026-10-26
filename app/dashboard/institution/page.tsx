@@ -164,6 +164,7 @@ export default function InstitutionAcademyPage() {
       <Panel>
         <p className="text-sm text-muted-foreground">Invite teachers and students first. The name on certificates and emails is the academy name saved below.</p>
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
+          <Link className="underline font-semibold" href="/dashboard/institution/timetable">ET AI Timetabler</Link>
           <Link className="underline font-semibold" href="/dashboard/institution/approvals">Approvals</Link>
           <Link className="underline font-semibold" href="/dashboard/institution/publishing">Course library</Link>
           <Link className="underline font-semibold" href="/dashboard/institution/sparks">Sparks</Link>

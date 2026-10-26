@@ -75,11 +75,14 @@ export interface AdminTask {
   resolution: AdminTaskResolution | null;
 }
 
+/** One switch per task type. Critical SafeLine is not in this map: it always sends. */
+export type AdminTaskSwitches = Record<AdminTaskType, boolean>;
+
 export interface AdminPushPrefs {
   mode: 'instant' | 'digest';
   digestTimes: string[];
   quietHours: { start: string; end: string; tz: string };
-  categories: { admin: boolean; emergency: boolean };
+  types: AdminTaskSwitches;
   lastDigestAt?: number;
 }
 
@@ -170,12 +173,12 @@ export function countByType(tasks: readonly AdminTask[]): Array<{ type: AdminTas
 export function emailAllowed(
   accountEmailOn: boolean,
   prefs: AdminPushPrefs,
-  channel: 'emergency' | 'admin',
+  task: Pick<AdminTask, 'type' | 'slaTier' | 'priority'>,
   now: number,
 ): boolean {
-  if (channel === 'emergency') return true;
+  if (criticalSafeline(task)) return true;
   if (!accountEmailOn) return false;
-  return pushDecision(prefs, channel, now) === 'send';
+  return pushDecision(prefs, task, now) === 'send';
 }
 
 /** Strip addresses, phone numbers, and labelled names. The stored summary never keeps them. */
@@ -261,18 +264,25 @@ export function countdown(dueAt: number, now: number): { label: string; overdue:
   return { label: `${Math.ceil(hours / 24)}d`, overdue: false };
 }
 
+export function defaultTaskSwitches(on = true): AdminTaskSwitches {
+  return Object.fromEntries(ADMIN_TASK_TYPES.map(type => [type, on])) as AdminTaskSwitches;
+}
+
 export const DEFAULT_ADMIN_PUSH_PREFS: AdminPushPrefs = {
   mode: 'instant',
   digestTimes: ['08:00', '17:00'],
   quietHours: { start: '22:00', end: '07:00', tz: 'Asia/Kuala_Lumpur' },
-  categories: { admin: true, emergency: true },
+  types: defaultTaskSwitches(true),
 };
 
-/** Urgent (high) and critical SafeLine use the emergency channel. Everything else uses admin. */
+/** Only a critical SafeLine case uses the emergency channel. High SafeLine stays on admin. */
 export function androidChannel(task: Pick<AdminTask, 'type' | 'slaTier' | 'priority'>): 'emergency' | 'admin' {
-  if (task.type !== 'safeline_case') return 'admin';
-  const urgent = task.slaTier === 'critical' || task.slaTier === 'high' || task.priority === 'critical' || task.priority === 'high';
-  return urgent ? 'emergency' : 'admin';
+  return criticalSafeline(task) ? 'emergency' : 'admin';
+}
+
+export function criticalSafeline(task: Pick<AdminTask, 'type' | 'slaTier' | 'priority'>): boolean {
+  if (task.type !== 'safeline_case') return false;
+  return task.slaTier === 'critical' || task.priority === 'critical';
 }
 
 export function pushPayload(task: AdminTask): AdminTaskPushPayload {
@@ -337,10 +347,14 @@ export function inQuietHours(prefs: AdminPushPrefs, now: number): boolean {
 
 export type PushDecision = 'send' | 'digest' | 'quiet' | 'muted';
 
-/** Emergency is never held for quiet hours or a muted admin category. */
-export function pushDecision(prefs: AdminPushPrefs, channel: 'emergency' | 'admin', now: number): PushDecision {
-  if (channel === 'emergency') return 'send';
-  if (prefs.categories.admin === false) return 'muted';
+/** Critical SafeLine is never held for quiet hours, digest, or a switched-off type. */
+export function pushDecision(
+  prefs: AdminPushPrefs,
+  task: Pick<AdminTask, 'type' | 'slaTier' | 'priority'>,
+  now: number,
+): PushDecision {
+  if (criticalSafeline(task)) return 'send';
+  if (prefs.types[task.type] === false) return 'muted';
   if (inQuietHours(prefs, now)) return 'quiet';
   if (prefs.mode === 'digest') return 'digest';
   return 'send';
@@ -358,12 +372,29 @@ export function digestDue(prefs: AdminPushPrefs, now: number, windowMs = 15 * 60
   });
 }
 
+/** Old `{ admin, emergency }` prefs become one switch per task type. A muted admin flag stays muted. SafeLine stays on, because it used to follow the always-on emergency flag. */
+export function taskSwitchesFrom(raw: unknown): AdminTaskSwitches {
+  const data = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
+  const types = data.types && typeof data.types === 'object' ? data.types as Record<string, unknown> : null;
+  const categories = data.categories && typeof data.categories === 'object' ? data.categories as Record<string, unknown> : null;
+  const legacyAdmin = categories && typeof categories.admin === 'boolean' ? categories.admin : null;
+  const switches = defaultTaskSwitches(true);
+  for (const type of ADMIN_TASK_TYPES) {
+    if (types && typeof types[type] === 'boolean') {
+      switches[type] = types[type] as boolean;
+      continue;
+    }
+    if (legacyAdmin == null) continue;
+    switches[type] = type === 'safeline_case' ? true : legacyAdmin;
+  }
+  return switches;
+}
+
 export function readAdminPushPrefs(raw: unknown): AdminPushPrefs {
   const data = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
   const quiet = data.quietHours && typeof data.quietHours === 'object' ? data.quietHours as Record<string, unknown> : {};
-  const categories = data.categories && typeof data.categories === 'object' ? data.categories as Record<string, unknown> : {};
   const times = Array.isArray(data.digestTimes)
-    ? data.digestTimes.filter((item): item is string => typeof item === 'string' && minutesOf(item) != null).slice(0, 8)
+    ? data.digestTimes.filter((item): item is string => typeof item === 'string' && minutesOf(item) != null).slice(0, 4)
     : DEFAULT_ADMIN_PUSH_PREFS.digestTimes;
   return {
     mode: data.mode === 'digest' ? 'digest' : 'instant',
@@ -373,10 +404,7 @@ export function readAdminPushPrefs(raw: unknown): AdminPushPrefs {
       end: typeof quiet.end === 'string' && minutesOf(quiet.end) != null ? quiet.end : DEFAULT_ADMIN_PUSH_PREFS.quietHours.end,
       tz: typeof quiet.tz === 'string' && quiet.tz.trim() ? quiet.tz.trim().slice(0, 64) : DEFAULT_ADMIN_PUSH_PREFS.quietHours.tz,
     },
-    categories: {
-      admin: categories.admin !== false,
-      emergency: true,
-    },
+    types: taskSwitchesFrom(data),
     lastDigestAt: typeof data.lastDigestAt === 'number' ? data.lastDigestAt : undefined,
   };
 }

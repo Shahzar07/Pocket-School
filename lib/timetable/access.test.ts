@@ -23,5 +23,11 @@ describe('timetabler packaging', () => {
     assert.equal(studioTimetableGate({ role: 'teacher', permissions: ['timetable:edit'] }), 'school');
     assert.equal(studioTimetableGate({ role: 'student' }), 'hidden');
     assert.equal(studioTimetableGate({ role: 'parent' }), 'hidden');
+    assert.equal(canEditSchool({ role: 'teacher', permissions: ['addon:et_ai_timetabler'] }), false);
+    assert.equal(canEditSchool({ role: 'teacher', permissions: ['timetable:edit'], institutionId: 'school-a' }), true);
+    assert.equal(canEditSchool({ role: 'teacher' }), false);
+    assert.equal(canEditSchool({ role: 'student' }), false);
+    assert.equal(canEditSchool({ role: 'institution_admin' }), false);
+    assert.equal(canEditPersonal({ role: 'teacher', permissions: ['timetable:edit'] }), true);
   });
 });

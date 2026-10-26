@@ -1322,19 +1322,30 @@ describe('admin action centre', () => {
     }));
   });
 
-  it('keeps emergency on in admin push preferences', async () => {
+  it('stores one switch per admin task type', async () => {
     const admin = env.authenticatedContext('admin1', { adminRole: 'super_admin' }).firestore();
     const student = env.authenticatedContext('adult1').firestore();
+    const types = {
+      registration: true,
+      safeline_case: false,
+      teacher_verification: true,
+      institution_verification: true,
+      report: true,
+      partner_application: true,
+      amber_request: true,
+      course_review: false,
+      other: true,
+    };
     const prefs = {
       mode: 'digest',
       digestTimes: ['08:00', '17:00'],
       quietHours: { start: '22:00', end: '07:00', tz: 'Asia/Kuala_Lumpur' },
-      categories: { admin: true, emergency: true },
+      types,
     };
     await assertSucceeds(setDoc(doc(admin, 'users/admin1/notificationPrefs/admin'), prefs));
     await assertFails(setDoc(doc(admin, 'users/admin1/notificationPrefs/admin'), {
       ...prefs,
-      categories: { admin: false, emergency: false },
+      categories: { admin: true, emergency: true },
     }));
     await assertFails(setDoc(doc(student, 'users/admin1/notificationPrefs/admin'), prefs));
   });

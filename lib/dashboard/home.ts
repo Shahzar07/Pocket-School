@@ -218,6 +218,7 @@ const institution: RoleHome = {
     { id: 'insights', label: 'Insights', href: '/dashboard/institution/progress', category: 'insights', hint: 'At-risk learners' },
   ],
   tiles: [
+    { id: 'timetable', label: 'ET AI Timetabler', href: '/dashboard/institution/timetable', category: 'learning' },
     { id: 'automation', label: 'Automation', href: '/dashboard/institution/templates', category: 'settings' },
     { id: 'care', label: 'Care cases', href: '/dashboard/institution/progress', category: 'safety', hint: 'Linked from progress alerts' },
     { id: 'emergency', label: 'Emergency alerts', href: '/dashboard/institution/emergency', category: 'safety' },

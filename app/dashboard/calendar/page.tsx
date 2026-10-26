@@ -72,7 +72,7 @@ export default function CalendarPage() {
 
   const load = async () => {
     const data = await getCalendarEvents({});
-    const feed = readTimetableFeed();
+    const feed = readTimetableFeed({ institutionId: profile?.institutionId });
     const lessons = (feed?.calendar ?? []).map((item, index) => ({
       id: `tt-${index}-${item.date}`,
       title: item.title,
@@ -86,7 +86,7 @@ export default function CalendarPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, [profile?.institutionId]);
 
   const handleCreate = async () => {
     if (!user || !form.title.trim() || !form.date) { toast.error('Fill in title and date.'); return; }

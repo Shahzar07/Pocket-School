@@ -22,6 +22,8 @@ describe('AI tool shell inventory', () => {
     assert.equal(isAiToolPath('/reads'), false);
     assert.equal(isAiToolPath('/dashboard/admin/blog'), false);
     assert.equal(isAiToolPath('/dashboard/teacher/gradebook'), false);
+    assert.equal(isAiToolPath('/dashboard/institution/timetable'), false);
+    assert.equal(isAiToolPath('/dashboard/studio/timetable'), true);
   });
 
   it('keeps role gates on the tools list', () => {

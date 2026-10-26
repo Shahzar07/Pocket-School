@@ -15,6 +15,7 @@ export function FlowTrail({
   onSelect,
   allowAhead = false,
   label = flowCopy.trail,
+  dataAttr,
 }: {
   steps: readonly FlowStep[];
   currentId: string;
@@ -22,6 +23,8 @@ export function FlowTrail({
   onSelect?: (id: string) => void;
   allowAhead?: boolean;
   label?: string;
+  /** Extra data attribute, such as data-tab, set to the step id. */
+  dataAttr?: string;
 }) {
   const index = flowIndex(steps, currentId);
   return (
@@ -32,13 +35,14 @@ export function FlowTrail({
           const complete = stepIndex < index;
           const open = flowStepOpen(stepIndex, index, allowAhead);
           const href = open && hrefFor ? hrefFor(step.id) : null;
+          const mark = dataAttr ? { [dataAttr]: step.id } : {};
           return (
             <li key={step.id} className="flex items-center gap-1">
               {stepIndex > 0 ? <span aria-hidden className="px-0.5 text-[#1E6A83] dark:text-[#3FE0D0]">→</span> : null}
               {active ? (
-                <span data-flow-step={step.id} aria-current="step" className={current}>{step.label}</span>
+                <span data-flow-step={step.id} aria-current="step" className={current} {...mark}>{step.label}</span>
               ) : href ? (
-                <Link data-flow-step={step.id} href={href} className={done}>{step.label}</Link>
+                <Link data-flow-step={step.id} href={href} className={done} {...mark}>{step.label}</Link>
               ) : onSelect && (complete || allowAhead) ? (
                 <button
                   type="button"
@@ -46,11 +50,12 @@ export function FlowTrail({
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => onSelect(step.id)}
                   className={complete ? done : future}
+                  {...mark}
                 >
                   {step.label}
                 </button>
               ) : (
-                <span data-flow-step={step.id} className={complete ? done : future}>{step.label}</span>
+                <span data-flow-step={step.id} className={complete ? done : future} {...mark}>{step.label}</span>
               )}
             </li>
           );

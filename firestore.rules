@@ -323,7 +323,7 @@ service cloud.firestore {
         && (incoming().digestTimes.size() < 4 || clockOk(incoming().digestTimes[3]));
     }
     function adminPushPrefsShape() {
-      return incoming().keys().hasOnly(['mode', 'digestTimes', 'quietHours', 'categories', 'lastDigestAt'])
+      return incoming().keys().hasOnly(['mode', 'digestTimes', 'quietHours', 'types', 'lastDigestAt'])
         && incoming().mode in ['instant', 'digest']
         && digestTimesOk()
         && incoming().quietHours is map
@@ -333,10 +333,17 @@ service cloud.firestore {
         && incoming().quietHours.tz is string
         && incoming().quietHours.tz.size() > 0
         && incoming().quietHours.tz.size() <= 64
-        && incoming().categories is map
-        && incoming().categories.keys().hasOnly(['admin', 'emergency'])
-        && incoming().categories.admin is bool
-        && incoming().categories.emergency == true;
+        && incoming().types is map
+        && incoming().types.keys().hasOnly(['registration', 'safeline_case', 'teacher_verification', 'institution_verification', 'report', 'partner_application', 'amber_request', 'course_review', 'other'])
+        && incoming().types.registration is bool
+        && incoming().types.safeline_case is bool
+        && incoming().types.teacher_verification is bool
+        && incoming().types.institution_verification is bool
+        && incoming().types.report is bool
+        && incoming().types.partner_application is bool
+        && incoming().types.amber_request is bool
+        && incoming().types.course_review is bool
+        && incoming().types.other is bool;
     }
     function taskSchool() {
       return resource.data.get('scope', {}).get('institutionId', '');

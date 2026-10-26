@@ -150,6 +150,11 @@ export function decideDashboardAccess(
   if (matches(path, '/dashboard/admin')) {
     return isSuperAdmin(actor) ? { allowed: true } : deny(actor, mode);
   }
+  if (matches(path, '/dashboard/institution/timetable')) {
+    const teaching = hasAccountRole(actor, 'teacher');
+    const authorised = (actor.permissions ?? []).includes('timetable:edit');
+    return isSuperAdmin(actor) || isInstitutionAdmin(actor) || teaching || authorised ? { allowed: true } : deny(actor, mode);
+  }
   if (matches(path, '/dashboard/institution')) {
     return isSuperAdmin(actor) || isInstitutionAdmin(actor) ? { allowed: true } : deny(actor, mode);
   }

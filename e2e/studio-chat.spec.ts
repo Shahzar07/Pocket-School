@@ -367,7 +367,7 @@ test.describe('ET AI studio chat', () => {
       { email: 'student.e2e@poketschool.ai', path: '/dashboard/studio/maths', shot: 'tool-student-maths' },
       { email: 'teacher.e2e@poketschool.ai', path: '/dashboard/teacher/upload', shot: 'tool-teacher-upload' },
       { email: 'parent.e2e@poketschool.ai', path: '/dashboard/parent/planner', shot: 'tool-parent-planner' },
-      { email: 'institution.e2e@poketschool.ai', path: '/dashboard/institution/timetable', shot: 'tool-institution-timetable' },
+      { email: 'institution.e2e@poketschool.ai', path: '/dashboard/studio/timetable', shot: 'tool-institution-timetable' },
       { email: 'admin.e2e@poketschool.ai', path: '/dashboard/admin/books', shot: 'tool-admin-books' },
     ];
     for (const visit of visits) {
