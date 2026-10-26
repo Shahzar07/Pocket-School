@@ -108,6 +108,59 @@ const SEARCH: Record<string, { search: string; none: string }> = {
   kk: { search: 'Тілді іздеу', none: 'Сәйкес тіл жоқ.' },
 };
 
+/** Footer level labels. The plan ids stay llb and mbbs. */
+const TRACKS: Record<string, { llb: string; mbbs: string }> = {
+  ar: { llb: 'القانون (LLB)', mbbs: 'الطب (MBBS)' },
+  he: { llb: 'משפטים (LLB)', mbbs: 'רפואה (MBBS)' },
+  fa: { llb: 'حقوق (LLB)', mbbs: 'پزشکی (MBBS)' },
+  ur: { llb: 'قانون (LLB)', mbbs: 'طب (MBBS)' },
+  ps: { llb: 'قانون (LLB)', mbbs: 'طب (MBBS)' },
+  hi: { llb: 'विधि (LLB)', mbbs: 'चिकित्सा (MBBS)' },
+  bn: { llb: 'আইন (LLB)', mbbs: 'চিকিৎসা (MBBS)' },
+  pa: { llb: 'ਕਾਨੂੰਨ (LLB)', mbbs: 'ਮੈਡੀਸਨ (MBBS)' },
+  te: { llb: 'న్యాయం (LLB)', mbbs: 'వైద్యం (MBBS)' },
+  mr: { llb: 'कायदा (LLB)', mbbs: 'वैद्यक (MBBS)' },
+  gu: { llb: 'કાયદો (LLB)', mbbs: 'તબીબી (MBBS)' },
+  kn: { llb: 'ಕಾನೂನು (LLB)', mbbs: 'ವೈದ್ಯಕೀಯ (MBBS)' },
+  ml: { llb: 'നിയമം (LLB)', mbbs: 'വൈദ്യം (MBBS)' },
+  ne: { llb: 'कानुन (LLB)', mbbs: 'चिकित्सा (MBBS)' },
+  or: { llb: 'ଆଇନ (LLB)', mbbs: 'ଚିକିତ୍ସା (MBBS)' },
+  si: { llb: 'නීතිය (LLB)', mbbs: 'වෛද්‍ය විද්‍යාව (MBBS)' },
+  id: { llb: 'Hukum (LLB)', mbbs: 'Kedokteran (MBBS)' },
+  jv: { llb: 'Hukum (LLB)', mbbs: 'Kedokteran (MBBS)' },
+  vi: { llb: 'Luật (LLB)', mbbs: 'Y khoa (MBBS)' },
+  th: { llb: 'กฎหมาย (LLB)', mbbs: 'แพทยศาสตร์ (MBBS)' },
+  fil: { llb: 'Batas (LLB)', mbbs: 'Medisina (MBBS)' },
+  my: { llb: 'ဥပဒေ (LLB)', mbbs: 'ဆေးပညာ (MBBS)' },
+  km: { llb: 'ច្បាប់ (LLB)', mbbs: 'វេជ្ជសាស្ត្រ (MBBS)' },
+  tr: { llb: 'Hukuk (LLB)', mbbs: 'Tıp (MBBS)' },
+  ru: { llb: 'Право (LLB)', mbbs: 'Медицина (MBBS)' },
+  de: { llb: 'Jura (LLB)', mbbs: 'Medizin (MBBS)' },
+  fr: { llb: 'Droit (LLB)', mbbs: 'Médecine (MBBS)' },
+  it: { llb: 'Giurisprudenza (LLB)', mbbs: 'Medicina (MBBS)' },
+  pt: { llb: 'Direito (LLB)', mbbs: 'Medicina (MBBS)' },
+  'pt-PT': { llb: 'Direito (LLB)', mbbs: 'Medicina (MBBS)' },
+  nl: { llb: 'Rechten (LLB)', mbbs: 'Geneeskunde (MBBS)' },
+  pl: { llb: 'Prawo (LLB)', mbbs: 'Medycyna (MBBS)' },
+  uk: { llb: 'Право (LLB)', mbbs: 'Медицина (MBBS)' },
+  ro: { llb: 'Drept (LLB)', mbbs: 'Medicină (MBBS)' },
+  el: { llb: 'Νομική (LLB)', mbbs: 'Ιατρική (MBBS)' },
+  cs: { llb: 'Právo (LLB)', mbbs: 'Medicína (MBBS)' },
+  hu: { llb: 'Jog (LLB)', mbbs: 'Orvostudomány (MBBS)' },
+  sv: { llb: 'Juridik (LLB)', mbbs: 'Medicin (MBBS)' },
+  ja: { llb: '法学 (LLB)', mbbs: '医学 (MBBS)' },
+  ko: { llb: '법학 (LLB)', mbbs: '의학 (MBBS)' },
+  kk: { llb: 'Құқық (LLB)', mbbs: 'Медицина (MBBS)' },
+  uz: { llb: 'Huquq (LLB)', mbbs: 'Tibbiyot (MBBS)' },
+  sw: { llb: 'Sheria (LLB)', mbbs: 'Tiba (MBBS)' },
+  ha: { llb: 'Doka (LLB)', mbbs: 'Likitanci (MBBS)' },
+  yo: { llb: 'Òfin (LLB)', mbbs: 'Ìṣègùn (MBBS)' },
+  am: { llb: 'ሕግ (LLB)', mbbs: 'ሕክምና (MBBS)' },
+  es: { llb: 'Derecho (LLB)', mbbs: 'Medicina (MBBS)' },
+  'zh-Hant': { llb: '法律 (LLB)', mbbs: '醫學 (MBBS)' },
+  yue: { llb: '法律 (LLB)', mbbs: '醫學 (MBBS)' },
+};
+
 function headlineParts(title: string): { title: string; titleEm: string } {
   const splitAt = title.indexOf(' & ');
   if (splitAt < 0) return { title, titleEm: '' };
@@ -118,7 +171,8 @@ export function reviewPatch(code: string): Record<string, unknown> | undefined {
   const hero = HERO[code];
   const search = SEARCH[code];
   const faq = FAQ_DRAFTS[code];
-  if (!hero && !search && !faq) return undefined;
+  const tracks = TRACKS[code];
+  if (!hero && !search && !faq && !tracks) return undefined;
   const landing = {
     ...(hero ? { hero } : {}),
     ...(faq ? { faq } : {}),
@@ -137,5 +191,6 @@ export function reviewPatch(code: string): Record<string, unknown> | undefined {
       },
     } : {}),
     ...(search ? { switcher: search } : {}),
+    ...(tracks ? { footer: tracks } : {}),
   };
 }

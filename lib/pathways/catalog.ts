@@ -212,7 +212,7 @@ export const PATHWAYS: readonly PathwayRecord[] = [
     progression: [
       { href: '/igcse', label: 'IGCSE' },
       { href: '/alevel', label: 'A-Level' },
-      { href: '/llb', label: 'LLB Law' },
+      { href: '/llb', label: 'Law (LLB)' },
       { href: '/mbbs', label: 'MBBS foundation' },
     ],
     boards: [],
@@ -257,7 +257,7 @@ export const PATHWAYS: readonly PathwayRecord[] = [
     progression: [
       { href: '/primary', label: 'Primary' },
       { href: '/alevel', label: 'A-Level' },
-      { href: '/llb', label: 'LLB Law' },
+      { href: '/llb', label: 'Law (LLB)' },
       { href: '/mbbs', label: 'MBBS foundation' },
     ],
     boards: SCHOOL_BOARDS,
@@ -309,7 +309,7 @@ export const PATHWAYS: readonly PathwayRecord[] = [
     ],
     progression: [
       { href: '/igcse', label: 'IGCSE' },
-      { href: '/llb', label: 'LLB Law' },
+      { href: '/llb', label: 'Law (LLB)' },
       { href: '/mbbs', label: 'MBBS foundation' },
     ],
     boards: SCHOOL_BOARDS,
@@ -352,8 +352,8 @@ export const PATHWAYS: readonly PathwayRecord[] = [
   },
   {
     slug: 'llb',
-    title: 'LLB Law',
-    metaTitle: 'LLB Law pathway',
+    title: 'Law (LLB)',
+    metaTitle: 'Law (LLB) pathway',
     overview: 'LLB Law is degree-level study with ET Law. The modules follow the usual foundations of a qualifying law degree. Poket School does not enrol you at a university.',
     audience: 'Learners who want Contract, Tort, Criminal, Public Law, Land, Equity and Trusts, and the other law modules in the catalogue, after IGCSE and A-Level or alongside them.',
     entry: 'This is not a university offer and not an admissions decision. You can start from the degree plan. Comfort with long written answers helps. No A-Level grade is required by Poket School.',
@@ -418,8 +418,8 @@ export const PATHWAYS: readonly PathwayRecord[] = [
   },
   {
     slug: 'mbbs',
-    title: 'MBBS Medicine',
-    metaTitle: 'MBBS Medicine pathway',
+    title: 'Medicine (MBBS)',
+    metaTitle: 'Medicine (MBBS) pathway',
     overview: 'MBBS Medicine on Poket School is foundation and degree-level study with ET Medicine and the science teachers. It does not place a learner in a medical school.',
     audience: 'Learners who want a pre-clinical foundation in anatomy, physiology, and the other medicine subjects in the catalogue, often after IGCSE and A-Level science.',
     entry: 'Poket School does not ask for a medical-school offer. Science subjects from IGCSE or A-Level are useful preparation. No grade threshold is set here.',
@@ -435,7 +435,7 @@ export const PATHWAYS: readonly PathwayRecord[] = [
     progression: [
       { href: '/igcse', label: 'IGCSE' },
       { href: '/alevel', label: 'A-Level' },
-      { href: '/llb', label: 'LLB Law' },
+      { href: '/llb', label: 'Law (LLB)' },
     ],
     boards: [],
     boardNote: 'Poket School does not award a medical degree and does not claim a medical council, a teaching hospital, or a clinical placement.',

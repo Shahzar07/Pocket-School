@@ -194,8 +194,8 @@ export function offerPlans(extras: boolean = OFFER_BUNDLE_EXTRAS): OfferPlan[] {
       priceNote: 'A super admin sets this',
       tagline: 'Degree-level study with ET AI.',
       features: [
-        'MBBS Medicine',
-        'LLB Law (University of London and others)',
+        'Medicine (MBBS)',
+        'Law (LLB) — University of London and others',
         'Engineering',
         'Nursing',
         'Transcripts and Open Badges',

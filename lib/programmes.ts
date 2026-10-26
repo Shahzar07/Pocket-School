@@ -75,7 +75,7 @@ export const PROGRAMMES: readonly Programme[] = [
   },
   {
     value: 'LLB Law',
-    label: 'LLB Law',
+    label: 'Law (LLB)',
     summary: 'LLB Law covers the University of London (UoL) and other universities.',
     tier: 4,
     years: ['Degree'],
@@ -86,7 +86,7 @@ export const PROGRAMMES: readonly Programme[] = [
   },
   {
     value: 'MBBS Medicine',
-    label: 'MBBS Medicine',
+    label: 'Medicine (MBBS)',
     summary: 'A full medical degree. ET Medicine is included on Professional & Degrees.',
     tier: 4,
     years: ['Degree'],

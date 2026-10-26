@@ -174,7 +174,21 @@ test('the language list covers the major world languages and rtl scripts', () =>
   assert.equal(catalogs.en.landing.newFeatures.label, 'New features');
   assert.equal(catalogs.en.landing.pricing.igcse7, 'ET AI Essay Writer — AI-graded 9-1 / A*-U');
   assert.equal(catalogs.en.landing.pricing.professional9, 'ET AI Live add-on');
-  assert.equal(catalogs.en.landing.degrees.lineup, 'LLB Law, MBBS Medicine, Engineering and Nursing');
+  assert.equal(catalogs.en.landing.degrees.lineup, 'Law (LLB), Medicine (MBBS), Engineering and Nursing');
+  for (const code of Object.keys(catalogs)) {
+    const footer = (catalogs as unknown as Record<string, { footer: { llb: string; mbbs: string } }>)[code].footer;
+    assert.match(footer.llb, /\(LLB\)/, code);
+    assert.match(footer.mbbs, /\(MBBS\)/, code);
+    assert.equal(footer.llb.includes('Law & LLB'), false, code);
+  }
+  assert.equal(catalogs.en.footer.llb, 'Law (LLB)');
+  assert.equal(catalogs.en.footer.mbbs, 'Medicine (MBBS)');
+  assert.equal(catalogs.ms.footer.llb, 'Undang-undang (LLB)');
+  assert.equal(catalogs.ms.footer.mbbs, 'Perubatan (MBBS)');
+  assert.equal(catalogs.zh.footer.llb, '法律 (LLB)');
+  assert.equal(catalogs.zh.footer.mbbs, '医学 (MBBS)');
+  assert.equal(catalogs.ta.footer.llb, 'சட்டம் (LLB)');
+  assert.equal(catalogs.ta.footer.mbbs, 'மருத்துவம் (MBBS)');
   assert.equal(catalogs.en.landing.supplement.title, 'We supplement. We do not replace.');
   assert.equal(
     catalogs.en.footer.disclaimer,

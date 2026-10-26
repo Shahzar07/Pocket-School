@@ -102,7 +102,8 @@ export function AllocationPanel({
   const { user } = useAuthSTORE();
   const policy = blankPolicy(product);
   const [role, setRole] = useState<ViewerRole>('student');
-  const [tier, setTier] = useState(2);
+  const [planId, setPlanId] = useState('igcse_alevel');
+  const tier = TIERS.find(item => item.id === planId)?.tier ?? 2;
   const [institutionId, setInstitutionId] = useState(institutions[0]?.id ?? '');
   const [userId, setUserId] = useState('');
   const [enrolled, setEnrolled] = useState(false);
@@ -221,7 +222,7 @@ export function AllocationPanel({
         <label className="block text-xs font-semibold">Minimum plan
           <select className="mt-1 w-full h-9 rounded-xl border border-border bg-card px-2" value={product.minTier ?? ''} onChange={event => onChange({ minTier: event.target.value === '' ? null : Number(event.target.value) })}>
             <option value="">Derive from the level</option>
-            {TIERS.map(item => <option key={item.tier} value={item.tier}>{item.name}</option>)}
+            {TIERS.map(item => <option key={item.id} value={item.tier}>{item.name}</option>)}
           </select>
         </label>
         <label className="block text-xs font-semibold">Price type
@@ -340,8 +341,8 @@ export function AllocationPanel({
           ))}
         </div>
         <label className="block text-[11px] font-semibold">Plan
-          <select className="mt-1 w-full h-8 rounded-lg border border-border bg-card px-2" value={tier} onChange={event => setTier(Number(event.target.value))}>
-            {TIERS.map(item => <option key={item.tier} value={item.tier}>{item.name}</option>)}
+          <select className="mt-1 w-full h-8 rounded-lg border border-border bg-card px-2" value={planId} onChange={event => setPlanId(event.target.value)}>
+            {TIERS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
         </label>
         <label className="block text-[11px] font-semibold">Institution

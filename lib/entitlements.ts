@@ -40,9 +40,10 @@ export interface TierDefinition {
 }
 
 /**
- * The seven tiers. Tier 3 and 4 are the same commercial plan — "Professional &
- * Degrees" — because LLB unlocks inside it; the brief keeps them as separate
- * minTier values so law content can be gated independently.
+ * Plan rows. Tiers 3 and 4 are the same commercial plan — "Professional &
+ * Degrees". Law (LLB) and Medicine (MBBS) both use access tier 4 so a degree
+ * track can be named on its own without moving Institution (5) or Marketplace (6).
+ * `tierDefinition` keeps the Law row for the number 4. Look Medicine up by id `mbbs`.
  */
 export const TIERS: TierDefinition[] = [
   {
@@ -105,10 +106,16 @@ export const TIERS: TierDefinition[] = [
     ],
   },
   {
-    tier: 4, id: 'llb', name: 'Law & LLB',
+    tier: 4, id: 'llb', name: 'Law (LLB)',
     blurb: 'LLB Law covers the University of London (UoL) and other universities. Unlocks within Professional & Degrees.',
     sparks: 1000, sparksRollover: 700,
     programmes: ['LLB Law — University of London (UoL) and other universities', 'A-Level Law', 'Pre-University Law', 'Everything in Professional & Degrees'],
+  },
+  {
+    tier: 4, id: 'mbbs', name: 'Medicine (MBBS)',
+    blurb: 'Medicine study on Poket School. Unlocks within Professional & Degrees. Not a medical school place and not a licence to practise.',
+    sparks: 1000, sparksRollover: 700,
+    programmes: ['MBBS Medicine — ET Medicine', 'Foundation medicine study', 'Everything in Professional & Degrees'],
   },
   {
     tier: 5, id: 'institution', name: 'Institution',
@@ -126,6 +133,11 @@ export const TIERS: TierDefinition[] = [
 
 export function tierDefinition(tier: AccessTier): TierDefinition {
   return TIERS.find(t => t.tier === tier) ?? TIERS[0];
+}
+
+/** Plan row by id. Law is `llb` and Medicine is `mbbs`; both sit on access tier 4. */
+export function tierById(id: string): TierDefinition | undefined {
+  return TIERS.find(t => t.id === id);
 }
 
 /** Plan bullets shown on pricing cards and at checkout. */
