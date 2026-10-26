@@ -11,6 +11,7 @@ const PRODUCT = {
   safeLine: 'Poket SafeLine',
   timetabler: 'ET AI Timetabler',
   timetableStudio: 'Timetabler',
+  schoolTimetable: 'School timetable',
 } as const;
 
 export interface ExtraNav {
@@ -22,6 +23,7 @@ export interface ExtraNav {
   safeLine: string;
   timetabler: string;
   timetableStudio: string;
+  schoolTimetable: string;
   tasks: string;
   myProgress: string;
   childDetail: string;

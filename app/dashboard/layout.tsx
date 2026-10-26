@@ -147,6 +147,7 @@ const NAV: Record<Role, NavGroup[]> = {
       { href: '/dashboard/studio', icon: Sparkles, labelKey: 'nav.aiStudio' },
       { href: '/dashboard/teacher/classes', icon: GraduationCap, labelKey: 'nav.myClasses' },
       { href: '/dashboard/teacher/timetable', icon: Calendar, labelKey: 'nav.timetabler', label: 'ET AI Timetabler' },
+      { href: '/dashboard/institution/timetable', icon: Calendar, labelKey: 'nav.schoolTimetable', label: 'School timetable' },
       { href: '/dashboard/teacher/courses', icon: Presentation, labelKey: 'nav.coursesProducts' },
       { href: '/courses', icon: Store, labelKey: 'nav.marketplace' },
       { href: '/reads', icon: BookMarked, labelKey: 'nav.books' },

@@ -48,7 +48,6 @@ export interface ToolRoute {
 const TIMETABLE_PATHS = [
   STUDIO_TIMETABLE,
   '/dashboard/admin/timetable',
-  '/dashboard/institution/timetable',
   '/dashboard/teacher/timetable',
   '/dashboard/student/timetable',
   '/dashboard/parent/timetable',

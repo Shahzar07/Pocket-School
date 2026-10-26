@@ -59,11 +59,12 @@ export function timetableEdition(actor: TimetableActor): TimetableEdition {
   return 'locked';
 }
 
+/** Institution admins with the add-on, and staff granted timetable:edit, can change the school week. */
 export function canEditSchool(actor: TimetableActor): boolean {
-  const edition = timetableEdition(actor);
-  if (actor.role === 'admin') return true;
-  if (edition !== 'school' && edition !== 'enterprise') return false;
-  return actor.role === 'institution_admin' || permissionsOf(actor).includes('timetable:edit') || hasTimetablerAddon(actor);
+  if (actor.role === 'admin' || (actor.roles ?? []).includes('admin')) return true;
+  const roles = new Set([actor.role ?? '', ...(actor.roles ?? [])]);
+  if (roles.has('institution_admin')) return hasTimetablerAddon(actor);
+  return permissionsOf(actor).includes('timetable:edit');
 }
 
 export function canEditPersonal(actor: TimetableActor): boolean {

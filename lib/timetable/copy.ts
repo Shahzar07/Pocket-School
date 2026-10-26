@@ -3,6 +3,8 @@
 export const TIMETABLE_COPY = {
   nav: 'ET AI Timetabler',
   title: 'ET AI Timetabler',
+  institutionPlace: 'Institution',
+  steps: 'Timetable steps',
   lede: 'A weekly timetable that feeds the calendar, the year planner, classes, and attendance.',
   priceNote: 'TBC by Harry',
   landingFeature: 'ET AI Timetabler for teachers, and for Institution and Enterprise schools.',

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { FlowNav } from '@/components/flow/flow-nav';
+import { FlowTrail } from '@/components/flow/flow-trail';
 import { DAY_LABEL, ROOM_TYPE_LABEL, TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { canEditPersonal, canEditSchool, canUseMultipleCampuses, timetableEdition, type TimetableActor } from '@/lib/timetable/access';
 import { canMove, hardViolations, suggestFix } from '@/lib/timetable/clashes';
@@ -42,6 +44,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
   const personalEditor = (surface === 'personal' || surface === 'teacher') && canEditPersonal(actor);
   const editing = surface === 'institution' ? schoolEditor : surface === 'personal' ? personalEditor : false;
   const bundleOptions = { sample, ownerId: actor.uid, institutionId: actor.institutionId };
+  const feedOptions = { sample, institutionId: actor.institutionId, ownerId: actor.uid };
   const [bundle, setBundle] = useState(() => loadBundle(bundleOptions));
   const [tab, setTab] = useState<Tab>(editing || personalEditor ? 'generate' : 'grid');
   const [selected, setSelected] = useState('');
@@ -63,7 +66,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
 
   useEffect(() => {
     setBundle(loadBundle(bundleOptions));
-    setFeed(readTimetableFeed());
+    setFeed(readTimetableFeed(feedOptions));
     // The signed-in identity decides which saved week to open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sample, actor.uid, actor.institutionId]);
@@ -73,7 +76,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
       ? { ...next, audit: [{ id: `audit-${next.audit.length + 1}`, at: stamp(), actorId: actor.uid || 'timetabler', action: detail, detail }, ...next.audit] }
       : next;
     if (detail) setNotice(detail);
-    setBundle(saveDoc(withAudit));
+    setBundle(saveDoc(withAudit, bundleOptions));
   };
 
   useEffect(() => {
@@ -157,8 +160,8 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
 
   const publish = () => {
     const result = publishTimetable(doc, stamp(), actor.uid || 'timetabler');
-    setBundle(saveDoc(result.doc));
-    writeTimetableFeed(result.feed);
+    setBundle(saveDoc(result.doc, bundleOptions));
+    writeTimetableFeed(result.feed, { sample: doc.sample === true, institutionId: doc.institutionId || actor.institutionId });
     setFeed(result.feed);
     setNotice(TIMETABLE_COPY.published);
   };
@@ -184,11 +187,14 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
     ? ['setup', 'options', 'generate', 'grid', 'cover', 'publish']
     : surface === 'student' || surface === 'parent'
       ? ['options', 'grid', 'publish']
-      : ['grid', 'publish'];
+      : surface === 'institution'
+        ? ['grid', 'cover', 'publish']
+        : ['grid', 'publish'];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 bg-white p-4 text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2] md:p-6" data-timetable={surface} data-edition={privateMode ? 'personal' : edition} data-sample={sample ? '1' : '0'}>
+    <div className="mx-auto max-w-6xl space-y-5 bg-white p-4 text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2] md:p-6" data-timetable={surface} data-edition={privateMode ? 'personal' : edition} data-sample={sample ? '1' : '0'} data-editing={editing || privateMode ? '1' : '0'} data-place={surface === 'institution' ? 'institution' : surface}>
       <header className="tt-no-print">
+        {surface === 'institution' ? <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83] dark:text-[#3FE0D0]">{TIMETABLE_COPY.institutionPlace}</p> : null}
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83] dark:text-[#3FE0D0]">{TIMETABLE_COPY.title}</p>
         <h1 className="mt-1 text-3xl font-semibold">{TIMETABLE_COPY.title}</h1>
         <p className="mt-2 max-w-3xl text-sm text-[#1E6A83] dark:text-[#3FE0D0]">
@@ -234,12 +240,18 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         </div>
       ) : null}
 
-      <div className="tt-no-print flex flex-wrap gap-2">
-        {tabs.map(item => (
-          <button key={item} type="button" data-tab={item} className={tab === item ? button : ghost} onClick={() => setTab(item)}>
-            {item === 'setup' ? TIMETABLE_COPY.tabSetup : item === 'options' ? TIMETABLE_COPY.tabOptions : item === 'generate' ? TIMETABLE_COPY.tabGenerate : item === 'grid' ? TIMETABLE_COPY.tabGrid : item === 'cover' ? TIMETABLE_COPY.tabCover : TIMETABLE_COPY.tabPublish}
-          </button>
-        ))}
+      <div className="tt-no-print">
+        <FlowTrail
+          steps={tabs.map(item => ({
+            id: item,
+            label: item === 'setup' ? TIMETABLE_COPY.tabSetup : item === 'options' ? TIMETABLE_COPY.tabOptions : item === 'generate' ? TIMETABLE_COPY.tabGenerate : item === 'grid' ? TIMETABLE_COPY.tabGrid : item === 'cover' ? TIMETABLE_COPY.tabCover : TIMETABLE_COPY.tabPublish,
+          }))}
+          currentId={tab}
+          allowAhead
+          onSelect={(id) => setTab(id as Tab)}
+          label={TIMETABLE_COPY.steps}
+          dataAttr="data-tab"
+        />
       </div>
 
       {tab === 'setup' ? <Setup doc={doc} csv={csv} setCsv={setCsv} multi={multi} onCommit={commit} /> : null}
@@ -290,6 +302,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
           setCoverTeacher={setCoverTeacher}
           setCoverDate={setCoverDate}
           setCoverReason={setCoverReason}
+          editing={editing}
           onAddStaff={() => setTab('setup')}
           onImport={(text) => {
             const imported = importCsv(doc, text);
@@ -339,6 +352,20 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         </section>
       ) : null}
 
+      <div className="tt-no-print">
+        <FlowNav
+          backDisabled={tabs.indexOf(tab) <= 0}
+          nextDisabled={tabs.indexOf(tab) >= tabs.length - 1}
+          onBack={() => {
+            const previous = tabs[tabs.indexOf(tab) - 1];
+            if (previous) setTab(previous);
+          }}
+          onNext={() => {
+            const next = tabs[tabs.indexOf(tab) + 1];
+            if (next) setTab(next);
+          }}
+        />
+      </div>
       <section className={`tt-no-print ${card}`}>
         <h2 className="font-semibold">{TIMETABLE_COPY.audit}</h2>
         <ul className="mt-2 space-y-1 text-sm">
@@ -466,7 +493,7 @@ function Options({ doc, actor, onCommit }: { doc: TimetableDoc; actor: Timetable
 }
 
 function CoverPanel({
-  doc, coverTeacher, coverDate, coverReason, proposals, queued,
+  doc, coverTeacher, coverDate, coverReason, proposals, queued, editing,
   setCoverTeacher, setCoverDate, setCoverReason, onPropose, onApprove, onAddStaff, onImport,
 }: {
   doc: TimetableDoc;
@@ -475,6 +502,7 @@ function CoverPanel({
   coverReason: 'absent' | 'leave' | 'new_hire';
   proposals: ReturnType<typeof proposeCover>;
   queued: ReturnType<typeof coverNotices>;
+  editing: boolean;
   setCoverTeacher: (value: string) => void;
   setCoverDate: (value: string) => void;
   setCoverReason: (value: 'absent' | 'leave' | 'new_hire') => void;
@@ -493,15 +521,19 @@ function CoverPanel({
       {doc.staff.length === 0 ? (
         <div className="space-y-3" data-staff-empty="1">
           <p className="text-sm">{TIMETABLE_COPY.staffEmpty}</p>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className={button} data-action="add-staff" onClick={onAddStaff}>{TIMETABLE_COPY.addStaff}</button>
-          </div>
-          <label className="block text-sm font-semibold">{TIMETABLE_COPY.importCsv}
-            <textarea className={`${field} mt-1 h-28`} value={importText} onChange={event => setImportText(event.target.value)} />
-          </label>
-          <button type="button" className={ghost} data-action="import-csv" onClick={() => onImport(importText)}>{TIMETABLE_COPY.importCsv}</button>
+          {editing ? (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className={button} data-action="add-staff" onClick={onAddStaff}>{TIMETABLE_COPY.addStaff}</button>
+              </div>
+              <label className="block text-sm font-semibold">{TIMETABLE_COPY.importCsv}
+                <textarea className={`${field} mt-1 h-28`} value={importText} onChange={event => setImportText(event.target.value)} />
+              </label>
+              <button type="button" className={ghost} data-action="import-csv" onClick={() => onImport(importText)}>{TIMETABLE_COPY.importCsv}</button>
+            </>
+          ) : null}
         </div>
-      ) : (
+      ) : editing ? (
         <>
           <label className="block text-sm font-semibold">{TIMETABLE_COPY.setupStaff}
             <select className={`${field} mt-1`} value={coverTeacher} onChange={event => setCoverTeacher(event.target.value)}>
@@ -517,6 +549,8 @@ function CoverPanel({
           </label>
           <button type="button" className={button} data-action="propose-cover" onClick={onPropose}>{TIMETABLE_COPY.propose}</button>
         </>
+      ) : (
+        <ul className="text-sm">{doc.staff.map(staff => <li key={staff.id}>{staff.name}</li>)}</ul>
       )}
       <ul className="text-sm" data-proposals={proposals.length}>
         {proposals.map(proposal => {
@@ -524,7 +558,7 @@ function CoverPanel({
           return <li key={proposal.lessonId}>{cover?.name}: {proposal.note}</li>;
         })}
       </ul>
-      <button type="button" className={button} data-action="approve-cover" disabled={proposals.length === 0} onClick={onApprove}>{TIMETABLE_COPY.approveCover}</button>
+      {editing ? <button type="button" className={button} data-action="approve-cover" disabled={proposals.length === 0} onClick={onApprove}>{TIMETABLE_COPY.approveCover}</button> : null}
       <h2 className="font-semibold">{TIMETABLE_COPY.notices}</h2>
       {queued.length === 0 ? <p className="text-sm" data-notices-empty="1">{TIMETABLE_COPY.noticesEmpty}</p> : null}
       <ul className="text-sm" data-notices={queued.length}>{queued.map((item, index) => <li key={`${item.userId}-${index}`}>{item.message}</li>)}</ul>
