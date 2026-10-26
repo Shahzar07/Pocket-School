@@ -90,11 +90,11 @@ async function fanout(task: AdminTask, now: number): Promise<void> {
     if (!adminInTaskScope(admin, task.scope)) continue;
     const prefsSnap = await db().doc(adminPushPrefsPath(person.id)).get();
     const prefs = readAdminPushPrefs(prefsSnap.exists ? prefsSnap.data() : null);
-    const decision = pushDecision(prefs, channel, now);
+    const decision = pushDecision(prefs, task, now);
     const category: PushCategory = channel === 'emergency' ? 'emergency' : 'admin';
     const address = typeof data.email === 'string' ? data.email : '';
     const accountEmailOn = !(data.notificationPrefs && typeof data.notificationPrefs === 'object' && (data.notificationPrefs as { email?: boolean }).email === false);
-    if (address && emailAllowed(accountEmailOn, prefs, channel, now)) {
+    if (address && emailAllowed(accountEmailOn, prefs, task, now)) {
       const mailed = await sendMail({
         to: address,
         subject: payload.title,

@@ -116,7 +116,7 @@ Open ET AI once. That visit is the tick for this lesson.`,
     title: 'Ask your ET Subject teacher',
     minutes: 3,
     hue: 'mist',
-    body: `Each subject has a named teacher. The name is ET plus the subject, such as ET Maths or ET English. Open a teacher and ask one question about the topic you are on.
+    body: `Each teacher is ET plus a subject. The name is ET plus the subject, such as ET Maths or ET English. Open a teacher and ask one question about the topic you are on.
 
 The teacher stays with that subject. ET AI is the wider study partner.`,
     question: 'How is an ET Subject teacher named?',

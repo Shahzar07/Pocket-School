@@ -2,14 +2,25 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { countByType, DEFAULT_ADMIN_PUSH_PREFS, type AdminPushPrefs, type AdminTaskPriority, type AdminTaskStatus, type AdminTaskType } from '@/lib/admin/tasks';
+import { ADMIN_TASK_TYPES, countByType, DEFAULT_ADMIN_PUSH_PREFS, type AdminPushPrefs, type AdminTaskPriority, type AdminTaskStatus, type AdminTaskType } from '@/lib/admin/tasks';
 import { TaskList } from './task-list';
 import { useAdminTasks } from './use-admin-tasks';
 
 const fieldClass = 'min-h-11 w-full rounded-2xl border border-border bg-card px-3 text-sm text-foreground';
 const buttonClass = 'inline-flex min-h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]';
 
-const TYPES: Array<AdminTaskType | 'all'> = ['all', 'registration', 'safeline_case', 'teacher_verification', 'institution_verification', 'report', 'partner_application', 'amber_request', 'course_review', 'other'];
+const TYPES: Array<AdminTaskType | 'all'> = ['all', ...ADMIN_TASK_TYPES];
+const TYPE_LABEL: Record<AdminTaskType, string> = {
+  registration: 'Registrations',
+  safeline_case: 'SafeLine',
+  teacher_verification: 'Teacher verification',
+  institution_verification: 'Institution verification',
+  report: 'Reports',
+  partner_application: 'Partner applications',
+  amber_request: 'Amber requests',
+  course_review: 'Course reviews',
+  other: 'Other admin tasks',
+};
 const TIERS: Array<AdminTaskPriority | 'all'> = ['all', 'critical', 'high', 'medium', 'low'];
 const STATUSES: Array<AdminTaskStatus | 'all'> = ['all', 'open', 'claimed', 'snoozed'];
 
@@ -67,8 +78,8 @@ export function ActionCentrePage() {
   };
 
   const save = () => {
-    savePrefs({ ...draft, categories: { ...draft.categories, emergency: true } })
-      .then(() => setNote('Notification preferences saved. Emergency stays on.'))
+    savePrefs(draft)
+      .then(() => setNote('Notification preferences saved. Critical SafeLine stays on.'))
       .catch(error => setNote(error instanceof Error ? error.message : 'Preferences did not save.'));
   };
 
@@ -130,7 +141,7 @@ export function ActionCentrePage() {
       )}
       <section className="rounded-[24px] border border-border bg-card p-4" aria-label="Push preferences">
         <h2 className="font-heading text-xl text-foreground">Push preferences</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Stored at users/&#123;uid&#125;/notificationPrefs/admin. Quiet hours never mute emergency.</p>
+        <p className="mt-1 text-sm text-muted-foreground">One switch per task type. Critical SafeLine stays on. Digest times default to 08:00 and 17:00.</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-semibold text-foreground">
             Mode
@@ -155,15 +166,23 @@ export function ActionCentrePage() {
             Time zone
             <input className={`${fieldClass} mt-1`} value={draft.quietHours.tz} onChange={event => setDraft({ ...draft, quietHours: { ...draft.quietHours, tz: event.target.value } })} />
           </label>
-          <label className="mt-6 flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground">
-            <input type="checkbox" checked={draft.categories.admin} onChange={event => setDraft({ ...draft, categories: { admin: event.target.checked, emergency: true } })} />
-            Admin channel
-          </label>
         </div>
-        <label className="mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground">
-          <input type="checkbox" checked disabled />
-          Emergency channel stays on
-        </label>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground">
+            <input type="checkbox" checked disabled />
+            Critical SafeLine
+          </label>
+          {ADMIN_TASK_TYPES.map(item => (
+            <label key={item} className="flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground">
+              <input
+                type="checkbox"
+                checked={draft.types[item]}
+                onChange={event => setDraft({ ...draft, types: { ...draft.types, [item]: event.target.checked } })}
+              />
+              {TYPE_LABEL[item]}
+            </label>
+          ))}
+        </div>
         <button type="button" className={`${buttonClass} mt-3`} onClick={save}>Save preferences</button>
       </section>
     </div>

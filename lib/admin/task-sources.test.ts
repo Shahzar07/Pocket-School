@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SENSITIVE_CATEGORIES } from '../hotline/policy';
-import { buildAdminTask, countByType, emailAllowed, sourceHref, type AdminPushPrefs, type AdminTask } from './tasks';
+import { buildAdminTask, countByType, defaultTaskSwitches, emailAllowed, sourceHref, type AdminPushPrefs, type AdminTask } from './tasks';
 import { draftForDocument, joinTaskType, sourceResolved } from './task-sources';
 
 const prefs: AdminPushPrefs = {
   mode: 'instant',
   digestTimes: ['08:00'],
   quietHours: { start: '22:00', end: '07:00', tz: 'UTC' },
-  categories: { admin: true, emergency: true },
+  types: defaultTaskSwitches(true),
 };
+const criticalSafeLine = { type: 'safeline_case' as const, slaTier: 'critical' as const, priority: 'critical' as const };
+const registrationTask = { type: 'registration' as const, slaTier: 'medium' as const, priority: 'medium' as const };
 
 function task(type: AdminTask['type'], tier: AdminTask['slaTier']): AdminTask {
   return buildAdminTask({
@@ -83,10 +85,10 @@ test('counts put the urgent types first', () => {
   assert.equal(rows[1]?.type, 'registration');
 });
 
-test('quiet hours and the account email toggle never mute emergency mail', () => {
+test('quiet hours and the account email toggle never mute critical SafeLine mail', () => {
   const quiet = Date.UTC(2026, 9, 20, 23, 0, 0);
-  assert.equal(emailAllowed(false, prefs, 'emergency', quiet), true);
-  assert.equal(emailAllowed(true, prefs, 'admin', quiet), false);
-  assert.equal(emailAllowed(false, prefs, 'admin', Date.UTC(2026, 9, 20, 12, 0, 0)), false);
-  assert.equal(emailAllowed(true, { ...prefs, mode: 'digest' }, 'admin', Date.UTC(2026, 9, 20, 12, 0, 0)), false);
+  assert.equal(emailAllowed(false, prefs, criticalSafeLine, quiet), true);
+  assert.equal(emailAllowed(true, prefs, registrationTask, quiet), false);
+  assert.equal(emailAllowed(false, prefs, registrationTask, Date.UTC(2026, 9, 20, 12, 0, 0)), false);
+  assert.equal(emailAllowed(true, { ...prefs, mode: 'digest' }, registrationTask, Date.UTC(2026, 9, 20, 12, 0, 0)), false);
 });

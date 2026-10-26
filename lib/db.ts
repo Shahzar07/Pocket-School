@@ -3478,7 +3478,7 @@ export async function getChildrenDailyGoals(
   })));
 }
 
-/** Student first, then a linked parent, then the named teachers. */
+/** Student first, then a linked parent, then the ET subject teachers. */
 export async function checkGoalAlerts(
   studentId: string,
   studentName: string,

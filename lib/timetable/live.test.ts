@@ -54,6 +54,31 @@ test('a live school week stays inside that institution', () => {
   }
 });
 
+test('a live load drops the staff invented in seed.ts', () => {
+  const store = new Map<string, string>();
+  const previous = globalThis.window;
+  Object.assign(globalThis, {
+    window: {
+      localStorage: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => { store.set(key, value); },
+      },
+    },
+  });
+  try {
+    store.set('poket-timetable-v1', JSON.stringify({ school: schoolTimetable(), personal: personalTimetable() }));
+    const live = loadBundle({ institutionId: 'school-a', ownerId: 'uid-harry' });
+    assert.equal(live.school.staff.length, 0);
+    assert.equal(live.school.people.length, 0);
+    assert.equal(isInventedTimetable(live.school), false);
+    const sample = loadBundle({ sample: true, institutionId: 'school-a' });
+    assert.equal(sample.school.staff.some(person => person.name === 'Ms Rahman'), true);
+  } finally {
+    if (previous) globalThis.window = previous;
+    else delete (globalThis as { window?: Window }).window;
+  }
+});
+
 test('a saved copy of the sample week is still recognised', () => {
   const saved = schoolTimetable();
   saved.sample = undefined;

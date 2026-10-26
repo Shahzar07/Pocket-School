@@ -118,8 +118,8 @@ Android notification channel:
 
 | Channel | When |
 | --- | --- |
-| `emergency` | `type` is `safeline_case` and `slaTier` or `priority` is `critical` or `high` |
-| `admin` | Every other task, including medium and low SafeLine |
+| `emergency` | `type` is `safeline_case` and `slaTier` or `priority` is `critical` |
+| `admin` | Every other task, including high, medium, and low SafeLine |
 
 `emergency` is sent as FCM Android priority `HIGH`. Other pushes that are not Action Centre tasks still send `{ link, category }` and do not set a channel.
 
@@ -142,14 +142,14 @@ users/{uid}/notificationPrefs/admin
 | `mode` | `instant` \| `digest` |
 | `digestTimes` | 1 to 4 `HH:MM` strings. Default `08:00` and `17:00` |
 | `quietHours` | `{ start, end, tz }`. Default `22:00`–`07:00`, `Asia/Kuala_Lumpur` |
-| `categories` | `{ admin: boolean, emergency: true }` |
+| `types` | One boolean per task type: `registration`, `safeline_case`, `teacher_verification`, `institution_verification`, `report`, `partner_application`, `amber_request`, `course_review`, `other` |
 | `lastDigestAt` | milliseconds. Written by the server. A client update must leave it unchanged |
 
-`categories.emergency` is forced on. Rules reject a write that sets it to false. Quiet hours never mute the `emergency` channel. A muted `admin` category does not mute `emergency` either.
+Critical SafeLine always sends. The web shows that row checked and disabled. Switching off `types.safeline_case` mutes high, medium, and low SafeLine only. Quiet hours and digest never hold a critical SafeLine alert. A stored document that still has `categories.admin` is read as one switch per admin task type, and SafeLine stays on so those alerts are not dropped. Digest times still default to `08:00` and `17:00`.
 
 `instant` sends the admin channel immediately, unless quiet hours are active. `digest` holds the admin channel for the daily cron. Vercel Hobby rejects a cron that runs more than once a day, so `/api/cron/admin-tasks` is `20 3 * * *` (03:20 UTC, 11:20 in Kuala Lumpur, outside the default quiet hours). That run sends a digest when the last one is more than 20 hours old, and it skips the send during quiet hours without stamping `lastDigestAt`. Emergency SafeLine pushes are not held for digest or quiet hours. Opening the Action Centre syncs queues and wakes expired snoozes, at most once a minute, so those do not wait for the daily cron.
 
-The signed-in user can read and write their own `notificationPrefs/admin` document. The web screen saves through `POST /api/admin/tasks/prefs`, which also forces `emergency: true` and ignores a client `lastDigestAt`.
+The signed-in user can read and write their own `notificationPrefs/admin` document. The web screen saves through `POST /api/admin/tasks/prefs`, which stores one switch per task type and ignores a client `lastDigestAt`. Critical SafeLine is not a switch the client can turn off.
 
 ## Server entry points
 

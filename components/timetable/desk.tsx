@@ -636,7 +636,7 @@ function Setup({
               unavailable: [], prefer: '', status: 'new_hire', campusId: doc.campusIds[0] ?? 'main',
             }],
           }, 'edit');
-        }}>{TIMETABLE_COPY.newHire}</button>
+        }}>{TIMETABLE_COPY.addStaff}</button>
       </div>
       <div>
         <h2 className="font-semibold">{TIMETABLE_COPY.setupSubjects}</h2>

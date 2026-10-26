@@ -5,6 +5,8 @@ import {
   ADMIN_SLA_MS,
   androidChannel,
   buildAdminTask,
+  criticalSafeline,
+  defaultTaskSwitches,
   deepLinkFor,
   digestDue,
   dueAtFor,
@@ -27,8 +29,9 @@ const prefs: AdminPushPrefs = {
   mode: 'instant',
   digestTimes: ['08:00'],
   quietHours: { start: '22:00', end: '07:00', tz: 'UTC' },
-  categories: { admin: true, emergency: true },
+  types: defaultTaskSwitches(true),
 };
+const registration = { type: 'registration' as const, slaTier: 'medium' as const, priority: 'medium' as const };
 
 test('SLA clocks match the SafeLine desk', () => {
   assert.deepEqual(ADMIN_SLA_MS, DESK_SLA_MS);
@@ -83,6 +86,7 @@ test('critical SafeLine uses the emergency channel', () => {
   assert.equal(task.summary.includes('Aisha'), false);
   assert.equal(task.summary.includes('@'), false);
   assert.equal(androidChannel(task), 'emergency');
+  assert.equal(criticalSafeline(task), true);
   const high = buildAdminTask({
     type: 'safeline_case',
     entityType: 'hotline_tickets',
@@ -93,9 +97,12 @@ test('critical SafeLine uses the emergency channel', () => {
     slaTier: 'high',
     now: 10,
   });
-  assert.equal(androidChannel(high), 'emergency');
+  assert.equal(androidChannel(high), 'admin');
+  assert.equal(criticalSafeline(high), false);
   const medium = { ...high, slaTier: 'medium' as const, priority: 'medium' as const };
   assert.equal(androidChannel(medium), 'admin');
+  const priorityCritical = { ...high, slaTier: 'high' as const, priority: 'critical' as const };
+  assert.equal(androidChannel(priorityCritical), 'emergency');
 });
 
 test('reject and dismiss require a reason, and the flat fields stay in sync', () => {
@@ -138,15 +145,19 @@ test('safeguarding names stay hidden unless the viewer is a lead', () => {
   assert.equal(lead.title, 'Amber for Aisha Rahman');
 });
 
-test('quiet hours never mute emergency, and digest holds the admin channel', () => {
+test('quiet hours never mute critical SafeLine, and digest holds other task types', () => {
   const night = Date.UTC(2026, 9, 19, 23, 0, 0);
+  const critical = { type: 'safeline_case' as const, slaTier: 'critical' as const, priority: 'critical' as const };
+  const high = { type: 'safeline_case' as const, slaTier: 'high' as const, priority: 'high' as const };
   assert.equal(inQuietHours(prefs, night), true);
-  assert.equal(pushDecision(prefs, 'admin', night), 'quiet');
-  assert.equal(pushDecision(prefs, 'emergency', night), 'send');
+  assert.equal(pushDecision(prefs, registration, night), 'quiet');
+  assert.equal(pushDecision(prefs, critical, night), 'send');
   const digest: AdminPushPrefs = { ...prefs, mode: 'digest' };
   const day = Date.UTC(2026, 9, 19, 12, 0, 0);
-  assert.equal(pushDecision(digest, 'admin', day), 'digest');
-  assert.equal(pushDecision({ ...prefs, categories: { admin: false, emergency: true } }, 'admin', day), 'muted');
+  assert.equal(pushDecision(digest, registration, day), 'digest');
+  assert.equal(pushDecision({ ...prefs, types: { ...prefs.types, registration: false } }, registration, day), 'muted');
+  assert.equal(pushDecision({ ...prefs, types: { ...prefs.types, safeline_case: false } }, high, day), 'muted');
+  assert.equal(pushDecision({ ...prefs, types: { ...prefs.types, safeline_case: false } }, critical, day), 'send');
 });
 
 test('a digest time fires once inside the window', () => {
@@ -156,7 +167,7 @@ test('a digest time fires once inside the window', () => {
   assert.equal(digestDue({ ...digest, lastDigestAt: atEight - 60_000 }, atEight), false);
 });
 
-test('prefs reading keeps emergency on and ignores a bad clock', () => {
+test('prefs reading keeps critical SafeLine on and maps the old admin flag', () => {
   const read = readAdminPushPrefs({
     mode: 'digest',
     digestTimes: ['nope', '18:30'],
@@ -165,9 +176,20 @@ test('prefs reading keeps emergency on and ignores a bad clock', () => {
   });
   assert.equal(read.mode, 'digest');
   assert.deepEqual(read.digestTimes, ['18:30']);
-  assert.equal(read.categories.emergency, true);
-  assert.equal(read.categories.admin, false);
+  assert.equal(read.types.registration, false);
+  assert.equal(read.types.course_review, false);
+  assert.equal(read.types.amber_request, false);
+  assert.equal(read.types.safeline_case, true);
   assert.equal(read.quietHours.tz, 'Asia/Kuala_Lumpur');
+  const kept = readAdminPushPrefs({ categories: { admin: true, emergency: true } });
+  assert.deepEqual(kept.digestTimes, ['08:00', '17:00']);
+  assert.equal(kept.types.registration, true);
+  assert.equal(kept.types.report, true);
+  assert.equal(kept.types.safeline_case, true);
+  const explicit = readAdminPushPrefs({ types: { registration: false, safeline_case: false } });
+  assert.equal(explicit.types.registration, false);
+  assert.equal(explicit.types.safeline_case, false);
+  assert.equal(explicit.types.other, true);
 });
 
 test('a stored task keeps refPath equal to entityPath when it is read back', () => {

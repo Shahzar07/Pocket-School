@@ -22,7 +22,7 @@ describe('studio timetable chat', () => {
     }));
   });
 
-  it('finds cover for a named teacher who is off tomorrow', () => {
+  it('finds cover for a teacher who is off tomorrow', () => {
     const doc = schoolTimetable();
     const lesson: Lesson = {
       id: 'tue-maths',
