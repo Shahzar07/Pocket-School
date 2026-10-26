@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { CareerHome, fieldClass, primaryButton, quietButton } from '@/components/career/app-surface';
 import { EventsDesk } from '@/components/career/events-desk';
-import { ROCHFORD_EVENTS } from '@/lib/career/events';
 import { authedFetch } from '@/lib/api-client';
 
 export default function InstitutionCareerPage() {
@@ -71,13 +70,13 @@ export default function InstitutionCareerPage() {
     >
       {section === 'events' || section === 'home' ? (
         <EventsDesk
-          initial={ROCHFORD_EVENTS}
-          person="Leah Tan, careers lead"
+          initial={[]}
+          person={profile?.name || 'Careers lead'}
           canEdit
-          skills={[{ name: 'Algebraic reasoning', evidence: 'Mapped to a lesson', visible: true }]}
-          matches={[{ title: 'Hospital shadowing week', organisation: 'City clinic', kind: 'experience' }]}
-          jobs={[{ title: 'Saturday lab assistant', employer: 'Science department', level: 'IGCSE', deadline: '30 Nov 2026' }]}
-          mentors={[{ name: 'Omar Haddad', field: 'Medicine', optedIn: true }]}
+          skills={[]}
+          matches={[]}
+          jobs={[]}
+          mentors={[]}
         />
       ) : null}
       {section === 'skills' ? (

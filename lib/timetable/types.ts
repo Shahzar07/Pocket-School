@@ -186,6 +186,8 @@ export interface TimetableDoc {
   versions: TimetableVersion[];
   audit: AuditEntry[];
   people: PersonRef[];
+  /** True only for the preview week. Live timetables omit it. */
+  sample?: boolean;
 }
 
 export interface Clash {

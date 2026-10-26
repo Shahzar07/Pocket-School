@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useAuthSTORE } from '@/hooks/use-auth';
 import { CareerHome, ProgressRing, fieldClass, primaryButton, quietButton } from '@/components/career/app-surface';
 import { EventsDesk } from '@/components/career/events-desk';
-import { ROCHFORD_EVENTS } from '@/lib/career/events';
 import { authedFetch } from '@/lib/api-client';
 
 interface SkillRow { id: string; name: string; visible: boolean; evidence: { label: string; url: string }[] }
@@ -34,6 +34,8 @@ const empty: CareerDesk = {
 };
 
 export default function StudentCareerPage() {
+  const { user, profile } = useAuthSTORE();
+  const person = profile?.name || user?.displayName || 'Student';
   const [desk, setDesk] = useState<CareerDesk>(empty);
   const [ready, setReady] = useState(false);
   const [section, setSection] = useState('events');
@@ -67,7 +69,7 @@ export default function StudentCareerPage() {
 
   const giving = desk.campaigns[0]?.progress ?? 0;
   const tiles = [
-    { id: 'events', label: 'Events', hint: 'RSVP', category: 'community' as const, badge: ROCHFORD_EVENTS.length },
+        { id: 'events', label: 'Events', hint: 'RSVP', category: 'community' as const },
     { id: 'skills', label: 'Skills', hint: 'Show or hide', category: 'learning' as const, badge: desk.skills.length },
     { id: 'references', label: 'References', hint: 'Locked notes', category: 'people' as const, badge: desk.endorsements.length },
     { id: 'matches', label: 'Matches', hint: 'ET AI list', category: 'careers' as const, badge: desk.matches.length },
@@ -99,23 +101,13 @@ export default function StudentCareerPage() {
     >
       {section === 'events' || section === 'home' ? (
         <EventsDesk
-          initial={ROCHFORD_EVENTS}
-          person="Amina Rahman"
+          initial={[]}
+          person={person}
           canEdit={false}
-          skills={[
-            { name: 'Algebraic reasoning', evidence: 'IGCSE Mathematics unit test', visible: true },
-            { name: 'Scientific method', evidence: 'Biology practical badge', visible: true },
-          ]}
-          matches={[
-            { title: 'Hospital shadowing week', organisation: 'City clinic', kind: 'experience' },
-            { title: 'Design internship', organisation: 'Studio North', kind: 'internship' },
-          ]}
-          jobs={[
-            { title: 'Saturday lab assistant', employer: 'Rochford science dept', level: 'IGCSE', deadline: '30 Nov 2026' },
-          ]}
-          mentors={[
-            { name: 'Omar Haddad', field: 'Medicine', optedIn: true },
-          ]}
+          skills={desk.skills.map((skill) => ({ name: skill.name, evidence: skill.evidence[0]?.label || 'Verified on Poket School', visible: skill.visible }))}
+          matches={desk.matches.map((row) => ({ title: row.title, organisation: row.organisation, kind: row.kind }))}
+          jobs={desk.openings.map((row) => ({ title: row.title, employer: row.employer, level: row.level, deadline: row.deadline }))}
+          mentors={[]}
         />
       ) : null}
       {section === 'skills' ? (

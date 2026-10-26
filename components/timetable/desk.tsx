@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { DAY_LABEL, ROOM_TYPE_LABEL, TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { canEditPersonal, canEditSchool, canUseMultipleCampuses, timetableEdition, type TimetableActor } from '@/lib/timetable/access';
 import { canMove, hardViolations, suggestFix } from '@/lib/timetable/clashes';
@@ -10,7 +11,7 @@ import { exportCsv, importCsv } from '@/lib/timetable/csv';
 import { applyParsedConstraint, parseNaturalConstraint } from '@/lib/timetable/explain';
 import { approveOptions, saveChoice, suggestBlocks } from '@/lib/timetable/options';
 import { buildFeed, publishTimetable, rollbackTimetable, visibleLessons, type TimetableFeed } from '@/lib/timetable/publish';
-import { personalTimetable } from '@/lib/timetable/seed';
+import { blankTimetable, mondayOf } from '@/lib/timetable/seed';
 import { explainSolve, proposeSoftFixes, requestedCount, solveTimetable } from '@/lib/timetable/solver';
 import { loadBundle, readTimetableFeed, saveDoc, writeTimetableFeed } from '@/lib/timetable/store';
 import type { Lesson, RoomType, TimetableDoc, Weekday } from '@/lib/timetable/types';
@@ -26,19 +27,22 @@ type Surface = 'institution' | 'personal' | 'teacher' | 'student' | 'parent';
 type Tab = 'setup' | 'options' | 'generate' | 'grid' | 'cover' | 'publish';
 
 const button = 'h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50';
-const ghost = 'h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]';
-const field = 'h-10 w-full rounded-xl border border-[#1E6A83]/30 px-3 text-sm text-[#203337]';
+const ghost = 'h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0]/50 dark:text-[#3FE0D0]';
+const field = 'h-10 w-full rounded-xl border border-[#1E6A83]/30 bg-white px-3 text-sm text-[#203337] dark:border-[#3FE0D0]/30 dark:bg-[#122226] dark:text-[#E7F4F2] dark:[color-scheme:dark]';
+const card = 'space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4 text-[#203337] dark:border-[#3FE0D0]/25 dark:bg-[#122226] dark:text-[#E7F4F2]';
 
 function stamp(): string {
   return new Date().toISOString();
 }
 
 export function TimetableDesk({ surface, actor }: { surface: Surface; actor: TimetableActor }) {
+  const sample = usePathname().startsWith('/preview') && useSearchParams().get('data') !== 'live';
   const edition = timetableEdition(actor);
   const schoolEditor = surface === 'institution' && canEditSchool(actor);
   const personalEditor = (surface === 'personal' || surface === 'teacher') && canEditPersonal(actor);
   const editing = surface === 'institution' ? schoolEditor : surface === 'personal' ? personalEditor : false;
-  const [bundle, setBundle] = useState(() => loadBundle());
+  const bundleOptions = { sample, ownerId: actor.uid, institutionId: actor.institutionId };
+  const [bundle, setBundle] = useState(() => loadBundle(bundleOptions));
   const [tab, setTab] = useState<Tab>(editing || personalEditor ? 'generate' : 'grid');
   const [selected, setSelected] = useState('');
   const [attempt, setAttempt] = useState<string[]>([]);
@@ -46,8 +50,8 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
   const [notice, setNotice] = useState('');
   const [csv, setCsv] = useState('');
   const [campus, setCampus] = useState('');
-  const [coverTeacher, setCoverTeacher] = useState('rahman');
-  const [coverDate, setCoverDate] = useState('2026-10-19');
+  const [coverTeacher, setCoverTeacher] = useState('');
+  const [coverDate, setCoverDate] = useState(() => sample ? '2026-10-19' : mondayOf());
   const [coverReason, setCoverReason] = useState<'absent' | 'leave' | 'new_hire'>('absent');
   const [proposals, setProposals] = useState<ReturnType<typeof proposeCover>>([]);
   const [queued, setQueued] = useState<ReturnType<typeof coverNotices>>([]);
@@ -58,9 +62,11 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
   const multi = canUseMultipleCampuses(actor);
 
   useEffect(() => {
-    setBundle(loadBundle());
+    setBundle(loadBundle(bundleOptions));
     setFeed(readTimetableFeed());
-  }, []);
+    // The signed-in identity decides which saved week to open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sample, actor.uid, actor.institutionId]);
 
   const commit = (next: TimetableDoc, detail?: string) => {
     const withAudit = detail
@@ -70,10 +76,15 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
     setBundle(saveDoc(withAudit));
   };
 
+  useEffect(() => {
+    if (doc.staff.some(person => person.id === coverTeacher)) return;
+    setCoverTeacher(doc.staff[0]?.id ?? '');
+  }, [coverTeacher, doc.staff]);
+
   const lessons = useMemo(() => {
-    if (surface === 'teacher' && !privateMode) return visibleLessons(doc, { teacherUserId: actor.uid || 't-adeyemi', campusId: campus || undefined });
-    if (surface === 'student') return visibleLessons(doc, { studentId: actor.uid || 's-noor' });
-    if (surface === 'parent') return visibleLessons(doc, { childIds: [...(actor.childIds ?? ['s-noor'])] });
+    if (surface === 'teacher' && !privateMode) return visibleLessons(doc, { teacherUserId: actor.uid || '', campusId: campus || undefined });
+    if (surface === 'student') return visibleLessons(doc, { studentId: actor.uid || '' });
+    if (surface === 'parent') return visibleLessons(doc, { childIds: [...(actor.childIds ?? [])] });
     return visibleLessons(doc, { campusId: campus || undefined });
   }, [actor.childIds, actor.uid, campus, doc, privateMode, surface]);
 
@@ -176,14 +187,19 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
       : ['grid', 'publish'];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 text-[#203337] md:p-6" data-timetable={surface} data-edition={privateMode ? 'personal' : edition}>
+    <div className="mx-auto max-w-6xl space-y-5 bg-white p-4 text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2] md:p-6" data-timetable={surface} data-edition={privateMode ? 'personal' : edition} data-sample={sample ? '1' : '0'}>
       <header className="tt-no-print">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83]">{TIMETABLE_COPY.title}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83] dark:text-[#3FE0D0]">{TIMETABLE_COPY.title}</p>
         <h1 className="mt-1 text-3xl font-semibold">{TIMETABLE_COPY.title}</h1>
-        <p className="mt-2 max-w-3xl text-sm text-[#1E6A83]">
+        <p className="mt-2 max-w-3xl text-sm text-[#1E6A83] dark:text-[#3FE0D0]">
           {surface === 'personal' || privateMode ? TIMETABLE_COPY.personalLede : editing ? TIMETABLE_COPY.schoolLede : surface === 'parent' ? TIMETABLE_COPY.parentWeek : surface === 'student' ? TIMETABLE_COPY.studentWeek : TIMETABLE_COPY.viewLede}
         </p>
-        <p className="mt-1 text-xs text-[#1E6A83]">{TIMETABLE_COPY.sampleNote}</p>
+        {sample ? (
+          <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#1E6A83] dark:text-[#3FE0D0]">
+            <span className="rounded-full bg-[#3FE0D0] px-2 py-0.5 font-bold text-[#203337]">{TIMETABLE_COPY.sampleBadge}</span>
+            {TIMETABLE_COPY.sampleNote}
+          </p>
+        ) : null}
       </header>
 
       <GoogleCalendarSync
@@ -214,7 +230,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
       {surface === 'teacher' && personalEditor ? (
         <div className="tt-no-print flex gap-2">
           <button type="button" className={privateMode ? button : ghost} onClick={() => setPrivateMode(false)}>{TIMETABLE_COPY.schoolTab}</button>
-          <button type="button" className={privateMode ? ghost : button} onClick={() => { setPrivateMode(true); setBundle(current => current.personal?.id ? current : { ...current, personal: personalTimetable(actor.uid || 't-adeyemi') }); }}>{TIMETABLE_COPY.privateTab}</button>
+          <button type="button" className={privateMode ? ghost : button} onClick={() => { setPrivateMode(true); setBundle(current => current.personal?.id ? current : { ...current, personal: blankTimetable('personal', actor.uid || '') }); }}>{TIMETABLE_COPY.privateTab}</button>
         </div>
       ) : null}
 
@@ -274,6 +290,11 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
           setCoverTeacher={setCoverTeacher}
           setCoverDate={setCoverDate}
           setCoverReason={setCoverReason}
+          onAddStaff={() => setTab('setup')}
+          onImport={(text) => {
+            const imported = importCsv(doc, text);
+            commit(imported.doc, 'import');
+          }}
           onPropose={() => {
             const day = weekdayOf(coverDate);
             if (!day && coverReason !== 'leave') {
@@ -318,7 +339,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         </section>
       ) : null}
 
-      <section className="tt-no-print rounded-3xl border border-[#1E6A83]/20 bg-white p-4">
+      <section className={`tt-no-print ${card}`}>
         <h2 className="font-semibold">{TIMETABLE_COPY.audit}</h2>
         <ul className="mt-2 space-y-1 text-sm">
           {doc.audit.slice(0, 8).map(entry => <li key={entry.id}>{entry.action}: {entry.detail}</li>)}
@@ -446,7 +467,7 @@ function Options({ doc, actor, onCommit }: { doc: TimetableDoc; actor: Timetable
 
 function CoverPanel({
   doc, coverTeacher, coverDate, coverReason, proposals, queued,
-  setCoverTeacher, setCoverDate, setCoverReason, onPropose, onApprove,
+  setCoverTeacher, setCoverDate, setCoverReason, onPropose, onApprove, onAddStaff, onImport,
 }: {
   doc: TimetableDoc;
   coverTeacher: string;
@@ -459,26 +480,44 @@ function CoverPanel({
   setCoverReason: (value: 'absent' | 'leave' | 'new_hire') => void;
   onPropose: () => void;
   onApprove: () => void;
+  onAddStaff: () => void;
+  onImport: (text: string) => void;
 }) {
   const load = coverLoad(doc);
+  const [importText, setImportText] = useState('');
   return (
-    <section className="space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4" data-cover="1">
-      <label className="block text-sm font-semibold">{TIMETABLE_COPY.setupStaff}
-        <select className={`${field} mt-1`} value={coverTeacher} onChange={event => setCoverTeacher(event.target.value)}>
-          {doc.staff.map(staff => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
-        </select>
-      </label>
+    <section className={card} data-cover="1">
       <label className="block text-sm font-semibold">{TIMETABLE_COPY.publish}
-        <input className={`${field} mt-1`} value={coverDate} onChange={event => setCoverDate(event.target.value)} />
+        <input type="date" className={`${field} mt-1`} value={coverDate} onChange={event => setCoverDate(event.target.value)} />
       </label>
-      <label className="block text-sm font-semibold">{TIMETABLE_COPY.absent}
-        <select className={`${field} mt-1`} value={coverReason} onChange={event => setCoverReason(event.target.value as 'absent' | 'leave' | 'new_hire')}>
-          <option value="absent">{TIMETABLE_COPY.absent}</option>
-          <option value="leave">{TIMETABLE_COPY.leave}</option>
-          <option value="new_hire">{TIMETABLE_COPY.newHire}</option>
-        </select>
-      </label>
-      <button type="button" className={button} data-action="propose-cover" onClick={onPropose}>{TIMETABLE_COPY.propose}</button>
+      {doc.staff.length === 0 ? (
+        <div className="space-y-3" data-staff-empty="1">
+          <p className="text-sm">{TIMETABLE_COPY.staffEmpty}</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={button} data-action="add-staff" onClick={onAddStaff}>{TIMETABLE_COPY.addStaff}</button>
+          </div>
+          <label className="block text-sm font-semibold">{TIMETABLE_COPY.importCsv}
+            <textarea className={`${field} mt-1 h-28`} value={importText} onChange={event => setImportText(event.target.value)} />
+          </label>
+          <button type="button" className={ghost} data-action="import-csv" onClick={() => onImport(importText)}>{TIMETABLE_COPY.importCsv}</button>
+        </div>
+      ) : (
+        <>
+          <label className="block text-sm font-semibold">{TIMETABLE_COPY.setupStaff}
+            <select className={`${field} mt-1`} value={coverTeacher} onChange={event => setCoverTeacher(event.target.value)}>
+              {doc.staff.map(staff => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm font-semibold">{TIMETABLE_COPY.absent}
+            <select className={`${field} mt-1`} value={coverReason} onChange={event => setCoverReason(event.target.value as 'absent' | 'leave' | 'new_hire')}>
+              <option value="absent">{TIMETABLE_COPY.absent}</option>
+              <option value="leave">{TIMETABLE_COPY.leave}</option>
+              <option value="new_hire">{TIMETABLE_COPY.newHire}</option>
+            </select>
+          </label>
+          <button type="button" className={button} data-action="propose-cover" onClick={onPropose}>{TIMETABLE_COPY.propose}</button>
+        </>
+      )}
       <ul className="text-sm" data-proposals={proposals.length}>
         {proposals.map(proposal => {
           const cover = doc.staff.find(staff => staff.id === proposal.coverTeacherId);
@@ -487,9 +526,12 @@ function CoverPanel({
       </ul>
       <button type="button" className={button} data-action="approve-cover" disabled={proposals.length === 0} onClick={onApprove}>{TIMETABLE_COPY.approveCover}</button>
       <h2 className="font-semibold">{TIMETABLE_COPY.notices}</h2>
+      {queued.length === 0 ? <p className="text-sm" data-notices-empty="1">{TIMETABLE_COPY.noticesEmpty}</p> : null}
       <ul className="text-sm" data-notices={queued.length}>{queued.map((item, index) => <li key={`${item.userId}-${index}`}>{item.message}</li>)}</ul>
       <h2 className="font-semibold">{TIMETABLE_COPY.fairness}</h2>
-      <ul className="text-sm">{load.map(row => <li key={row.teacherId}>{row.name}: {row.count}</li>)}</ul>
+      {load.length === 0 ? <p className="text-sm">{TIMETABLE_COPY.coverEmpty}</p> : (
+        <ul className="text-sm">{load.map(row => <li key={row.teacherId}>{row.name}: {row.count}</li>)}</ul>
+      )}
     </section>
   );
 }

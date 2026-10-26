@@ -2,6 +2,29 @@ import type { TimetableDoc } from './types';
 
 const monday = '2026-10-19';
 
+/** Monday of the week that contains `now`, in the local calendar. */
+export function mondayOf(now = new Date()): string {
+  const copy = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = copy.getDay();
+  const delta = day === 0 ? -6 : 1 - day;
+  copy.setDate(copy.getDate() + delta);
+  const year = copy.getFullYear();
+  const month = String(copy.getMonth() + 1).padStart(2, '0');
+  const date = String(copy.getDate()).padStart(2, '0');
+  return `${year}-${month}-${date}`;
+}
+
+const INVENTED_STAFF = ['rahman', 'adeyemi', 'yusuf', 'okonkwo', 'patel', 'chen', 'lim'] as const;
+
+/** The Primary 2 / IGCSE fixture, including a copy already saved in the browser. */
+export function isInventedTimetable(doc: Pick<TimetableDoc, 'id' | 'sample' | 'staff' | 'people'>): boolean {
+  if (doc.sample === true || doc.id === 'school-a') return true;
+  const ids = new Set(doc.staff.map(person => person.id));
+  if (INVENTED_STAFF.filter(id => ids.has(id)).length >= 3) return true;
+  return doc.staff.some(person => person.id === 'me' && person.name === 'Ms Adeyemi')
+    && doc.people.some(person => person.id === 'p-s1' || person.name === 'Hana Ibrahim');
+}
+
 function shell(partial: Pick<TimetableDoc, 'id' | 'kind' | 'ownerId' | 'institutionId' | 'campusIds'>): TimetableDoc {
   return {
     ...partial,
@@ -35,6 +58,7 @@ function shell(partial: Pick<TimetableDoc, 'id' | 'kind' | 'ownerId' | 'institut
     versions: [],
     audit: [],
     people: [],
+    sample: false,
   };
 }
 
@@ -101,6 +125,21 @@ export function schoolTimetable(): TimetableDoc {
     { id: 'parent-noor', name: 'Parent of Noor', role: 'parent', childIds: ['s-noor'] },
     { id: 'parent-mei', name: 'Parent of Mei', role: 'parent', childIds: ['s-mei'] },
   ];
+  doc.sample = true;
+  return doc;
+}
+
+/** A live timetable with the bell structure and nobody invented. */
+export function blankTimetable(kind: 'school' | 'personal', ownerId = '', institutionId = ''): TimetableDoc {
+  const doc = shell({
+    id: kind === 'personal' ? `personal-${ownerId || 'teacher'}` : `school-${institutionId || ownerId || 'live'}`,
+    kind,
+    ownerId,
+    institutionId: kind === 'school' ? institutionId : '',
+    campusIds: [kind === 'personal' ? 'studio' : 'main'],
+  });
+  doc.anchorMonday = mondayOf();
+  doc.sample = false;
   return doc;
 }
 
@@ -133,5 +172,6 @@ export function personalTimetable(ownerId = 't-adeyemi'): TimetableDoc {
     { id: 'p-s2', name: 'Omar Rahman', role: 'student', childIds: [] },
     { id: 'p-parent', name: 'Parent of Hana', role: 'parent', childIds: ['p-s1'] },
   ];
+  doc.sample = true;
   return doc;
 }
