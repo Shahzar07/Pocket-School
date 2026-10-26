@@ -129,6 +129,10 @@ export function seedPricing(): PricingConfig {
     // year would be $711 ($59.25 a month).
     { id: 'igcse_alevel', monthlyUsd: 79, sparks: 800, annualUsd: 708 },
     { id: 'professional', monthlyUsd: null, sparks: 1000, annualUsd: null },
+    // Law and Medicine reuse the Professional & Degrees amounts. Nothing is
+    // charged until a super admin sets that price. Do not invent a dollar figure.
+    { id: 'llb', monthlyUsd: null, sparks: 1000, annualUsd: null },
+    { id: 'mbbs', monthlyUsd: null, sparks: 1000, annualUsd: null },
   ];
   // Reads annual amounts are the published prices. School plans use annualDiscount.
   const reads = [

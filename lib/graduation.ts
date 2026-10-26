@@ -266,18 +266,20 @@ export function graduationCard(input: {
   };
 }
 
-/** Law uses the law plan when that plan has a price. Otherwise the professional plan. */
-export function individualPlanSku(level: string): 'primary_secondary' | 'igcse_alevel' | 'professional' | 'llb' {
+/** Law and Medicine use their own plan when that plan has a price. Otherwise the professional plan. */
+export function individualPlanSku(level: string): 'primary_secondary' | 'igcse_alevel' | 'professional' | 'llb' | 'mbbs' {
   const wanted = level === 'Law'
     ? 'llb'
-    : level === 'Primary' || level === 'Lower Secondary'
-      ? 'primary_secondary'
-      : level === 'Degree' || level === 'Professional' || level === 'Graduated'
-        ? 'professional'
-        : 'igcse_alevel';
+    : level === 'Medicine' || level === 'MBBS'
+      ? 'mbbs'
+      : level === 'Primary' || level === 'Lower Secondary'
+        ? 'primary_secondary'
+        : level === 'Degree' || level === 'Professional' || level === 'Graduated'
+          ? 'professional'
+          : 'igcse_alevel';
   const plan = seedPricing().plans.find((item) => item.id === wanted);
   if (!plan) return 'professional';
-  if (wanted === 'llb' && !(typeof plan.monthlyUsd === 'number' && plan.monthlyUsd > 0)) return 'professional';
+  if ((wanted === 'llb' || wanted === 'mbbs') && !(typeof plan.monthlyUsd === 'number' && plan.monthlyUsd > 0)) return 'professional';
   return wanted;
 }
 

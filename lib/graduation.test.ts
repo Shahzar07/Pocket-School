@@ -145,6 +145,8 @@ test('the letter, the card, and the one-page summary stay inside one page', () =
 
 test('the alumni percent is a checkout coupon and seats freed are counted by year', () => {
   assert.equal(individualPlanSku('Law'), 'professional');
+  assert.equal(individualPlanSku('Medicine'), 'professional');
+  assert.equal(individualPlanSku('MBBS'), 'professional');
   assert.equal(individualPlanSku('Primary'), 'primary_secondary');
   assert.equal(individualPlanSku('IGCSE'), 'igcse_alevel');
   const offer = individualOffer('Professional', 0.15);

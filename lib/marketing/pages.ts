@@ -186,13 +186,13 @@ export const MARKET_PAGES: MarketPage[] = [
     ],
     links: [
       { href: '/signup?plan=igcse', label: 'Get IGCSE and A-Level' },
-      { href: '/llb', label: 'LLB Law' },
+      { href: '/llb', label: 'Law (LLB)' },
     ],
   },
   {
     slug: 'llb',
-    metaTitle: 'LLB Law',
-    title: 'LLB Law',
+    metaTitle: 'Law (LLB)',
+    title: 'Law (LLB)',
     lede: 'LLB Law is a degree pathway on Poket School, including support for University of London style modules. It is study material and tutoring. It is not enrolment at a university and it does not confer a degree.',
     sections: [
       {
@@ -212,13 +212,13 @@ export const MARKET_PAGES: MarketPage[] = [
     ],
     links: [
       { href: '/signup?plan=degree', label: 'Get LLB and MBBS' },
-      { href: '/mbbs', label: 'MBBS Medicine' },
+      { href: '/mbbs', label: 'Medicine (MBBS)' },
     ],
   },
   {
     slug: 'mbbs',
-    metaTitle: 'MBBS Medicine',
-    title: 'MBBS Medicine',
+    metaTitle: 'Medicine (MBBS)',
+    title: 'Medicine (MBBS)',
     lede: 'MBBS Medicine on Poket School is foundation and degree-level study with ET Medicine and the science teachers. It does not place a learner in a medical school and it is not a licence to practise.',
     sections: [
       {
@@ -335,7 +335,7 @@ export const MARKET_PAGES: MarketPage[] = [
         body: 'Named ET AI teachers for Primary, IGCSE, A-Level, LLB, MBBS foundation, and independent study. A studio for lessons and books. A desk for real classes, including private classrooms. A parent view that shows grades and goals when the accounts are linked.',
         points: [
           'One login for the learner, the parent, and the teacher.',
-          'Built with Rochford’s International School in Ipoh.',
+          'Built with Rochford’s International School in Ipoh, Malaysia.',
           'Exam-board names describe alignment. They are not a partnership claim.',
         ],
       },

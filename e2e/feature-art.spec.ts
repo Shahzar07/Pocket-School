@@ -66,10 +66,14 @@ test('landing ET AI teachers card covers the full range', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const card = page.locator('a[href="/ai-teachers"]').filter({ has: page.getByRole('heading', { name: 'ET AI teachers', exact: true }) });
+  await expect(card).toContainText('One ET AI teacher for every subject');
   await expect(card).toContainText('Primary to A-Levels');
   await expect(card).toContainText('Masters and PhD');
   await expect(card).toContainText('continuous professional development and independent learning');
-  await expect(card).toContainText('The count on this page is the list in the product.');
+  await expect(card).toContainText('Learn more');
+  await expect(card).toContainText('70%');
+  await expect(card).not.toContainText('named');
+  await expect(card).not.toContainText('The count on this page');
   await expect(card).not.toContainText('degree foundation');
 });
 

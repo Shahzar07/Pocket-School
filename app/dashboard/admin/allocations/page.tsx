@@ -220,7 +220,7 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
             <div className="flex flex-wrap gap-2">
               {TIERS.map(t => (
                 <button
-                  key={t.tier}
+                  key={t.id}
                   disabled={saving === 'tier'}
                   onClick={() => applyTier(t.tier)}
                   title={t.blurb}

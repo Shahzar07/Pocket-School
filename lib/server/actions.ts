@@ -6,7 +6,7 @@ import { hasAccountRole } from '../account-modes';
 import { publicDisplayName } from '../display-name';
 import { canDirectMessage } from '../community/policy';
 import { asAgeTier, isAgeTier } from '../age-tier';
-import { accessTierFor, freePreviewCount, tierDefinition, type AccessTier } from '../entitlements';
+import { accessTierFor, freePreviewCount, TIERS, tierDefinition, type AccessTier } from '../entitlements';
 import { answersMatch } from '../quiz';
 import { resolvePassMark } from '../unit-test';
 import { countCompleted, isPublishedLesson, progressPercent } from '../progress';
@@ -1104,7 +1104,7 @@ export async function lookupEnrolledStudent(teacherId: string, email: string) {
 }
 
 export function tierFromId(id: string): AccessTier | null {
-  const found = [0, 1, 2, 3, 4, 5, 6].map((n) => tierDefinition(n as AccessTier)).find((t) => t.id === id);
+  const found = TIERS.find((t) => t.id === id);
   return found ? found.tier : null;
 }
 

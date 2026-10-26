@@ -11,7 +11,8 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   const hero = page.getByRole('heading', { level: 1 });
-  await expect(hero).toContainText('Learn your way.');
+  await expect(hero).toContainText('Learn your way');
+  await expect(hero).toContainText('&');
   await expect(hero).toContainText('Go further with AI.');
   const stats = page.locator('[data-hero-stats="1"]');
   await expect(stats).toContainText('Primary to PhD');
@@ -42,7 +43,7 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(nav.getByRole('link', { name: 'Home', exact: true })).toBeVisible();
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Learn your way.');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Learn your way &');
 
   const globe = page.getByRole('button', { name: 'Change language' });
   await expect(globe).toBeVisible();
@@ -60,7 +61,8 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   await page.getByRole('button', { name: /Bahasa Melayu/ }).click();
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'ms-MY');
-  await expect(hero).toContainText('Belajar dengan cara anda.');
+  await expect(hero).toContainText('Belajar dengan cara anda');
+  await expect(hero).toContainText('&');
   await expect(hero).toContainText('Pergi lebih jauh dengan AI.');
   await expect(stats).toContainText('Sekolah rendah hingga PhD');
   await expect(stats).toContainText('Termasuk pembangunan profesional berterusan dan pembelajaran kendiri');
