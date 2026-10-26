@@ -94,7 +94,7 @@ export function WallScreen({
   surface?: FeedFilter;
   profileHandle?: string;
 }) {
-  const { user, profile: account } = useAuthSTORE();
+  const { user, profile: account, loading } = useAuthSTORE();
   const actor = useMemo<WallActor | null>(() => {
     if (!user) return null;
     const name = account?.displayName || account?.name || 'Learner';
@@ -110,9 +110,10 @@ export function WallScreen({
     ? { handle: wallHandle(actor.name, actor.uid), ageTier: actor.ageTier === 'under13' || actor.ageTier === 'adult' ? actor.ageTier : 'teen', schoolId: actor.schoolId }
     : VIEWER;
   const seed = useMemo(() => rochfordWall(NOW), []);
-  const [posts, setPosts] = useState<WallPost[]>(() => seed.posts.filter((post) => post.id !== 'pond'));
+  const [sampleFeed, setSampleFeed] = useState(false);
+  const [posts, setPosts] = useState<WallPost[]>([]);
   const [liveReady, setLiveReady] = useState(false);
-  const [incoming, setIncoming] = useState<WallPost[]>(() => seed.posts.filter((post) => post.id === 'pond'));
+  const [incoming, setIncoming] = useState<WallPost[]>([]);
   const [filter, setFilter] = useState<FeedFilter>(surface === 'all' ? 'all' : surface);
   const [sort, setSort] = useState<'top' | 'recent'>('recent');
   const [count, setCount] = useState(8);
@@ -124,7 +125,9 @@ export function WallScreen({
   const [thread, setThread] = useState('');
   const sentinel = useRef<HTMLDivElement>(null);
 
-  const profile = profileHandle ? personByHandle(seed.people, profileHandle) : undefined;
+  const people = sampleFeed ? seed.people : [];
+  const side = sampleFeed ? seed.side : { events: [], groups: [], moments: [], online: [] };
+  const profile = profileHandle ? personByHandle(people, profileHandle) : undefined;
   const missingProfile = Boolean(profileHandle) && !profile && !actor;
   const visible = useMemo(() => {
     if (missingProfile) return [];
@@ -135,6 +138,17 @@ export function WallScreen({
     return sortFeed(saved, sort);
   }, [posts, filter, sort, profileHandle, viewer, savedOnly, missingProfile]);
   const page = visible.slice(0, count);
+
+  useEffect(() => {
+    if (loading) return;
+    if (user) {
+      setSampleFeed(false);
+      return;
+    }
+    setPosts(seed.posts.filter((post) => post.id !== 'pond'));
+    setIncoming(seed.posts.filter((post) => post.id === 'pond'));
+    setSampleFeed(true);
+  }, [loading, seed.posts, user]);
 
   useEffect(() => {
     if (!actor) return undefined;
@@ -168,7 +182,8 @@ export function WallScreen({
   return (
     <div className="mx-auto grid max-w-[1180px] gap-4 px-3 py-4 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_300px]">
       <aside className="hidden space-y-3 lg:block">
-        <ProfileMini people={seed.people} viewer={viewer} onSaved={() => { setSavedOnly(true); setFilter('all'); }} />
+        {sampleFeed ? <p className="rounded-full bg-[#3FE0D0] px-2 py-0.5 text-xs font-bold text-[#203337]">Sample data</p> : null}
+        <ProfileMini people={people} viewer={viewer} actorName={actor?.name ?? ''} onSaved={() => { setSavedOnly(true); setFilter('all'); }} />
         <nav className="rounded-2xl border border-[#E7EDED] bg-white p-2 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
           {([
             ['all', 'All posts'],
@@ -245,7 +260,7 @@ export function WallScreen({
           <PostCard
             key={post.id}
             post={post}
-            people={seed.people}
+            people={people}
             shared={post.sharedId ? posts.find((item) => item.id === post.sharedId) : undefined}
             open={thread === post.id}
             menu={menu === post.id}
@@ -316,22 +331,26 @@ export function WallScreen({
 
       <aside className="hidden space-y-3 xl:block">
         <SideCard title="Upcoming">
-          {seed.side.events.map((event) => (
+          {side.events.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">Nothing scheduled.</p> : null}
+          {side.events.map((event) => (
             <p key={event.id} className="py-2 text-sm text-[#203337]"><span className="font-semibold">{event.title}</span><span className="block text-[#1E6A83]">{event.when} · {event.place}</span></p>
           ))}
         </SideCard>
         <SideCard title="Suggested groups">
-          {seed.side.groups.map((group) => (
+          {side.groups.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">No groups yet.</p> : null}
+          {side.groups.map((group) => (
             <p key={group.id} className="flex items-center justify-between py-2 text-sm text-[#203337]"><span>{group.name}</span><span className="text-[#1E6A83]">{group.members}</span></p>
           ))}
         </SideCard>
         <SideCard title="Birthdays and achievements">
-          {seed.side.moments.map((moment) => (
+          {side.moments.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">No moments yet.</p> : null}
+          {side.moments.map((moment) => (
             <p key={moment.id} className="py-2 text-sm text-[#203337]"><span className="font-semibold">{moment.name}</span><span className="block text-[#1E6A83]">{moment.detail}</span></p>
           ))}
         </SideCard>
         <SideCard title="Online in your school">
-          {seed.side.online.map((person) => (
+          {side.online.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">No one listed.</p> : null}
+          {side.online.map((person) => (
             <Link key={person.handle} href={`/u/${person.handle}`} className="flex items-center gap-2 py-2 text-sm font-semibold text-[#203337]">
               <span className="h-2.5 w-2.5 rounded-full bg-[#1F8A70]" aria-hidden />
               {person.name}
@@ -345,8 +364,14 @@ export function WallScreen({
           <Link href="/safety-terms" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">Safety terms</Link>
         </SideCard>
         <SideCard title="Notifications">
-          <p className="flex gap-2 py-2 text-sm text-[#203337]"><Bell className="mt-0.5 h-4 w-4 text-[#1E6A83]" aria-hidden /> Wei Lin liked your pond notes.</p>
-          <p className="flex gap-2 py-2 text-sm text-[#203337]"><Bell className="mt-0.5 h-4 w-4 text-[#1E6A83]" aria-hidden /> Priya Shah mentioned you in class.</p>
+          {sampleFeed ? (
+            <>
+              <p className="flex gap-2 py-2 text-sm text-[#203337]"><Bell className="mt-0.5 h-4 w-4 text-[#1E6A83]" aria-hidden /> Wei Lin liked your pond notes.</p>
+              <p className="flex gap-2 py-2 text-sm text-[#203337]"><Bell className="mt-0.5 h-4 w-4 text-[#1E6A83]" aria-hidden /> Priya Shah mentioned you in class.</p>
+            </>
+          ) : (
+            <p className="py-2 text-sm text-[#1E6A83]" data-wall-notices-empty="1">No notifications yet.</p>
+          )}
         </SideCard>
       </aside>
 
@@ -372,9 +397,21 @@ export function WallScreen({
   );
 }
 
-function ProfileMini({ people, viewer, onSaved }: { people: ReturnType<typeof rochfordWall>['people']; viewer: WallViewer; onSaved: () => void }) {
-  const me = personByHandle(people, viewer.handle) ?? personByHandle(people, VIEWER.handle);
-  if (!me) return null;
+function ProfileMini({ people, viewer, actorName, onSaved }: { people: ReturnType<typeof rochfordWall>['people']; viewer: WallViewer; actorName: string; onSaved: () => void }) {
+  const me = personByHandle(people, viewer.handle) ?? (actorName ? undefined : personByHandle(people, VIEWER.handle));
+  if (!me && !actorName) return null;
+  if (!me) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-[#E7EDED] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
+        <div className="h-16" style={{ background: 'var(--ps-hero)' }} />
+        <div className="-mt-6 px-4 pb-4">
+          <span className="grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-[#3FE0D0] text-sm font-bold text-[#203337]">{actorName.slice(0, 2).toUpperCase()}</span>
+          <p className="mt-2 font-semibold text-[#203337]">{actorName}</p>
+          <button type="button" onClick={onSaved} className="mt-3 block w-full rounded-lg px-2 py-1.5 text-left text-sm text-[#203337] hover:bg-[#F4F6F6]">Saved</button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="overflow-hidden rounded-2xl border border-[#E7EDED] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
       <div className="h-16" style={{ background: 'var(--ps-hero)' }} />

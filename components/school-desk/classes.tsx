@@ -41,16 +41,16 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
     campus: 'Ipoh Garden',
     room: 'G-2',
     timetable: 'Tue and Thu, 10:00',
-    coTeachers: 'Siti Aminah',
+    coTeachers: '',
     capacity: '20',
   });
-  const [csv, setCsv] = useState('name,under18,member\nNadia Chong,yes,yes\nGuest Student,yes,no');
-  const [bulk, setBulk] = useState('name,subject,level,programme,term,campus,room,timetable,teacher,capacity\nIGCSE Physics,Physics,IGCSE,Cambridge IGCSE,Term 1,Falim,F-8,Thu 11:00,Siti Aminah,22');
+  const [csv, setCsv] = useState('name,under18,member');
+  const [bulk, setBulk] = useState('name,subject,level,programme,term,campus,room,timetable,teacher,capacity');
   const [news, setNews] = useState('');
   const [error, setError] = useState('');
   const [visibility, setVisibility] = useState<'school' | 'private'>(state.institution.kind === 'independent' ? 'private' : 'school');
   const [autoApprove, setAutoApprove] = useState(false);
-  const [inviteName, setInviteName] = useState('Hana Ibrahim');
+  const [inviteName, setInviteName] = useState('');
   const [studentRecord, setStudentRecord] = useState('');
   const [consoleOn, setConsoleOn] = useState(role === 'institution_admin');
   const [edit, setEdit] = useState(form);
@@ -229,8 +229,11 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               ))}
               <LevelMenu ariaLabel={t.filterLevel} value={edit.level} valueKind="label" onChange={(next) => setEditField('level', next)} />
               <label className="text-sm text-[#1E6A83]">{t.assignTeacher}
-                <select className={`${deskStyles.field} mt-1 w-full`} value={klass.ownerTeacherName} aria-label={t.assignTeacher} onChange={(event) => setState(updateClass(state, klass.id, { ownerTeacherName: event.target.value, ownerTeacherId: event.target.value === 'Aisha Rahman' ? 'teacher-aisha' : 'teacher-assigned' }, state.actorName))}>
-                  {['Aisha Rahman', 'Daniel Ong', 'Siti Aminah'].map((item) => <option key={item}>{item}</option>)}
+                <select className={`${deskStyles.field} mt-1 w-full`} value={klass.ownerTeacherName} aria-label={t.assignTeacher} onChange={(event) => {
+                  const name = event.target.value;
+                  setState(updateClass(state, klass.id, { ownerTeacherName: name, ownerTeacherId: name === state.actorName ? state.actorId : name }, state.actorName));
+                }}>
+                  {[...new Set([state.actorName, ...state.classes.map((item) => item.ownerTeacherName)].filter((name) => name.trim()))].map((item) => <option key={item}>{item}</option>)}
                 </select>
               </label>
               <button type="submit" className={deskStyles.btn} data-action="save-class">{t.saveClass}</button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { StudioTimetableChat } from '@/components/timetable/studio';
 import { useAuthSTORE } from '@/hooks/use-auth';
@@ -187,7 +187,9 @@ export function EtCanvas({ name, actor, editorHref = STUDIO_TIMETABLE }: { name:
           </>
         ) : null}
         {tab === 'timetable' && showTimetable ? (
-          <StudioTimetableChat actor={resolved} editorHref={editorHref} seed={seed?.text} seedId={seed?.id ?? 0} />
+          <Suspense fallback={null}>
+            <StudioTimetableChat actor={resolved} editorHref={editorHref} seed={seed?.text} seedId={seed?.id ?? 0} />
+          </Suspense>
         ) : null}
         {tab === 'exams' ? <Link href="/dashboard/studio/exam-prep" className="text-[#3FE0D0]">{ET_COPY.exams}</Link> : null}
         {tab === 'apps' ? <Link href="/dashboard/studio" className="text-[#3FE0D0]">{ET_COPY.apps}</Link> : null}

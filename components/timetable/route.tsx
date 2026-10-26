@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import type { TimetableActor } from '@/lib/timetable/access';
 import { TimetableDesk } from './desk';
@@ -18,5 +19,9 @@ export function TimetableRoute({ surface }: { surface: Surface }) {
     childIds: profile?.childIds,
     plan: profile?.role === 'admin' ? 'enterprise' : undefined,
   };
-  return <TimetableDesk surface={surface} actor={actor} />;
+  return (
+    <Suspense fallback={null}>
+      <TimetableDesk surface={surface} actor={actor} />
+    </Suspense>
+  );
 }

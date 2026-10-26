@@ -1,4 +1,4 @@
-import { personalTimetable, schoolTimetable } from './seed';
+import { blankTimetable, isInventedTimetable, personalTimetable, schoolTimetable } from './seed';
 import type { TimetableFeed } from './publish';
 import type { TimetableDoc } from './types';
 
@@ -10,22 +10,45 @@ interface Bundle {
   personal: TimetableDoc;
 }
 
-function empty(): Bundle {
-  return { school: schoolTimetable(), personal: personalTimetable() };
+export interface BundleOptions {
+  /** Preview and demo routes keep the labelled sample week. */
+  sample?: boolean;
+  ownerId?: string | null;
+  institutionId?: string | null;
 }
 
-export function loadBundle(): Bundle {
-  if (typeof window === 'undefined') return empty();
+function fresh(options: BundleOptions = {}): Bundle {
+  if (options.sample) {
+    return { school: schoolTimetable(), personal: personalTimetable(options.ownerId || 't-adeyemi') };
+  }
+  const ownerId = options.ownerId || '';
+  const institutionId = options.institutionId || '';
+  return {
+    school: blankTimetable('school', ownerId, institutionId),
+    personal: blankTimetable('personal', ownerId, institutionId),
+  };
+}
+
+function keep(doc: TimetableDoc | undefined, fallback: TimetableDoc, sample: boolean): TimetableDoc {
+  if (!doc?.id) return fallback;
+  const invented = isInventedTimetable(doc);
+  if (sample) return invented ? doc : fallback;
+  return invented ? fallback : doc;
+}
+
+export function loadBundle(options: BundleOptions = {}): Bundle {
+  const base = fresh(options);
+  if (typeof window === 'undefined') return base;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return empty();
+    if (!raw) return base;
     const parsed = JSON.parse(raw) as Partial<Bundle>;
     return {
-      school: parsed.school?.id ? parsed.school : schoolTimetable(),
-      personal: parsed.personal?.id ? parsed.personal : personalTimetable(),
+      school: keep(parsed.school, base.school, options.sample === true),
+      personal: keep(parsed.personal, base.personal, options.sample === true),
     };
   } catch {
-    return empty();
+    return base;
   }
 }
 
@@ -34,8 +57,8 @@ export function saveBundle(bundle: Bundle): void {
   window.localStorage.setItem(KEY, JSON.stringify(bundle));
 }
 
-export function saveDoc(doc: TimetableDoc): Bundle {
-  const bundle = loadBundle();
+export function saveDoc(doc: TimetableDoc, options: BundleOptions = {}): Bundle {
+  const bundle = loadBundle({ ...options, sample: doc.sample === true || options.sample === true });
   if (doc.kind === 'personal') bundle.personal = doc;
   else bundle.school = doc;
   saveBundle(bundle);

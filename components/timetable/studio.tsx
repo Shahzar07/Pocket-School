@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useAuthSTORE } from '@/hooks/use-auth';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { TIMETABLE_COPY } from '@/lib/timetable/copy';
 import { studioTimetableGate, type StudioTimetableGate, type TimetableActor } from '@/lib/timetable/access';
 import { previewIntent, previewTimetableChat, type TimetablePreview } from '@/lib/timetable/chat';
@@ -15,8 +16,8 @@ import { TimetableGrid } from './grid';
 const button = 'h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50';
 const ghost = 'h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]';
 
-function docFor(gate: StudioTimetableGate): TimetableDoc {
-  const bundle = loadBundle();
+function docFor(gate: StudioTimetableGate, sample: boolean, actor: TimetableActor): TimetableDoc {
+  const bundle = loadBundle({ sample, ownerId: actor.uid, institutionId: actor.institutionId });
   return gate === 'personal' ? bundle.personal : bundle.school;
 }
 
@@ -59,7 +60,9 @@ export function StudioTimetableScreen({ actor }: { actor: TimetableActor }) {
   }
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background" data-studio-timetable="1" data-nested-frame="0" data-studio-edition={gate}>
-      <TimetableDesk surface={gate === 'personal' ? 'personal' : 'institution'} actor={actor} />
+      <Suspense fallback={null}>
+        <TimetableDesk surface={gate === 'personal' ? 'personal' : 'institution'} actor={actor} />
+      </Suspense>
     </div>
   );
 }
@@ -98,6 +101,7 @@ export function StudioTimetableChat({
   seedId?: number;
 }) {
   const gate = studioTimetableGate(actor);
+  const sample = usePathname().startsWith('/preview') && useSearchParams().get('data') !== 'live';
   const [pending, setPending] = useState<TimetablePreview | null>(null);
   const [notice, setNotice] = useState('');
   const [text, setText] = useState('');
@@ -110,7 +114,7 @@ export function StudioTimetableChat({
       setNotice(gate === 'hidden' ? TIMETABLE_COPY.studioHidden : TIMETABLE_COPY.studioUpsell);
       return true;
     }
-    const preview = previewTimetableChat(docFor(gate), message);
+    const preview = previewTimetableChat(docFor(gate, sample, actor), message);
     if (!preview) return false;
     setPending(preview);
     setNotice(preview.summary);
@@ -180,7 +184,7 @@ export function StudioTimetableChat({
       setNotice(TIMETABLE_COPY.studioUnread);
       return;
     }
-    const preview = previewIntent(docFor(gate), { type: 'import', rows });
+    const preview = previewIntent(docFor(gate, sample, actor), { type: 'import', rows });
     setPending(preview);
     setNotice(preview.summary);
   };
@@ -189,7 +193,7 @@ export function StudioTimetableChat({
     return <TimetableUpsell gate={gate} />;
   }
 
-  const live = pending?.doc ?? docFor(gate);
+  const live = pending?.doc ?? docFor(gate, sample, actor);
 
   return (
     <div className="w-full max-w-5xl rounded-3xl bg-white p-4 text-start text-[#203337]" data-studio-chat="1" data-applied={applied}>

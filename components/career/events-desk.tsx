@@ -169,6 +169,7 @@ export function EventsDesk({
           {canEdit ? (
             <button type="button" className="h-10 rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white" onClick={() => setDraft({ ...BLANK, id: `event-${events.length + 1}` })}>Add an event</button>
           ) : null}
+          {shown.length === 0 ? <p className="text-sm text-[#1E6A83]">No events yet.</p> : null}
           <ul className="space-y-3">
             {shown.map((event) => (
               <li key={event.id} className="rounded-3xl border border-[#E7EDED] bg-white p-4">
@@ -263,13 +264,16 @@ export function EventsDesk({
         <div className="rounded-3xl border border-[#E7EDED] bg-white p-4">
           <h2 className="font-heading text-xl">ET AI matcher</h2>
           <p className="mt-1 text-sm text-[#1E6A83]">Matches come from opportunities the school entered. ET AI does not invent one.</p>
-          <ul className="mt-3 space-y-2">
-            {matches.map((row) => <li key={row.title} className="text-sm"><span className="font-semibold">{row.title}</span> · {row.organisation} · {row.kind}</li>)}
-          </ul>
+          {matches.length === 0 ? <p className="mt-3 text-sm">No matches yet.</p> : (
+            <ul className="mt-3 space-y-2">
+              {matches.map((row) => <li key={row.title} className="text-sm"><span className="font-semibold">{row.title}</span> · {row.organisation} · {row.kind}</li>)}
+            </ul>
+          )}
         </div>
       ) : null}
 
       {tab === 'jobs' ? (
+        jobs.length === 0 ? <p className="text-sm">No jobs yet.</p> : (
         <ul className="space-y-2">
           {jobs.map((job) => (
             <li key={job.title} className="rounded-2xl border border-[#E7EDED] bg-white p-4 text-sm">
@@ -278,19 +282,23 @@ export function EventsDesk({
             </li>
           ))}
         </ul>
+        )
       ) : null}
 
       {tab === 'cv' ? (
         <article className="rounded-3xl border border-[#E7EDED] bg-white p-4">
           <h2 className="font-heading text-xl">Verified CV</h2>
-          <p className="mt-1 text-sm text-[#1E6A83]">Amina Rahman · IGCSE · Rochford&apos;s International School. Skills below are verified by Poket School. The PDF stays with the student until they share it.</p>
-          <ul className="mt-3 list-disc pl-5 text-sm">
-            {skills.filter((skill) => skill.visible).map((skill) => <li key={skill.name}>{skill.name} — {skill.evidence}</li>)}
-          </ul>
+          <p className="mt-1 text-sm text-[#1E6A83]">{person}. Skills below are verified by Poket School. The PDF stays with the student until they share it.</p>
+          {skills.filter((skill) => skill.visible).length === 0 ? <p className="mt-3 text-sm">No verified skills yet.</p> : (
+            <ul className="mt-3 list-disc pl-5 text-sm">
+              {skills.filter((skill) => skill.visible).map((skill) => <li key={skill.name}>{skill.name} — {skill.evidence}</li>)}
+            </ul>
+          )}
         </article>
       ) : null}
 
       {tab === 'mentoring' ? (
+        mentors.length === 0 ? <p className="text-sm">No mentors yet.</p> : (
         <ul className="space-y-2">
           {mentors.map((mentor) => (
             <li key={mentor.name} className="rounded-2xl border border-[#E7EDED] bg-white p-4 text-sm">
@@ -299,6 +307,7 @@ export function EventsDesk({
             </li>
           ))}
         </ul>
+        )
       ) : null}
     </div>
   );
