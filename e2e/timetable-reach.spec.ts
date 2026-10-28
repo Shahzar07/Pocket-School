@@ -143,8 +143,9 @@ test.describe('timetabler on the signed-in emulator', () => {
     await expect(page.locator('[data-google-state="unconfigured"]')).toBeVisible();
     await expect(page.locator('[data-google-unconfigured="1"]')).toHaveText(GOOGLE_CALENDAR_COPY.notConfigured);
     await expect(page.locator('[data-google-error="1"]')).toContainText(GOOGLE_CALENDAR_COPY.noError);
+    await expect(page.locator('[data-timetable-ready="1"]')).toBeVisible();
     await page.locator('[data-action="generate"]').click();
-    await expect(page.locator('[data-quality]')).toBeVisible();
+    await expect(page.locator('[data-timetable]')).toHaveAttribute('data-generated', /^[1-9]/);
     await expect(page.locator('[data-lesson]').first()).toBeVisible();
     await page.screenshot({ path: '/opt/cursor/artifacts/screenshots/timetable-built.png', fullPage: false });
     const first = page.locator('[data-lesson]').first();

@@ -60,6 +60,8 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
   const [queued, setQueued] = useState<ReturnType<typeof coverNotices>>([]);
   const [feed, setFeed] = useState<TimetableFeed | null>(null);
   const [privateMode, setPrivateMode] = useState(surface === 'personal');
+  const [ready, setReady] = useState(false);
+  const [generated, setGenerated] = useState<number | null>(null);
 
   const doc = privateMode || surface === 'personal' ? bundle.personal : bundle.school;
   const multi = canUseMultipleCampuses(actor);
@@ -67,6 +69,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
   useEffect(() => {
     setBundle(loadBundle(bundleOptions));
     setFeed(readTimetableFeed(feedOptions));
+    setReady(true);
     // The signed-in identity decides which saved week to open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sample, actor.uid, actor.institutionId]);
@@ -134,6 +137,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
       status: 'draft' as const,
     };
     commit(next, 'generate');
+    setGenerated(result.lessons.length);
     setNotice(explanation);
     setTab('grid');
     void fetch('/api/timetable/explain', {
@@ -192,7 +196,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         : ['grid', 'publish'];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 bg-white p-4 text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2] md:p-6" data-timetable={surface} data-edition={privateMode ? 'personal' : edition} data-sample={sample ? '1' : '0'} data-editing={editing || privateMode ? '1' : '0'} data-place={surface === 'institution' ? 'institution' : surface}>
+    <div className="mx-auto max-w-6xl space-y-5 bg-white p-4 text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2] md:p-6" data-timetable={surface} data-timetable-ready={ready ? '1' : '0'} data-generated={generated === null ? undefined : String(generated)} data-edition={privateMode ? 'personal' : edition} data-sample={sample ? '1' : '0'} data-editing={editing || privateMode ? '1' : '0'} data-place={surface === 'institution' ? 'institution' : surface}>
       <header className="tt-no-print">
         {surface === 'institution' ? <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83] dark:text-[#3FE0D0]">{TIMETABLE_COPY.institutionPlace}</p> : null}
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83] dark:text-[#3FE0D0]">{TIMETABLE_COPY.title}</p>

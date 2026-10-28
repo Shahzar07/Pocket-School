@@ -69,7 +69,9 @@ test('sync uses stable ids against a mocked Google calendar', async ({ page }) =
   await page.goto('/preview/timetable?surface=institution');
   await page.evaluate(() => window.localStorage.removeItem('poket-timetable-v1'));
   await page.reload();
+  await expect(page.locator('[data-timetable-ready="1"]')).toBeVisible();
   await page.locator('[data-action="generate"]').click();
+  await expect(page.locator('[data-timetable]')).toHaveAttribute('data-generated', /^[1-9]/);
   await expect(page.locator('[data-google-state="connected"]')).toBeVisible();
   await page.locator('[data-action="google-sync"]').click();
   await expect(page.locator('[data-google-message="1"]')).toContainText(GOOGLE_CALENDAR_COPY.synced);
