@@ -183,7 +183,7 @@ const enCore = {
     aiPerformanceDesc: 'Helps us improve ET AI response quality and personalisation.',
   },
   auth: {
-    line1: 'Your Smartest',
+    line1: 'Your Smartest Classroom',
     line2: 'Classroom in Your Poket',
     subtitle: 'AI-powered learning for IGCSE, A-Levels, degrees & beyond.',
     f1title: 'ET AI — Your AI Tutor',

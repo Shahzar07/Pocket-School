@@ -19,6 +19,9 @@ import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
 
 const STORAGE_KEY = 'poket-cookie-consent';
 
+/** Fired when a visitor accepts, rejects, or saves cookie choices. */
+export const COOKIE_CONSENT_EVENT = 'poket-cookie-consent';
+
 export interface CookiePrefs {
   essential: true;
   functional: boolean;
@@ -41,6 +44,14 @@ export function getCookiePrefs(): CookiePrefs | null {
 /** True only when the visitor actively allowed that category. */
 export function hasCookieConsent(category: 'functional' | 'analytics' | 'aiPerformance'): boolean {
   return !!getCookiePrefs()?.[category];
+}
+
+/** Pip waits for this on ordinary pages, so the two bars are not on screen together. */
+export function tourWaitsForCookieConsent(pathname?: string): boolean {
+  if (getCookiePrefs()) return false;
+  const path = pathname ?? (typeof window === 'undefined' ? '' : window.location.pathname);
+  if (!path || isBrandedLoginPath(path) || isInstitutionJourneyPath(path)) return false;
+  return true;
 }
 
 const CATEGORIES = [
@@ -68,6 +79,7 @@ export function CookieConsent() {
   const persist = (p: { functional: boolean; analytics: boolean; aiPerformance: boolean }) => {
     const record: CookiePrefs = { essential: true, ...p, decidedAt: new Date().toISOString() };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(record)); } catch { /* private mode */ }
+    window.dispatchEvent(new Event(COOKIE_CONSENT_EVENT));
     setOpen(false);
     setManaging(false);
   };

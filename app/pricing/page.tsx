@@ -177,7 +177,7 @@ export default function PricingPage() {
       data-display-currency={currency}
     >
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F5F1FF] to-background overflow-hidden dark:from-[#0B1417] dark:via-[#121E22] dark:to-[#0B1417]">
+      <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F4FBFA] to-background overflow-hidden dark:from-[#0B1417] dark:via-[#122226] dark:to-[#0B1417]">
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" aria-hidden />
         <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" aria-hidden />
 
@@ -187,7 +187,7 @@ export default function PricingPage() {
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-foreground leading-[0.98] mb-6">
               Learn free.
               <br />
-              <span className="bg-gradient-to-r from-primary via-[#1E3A8A] to-primary bg-clip-text text-transparent">
+              <span className="ps-ink-gradient">
                 Upgrade when it earns it.
               </span>
             </h1>
@@ -347,7 +347,7 @@ export default function PricingPage() {
               <p className="text-xs font-bold tracking-[0.2em] text-primary mb-4">THE SPARKS SYSTEM</p>
               <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-foreground leading-[1.05] mb-5">
                 What exactly is a{' '}
-                <span className="bg-gradient-to-r from-primary to-[#1E3A8A] bg-clip-text text-transparent">
+                <span className="ps-ink-gradient">
                   Spark
                 </span>
                 ?
@@ -628,7 +628,7 @@ function PlanCard({
         {isFree ? (
           <Link
             href="/signup"
-            className="mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all bg-[#203337] hover:bg-[#132a5e] text-white"
+            className="mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all bg-[#203337] hover:bg-[#1E6A83] text-white"
           >
             {plan.cta}
             <ArrowRight className="w-4 h-4" />
@@ -641,7 +641,7 @@ function PlanCard({
             className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all disabled:opacity-60 ${
               plan.popular
                 ? 'bg-primary hover:bg-[#1E6A83] text-primary-foreground shadow-lg shadow-primary/30'
-                : 'bg-[#203337] hover:bg-[#132a5e] text-white'
+                : 'bg-[#203337] hover:bg-[#1E6A83] text-white'
             }`}
           >
             {priceUnset ? 'Price not set' : checkingOut ? 'Starting checkout…' : plan.cta}

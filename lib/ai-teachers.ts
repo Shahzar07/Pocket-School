@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { portraitFor } from './teacher-portrait';
 
 export type TeacherStatus = 'live' | 'coming-soon';
@@ -66,13 +67,23 @@ const VOICES: TeacherVoice[] = [
   'Kore', 'Charon', 'Aoede', 'Puck', 'Leda', 'Zephyr', 'Fenrir', 'Orus', 'Iapetus',
 ];
 
-const PALETTE = ['#1A73E8', '#1E3A8A', '#0B1B3F', '#10B981', '#1E6A83', '#8B5CF6', '#EC4899', '#3FE0D0'];
+/** Brand only. Cyan is a fill; `accentOnLight` turns it into blue when it is text. */
+const PALETTE = ['#1E6A83', '#203337', '#2786A4', '#3FE0D0'];
 
 /** Cyan fills are not text on white. Brand blue is the light-background ink. */
 export function accentOnLight(hex: string): string {
   const color = hex.trim().toUpperCase();
   if (color === '#3FE0D0' || color === '#14B8A6') return '#1E6A83';
   return hex;
+}
+
+/** Subject chip: blue or ink on a tint. Callers add cyan text only in dark mode. */
+export function subjectChipStyle(hex: string): CSSProperties {
+  const ink = accentOnLight(hex);
+  return {
+    backgroundColor: `color-mix(in srgb, ${ink} 15%, transparent)`,
+    ['--chip-ink' as string]: ink,
+  };
 }
 
 /** Text that sits on the accent when it is used as a button fill. */
@@ -95,7 +106,7 @@ function et(input: {
   sampleQuestions?: string[];
 }): AiTeacher {
   const voice = VOICES[voiceCursor % VOICES.length] ?? 'Kore';
-  const accentColor = PALETTE[voiceCursor % PALETTE.length] ?? '#1A73E8';
+  const accentColor = PALETTE[voiceCursor % PALETTE.length] ?? '#1E6A83';
   voiceCursor += 1;
   return {
     ...input,

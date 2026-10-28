@@ -177,7 +177,8 @@ test('admin desk tiles and urgent alerts use brand tokens', () => {
   assert.match(dark, /--ps-urgent-ink:\s*#203337/i);
 });
 
-test('Pip avatar art is left as drawn', () => {
+test('Pip cheeks use a brand tint', () => {
   const pip = readFileSync(path.join(ROOT, 'components/pip-guide.tsx'), 'utf8');
-  assert.match(pip, /#EC4899/);
+  assert.match(pip, /fill="#3FE0D0"/);
+  assert.doesNotMatch(pip, /#EC4899/);
 });

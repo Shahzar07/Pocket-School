@@ -592,11 +592,22 @@ h1.font-heading, .font-heading.text-4xl, .font-heading.text-5xl {
 @property --c5-s4 { syntax: '<percentage>'; inherits: false; initial-value: 55%; }
 @property --c5-s5 { syntax: '<percentage>'; inherits: false; initial-value: 65%; }
 
+/* Headline ink. The dark middle stays cyan so it does not disappear on #0B1417. */
+.ps-ink-gradient {
+  background-image: linear-gradient(90deg, #203337 0%, #1E6A83 50%, #203337 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dark .ps-ink-gradient {
+  background-image: linear-gradient(90deg, #E7F4F2 0%, #3FE0D0 50%, #E7F4F2 100%);
+}
+
 .c5-animated-gradient {
   background-color: #1E6A83;
   background-image:
     radial-gradient(circle at var(--c5-x1) var(--c5-y1), #93C5FD 0px, transparent var(--c5-s1)),
-    radial-gradient(circle at var(--c5-x2) var(--c5-y2), #1E3A8A 0px, transparent var(--c5-s2)),
+    radial-gradient(circle at var(--c5-x2) var(--c5-y2), #1E6A83 0px, transparent var(--c5-s2)),
     radial-gradient(circle at var(--c5-x3) var(--c5-y3), #3FE0D0 0px, transparent var(--c5-s3)),
     radial-gradient(circle at var(--c5-x4) var(--c5-y4), #6FBBCE 0px, transparent var(--c5-s4)),
     radial-gradient(circle at var(--c5-x5) var(--c5-y5), #1E6A83 0px, transparent var(--c5-s5));
