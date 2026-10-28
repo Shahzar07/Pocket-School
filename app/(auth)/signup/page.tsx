@@ -706,7 +706,7 @@ export default function SignupPage() {
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={e => setDob(e.target.value)} disabled={loading} />
               {tooYoung && (
-                <p className="text-xs text-red-300">{t('signup.tooYoung')}</p>
+                <p className="text-xs text-[#3FE0D0]">{t('signup.tooYoung')}</p>
               )}
               {isMinor && !tooYoung && (
                 <p className="text-xs text-[var(--ps-cyan-text)] flex items-start gap-1.5">

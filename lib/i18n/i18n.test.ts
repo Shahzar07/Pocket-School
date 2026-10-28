@@ -196,6 +196,7 @@ test('the language list covers the major world languages and rtl scripts', () =>
   );
   assert.equal(catalogs.en.footer.rights, '© {{year}} Poket Media Sdn Bhd (1332289-X) · Made in Malaysia');
   assert.equal(catalogs.ar.footer.rights, catalogs.en.footer.rights);
+  assert.equal(catalogs.en.auth.line1, 'Your Smartest Classroom');
   assert.equal(catalogs.en.auth.line2.includes('Pocket'), false);
 });
 

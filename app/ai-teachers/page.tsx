@@ -26,13 +26,13 @@ import { PublicToolShell } from '@/components/studio/tool-shell';
 import { portraitAlt, teacherPortrait } from '@/lib/teacher-portrait';
 import Image from 'next/image';
 import {
-  accentOnLight,
   AI_TEACHERS,
   CEFR_BANNER,
   CEFR_LEVELS,
   TEACHER_CATEGORIES,
   type AiTeacher,
   type TeacherCategory,
+  subjectChipStyle,
   type TeacherIconKey,
 } from '@/lib/ai-teachers';
 
@@ -86,7 +86,7 @@ export default function AiTeachersPage() {
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-foreground leading-[0.95] mb-6 max-w-4xl mx-auto lg:mx-0">
             Your 24/7 Faculty.
             <br />
-            <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#1E3A8A] to-[var(--ps-primary)] bg-clip-text text-transparent">
+            <span className="ps-ink-gradient">
               Always Available.
             </span>
           </h1>
@@ -96,8 +96,8 @@ export default function AiTeachersPage() {
           <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-foreground">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-black/[0.04]">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FE0D0] opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FE0D0]" />
               </span>
               30+ AVAILABLE NOW
             </span>
@@ -268,8 +268,8 @@ function TeacherCard({
         {isLive && (
           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-sm">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FE0D0] opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3FE0D0]" />
             </span>
             <span className="text-[9px] font-bold tracking-widest text-white">AVAILABLE NOW</span>
           </div>
@@ -290,8 +290,8 @@ function TeacherCard({
           {teacher.subjects.slice(0, 3).map((s) => (
             <span
               key={s}
-              className="text-[10px] font-bold px-2 py-0.5 rounded"
-              style={{ backgroundColor: `${teacher.accentColor}15`, color: accentOnLight(teacher.accentColor) }}
+              className="text-[10px] font-bold px-2 py-0.5 rounded text-[var(--chip-ink)] dark:text-[#3FE0D0]"
+              style={subjectChipStyle(teacher.accentColor)}
             >
               {s}
             </span>

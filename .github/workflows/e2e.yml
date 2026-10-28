@@ -16,7 +16,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npx tsx --test lib/dashboard-nav-label.test.ts lib/design/dashboard-colours.test.ts
+      - run: npx tsx --test lib/dashboard-nav-label.test.ts lib/design/dashboard-colours.test.ts lib/design/public-palette.test.ts lib/studio-paths.test.ts lib/pip-card.test.ts lib/firebase-lazy.test.ts
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
         env:

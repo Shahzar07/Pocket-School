@@ -9,9 +9,28 @@ export const STUDIO_TIMETABLE = '/dashboard/studio/timetable';
  * Old addresses keep working. Next applies these before the app routes,
  * and query strings travel with the request.
  */
+/** Public names that do not match the dashboard folder. */
+const AI_STUDIO_RENAMES: Record<string, string> = {
+  timetabler: 'timetable',
+};
+
+/** `/ai-studio/timetabler` lands on the real timetable route. Other segments are kept. */
+export function aiStudioDestination(path: string): string {
+  if (path === '/ai-studio') return STUDIO_HUB;
+  const prefix = '/ai-studio/';
+  if (!path.startsWith(prefix)) return path;
+  const rest = path.slice(prefix.length);
+  const slash = rest.indexOf('/');
+  const head = slash === -1 ? rest : rest.slice(0, slash);
+  const tail = slash === -1 ? '' : rest.slice(slash);
+  return `${STUDIO_HUB}/${AI_STUDIO_RENAMES[head] ?? head}${tail}`;
+}
+
 export const studioRedirects = [
   { source: '/ai-studio', destination: STUDIO_HUB, permanent: false },
-  { source: '/ai-studio/:path*', destination: STUDIO_HUB, permanent: false },
+  { source: '/ai-studio/timetabler', destination: STUDIO_TIMETABLE, permanent: false },
+  { source: '/ai-studio/timetabler/:path*', destination: `${STUDIO_TIMETABLE}/:path*`, permanent: false },
+  { source: '/ai-studio/:path*', destination: `${STUDIO_HUB}/:path*`, permanent: false },
   { source: '/dashboard/student/maths', destination: STUDIO_MATHS, permanent: false },
   { source: '/dashboard/student/maths/:path*', destination: `${STUDIO_MATHS}/:path*`, permanent: false },
   { source: '/dashboard/student/exam-prep', destination: STUDIO_EXAM_PREP, permanent: false },
@@ -26,7 +45,7 @@ export function relocateStudioPath(url: string): string {
   const queryAt = url.indexOf('?');
   const path = queryAt === -1 ? url : url.slice(0, queryAt);
   const search = queryAt === -1 ? '' : url.slice(queryAt);
-  if (path === '/ai-studio' || path.startsWith('/ai-studio/')) return STUDIO_HUB + search;
+  if (path === '/ai-studio' || path.startsWith('/ai-studio/')) return aiStudioDestination(path) + search;
   const rules: [string, string][] = [
     ['/dashboard/student/maths', STUDIO_MATHS],
     ['/dashboard/student/exam-prep', STUDIO_EXAM_PREP],

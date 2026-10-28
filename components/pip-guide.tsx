@@ -14,10 +14,13 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, ArrowRight, ArrowLeft, Loader2, Send, RotateCcw } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Send } from 'lucide-react';
+import { COOKIE_CONSENT_EVENT, tourWaitsForCookieConsent } from '@/components/cookie-consent';
 import { CloseControl, useLayerDismiss } from '@/components/ui/close-control';
+import { placePipCard } from '@/lib/pip-card';
 import {
   defaultTour, getStep, matchSteps, type TourRole, type TourStep,
 } from '@/lib/tour-steps';
@@ -92,8 +95,8 @@ export function PipCharacter({
       )}
 
       {/* cheeks */}
-      <circle cx="36" cy="66" r="4" fill="#EC4899" opacity="0.5" />
-      <circle cx="84" cy="66" r="4" fill="#EC4899" opacity="0.5" />
+      <circle cx="36" cy="66" r="4" fill="#3FE0D0" opacity="0.5" />
+      <circle cx="84" cy="66" r="4" fill="#3FE0D0" opacity="0.5" />
 
       {/* arms */}
       <rect x="6" y="52" width="12" height="26" rx="6" fill="var(--primary)" />
@@ -185,13 +188,24 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
 
   const step = steps[index];
 
-  /* First-run: offer the tour once, after the dashboard has settled. */
+  /* First-run: offer the tour once consent is settled, so it does not cover the cookie bar. */
   useEffect(() => {
     let seen = true;
     try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch { /* private mode */ }
     if (seen) return;
-    const t = setTimeout(() => { startTour(defaultTour(role)); }, 1200);
-    return () => clearTimeout(t);
+    let cancel = false;
+    let timer = 0;
+    const begin = () => {
+      if (cancel || tourWaitsForCookieConsent()) return;
+      timer = window.setTimeout(() => { startTour(defaultTour(role)); }, 400);
+    };
+    begin();
+    window.addEventListener(COOKIE_CONSENT_EVENT, begin);
+    return () => {
+      cancel = true;
+      window.clearTimeout(timer);
+      window.removeEventListener(COOKIE_CONSENT_EVENT, begin);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
@@ -327,15 +341,20 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
     }
   };
 
-  /* Card position: beside the spotlight when there is room, else centred. */
+  /* Card position: inside the viewport, above the lesson docks. No translate. */
   const cardStyle = useMemo((): React.CSSProperties => {
-    if (!rect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const CARD_W = 372, CARD_H = 260;
-    const below = rect.top + rect.height + 16;
-    const top = below + CARD_H < vh ? below : Math.max(16, rect.top - CARD_H - 16);
-    const left = Math.min(Math.max(16, rect.left), vw - CARD_W - 16);
-    return { top, left };
+    if (typeof window === 'undefined') return { top: 16, left: 16, width: 320, maxHeight: 480 };
+    const dock = ['--ps-lesson-dock', '--ps-quiz-dock'].reduce((sum, name) => {
+      const value = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+    const box = placePipCard({
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      rect,
+      dockBottom: dock,
+    });
+    return { top: box.top, left: box.left, width: box.width, maxHeight: box.maxHeight };
   }, [rect]);
 
   const isLast = index >= steps.length - 1;
@@ -344,8 +363,13 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
     <>
       {/* Trigger — top-left of the dashboard chrome */}
       <button
-        onClick={() => (open ? close() : startTour(defaultTour(role)))}
+        onClick={() => {
+          if (open) { close(); return; }
+          if (tourWaitsForCookieConsent()) return;
+          startTour(defaultTour(role));
+        }}
         data-tour="pip-trigger"
+        data-pip-launcher=""
         title="Show me around"
         aria-label="Open the guided tour"
         className="relative flex items-center gap-2 h-9 pl-1 pr-3 rounded-full border border-border bg-card hover:bg-muted transition-colors group"
@@ -355,11 +379,13 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
         <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
 
+      {typeof document !== 'undefined' && createPortal(
       <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[90]"
+            data-pip-layer=""
           >
             {/* Dim with a cutout. Four panels rather than an SVG mask so the
                 hole stays crisp and the element underneath stays clickable. */}
@@ -405,7 +431,8 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
               initial={{ opacity: 0, y: 12, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="absolute w-[372px] max-w-[calc(100vw-32px)] bg-card border border-border rounded-3xl shadow-2xl overflow-hidden"
+              className="absolute bg-card border border-border rounded-3xl shadow-2xl overflow-y-auto"
+              data-pip-card=""
               style={cardStyle}
             >
               {/* header */}
@@ -487,7 +514,9 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body,
+      )}
     </>
   );
 }

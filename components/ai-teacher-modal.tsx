@@ -34,7 +34,7 @@ import {
 import { useAuthSTORE } from '@/hooks/use-auth';
 import { subscribeTeacherNotification } from '@/lib/db';
 import { toast } from 'sonner';
-import { accentOnFill, accentOnLight, type AiTeacher, type TeacherIconKey } from '@/lib/ai-teachers';
+import { accentOnFill, accentOnLight, subjectChipStyle, type AiTeacher, type TeacherIconKey } from '@/lib/ai-teachers';
 import { TeacherPortrait } from '@/components/teachers/portrait';
 
 const ICONS: Record<TeacherIconKey, typeof Atom> = {
@@ -193,8 +193,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
               {isLive && (
                 <div className="absolute top-3 left-3 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-sm">
                   <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FE0D0] opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FE0D0]" />
                   </span>
                   <span className="text-[10px] font-bold tracking-widest text-white">LIVE 24/7</span>
                 </div>
@@ -223,8 +223,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
           <div className="relative overflow-y-auto max-h-[92vh] p-6 lg:p-8 bg-white">
             <div className="flex items-start gap-4 mb-5">
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${teacher.accentColor}15`, color: accentOnLight(teacher.accentColor) }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 text-[var(--chip-ink)]"
+                style={subjectChipStyle(teacher.accentColor)}
               >
                 <Icon className="w-7 h-7" strokeWidth={1.7} />
               </div>
@@ -238,8 +238,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
               {teacher.subjects.map((s) => (
                 <span
                   key={s}
-                  className="text-[11px] font-bold px-2.5 py-1 rounded-md"
-                  style={{ backgroundColor: `${teacher.accentColor}15`, color: accentOnLight(teacher.accentColor) }}
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-md text-[var(--chip-ink)]"
+                  style={subjectChipStyle(teacher.accentColor)}
                 >
                   {s}
                 </span>
@@ -310,7 +310,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3">Specialties</p>
                 <div className="flex flex-wrap gap-1.5">
                   {teacher.specialties.map((s) => (
-                    <span key={s} className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#E9F7FA] text-[#1E3A8A]">
+                    <span key={s} className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#E9F7FA] text-[#1E6A83]">
                       {s}
                     </span>
                   ))}
