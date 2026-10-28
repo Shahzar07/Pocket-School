@@ -12,6 +12,7 @@ import { aiDrafts } from './ai-drafts';
 import { chromeEn, chromeLocale } from './chrome';
 import { pageNamespaces } from './page-copy';
 import { LANGUAGES } from '../languages';
+import { englishReads, readsHuman } from './reads-human';
 import { reviewPatch } from './review-patches';
 import { landingEn, landingMs, landingTa, landingZh, type LandingCopy } from './landing';
 
@@ -312,7 +313,7 @@ const ms = {
     careerDesk: 'Meja kerjaya',
     partner: 'Portal rakan',
     activityLog: 'Log aktiviti',
-    alumni: 'Alumni',
+    alumni: 'Bekas pelajar',
     approvals: 'Kelulusan',
     blog: 'Blog',
     helpArticles: 'Bantuan admin',
@@ -449,7 +450,7 @@ const ms = {
     aiPerformanceDesc: 'Membantu kami menambah baik kualiti respons ET AI dan pemperibadian.',
   },
   auth: {
-    line1: 'Bilik darjah',
+    line1: 'Kelas paling pintar anda',
     line2: 'paling pintar dalam poket anda',
     subtitle: 'Pembelajaran berkuasa AI untuk IGCSE, A-Level, ijazah dan seterusnya.',
     f1title: 'ET AI — Tutor AI anda',
@@ -1137,8 +1138,11 @@ const OFFICIAL_RIGHTS = '© {{year}} Poket Media Sdn Bhd (1332289-X) · Made in 
 const HUMAN_CATALOGS = new Set(['en', 'ms', 'zh', 'ta']);
 
 const englishCatalog = mergeCatalog(
-  seeded.en as unknown as Record<string, unknown>,
-  chromeEn as unknown as Record<string, unknown>,
+  mergeCatalog(
+    seeded.en as unknown as Record<string, unknown>,
+    chromeEn as unknown as Record<string, unknown>,
+  ),
+  englishReads,
 );
 
 export const catalogs = Object.fromEntries(
@@ -1149,6 +1153,8 @@ export const catalogs = Object.fromEntries(
     if (human) merged = mergeCatalog(merged, human as Record<string, unknown>);
     const reviewed = reviewPatch(language.code);
     if (reviewed) merged = mergeCatalog(merged, reviewed);
+    const reads = readsHuman[language.code];
+    if (reads) merged = mergeCatalog(merged, reads);
     merged = mergeCatalog(merged, {
       footer: {
         rights: OFFICIAL_RIGHTS,

@@ -2,6 +2,7 @@
  * Keys added after the human catalogs were written. Merged onto every
  * language. Human locales override the English source below.
  */
+import { humanHomePatch } from './human-home';
 import { extraNavEn, extraNavLocale, type ExtraNav } from './nav-labels';
 
 const { section: extraSection, ...extraNav } = extraNavEn;
@@ -307,7 +308,7 @@ export const chromeEn = {
 const ms = {
   header: {
     etMaths: 'ET Maths',
-    examPrep: 'Exam Prep',
+    examPrep: 'Persediaan peperiksaan',
     blog: 'Blog',
     forSchools: 'Untuk sekolah dan organisasi',
     programmes: 'Program dan produk',
@@ -444,6 +445,12 @@ const ms = {
     levels: 'Peringkat',
     company: 'Syarikat',
     schools: 'Untuk sekolah dan organisasi',
+    about: 'Perihal',
+    demo: 'Tempah demo',
+    etTeachers: 'Guru ET AI',
+    studentId: 'Kad ID pelajar',
+    primary: 'Sekolah rendah',
+    independentLearning: 'Pembelajaran bebas',
     llb: 'Undang-undang (LLB)',
     mbbs: 'Perubatan (MBBS)',
   },
@@ -519,7 +526,7 @@ const ms = {
 };
 
 const zh = {
-  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep', blog: '博客' },
+  header: { etMaths: 'ET Maths', examPrep: '备考', blog: '博客' },
   home: {
     v3: {
       title: '用你的方式学习',
@@ -600,7 +607,18 @@ const zh = {
       rochfords: '与 Rochford’s International School, Ipoh, 马来西亚 共同打造。',
     },
   },
-  footer: { blog: '博客', llb: '法律 (LLB)', mbbs: '医学 (MBBS)' },
+  footer: {
+    blog: '博客',
+    llb: '法律 (LLB)',
+    mbbs: '医学 (MBBS)',
+    about: '关于',
+    demo: '预约演示',
+    schools: '面向学校和机构',
+    etTeachers: 'ET AI 老师',
+    studentId: '学生证',
+    primary: '小学',
+    independentLearning: '自主学习',
+  },
   nav: {
     community: '社区',
     channels: '频道',
@@ -670,7 +688,7 @@ const zh = {
 };
 
 const ta = {
-  header: { etMaths: 'ET Maths', examPrep: 'Exam Prep', blog: 'வலைப்பதிவு' },
+  header: { etMaths: 'ET Maths', examPrep: 'தேர்வுத் தயாரிப்பு', blog: 'வலைப்பதிவு' },
   home: {
     v3: {
       title: 'உங்கள் வழியில் கற்றுக்கொள்ளுங்கள்',
@@ -751,7 +769,18 @@ const ta = {
       rochfords: 'Rochford’s International School, Ipoh, மலேசியா உடன் உருவாக்கப்பட்டது.',
     },
   },
-  footer: { blog: 'வலைப்பதிவு', llb: 'சட்டம் (LLB)', mbbs: 'மருத்துவம் (MBBS)' },
+  footer: {
+    blog: 'வலைப்பதிவு',
+    llb: 'சட்டம் (LLB)',
+    mbbs: 'மருத்துவம் (MBBS)',
+    about: 'பற்றி',
+    demo: 'ஒரு செயல்விளக்கத்தை முன்பதிவு செய்',
+    schools: 'பள்ளிகளுக்கும் அமைப்புகளுக்கும்',
+    etTeachers: 'ET AI ஆசிரியர்கள்',
+    studentId: 'மாணவர் அடையாள அட்டை',
+    primary: 'தொடக்கப்பள்ளி',
+    independentLearning: 'தனிக் கற்றல்',
+  },
   nav: {
     community: 'சமூகம்',
     channels: 'சேனல்கள்',
@@ -824,9 +853,11 @@ const HUMAN: Record<string, Record<string, unknown>> = { ms, zh, ta };
 
 export function chromeLocale(code: string): Record<string, unknown> | undefined {
   const human = HUMAN[code];
+  const home = humanHomePatch[code];
+  const withHome = human && home ? mergeRecords(human, home) : human ?? home;
   const labels = extraNavLocale(code);
-  if (!labels) return human;
+  if (!labels) return withHome;
   const patch = { nav: navPatch(labels) };
-  if (!human) return patch;
-  return mergeRecords(human, patch);
+  if (!withHome) return patch;
+  return mergeRecords(withHome, patch);
 }

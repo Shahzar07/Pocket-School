@@ -85,9 +85,10 @@ interface Phrase {
   curriculum: string;
 }
 
-function pack(phrase: Phrase): ExtraNav {
+function pack(phrase: Phrase, schoolTimetable = PRODUCT.schoolTimetable): ExtraNav {
   return {
     ...PRODUCT,
+    schoolTimetable,
     tasks: phrase.tasks,
     myProgress: phrase.myProgress,
     childDetail: phrase.childDetail,
@@ -179,7 +180,7 @@ const overlays: Record<string, ExtraNav> = {
     studio: 'Alat studio',
     groups: 'Kumpulan',
     curriculum: 'Kurikulum',
-  }),
+  }, 'Jadual waktu sekolah'),
   zh: pack({
     tasks: '任务',
     myProgress: '我的进度',
@@ -208,7 +209,7 @@ const overlays: Record<string, ExtraNav> = {
     studio: '工作室工具',
     groups: '小组',
     curriculum: '课程',
-  }),
+  }, '学校课表'),
   'zh-Hant': pack({
     tasks: '任務',
     myProgress: '我的進度',
@@ -266,7 +267,7 @@ const overlays: Record<string, ExtraNav> = {
     studio: 'ஸ்டுடியோ கருவிகள்',
     groups: 'குழுக்கள்',
     curriculum: 'பாடத்திட்டம்',
-  }),
+  }, 'பள்ளி நேர அட்டவணை'),
   ja: pack({
     tasks: 'タスク',
     myProgress: '自分の進捗',
