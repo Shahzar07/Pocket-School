@@ -161,6 +161,19 @@ test('sales-letter jackets use Poket blue and electric cyan', () => {
   assert.match(offerLetter, /ReadsOfferThemeToggle/);
 });
 
+test('the offer page does not name a competitor', () => {
+  const files = [
+    'components/reads-offer/letter.tsx',
+    'app/reads/offer/page.tsx',
+    'lib/reads-offer.ts',
+  ];
+  const banned = /\bKindle\b|\bAmazon\b|\bAudible\b|\bKobo\b|\bScribd\b|\bStorytel\b|\bWattpad\b/i;
+  for (const file of files) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+    assert.equal(banned.test(source), false, `${file} ${source.match(banned)?.[0] ?? ''}`);
+  }
+});
+
 test('sales copy does not target Malaysia', () => {
   assert.equal(READS_OFFER_HEADLINE_LINES.join(' '), READS_OFFER_HEADLINE);
   const files = [

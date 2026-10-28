@@ -9,7 +9,7 @@ export const revalidate = 86400;
 const indexable = readsOfferIndexable();
 
 const TITLE = `Poket Reads — ${READS_OFFER_HEADLINE.replace(/\.$/, '')}`;
-const DESCRIPTION = `${READS_OFFER_HEADLINE} Poket Reads is sold on its own. ${ownOrReadLine()}. Academic titles and stories, and Ask ET. Kindle Unlimited is not sold here.`;
+const DESCRIPTION = `${READS_OFFER_HEADLINE} Poket Reads is sold on its own. ${ownOrReadLine()}. Academic titles and stories, and Ask ET. The plan is PoketReads’ own library, not a third-party subscription.`;
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

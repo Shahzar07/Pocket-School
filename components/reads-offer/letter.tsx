@@ -69,7 +69,7 @@ export function ReadsOfferLetter() {
           {READS_OFFER_HEADLINE}
         </h1>
         <p className="mt-6 text-xl leading-snug text-foreground sm:text-2xl">
-          Poket Reads is the shelf you subscribe to, or the single book you buy once and keep. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here.
+          Poket Reads is the shelf you subscribe to, or the single book you buy once and keep. The plan is PoketReads’ own library. It is not a third-party subscription.
         </p>
         <p className="mt-6 text-[17px] leading-[1.7] text-muted-foreground">
           {ownOrReadLine()} ({readsMoneyWords(readsYearlyUsd('reads'))} a year).
@@ -89,7 +89,7 @@ export function ReadsOfferLetter() {
             You have the reading list. A novel someone actually wants to finish. A biology title the syllabus named. A picture book for the youngest, and a contract chapter that has to sound like English rather than a statute.
           </p>
           <p>
-            Then you open the service everyone else seems to use, and the subscription is not offered. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. The bookshop may have a copy, at a price that makes a weekly shop look gentle. Or it may not have it at all.
+            Then you open a service that will not sell you the subscription. The bookshop may have a copy, at a price that makes a weekly shop look gentle. Or it may not have it at all.
           </p>
           <p>
             The frustrating part is not the desire to read. The frustrating part is paying.
@@ -115,7 +115,7 @@ export function ReadsOfferLetter() {
               The moment it became obvious was small. The books existed. The household was willing to pay. The service that rented those books to the rest of the world simply did not sell that rental. A cheaper coupon for a shop that will not serve you is not a plan. A shelf that is actually for sale is a different opportunity.
             </p>
             <p>
-              That is Poket Reads. Not a code for Kindle. A shelf of our own: stories, general non-fiction, and academic books tagged for the paths students actually walk. You subscribe for the reading shelf, or you buy one book and keep it. You pay by card, or by FPX, GrabPay, Touch &apos;n Go, Boost, ShopeePay or DuitNow, when checkout offers that method for your country and currency.
+              That is Poket Reads. A shelf of our own: stories, general non-fiction, and academic books tagged for the paths students actually walk. You subscribe for the reading shelf, or you buy one book and keep it. You pay by card, or by FPX, GrabPay, Touch &apos;n Go, Boost, ShopeePay or DuitNow, when checkout offers that method for your country and currency.
             </p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export function ReadsOfferLetter() {
               <p className="text-sm font-bold text-primary">Secret three. The outside world.</p>
               <h3 className="mt-2 font-heading text-3xl tracking-[-0.03em]">“The books we need are not on any service I can join.”</h3>
               <p className="mt-4 text-[17px] leading-[1.7]">
-                This one was partly true, and it is the reason the page exists. Kindle Unlimited and Amazon Kids+ are not sold here, so “just subscribe” was never an instruction you could follow. Poket Reads publishes into that gap. New titles are reviewed by a person before they go on the shelf. The interface speaks {READS_OFFER_LANGUAGE_COUNT} languages, and a book can be translated instead of being swapped for a different book. The titles below are ones you can open today, not a promise of a catalogue we have not printed.
+                This one was partly true, and it is the reason the page exists. A third-party reading subscription is not sold here, so “just subscribe” was never an instruction you could follow. Poket Reads publishes into that gap. New titles are reviewed by a person before they go on the shelf. The interface speaks {READS_OFFER_LANGUAGE_COUNT} languages, and a book can be translated instead of being swapped for a different book. The titles below are ones you can open today, not a promise of a catalogue we have not printed.
               </p>
             </li>
           </ol>
@@ -382,7 +382,7 @@ export function ReadsOfferLetter() {
           <OfferCta href="/reads" id="close-shelf" variant="quiet">Browse the shelf</OfferCta>
         </div>
         <p className="mt-10 text-[17px] leading-[1.7]">
-          <strong>P.S.</strong> Kindle Unlimited and Amazon Kids+ are still not sold here. The yearly price on this page is not a launch timer. It is the yearly price on the card.
+          <strong>P.S.</strong> The plan is PoketReads’ own library, and it is not a third-party subscription. The yearly price on this page is not a launch timer. It is the yearly price on the card.
         </p>
         <p className="mt-4 text-[17px] leading-[1.7]">
           <strong>P.P.S.</strong> A book you buy stays after the subscription ends. The first chapter of a published book is free to read before you pay anyone.
