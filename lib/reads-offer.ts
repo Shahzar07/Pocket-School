@@ -176,8 +176,8 @@ export const READS_OFFER_FAQ: OfferFaq[] = [
     answer: 'No. This page sells Poket Reads on its own. Poket School plans use a different checkout. You can subscribe to Reads, or buy a single book, without taking a school plan.',
   },
   {
-    question: 'Why mention Kindle Unlimited and Amazon Kids+?',
-    answer: 'Neither service is sold here. Poket Reads is a shelf you can pay for. Checkout can take a card, FPX, GrabPay, Touch \'n Go, Boost, ShopeePay or DuitNow when that method is offered for your country and currency.',
+    question: 'Is this someone else’s reading subscription?',
+    answer: 'No. The plan is PoketReads’ own library. It is not a third-party subscription. Checkout can take a card, FPX, GrabPay, Touch \'n Go, Boost, ShopeePay or DuitNow when that method is offered for your country and currency.',
   },
   {
     question: 'What does the monthly Reads price include?',
@@ -218,7 +218,7 @@ export const READS_OFFER_FOUNDER = {
   role: 'Founder, Poket School',
   paragraphs: [
     'I am Harry Seggu, founder of Poket School.',
-    'Poket Reads is a shelf we sell on its own. Kindle Unlimited is not sold here. Amazon Kids+ is not sold here. A household can subscribe, or buy one published book and keep it.',
+    'Poket Reads is a shelf we sell on its own. The plan is PoketReads’ own library, and it is not a third-party subscription. A household can subscribe, or buy one published book and keep it.',
     `The figures on this page are the prices in the product. The shelf price for a book is ${readsUsdWords(READS_BOOK_USD)} to buy and keep. A title that stores its own price uses that figure. Reads is ${readsUsdWords(readsMonthlyUsd('reads'))} a month, or ${readsUsdWords(readsYearlyUsd('reads'))} for the year. Reads Family is ${readsUsdWords(readsMonthlyUsd('reads-family'))} a month, or ${readsUsdWords(readsYearlyUsd('reads-family'))} for the year. ${booksVersusUnlimitedLine()}. The subscription opens Primary and Lower Secondary, plus general fiction, non-fiction and children’s stories on that shelf. IGCSE, A-Level and LLB titles can be sampled and bought. They are not included in that monthly price.`,
     'The lines under Read a page are the openings of published chapters. I have not put a customer’s words on this page. We do not have them yet.',
   ],
