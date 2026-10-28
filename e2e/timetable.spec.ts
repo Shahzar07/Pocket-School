@@ -5,14 +5,20 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: `/opt/cursor/artifacts/screenshots/${name}.png`, fullPage: true });
 }
 
+/** Click generate only after the desk has loaded, then wait until the solve has written lessons. */
+async function generateWeek(page: Page) {
+  await expect(page.locator('[data-timetable-ready="1"]')).toBeVisible();
+  await page.locator('[data-action="generate"]').click();
+  await expect(page.locator('[data-timetable]')).toHaveAttribute('data-generated', /^[1-9]/);
+  await expect(page.locator('[data-lesson]').first()).toBeVisible();
+}
+
 test('admin generates, fixes a clash, and approves cover', async ({ page }) => {
   await page.goto('/preview/timetable?surface=institution');
   await page.evaluate(() => window.localStorage.removeItem('poket-timetable-v1'));
   await page.reload();
   await expect(page.locator('[data-timetable="institution"]')).toBeVisible();
-  await page.locator('[data-action="generate"]').click();
-  await expect(page.locator('[data-quality]')).toBeVisible();
-  await expect(page.locator('[data-lesson]').first()).toBeVisible();
+  await generateWeek(page);
   await shot(page, 'timetable-built');
   await expect(page.locator('[data-clash-panel="1"]')).toContainText(TIMETABLE_COPY.noClash);
   const first = page.locator('[data-lesson]').first();
@@ -57,8 +63,7 @@ test('teacher and parent see their own week', async ({ page }) => {
   await page.evaluate(() => window.localStorage.removeItem('poket-timetable-v1'));
   await page.reload();
   await expect(page.locator('[data-timetable="institution"]')).toBeVisible();
-  await page.locator('[data-action="generate"]').click();
-  await expect(page.locator('[data-lesson]').first()).toBeVisible();
+  await generateWeek(page);
   await page.locator('[data-tab="publish"]').click();
   await page.locator('[data-action="publish"]').click();
   await expect(page.locator('[data-feed="1"]')).toContainText(TIMETABLE_COPY.registers);
@@ -73,8 +78,7 @@ test('teacher and parent see their own week', async ({ page }) => {
   await shot(page, 'timetable-parent');
   await page.goto('/preview/timetable?surface=personal');
   await expect(page.locator('[data-timetable="personal"]')).toBeVisible();
-  await page.locator('[data-action="generate"]').click();
-  await expect(page.locator('[data-quality]')).toBeVisible();
+  await generateWeek(page);
   await shot(page, 'timetable-personal');
 });
 
