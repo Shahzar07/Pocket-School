@@ -19,6 +19,11 @@ export const SHORT_HEADLINE = 'Not an emergency service. In danger? Call {local 
 
 export const SHORT_BODY = "Poket School's safety tools are a free community service we provide in good faith. We are a private company, not the police, a school, a counsellor or an emergency service, and we can't guarantee that any alert, report or message will be received, seen or acted on in time.";
 
+/** English only. Malay, Chinese and Tamil copies of this sentence are pending legal review. */
+export const NO_LEGAL_DUTY = 'Poket School is a private company that owes no legal duty of care and provides these tools as a goodwill community service.';
+
+export const NO_LEGAL_DUTY_LOCALES_PENDING = ['ms', 'zh', 'ta'] as const;
+
 export const COMMUNITY_PARTNERS_LINE = "Poket School's safety features are a free community service. We invite community partners to get involved.";
 
 export const FULL_CLAUSES = [
@@ -72,6 +77,7 @@ export function safetyMessageFooter(emergencyNumber: string, origin = 'https://p
   return [
     shortHeadline(emergencyNumber),
     SHORT_BODY,
+    NO_LEGAL_DUTY,
     `Read the full terms: ${safetyTermsUrl(origin)}`,
     COMMUNITY_PARTNERS_LINE,
     `Get involved: ${communityPartnersUrl(origin)}`,

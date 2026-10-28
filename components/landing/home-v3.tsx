@@ -164,7 +164,7 @@ export function HomeV3() {
                   <ul className="mt-3 flex-1 space-y-2">
                     {points.map((point) => (
                       <li key={point} className="flex gap-2 text-sm leading-relaxed text-[#203337] dark:text-[#E7F4F2]">
-                        <Check aria-hidden className="mt-0.5 shrink-0 text-[#3FE0D0]" size={16} />
+                        <Check aria-hidden className="mt-0.5 shrink-0 text-[#1E6A83] dark:text-[#3FE0D0]" size={16} />
                         <span>{point}</span>
                       </li>
                     ))}
