@@ -18,7 +18,7 @@ export function FooterColumns({ tone }: { tone: 'ink' | 'glass' }) {
   const { t } = useTranslation();
   const linkClass = tone === 'glass'
     ? 'text-xs text-white/75 hover:text-white'
-    : 'text-[13px] text-[#203337] hover:text-[#1E6A83] dark:text-[#E7F4F2] dark:hover:text-[#3FE0D0]';
+    : 'block max-w-full break-words text-[13px] text-[#203337] hover:text-[#1E6A83] dark:text-[#E7F4F2] dark:hover:text-[#3FE0D0]';
   const titleClass = tone === 'glass'
     ? 'text-sm font-semibold text-white'
     : 'text-sm font-semibold text-[#203337] dark:text-[#3FE0D0]';

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Plus_Jakarta_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew, DM_Sans, DM_Serif_Display } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew, Noto_Sans_Tamil, DM_Sans, DM_Serif_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AppChrome } from '@/components/app-chrome';
 
@@ -23,6 +23,14 @@ const notoArabic = Noto_Sans_Arabic({
 const notoHebrew = Noto_Sans_Hebrew({
   subsets: ['hebrew'],
   variable: '--font-hebrew',
+  weight: ['400', '600', '700'],
+  display: 'swap',
+  preload: false,
+});
+
+const notoTamil = Noto_Sans_Tamil({
+  subsets: ['tamil'],
+  variable: '--font-tamil',
   weight: ['400', '600', '700'],
   display: 'swap',
   preload: false,
@@ -70,7 +78,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, notoArabic.variable, notoHebrew.variable, dmSans.variable, dmSerif.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, notoArabic.variable, notoHebrew.variable, notoTamil.variable, dmSans.variable, dmSerif.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
         <AppChrome>{children}</AppChrome>
       </body>
