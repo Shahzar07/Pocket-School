@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { authedFetch, postJSON } from '@/lib/authed-fetch';
 import { BRAND } from '@/lib/brand';
 import { useAuthSTORE } from '@/hooks/use-auth';
-import { COMMUNITY_PARTNERS_LINE, SHORT_BODY, UNDER_13_DISCLAIMER, shortHeadline } from '@/lib/safety/disclaimer';
+import { COMMUNITY_PARTNERS_LINE, NO_LEGAL_DUTY, SHORT_BODY, UNDER_13_DISCLAIMER, shortHeadline } from '@/lib/safety/disclaimer';
 
 function useUnder13(): boolean {
   const user = useAuthSTORE(state => state.user);
@@ -22,6 +22,7 @@ export function SafetyDisclaimerFooter({ emergencyNumber = '999' }: { emergencyN
         <>
           <p className="font-semibold">{shortHeadline(emergencyNumber)}</p>
           <p>{SHORT_BODY}</p>
+          <p>{NO_LEGAL_DUTY}</p>
         </>
       )}
       <a className="font-semibold text-primary" href="/safety-terms">Read the full terms</a>

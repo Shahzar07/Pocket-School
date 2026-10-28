@@ -706,7 +706,7 @@ export default function SignupPage() {
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={e => setDob(e.target.value)} disabled={loading} />
               {tooYoung && (
-                <p className="text-xs text-[#3FE0D0]">{t('signup.tooYoung')}</p>
+                <p className="rounded-lg bg-[#E9F7FA] px-3 py-2 text-xs font-semibold text-[#1E6A83] dark:bg-[#122226] dark:text-[#E7F4F2]">{t('signup.tooYoung')}</p>
               )}
               {isMinor && !tooYoung && (
                 <p className="text-xs text-[var(--ps-cyan-text)] flex items-start gap-1.5">

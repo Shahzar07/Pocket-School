@@ -16,6 +16,7 @@ import {
   type WallActor,
 } from '@/lib/wall/live';
 import { wallHandle } from '@/lib/wall/live-shape';
+import { NO_LEGAL_DUTY } from '@/lib/safety/disclaimer';
 import {
   BadgeCheck, Bell, Bookmark, CalendarDays, Globe2, ImagePlus, Lock, MapPin,
   MessageCircle, MoreHorizontal, School, Send, Share2, Smile, Users,
@@ -361,6 +362,7 @@ export function WallScreen({
         <SideCard title="Poket SafeLine">
           <p className="text-sm text-[#203337]">Report a post, or open SafeLine if something feels wrong.</p>
           <p className="mt-2 text-xs font-semibold text-[#203337]">Not an emergency service. In danger? Call 999.</p>
+          <p className="mt-2 text-xs text-[#203337]">{NO_LEGAL_DUTY}</p>
           <Link href="/safety-terms" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">Safety terms</Link>
         </SideCard>
         <SideCard title="Notifications">

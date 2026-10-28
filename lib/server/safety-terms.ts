@@ -12,6 +12,8 @@ import {
   SAFETY_TERMS_STATUS,
   SAFETY_TERMS_TITLE,
   SAFETY_TERMS_VERSION,
+  NO_LEGAL_DUTY,
+  NO_LEGAL_DUTY_LOCALES_PENDING,
   SHORT_BODY,
   SHORT_HEADLINE,
   UNDER_13_DISCLAIMER,
@@ -50,6 +52,8 @@ export async function ensureCurrentTerms() {
     under13: UNDER_13_DISCLAIMER,
     shortHeadline: SHORT_HEADLINE,
     shortBody: SHORT_BODY,
+    noLegalDuty: NO_LEGAL_DUTY,
+    noLegalDutyLocalesPending: [...NO_LEGAL_DUTY_LOCALES_PENDING],
     clauses: [...FULL_CLAUSES],
     updatedAt: now,
   };

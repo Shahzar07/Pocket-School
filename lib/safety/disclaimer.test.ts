@@ -7,6 +7,7 @@ import {
   PENDING_LEGAL_REVIEW,
   SAFETY_TERMS_STATUS,
   SAFETY_TERMS_TITLE,
+  NO_LEGAL_DUTY,
   SHORT_BODY,
   UNDER_13_DISCLAIMER,
   UNGATED_EMERGENCY_ACTIONS,
@@ -34,6 +35,8 @@ test('the short footer and the under-13 line are the supplied sentences', () => 
   const footer = safetyMessageFooter('999');
   assert.match(footer, /Call 999 now/);
   assert.match(footer, new RegExp(SHORT_BODY.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.equal(NO_LEGAL_DUTY, 'Poket School is a private company that owes no legal duty of care and provides these tools as a goodwill community service.');
+  assert.match(footer, new RegExp(NO_LEGAL_DUTY.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(footer, /https:\/\/poketschool\.ai\/safety-terms/);
   assert.match(safetyDeskEmailText('Confidential notice', '999'), /\/safety-terms/);
   assert.match(safetyDeskSmsText('Safety Desk', '999'), /\/safety-terms/);
