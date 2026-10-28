@@ -41,6 +41,7 @@ export function EtCanvas({ name, actor, editorHref = STUDIO_TIMETABLE }: { name:
   };
   const gate = studioTimetableGate(resolved);
   const [tab, setTab] = useState<Tab>('ask');
+  const [ready, setReady] = useState(false);
   const [subject, setSubject] = useState<string>(ET_COPY.subjects[0]);
   const [text, setText] = useState('');
   const [reply, setReply] = useState('');
@@ -50,6 +51,8 @@ export function EtCanvas({ name, actor, editorHref = STUDIO_TIMETABLE }: { name:
   const first = name.trim().split(' ')[0] || 'there';
   const showTimetable = gate !== 'hidden';
   const face = AI_TEACHERS.find((teacher) => teacher.id === (SUBJECT_FACE[subject] || 'et-ai')) ?? AI_TEACHERS[AI_TEACHERS.length - 1];
+
+  useEffect(() => { setReady(true); }, []);
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search).get('q');
@@ -139,7 +142,7 @@ export function EtCanvas({ name, actor, editorHref = STUDIO_TIMETABLE }: { name:
   };
 
   return (
-    <div className="flex h-[calc(100dvh-3rem)] flex-col bg-[#0B1417] text-white" data-et-canvas="1">
+    <div className="flex h-[calc(100dvh-3rem)] flex-col bg-[#0B1417] text-white" data-et-canvas="1" data-studio-ready={ready ? '1' : '0'}>
       <div className="flex flex-wrap gap-2 px-4 pt-4" role="tablist" aria-label={ET_COPY.ask} data-studio-header="1">
         {(['ask', 'exams', 'apps', 'more'] as const).map((item) => (
           <button

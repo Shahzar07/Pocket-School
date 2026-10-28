@@ -9,6 +9,10 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: `/opt/cursor/artifacts/screenshots/${name}.png`, fullPage: true });
 }
 
+async function studioReady(page: Page) {
+  await expect(page.locator('[data-studio-ready="1"]')).toBeVisible();
+}
+
 test('ET AI drafts an IGCSE week and waits for confirm', async ({ page }) => {
   await page.addInitScript(() => {
     class FakeSpeech {
@@ -23,6 +27,7 @@ test('ET AI drafts an IGCSE week and waits for confirm', async ({ page }) => {
   await page.goto('/preview/studio?gate=school');
   await page.evaluate(() => window.localStorage.removeItem('poket-timetable-v1'));
   await page.reload();
+  await studioReady(page);
   await expect(page.locator('[data-studio-tab="timetable"]')).toBeVisible();
   await page.locator('[data-action="studio-quick"]').click();
   await expect(page.locator('[data-preview-diff="1"]')).toContainText('IGCSE');
@@ -57,6 +62,7 @@ test('a photographed timetable previews before it is saved', async ({ page }) =>
   await page.goto('/preview/studio?gate=school');
   await page.evaluate(() => window.localStorage.removeItem('poket-timetable-v1'));
   await page.reload();
+  await studioReady(page);
   await page.locator('[data-studio-tab="timetable"]').click();
   await page.locator('[data-action="photo-timetable"]').setInputFiles('/tmp/paper-timetable.png');
   await expect(page.locator('[data-preview-diff="1"]')).toContainText('Primary 2');
@@ -68,6 +74,7 @@ test('a photographed timetable previews before it is saved', async ({ page }) =>
 
 test('the timetabler stays an upsell until the add-on is included', async ({ page }) => {
   await page.goto('/preview/studio?gate=upsell');
+  await studioReady(page);
   await expect(page.locator('[data-studio-tab="timetable"]')).toBeVisible();
   await page.locator('[data-action="studio-quick"]').click();
   await expect(page.locator('[data-upsell="1"]')).toContainText(TIMETABLE_COPY.priceNote);
