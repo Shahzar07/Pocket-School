@@ -334,7 +334,7 @@ const ms = {
       formatsLabel: 'Termasuk pembangunan profesional berterusan dan pembelajaran kendiri',
       teachersLabel: 'Guru ET AI',
       languagesLabel: 'Bahasa dalam produk',
-      annual: 'Bil tahunan menjimatkan 25 peratus.',
+      annual: 'Bil tahunan jimat 25 peratus.',
       solveTag: 'Kami selesaikan ini',
       solveTitle: 'Masalah yang pelajar, ibu bapa, dan sekolah benar-benar hadapi.',
       solveBody: 'Tiada statistik yang direka. Alat untuk latihan peperiksaan, pandangan ibu bapa, dan cara melaporkan kebimbangan.',

@@ -660,6 +660,12 @@ html[dir='rtl'] {
 html[dir='rtl'][lang='he'] {
   font-family: var(--font-hebrew), var(--font-sans), sans-serif;
 }
+/* Latin faces do not cover Tamil, and their Arial fallback paints empty boxes. */
+html[lang|='ta'],
+html[lang|='ta'] body,
+html[lang|='ta'] .font-sans {
+  font-family: var(--font-tamil), var(--font-sans), sans-serif;
+}
 html[dir='rtl'] .text-left { text-align: right; }
 html[dir='rtl'] .text-right { text-align: left; }
 html[dir='rtl'] .left-0 { left: auto; right: 0; }
