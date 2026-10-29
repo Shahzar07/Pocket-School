@@ -35,6 +35,9 @@ test('the cookie banner and the Pip card fit at 390 and do not cover each other'
     const cookie = page.getByRole('dialog', { name: 'Cookie consent' });
     await expect(cookie).toBeVisible();
     inside(await cookie.boundingBox(), 390, 844);
+    for (const name of ['Accept all', 'Manage preferences', 'Reject optional']) {
+      await expect.poll(async () => (await page.getByRole('button', { name }).boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(40);
+    }
     const pip = page.locator('[data-pip-card]');
     await expect(pip).toHaveCount(0);
     expect(await overlaps(cookie, pip)).toBe(false);

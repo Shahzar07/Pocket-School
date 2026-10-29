@@ -103,7 +103,7 @@ export const TIMETABLE_COPY = {
   addStaff: 'Add staff',
   noticesEmpty: 'No notices queued.',
   coverEmpty: 'Cover load appears after you add staff.',
-  modelNote: 'A live ET AI paragraph needs OPENROUTER_API_KEY. The timetable itself is placed without that key.',
+  modelNote: 'The timetable is placed without an AI call. A written explanation is added only when AI is configured on the server.',
   assignmentLink: 'Assignments',
   examLink: 'Exams',
   attendanceLink: 'Attendance',
