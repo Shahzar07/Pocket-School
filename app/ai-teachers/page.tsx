@@ -27,6 +27,8 @@ import { portraitAlt, teacherPortrait } from '@/lib/teacher-portrait';
 import Image from 'next/image';
 import {
   AI_TEACHERS,
+  teacherRosterCount,
+  teacherShowingLine,
   CEFR_BANNER,
   CEFR_LEVELS,
   TEACHER_CATEGORIES,
@@ -99,11 +101,11 @@ export default function AiTeachersPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FE0D0] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FE0D0]" />
               </span>
-              30+ AVAILABLE NOW
+              {teacherRosterCount()} AVAILABLE NOW
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-black/[0.04]">
               <Sparkles className="w-3.5 h-3.5 text-[var(--ps-cyan-text)]" />
-              30+ SUBJECTS
+              {teacherRosterCount()} SUBJECTS
             </span>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-black/[0.04]">
               <Mic className="w-3.5 h-3.5 text-primary" />
@@ -126,7 +128,7 @@ export default function AiTeachersPage() {
               </h2>
             </div>
             <p className="text-sm font-semibold text-muted-foreground">
-              Showing {visible.length} of 30+
+              {teacherShowingLine(visible.length)}
             </p>
           </div>
 

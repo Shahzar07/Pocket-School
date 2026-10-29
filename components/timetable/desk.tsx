@@ -30,8 +30,9 @@ type Tab = 'setup' | 'options' | 'generate' | 'grid' | 'cover' | 'publish';
 
 const button = 'h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50';
 const ghost = 'h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0]/50 dark:text-[#3FE0D0]';
-const field = 'h-10 w-full rounded-xl border border-[#1E6A83]/30 bg-white px-3 text-sm text-[#203337] dark:border-[#3FE0D0]/30 dark:bg-[#122226] dark:text-[#E7F4F2] dark:[color-scheme:dark]';
-const card = 'space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4 text-[#203337] dark:border-[#3FE0D0]/25 dark:bg-[#122226] dark:text-[#E7F4F2]';
+const field = 'h-10 w-full rounded-xl border border-[#1E6A83]/30 bg-white px-3 text-sm text-[#203337] dark:border-[#3FE0D0]/30 dark:bg-[#0B1417] dark:text-[#E7F4F2] dark:[color-scheme:dark]';
+const panel = 'rounded-3xl border border-[#1E6A83]/20 bg-white p-4 text-[#203337] dark:border-[#3FE0D0]/25 dark:bg-[#122226] dark:text-[#E7F4F2]';
+const card = `${panel} space-y-3`;
 
 function stamp(): string {
   return new Date().toISOString();
@@ -261,14 +262,14 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
       {tab === 'setup' ? <Setup doc={doc} csv={csv} setCsv={setCsv} multi={multi} onCommit={commit} /> : null}
       {tab === 'options' ? <Options doc={doc} actor={actor} onCommit={commit} /> : null}
       {tab === 'generate' ? (
-        <section className="space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4">
+        <section className={card}>
           <button type="button" className={button} data-action="generate" onClick={generate}>{TIMETABLE_COPY.generate}</button>
           <label className="block text-sm font-semibold">{TIMETABLE_COPY.constraintLabel}
             <input className={`${field} mt-1`} value={constraint} onChange={event => setConstraint(event.target.value)} />
           </label>
           <button type="button" className={ghost} data-action="constraint" onClick={applyConstraint}>{TIMETABLE_COPY.constraintButton}</button>
           <p className="text-sm" data-explanation="1">{doc.explanation || notice}</p>
-          <p className="text-xs text-[#1E6A83]">{TIMETABLE_COPY.modelNote}</p>
+          <p className="text-xs text-[#1E6A83] dark:text-[#E7F4F2]">{TIMETABLE_COPY.modelNote}</p>
           <Quality doc={doc} fixes={fixes} />
         </section>
       ) : null}
@@ -283,7 +284,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
             </label>
           ) : null}
           <TimetableGrid doc={doc} lessons={lessons} selectedId={selected} onSelect={setSelected} onMove={editing || privateMode ? move : () => undefined} />
-          <aside className="tt-no-print rounded-3xl border border-[#1E6A83]/20 bg-white p-4" data-clash-panel="1">
+          <aside className={`${card} tt-no-print`} data-clash-panel="1">
             <h2 className="font-semibold">{TIMETABLE_COPY.clashTitle}</h2>
             {attempt.length === 0 && clashes.length === 0 ? <p className="mt-2 text-sm">{TIMETABLE_COPY.noClash}</p> : null}
             {attempt.length > 0 ? <p className="mt-2 text-sm" data-blocked="1">{TIMETABLE_COPY.blocked}</p> : null}
@@ -337,7 +338,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         />
       ) : null}
       {tab === 'publish' ? (
-        <section className="space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4">
+        <section className={card}>
           <p data-status={doc.status}>{doc.status === 'published' ? TIMETABLE_COPY.published : TIMETABLE_COPY.draft} · {TIMETABLE_COPY.version} {doc.publishedVersion ?? doc.version}</p>
           {editing || privateMode ? <button type="button" className={button} data-action="publish" onClick={publish} disabled={doc.lessons.length === 0}>{TIMETABLE_COPY.publish}</button> : null}
           <button type="button" className={ghost} data-action="ical" onClick={downloadIcal}>{TIMETABLE_COPY.ical}</button>
@@ -400,7 +401,7 @@ function Quality({ doc, fixes }: { doc: TimetableDoc; fixes: string[] }) {
       {doc.unmet.length === 0 ? <p className="text-sm">{TIMETABLE_COPY.noneUnmet}</p> : (
         <ul className="text-sm">{doc.unmet.map(line => <li key={line}>{line}</li>)}</ul>
       )}
-      {fixes.length > 0 ? <ul className="text-sm text-[#1E6A83]">{fixes.map(line => <li key={line}>{line}</li>)}</ul> : null}
+      {fixes.length > 0 ? <ul className="text-sm text-[#1E6A83] dark:text-[#E7F4F2]">{fixes.map(line => <li key={line}>{line}</li>)}</ul> : null}
     </div>
   );
 }
@@ -431,7 +432,7 @@ function Options({ doc, actor, onCommit }: { doc: TimetableDoc; actor: Timetable
   })).filter(wish => wish.subjectIds.length > 0);
   const plan = wishes.length ? suggestBlocks(doc.optionSubjects, wishes, 3) : null;
   return (
-    <section className="space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4" data-options="1">
+    <section className={card} data-options="1">
       {doc.blocks.map(block => (
         <fieldset key={block.id}>
           <legend className="text-sm font-semibold">{block.name}</legend>
@@ -587,7 +588,7 @@ function Setup({
   const [staff, setStaff] = useState({ name: '', subjects: 'Maths', levels: 'IGCSE', maxPerDay: '4', maxPerWeek: '16' });
   const [subject, setSubject] = useState({ name: '', level: 'IGCSE', periods: '2', roomType: 'classroom' as RoomType, groupId: doc.groups[0]?.id ?? '' });
   return (
-    <section className="space-y-4 rounded-3xl border border-[#1E6A83]/20 bg-white p-4" data-setup="1">
+    <section className={`${panel} space-y-4`} data-setup="1">
       <p className="text-sm">{TIMETABLE_COPY.setupDays}: {doc.days.map(day => DAY_LABEL[day]).join(', ')}</p>
       <div>
         <h2 className="font-semibold">{TIMETABLE_COPY.setupPeriods}</h2>
