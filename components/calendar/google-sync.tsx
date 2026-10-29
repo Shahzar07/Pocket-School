@@ -28,6 +28,11 @@ declare global {
 }
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly';
+/** Blue on white in light mode. Mist on ink in dark mode so the note stays AA. */
+const onInk = 'text-[#1E6A83] dark:text-[#E7F4F2]';
+const outline = 'h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#E7F4F2]/40 dark:text-[#E7F4F2]';
+/** Light mode stays faded. Dark mode uses a quieter mist that still clears AA on #122226. */
+const outlineMuted = `${outline} disabled:opacity-50 dark:disabled:opacity-100 dark:disabled:border-[#8FB8B4] dark:disabled:text-[#8FB8B4]`;
 
 async function loadGis(): Promise<void> {
   if (window.google?.accounts?.oauth2) return;
@@ -178,7 +183,7 @@ export function GoogleCalendarSync({
       {status.configured && !status.connected ? (
         <button type="button" className="h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" data-action="google-connect" onClick={() => void connect()}>{GOOGLE_CALENDAR_COPY.connect}</button>
       ) : null}
-      <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] disabled:opacity-50 dark:border-[#3FE0D0]/50 dark:text-[#E7F4F2]" data-action="google-sync" disabled={!status.connected} onClick={() => void sync()}>{GOOGLE_CALENDAR_COPY.sync}</button>
+      <button type="button" className={outlineMuted} data-action="google-sync" disabled={!status.connected} onClick={() => void sync()}>{GOOGLE_CALENDAR_COPY.sync}</button>
       {status.connected ? (
         <div className="space-y-2 text-sm">
           <p className="font-semibold">{GOOGLE_CALENDAR_COPY.types}</p>
@@ -202,26 +207,26 @@ export function GoogleCalendarSync({
             <input type="checkbox" checked={status.freeBusyOptIn} onChange={event => void pull(event.target.checked)} />
             {GOOGLE_CALENDAR_COPY.freeBusy}
           </label>
-          <p className="text-xs text-[#1E6A83]">{GOOGLE_CALENDAR_COPY.freeBusyNote}</p>
+          <p className={`text-xs ${onInk}`}>{GOOGLE_CALENDAR_COPY.freeBusyNote}</p>
           <label className="block text-sm font-semibold">{GOOGLE_CALENDAR_COPY.absenceKeyword}
             <input className="mt-1 h-10 w-full rounded-xl border border-[#1E6A83]/30 px-3 text-sm" value={keyword} aria-label={GOOGLE_CALENDAR_COPY.absenceKeyword} onChange={event => setKeyword(event.target.value)} onBlur={() => void saveSettings(status.toggles, status.freeBusyOptIn)} />
           </label>
           <label className="block text-sm font-semibold">{GOOGLE_CALENDAR_COPY.absenceCalendar}
             <input className="mt-1 h-10 w-full rounded-xl border border-[#1E6A83]/30 px-3 text-sm" value={absenceCalendarId} aria-label={GOOGLE_CALENDAR_COPY.absenceCalendar} onChange={event => setAbsenceCalendarId(event.target.value)} onBlur={() => void saveSettings(status.toggles, status.freeBusyOptIn)} />
           </label>
-          <p className="text-xs text-[#1E6A83]">{GOOGLE_CALENDAR_COPY.absenceNote}</p>
+          <p className={`text-xs ${onInk}`}>{GOOGLE_CALENDAR_COPY.absenceNote}</p>
           <p data-absences={absences.length} data-applied="0">{absences.length > 0 ? GOOGLE_CALENDAR_COPY.absenceQueued : null}</p>
-          <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" data-action="google-disconnect" onClick={() => void post('disconnect', {}).then(() => { setMessage(GOOGLE_CALENDAR_COPY.disconnected); load(); })}>{GOOGLE_CALENDAR_COPY.disconnect}</button>
+          <button type="button" className={outline} data-action="google-disconnect" onClick={() => void post('disconnect', {}).then(() => { setMessage(GOOGLE_CALENDAR_COPY.disconnected); load(); })}>{GOOGLE_CALENDAR_COPY.disconnect}</button>
         </div>
       ) : null}
       <p className="text-sm">{GOOGLE_CALENDAR_COPY.lastSync}: {status.lastSyncAt ?? GOOGLE_CALENDAR_COPY.neverSynced}</p>
       <p className="text-sm" data-google-error="1">{GOOGLE_CALENDAR_COPY.lastError}: {status.lastError ?? GOOGLE_CALENDAR_COPY.noError}</p>
-      {message ? <p className="text-sm text-[#1E6A83]" data-google-message="1">{message}</p> : null}
+      {message ? <p className={`text-sm ${onInk}`} data-google-message="1">{message}</p> : null}
       <div>
         <h3 className="font-semibold">{GOOGLE_CALENDAR_COPY.feedTitle}</h3>
-        <p className="text-sm text-[#1E6A83]">{GOOGLE_CALENDAR_COPY.feedNote}</p>
+        <p className={`text-sm ${onInk}`} data-feed-note="1">{GOOGLE_CALENDAR_COPY.feedNote}</p>
         {status.feedUrl ? <p className="mt-1 break-all text-xs" data-feed-url="1">{status.feedUrl}</p> : null}
-        <button type="button" className="mt-2 h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" data-action="google-regenerate" onClick={() => void post('feed', { ics, regenerate: true }).then(({ response, data }) => {
+        <button type="button" className={`mt-2 ${outline}`} data-action="google-regenerate" onClick={() => void post('feed', { ics, regenerate: true }).then(({ response, data }) => {
           if (response.status === 401) setMessage(GOOGLE_CALENDAR_COPY.signIn);
           else if (data.url) setStatus(current => ({ ...current, feedUrl: data.url ?? null }));
         })}>{GOOGLE_CALENDAR_COPY.regenerate}</button>
@@ -235,7 +240,7 @@ export function GoogleCalendarSync({
           <label className="block text-sm font-semibold">{GOOGLE_CALENDAR_COPY.eventsCalendar}
             <input className="mt-1 h-10 w-full rounded-xl border border-[#1E6A83]/30 px-3 text-sm" value={eventsCalendarId} aria-label={GOOGLE_CALENDAR_COPY.eventsCalendar} onChange={event => setEventsCalendarId(event.target.value)} />
           </label>
-          <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" data-action="google-workspace" onClick={() => void post('workspace', {
+          <button type="button" className={outline} data-action="google-workspace" onClick={() => void post('workspace', {
             institutionId,
             roomCalendarId,
             eventsCalendarId,
