@@ -18,12 +18,12 @@ export function TimetableGrid({
 }) {
   return (
     <div className="overflow-x-auto" data-print-root="1">
-      <table className="w-full min-w-[720px] border-collapse text-sm text-[#203337]">
+      <table className="w-full min-w-[720px] border-collapse text-sm text-[#203337] dark:text-[#E7F4F2]">
         <thead>
           <tr>
-            <th className="border border-[#1E6A83]/20 bg-[#E9F7FA] p-2 text-left">{TIMETABLE_COPY.setupPeriods}</th>
+            <th className="border border-[#1E6A83]/20 bg-[#E9F7FA] p-2 text-left dark:border-[#3FE0D0]/25 dark:bg-[#122226]">{TIMETABLE_COPY.setupPeriods}</th>
             {doc.days.map(day => (
-              <th key={day} className="border border-[#1E6A83]/20 bg-[#E9F7FA] p-2 text-left">{DAY_LABEL[day]}</th>
+              <th key={day} className="border border-[#1E6A83]/20 bg-[#E9F7FA] p-2 text-left dark:border-[#3FE0D0]/25 dark:bg-[#122226]">{DAY_LABEL[day]}</th>
             ))}
           </tr>
         </thead>
@@ -64,10 +64,10 @@ export function TimetableGrid({
                               if (selectedId && selectedId !== lesson.id) onMove(selectedId, day, period.id);
                               else onSelect(lesson.id);
                             }}
-                            className={`mb-1 w-full rounded-xl px-2 py-1 text-left ${selectedId === lesson.id ? 'bg-[#3FE0D0]' : 'bg-[#E9F7FA]'}`}
+                            className={`mb-1 w-full rounded-xl px-2 py-1 text-left text-[#203337] ${selectedId === lesson.id ? 'bg-[#3FE0D0]' : 'bg-[#E9F7FA] dark:bg-[#1A3338] dark:text-[#E7F4F2]'}`}
                           >
                             <span className="block font-semibold">{subject ? `${subject.name} — ${subject.level}` : lesson.subjectId}</span>
-                            <span className="block text-xs text-[#1E6A83]">{teacher?.name} · {room?.name}</span>
+                            <span className="block text-xs text-[#1E6A83] dark:text-[#E7F4F2]">{teacher?.name} · {room?.name}</span>
                           </button>
                         );
                       })}

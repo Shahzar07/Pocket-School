@@ -172,13 +172,13 @@ export function GoogleCalendarSync({
   };
 
   return (
-    <section className="space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4 text-[#203337]" data-google-sync={source} data-google-state={status.configured ? (status.connected ? 'connected' : 'ready') : 'unconfigured'}>
+    <section className="space-y-3 rounded-3xl border border-[#1E6A83]/20 bg-white p-4 text-[#203337] dark:border-[#3FE0D0]/25 dark:bg-[#122226] dark:text-[#E7F4F2]" data-google-sync={source} data-google-state={status.configured ? (status.connected ? 'connected' : 'ready') : 'unconfigured'}>
       <h2 className="font-semibold">{GOOGLE_CALENDAR_COPY.calendarName}</h2>
       {status.configured ? null : <p data-google-unconfigured="1">{GOOGLE_CALENDAR_COPY.notConfigured}</p>}
       {status.configured && !status.connected ? (
         <button type="button" className="h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" data-action="google-connect" onClick={() => void connect()}>{GOOGLE_CALENDAR_COPY.connect}</button>
       ) : null}
-      <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] disabled:opacity-50" data-action="google-sync" disabled={!status.connected} onClick={() => void sync()}>{GOOGLE_CALENDAR_COPY.sync}</button>
+      <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] disabled:opacity-50 dark:border-[#3FE0D0]/50 dark:text-[#E7F4F2]" data-action="google-sync" disabled={!status.connected} onClick={() => void sync()}>{GOOGLE_CALENDAR_COPY.sync}</button>
       {status.connected ? (
         <div className="space-y-2 text-sm">
           <p className="font-semibold">{GOOGLE_CALENDAR_COPY.types}</p>

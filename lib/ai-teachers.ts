@@ -343,6 +343,22 @@ export const AI_TEACHERS: AiTeacher[] = [
   }),
 ];
 
+/** How many teachers the public faculty list actually contains. */
+export function teacherRosterCount(): number {
+  return AI_TEACHERS.length;
+}
+
+/** Filter line. The total is the roster, never a rounded marketing floor. */
+export function teacherShowingLine(visible: number, total = teacherRosterCount()): string {
+  if (!Number.isInteger(visible) || visible < 0 || visible > total) {
+    throw new Error('Visible teacher count is outside the roster.');
+  }
+  if (!Number.isInteger(total) || total < 1) {
+    throw new Error('Teacher total must be the roster size.');
+  }
+  return `Showing ${visible} of ${total}`;
+}
+
 /** Floating tutor in the dashboard. Built by hand so it does not shift the catalog voices. */
 export const ET_AI_TUTOR: AiTeacher = {
   id: 'et-ai',
