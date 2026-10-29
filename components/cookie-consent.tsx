@@ -157,31 +157,31 @@ export function CookieConsent() {
                 )}
               </AnimatePresence>
 
-              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <button
                   onClick={acceptAll}
-                  className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity"
+                  className="h-11 w-full shrink-0 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 sm:flex-1"
                 >
                   {t('cookie.acceptAll')}
                 </button>
                 {managing ? (
                   <button
                     onClick={() => persist(prefs)}
-                    className="flex-1 h-10 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+                    className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:flex-1"
                   >
                     {t('cookie.saveChoices')}
                   </button>
                 ) : (
                   <button
                     onClick={() => setManaging(true)}
-                    className="flex-1 h-10 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+                    className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:flex-1"
                   >
                     {t('cookie.manage')}
                   </button>
                 )}
                 <button
                   onClick={rejectAll}
-                  className="flex-1 h-10 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted sm:flex-1"
                 >
                   {t('cookie.reject')}
                 </button>
