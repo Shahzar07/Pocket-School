@@ -84,8 +84,8 @@ export function HomeV3() {
               className="mt-4 max-w-xl text-[36px] font-medium leading-[1.08] tracking-[-0.02em] sm:text-[56px] sm:leading-[1.05] sm:tracking-[-0.03em]"
               style={clusterScript ? { ...display, overflowWrap: 'anywhere' } : display}
             >
-              <span className="block">{t('home.v3.title')}</span>
-              <span className="mt-2 inline decoration-[#3FE0D0] decoration-4 underline-offset-[6px] underline">& {t('home.v3.titleEm')}</span>
+              <span className="block">{t('home.v3.title')}{' & '}</span>
+              <span className="mt-2 inline decoration-[#3FE0D0] decoration-4 underline-offset-[6px] underline">{t('home.v3.titleEm')}</span>
             </h1>
             <p className="mt-6 max-w-xl text-base font-normal leading-7 text-[#203337] dark:text-[#E7F4F2]">{t('home.v3.lede')}</p>
             <p className="mt-3 max-w-xl text-sm leading-5 text-[#5F7074] dark:text-[#93A7AB]">{t('home.v3.cred')}</p>
