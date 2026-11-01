@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthSTORE } from "@/hooks/use-auth";
-import { Globe, Menu, X, ArrowRight } from "lucide-react";
+import { IconArrow, IconClose, IconMark, IconMenu } from "@/components/design/icons";
 import { useTranslation } from "react-i18next";
 import { isAdmin } from "@/lib/roles";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -59,16 +59,8 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const { user, profile } = useAuthSTORE();
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 72);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -128,14 +120,13 @@ export function SiteHeader() {
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand}>
             <span className={styles.mark} aria-hidden>
-              <Globe size={16} />
+              <IconMark size={16} />
             </span>
             <span>
               Poket School <small>/ AI</small>
             </span>
           </Link>
-          {!isLanding && (
-            <nav className={styles.desktopNav} aria-label={t("header.mainNav")}>
+          <nav className={styles.desktopNav} aria-label={t("header.mainNav")}>
               <Link href="/">{t("header.home")}</Link>
               <Link href="/courses">{t("header.courses")}</Link>
               <Link href="/ai-studio">{t("header.aiStudio")}</Link>
@@ -155,18 +146,17 @@ export function SiteHeader() {
                   ))}
                 </div>
               </details>
-            </nav>
-          )}
+          </nav>
           <div className={styles.headerTools}>
-            <LanguageSwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
-            <CurrencySwitcher tone={isLanding && !scrolled ? "onDark" : "default"} />
-            <ThemeToggle onDark={isLanding && !scrolled} />
+            <LanguageSwitcher tone="default" />
+            <CurrencySwitcher tone="default" />
+            <ThemeToggle />
           </div>
           {!user && (
             <Link className={styles.headerSign} href="/login">{t("header.signIn")}</Link>
           )}
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
-            {user ? t("header.dashboard") : t("header.startFree")} <ArrowRight size={14} className="ps-dir-icon" />
+            {user ? t("header.dashboard") : t("header.startFree")} <IconArrow size={14} className="ps-dir-icon" />
           </Link>
           <button
             className={styles.menuButton}
@@ -177,7 +167,7 @@ export function SiteHeader() {
             aria-controls="site-navigation"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <X /> : <Menu />}
+            {mobileOpen ? <IconClose size={18} /> : <IconMenu size={18} />}
           </button>
         </div>
         {mobileOpen && (
@@ -212,7 +202,7 @@ export function SiteHeader() {
       </header>
       {/* The header is fixed, so non-landing pages need a spacer the height
           of the scrolled bar: 16px padding, ~44px content, 16px padding. */}
-      {!isLanding && <div className="h-[76px]" aria-hidden />}
+      {!isLanding && <div className="h-24" aria-hidden />}
     </>
   );
 }

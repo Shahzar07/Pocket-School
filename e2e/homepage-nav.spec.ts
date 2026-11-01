@@ -9,20 +9,21 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('the homepage header scrolls away and other pages keep it fixed', async ({ page }) => {
+test('the homepage header stays a fixed pill and other pages keep it fixed', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const header = page.locator('[data-site-header]');
   await expect(header).toHaveAttribute('data-site-header', 'flow');
   const homePosition = await header.evaluate((node) => getComputedStyle(node).position);
-  expect(homePosition).toBe('absolute');
+  expect(homePosition).toBe('fixed');
   await page.evaluate(() => {
     document.documentElement.style.scrollBehavior = 'auto';
     window.scrollTo(0, 900);
   });
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800);
   const top = await header.evaluate((node) => node.getBoundingClientRect().top);
-  expect(top).toBeLessThan(0);
+  expect(top).toBeGreaterThanOrEqual(0);
+  expect(top).toBeLessThan(24);
 
   await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
   const fixed = page.locator('[data-site-header]');
@@ -46,10 +47,12 @@ test('public profile pages hide the site header', async ({ page }) => {
   await expect(page.getByRole('banner')).toHaveCount(0);
 });
 
-test('the landing page has no menu bar and no scrollbar', async ({ page }) => {
+test('the landing pill nav fits without a scrollbar', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 800 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await expect(nav).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Home', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /navigation/i })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Poket School', exact: false }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Change language' })).toBeVisible();

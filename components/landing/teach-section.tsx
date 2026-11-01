@@ -8,8 +8,6 @@ import {
 } from 'lucide-react';
 import { DuoIcon } from '@/components/landing/duo-icon';
 
-const serif = { fontFamily: 'var(--font-dm-serif), Georgia, serif' } as const;
-
 const INTELLIGENCES = [
   { key: 'home.v3.miLogical', icon: Calculator },
   { key: 'home.v3.miLinguistic', icon: Languages },
@@ -44,13 +42,13 @@ export function TeachSection() {
     <section id="how-we-teach" data-landing-teach className="bg-[#F4FBFA] px-6 py-16 dark:bg-[#122226]">
       <div className="mx-auto max-w-5xl">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{t('home.v3.teachEyebrow')}</p>
-        <h2 className="mt-2 max-w-2xl text-3xl text-[#203337] sm:text-4xl dark:text-[#E7F4F2]" style={serif}>{t('home.v3.teachTitle')}</h2>
+        <h2 className="mt-2 max-w-2xl text-3xl font-extrabold tracking-tight text-[#203337] sm:text-4xl dark:text-[#E7F4F2]">{t('home.v3.teachTitle')}</h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#203337]/80 dark:text-[#E7F4F2]/80">{t('home.v3.teachLede')}</p>
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-[#1E6A83]/15 bg-white p-5 dark:border-[#3FE0D0]/25 dark:bg-[#1A1918]">
             <div className="flex items-center gap-3">
               <DuoIcon icon={Users} />
-              <h3 className="text-xl text-[#203337] dark:text-[#E7F4F2]" style={serif}>{t('home.v3.miTitle')}</h3>
+              <h3 className="text-xl font-extrabold tracking-tight text-[#203337] dark:text-[#E7F4F2]">{t('home.v3.miTitle')}</h3>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-[#203337]/85 dark:text-[#E7F4F2]/85">{t('home.v3.miBody')}</p>
             <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -66,7 +64,7 @@ export function TeachSection() {
           <article className="rounded-2xl border border-[#1E6A83]/15 bg-white p-5 dark:border-[#3FE0D0]/25 dark:bg-[#1A1918]">
             <div className="flex items-center gap-3">
               <DuoIcon icon={Sparkles} />
-              <h3 className="text-xl text-[#203337] dark:text-[#E7F4F2]" style={serif}>{t('home.v3.bloomTitle')}</h3>
+              <h3 className="text-xl font-extrabold tracking-tight text-[#203337] dark:text-[#E7F4F2]">{t('home.v3.bloomTitle')}</h3>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-[#203337]/85 dark:text-[#E7F4F2]/85">{t('home.v3.bloomBody')}</p>
             <ol className="mx-auto mt-4 flex max-w-sm flex-col items-center gap-1.5" aria-label={t('home.v3.bloomTitle')}>
@@ -85,7 +83,7 @@ export function TeachSection() {
           <article className="rounded-2xl border border-[#1E6A83]/15 bg-white p-5 dark:border-[#3FE0D0]/25 dark:bg-[#1A1918]">
             <div className="flex items-center gap-3">
               <DuoIcon icon={Lock} />
-              <h3 className="text-xl text-[#203337] dark:text-[#E7F4F2]" style={serif}>{t('home.v3.testsTitle')}</h3>
+              <h3 className="text-xl font-extrabold tracking-tight text-[#203337] dark:text-[#E7F4F2]">{t('home.v3.testsTitle')}</h3>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-[#203337]/85 dark:text-[#E7F4F2]/85">{t('home.v3.testsBody')}</p>
             <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold text-[#203337] dark:text-[#E7F4F2]">
@@ -100,7 +98,7 @@ export function TeachSection() {
           <article className="rounded-2xl border border-[#1E6A83]/15 bg-white p-5 dark:border-[#3FE0D0]/25 dark:bg-[#1A1918]">
             <div className="flex items-center gap-3">
               <DuoIcon icon={Images} />
-              <h3 className="text-xl text-[#203337] dark:text-[#E7F4F2]" style={serif}>{t('home.v3.visualsTitle')}</h3>
+              <h3 className="text-xl font-extrabold tracking-tight text-[#203337] dark:text-[#E7F4F2]">{t('home.v3.visualsTitle')}</h3>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-[#203337]/85 dark:text-[#E7F4F2]/85">{t('home.v3.visualsBody')}</p>
             <ul className="mt-4 flex flex-wrap gap-2">
@@ -115,7 +113,7 @@ export function TeachSection() {
           <article className="rounded-2xl border border-[#1E6A83]/15 bg-white p-5 lg:col-span-2 dark:border-[#3FE0D0]/25 dark:bg-[#1A1918]">
             <div className="flex items-center gap-3">
               <DuoIcon icon={MessageCircleQuestion} />
-              <h3 className="text-xl text-[#203337] dark:text-[#E7F4F2]" style={serif}>{t('home.v3.hintsTitle')}</h3>
+              <h3 className="text-xl font-extrabold tracking-tight text-[#203337] dark:text-[#E7F4F2]">{t('home.v3.hintsTitle')}</h3>
             </div>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#203337]/85 dark:text-[#E7F4F2]/85">{t('home.v3.hintsBody')}</p>
           </article>

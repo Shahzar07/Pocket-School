@@ -19,9 +19,10 @@
   left: 0;
   right: 0;
   z-index: 50;
-  color: #fff;
-  padding: 16px 40px;
+  color: #203337;
+  padding: 10px 16px;
   font-family: var(--font-sans), Arial, sans-serif;
+  background: transparent;
 }
 .headerInner {
   max-width: 1180px;
@@ -29,8 +30,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   min-width: 0;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid rgba(30, 106, 131, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 10px 30px rgba(32, 51, 55, 0.08);
+  backdrop-filter: blur(18px);
 }
 .brand {
   display: inline-flex;
@@ -46,10 +53,9 @@
   width: 32px;
   height: 32px;
   place-items: center;
-  border-radius: 10px;
-  background: #1E6A83;
-  color: #fff;
-  box-shadow: 0 0 0 3px #6FBBCE, 0 8px 18px var(--ps-glow);
+  border-radius: 999px;
+  background: #3FE0D0;
+  color: #203337;
 }
 .brand small {
   font-weight: 400;
@@ -61,13 +67,12 @@
   flex: 0 1 auto;
   min-width: 0;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   overflow: visible;
-  background: #ffffff26;
-  border: 1px solid #ffffff30;
-  padding: 9px 16px;
-  border-radius: 12px;
-  backdrop-filter: blur(12px);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
 }
 .moreMenu {
   position: relative;
@@ -116,7 +121,8 @@
   white-space: nowrap;
   font-size: 12px;
   line-height: 1.2;
-  color: #f2fbff;
+  color: #1E6A83;
+  font-weight: 600;
 }
 .desktopNav .morePanel a {
   display: block;
@@ -179,24 +185,19 @@
 }
 .scrolled {
   position: fixed;
-  background: #fffefa;
-  color: #254b57;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  box-shadow: 0 3px 20px #193e4510;
-  backdrop-filter: blur(15px);
+  background: transparent;
+  color: #203337;
+  box-shadow: none;
 }
 .scrolled .desktopNav {
-  background: #edf4f5;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  background: transparent;
 }
 .scrolled .desktopNav a,
 .scrolled .desktopNav summary {
-  color: #315b68;
+  color: #1E6A83;
 }
 .headerFlow {
-  position: absolute;
+  position: fixed;
 }
 .mobileNav {
   display: none;
@@ -214,9 +215,9 @@
   gap: 22px;
 }
 .footerGrid p {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.7;
-  color: #7b8987;
+  color: #5F7074;
   margin: 19px 0;
 }
 .footerGrid h2 {
@@ -255,19 +256,19 @@
 }
 .footerLegal {
   margin-top: 35px;
-  color: #7c8987;
-  font-size: 9px;
-  line-height: 1.8;
+  color: #5F7074;
+  font-size: 12px;
+  line-height: 1.7;
 }
 .footerLegal p + p {
   margin-top: 13px;
 }
 .footerWordmark {
   font-size: clamp(75px, 14.2vw, 215px);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.07em;
   line-height: 1;
-  color: #fff;
+  color: rgba(32, 51, 55, 0.07);
   white-space: nowrap;
   margin: 25px -30px -25px;
   user-select: none;
@@ -297,10 +298,11 @@
 }
 @media (max-width: 800px) {
   .header {
-    padding: 12px;
+    padding: 6px 12px;
   }
   .headerInner {
-    gap: 12px;
+    gap: 8px;
+    padding: 3px 6px 3px 10px;
   }
   .brand {
     font-size: 13px;
@@ -335,10 +337,11 @@
     flex-shrink: 0;
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
-    background: #ffffff20;
-    border-radius: 7px;
+    width: 36px;
+    height: 36px;
+    background: #E9F7FA;
+    color: #203337;
+    border-radius: 999px;
     cursor: pointer;
   }
   .menuButton svg {
@@ -424,19 +427,29 @@
   }
 }
 
-:global(.dark) .scrolled {
-  background: var(--ps-bg);
-  color: var(--ps-ink);
-  box-shadow: 0 3px 20px #00000055;
+:global(.dark) .header,
+:global(.dark) .scrolled,
+:global(.dark) .headerFlow {
+  background: transparent;
+  color: #E7F4F2;
 }
 
-:global(.dark) .scrolled .desktopNav {
-  background: var(--ps-mist);
-  border-color: var(--ps-line);
+:global(.dark) .headerInner {
+  background: rgba(18, 34, 38, 0.9);
+  border-color: rgba(231, 244, 242, 0.16);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
 }
 
-:global(.dark) .scrolled .desktopNav a {
-  color: var(--ps-ink);
+:global(.dark) .desktopNav a,
+:global(.dark) .desktopNav summary,
+:global(.dark) .scrolled .desktopNav a,
+:global(.dark) .scrolled .desktopNav summary {
+  color: #E7F4F2;
+}
+
+:global(.dark) .menuButton {
+  background: #122226;
+  color: #E7F4F2;
 }
 
 :global(.dark) .mobileNav {
