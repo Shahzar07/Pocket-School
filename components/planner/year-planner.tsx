@@ -41,15 +41,15 @@ const KINDS: PlannerKind[] = ['term', 'holiday', 'exam', 'closure', 'assessment'
 
 const DOT: Record<string, string> = {
   holiday: 'bg-[var(--ps-cyan)]',
-  exam: 'bg-[#1E6A83]',
-  assessment: 'bg-[#1E6A83]',
+  exam: 'bg-[#096ab7]',
+  assessment: 'bg-[#096ab7]',
   report: 'bg-success',
   period: 'bg-sky-500',
   term: 'bg-primary',
   event: 'bg-teal-500',
   ptm: 'bg-[var(--ps-cyan)]',
   closure: 'bg-stone-500',
-  revision: 'bg-[#1E6A83]',
+  revision: 'bg-[#096ab7]',
 };
 
 export type PlannerRole = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin';

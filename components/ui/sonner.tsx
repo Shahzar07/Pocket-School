@@ -54,7 +54,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         closeButtonAriaLabel: "Close",
         classNames: {
           toast: "cn-toast pr-14",
-          closeButton: "!left-auto !right-2 !top-2 !size-11 !min-h-11 !min-w-11 !translate-x-0 !translate-y-0 !border-border !bg-popover !text-foreground focus-visible:!ring-2 focus-visible:!ring-[#1E6A83] focus-visible:!ring-offset-2",
+          closeButton: "!left-auto !right-2 !top-2 !size-11 !min-h-11 !min-w-11 !translate-x-0 !translate-y-0 !border-border !bg-popover !text-foreground focus-visible:!ring-2 focus-visible:!ring-[#096ab7] focus-visible:!ring-offset-2",
         },
       }}
       {...props}

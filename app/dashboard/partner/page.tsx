@@ -21,12 +21,12 @@ export default function PartnerPortalPage() {
     load().catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'The partner desk could not be loaded.'));
   }, []);
 
-  if (error) return <p className="text-sm text-[#203337]">{error}</p>;
+  if (error) return <p className="text-sm text-[#11131b]">{error}</p>;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-[#203337]">
-        Update your name, logo, offers, and contact on the <a className="font-semibold text-[#1E6A83]" href="/dashboard/admin/partners">merchant record</a>. Approval stays with Poket School.
+      <p className="text-sm text-[#11131b]">
+        Update your name, logo, offers, and contact on the <a className="font-semibold text-[#096ab7]" href="/dashboard/admin/partners">merchant record</a>. Approval stays with Poket School.
       </p>
     <PartnerDesk
       name={name}

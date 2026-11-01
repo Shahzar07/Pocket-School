@@ -14,7 +14,7 @@ const face: PublicVerification = {
 
 export default function PreviewVerifyPage() {
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-12">
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-12">
       <VerifyFace face={face} />
     </main>
   );

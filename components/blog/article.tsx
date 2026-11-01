@@ -16,7 +16,7 @@ function inline(text: string, key: string): ReactNode[] {
     const id = `${key}-${index}`;
     index += 1;
     if (match[1] != null) {
-      nodes.push(<code key={id} className="rounded bg-[#E9F7FA] px-1">{match[1]}</code>);
+      nodes.push(<code key={id} className="rounded bg-[#eaf6ff] px-1">{match[1]}</code>);
     } else if (match[2] != null && match[3]) {
       nodes.push(<EssayImage key={id} alt={match[2]} src={match[3]} />);
     } else if (match[4]) {
@@ -88,7 +88,7 @@ export function ArticleBody({ post }: { post: BlogPost }) {
       }
       if ((lines[index] ?? '').trim().startsWith('```')) index += 1;
       blocks.push(
-        <pre key={key} className="overflow-x-auto rounded-2xl bg-[#203337] p-4 text-sm leading-6 text-white">
+        <pre key={key} className="overflow-x-auto rounded-2xl bg-[#11131b] p-4 text-sm leading-6 text-white">
           <code>{code.join('\n')}</code>
         </pre>,
       );
@@ -110,8 +110,8 @@ export function ArticleBody({ post }: { post: BlogPost }) {
                   {row.map((cell, cellIndex) => {
                     const content = inline(cell, `${key}-${rowIndex}-${cellIndex}`);
                     return rowIndex === 0
-                      ? <th key={cellIndex} className="border border-[#203337]/15 px-2 py-1 font-semibold">{content}</th>
-                      : <td key={cellIndex} className="border border-[#203337]/15 px-2 py-1">{content}</td>;
+                      ? <th key={cellIndex} className="border border-[#11131b]/15 px-2 py-1 font-semibold">{content}</th>
+                      : <td key={cellIndex} className="border border-[#11131b]/15 px-2 py-1">{content}</td>;
                   })}
                 </tr>
               ))}
@@ -122,7 +122,7 @@ export function ArticleBody({ post }: { post: BlogPost }) {
       continue;
     }
     if (line.trim() === '---') {
-      blocks.push(<hr key={key} className="border-[#203337]/15" />);
+      blocks.push(<hr key={key} className="border-[#11131b]/15" />);
       index += 1;
       continue;
     }
@@ -210,7 +210,7 @@ export function AffiliateNote({ post }: { post: BlogPost }) {
 
 function CtaLink({ link, primary }: { link: BlogLink; primary: boolean }) {
   const className = primary
-    ? 'inline-flex min-h-11 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-5 text-sm font-bold text-[#203337]'
+    ? 'inline-flex min-h-11 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-5 text-sm font-bold text-[#11131b]'
     : 'inline-flex min-h-11 items-center rounded-full border border-white/25 px-5 text-sm font-bold';
   if (isAffiliateToken(link.href)) {
     return <a href={link.href} rel={AFFILIATE_REL} className={className}>{link.label}</a>;
@@ -232,7 +232,7 @@ export function ArticleCta({ post }: { post: BlogPost }) {
       { label: 'Create an account', href: '/signup' },
     ];
   return (
-    <aside className="mt-10 rounded-3xl bg-[#203337] px-6 py-7 text-white sm:px-8">
+    <aside className="mt-10 rounded-3xl bg-[#11131b] px-6 py-7 text-white sm:px-8">
       <h2 className="font-heading text-2xl tracking-tight">{post.ctaTitle}</h2>
       <p className="mt-2 max-w-xl text-sm leading-6 text-white/75">{post.ctaBody}</p>
       <div className="mt-5 flex flex-wrap gap-3">
@@ -250,14 +250,14 @@ export function Cover({ post, className = '' }: { post: BlogPost; className?: st
     );
   }
   return (
-    <div className={className} style={{ background: 'linear-gradient(135deg, #1E6A83, #203337)' }} aria-hidden />
+    <div className={className} style={{ background: 'linear-gradient(135deg, #096ab7, #11131b)' }} aria-hidden />
   );
 }
 
 export function CardThumb({ post, className = '' }: { post: BlogPost; className?: string }) {
   const src = cardImage(post);
   if (!src) {
-    return <div className={className} style={{ background: 'linear-gradient(135deg, #1E6A83, #203337)' }} aria-hidden />;
+    return <div className={className} style={{ background: 'linear-gradient(135deg, #096ab7, #11131b)' }} aria-hidden />;
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -267,7 +267,7 @@ export function CardThumb({ post, className = '' }: { post: BlogPost; className?
 
 export function PostHero({ post }: { post: BlogPost }) {
   return (
-    <header className="relative isolate min-h-[28rem] w-full overflow-hidden bg-[#1E6A83]" data-blog-hero="1">
+    <header className="relative isolate min-h-[28rem] w-full overflow-hidden bg-[#096ab7]" data-blog-hero="1">
       {post.coverImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.coverImage} alt={coverAltOf(post)} className="absolute inset-0 h-full w-full object-cover" />
@@ -277,7 +277,7 @@ export function PostHero({ post }: { post: BlogPost }) {
         style={{ background: 'linear-gradient(180deg, rgba(30,106,131,0.2) 0%, rgba(32,51,55,0.88) 78%)' }}
       />
       <div className="relative mx-auto flex min-h-[28rem] max-w-4xl flex-col justify-end px-4 pb-12 pt-28 sm:px-6">
-        <p className="text-xs font-bold tracking-[0.18em] text-[#3FE0D0]" data-blog-badge="1">{post.category}</p>
+        <p className="text-xs font-bold tracking-[0.18em] text-[#d9efff]" data-blog-badge="1">{post.category}</p>
         <h1 className="mt-3 max-w-3xl font-heading text-4xl tracking-tight text-white sm:text-5xl">{post.title}</h1>
       </div>
     </header>

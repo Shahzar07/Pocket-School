@@ -59,7 +59,7 @@ export function TaskBell() {
       >
         <ListTodo className="h-5 w-5" />
         {unread.length > 0 ? (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#203337] px-1 text-[10px] font-bold text-white" data-unread-count={unread.length}>
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#11131b] px-1 text-[10px] font-bold text-white" data-unread-count={unread.length}>
             {unread.length > 9 ? '9+' : unread.length}
           </span>
         ) : null}
@@ -67,12 +67,12 @@ export function TaskBell() {
       {open ? (
         <div className="absolute right-0 z-40 mt-2 w-80 rounded-2xl border border-border bg-card p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-semibold text-[#203337]">Action Centre</p>
-            <Link href="/dashboard/admin/tasks" className="text-sm font-semibold text-[#1E6A83]" onClick={() => setOpen(false)}>
+            <p className="text-sm font-semibold text-[#11131b]">Action Centre</p>
+            <Link href="/dashboard/admin/tasks" className="text-sm font-semibold text-[#096ab7]" onClick={() => setOpen(false)}>
               Open
             </Link>
           </div>
-          {waiting.length === 0 ? <p className="text-sm text-[#203337]">Nothing is waiting.</p> : null}
+          {waiting.length === 0 ? <p className="text-sm text-[#11131b]">Nothing is waiting.</p> : null}
           <ul className="max-h-80 space-y-2 overflow-y-auto">
             {waiting.slice(0, 5).map(task => {
               const clock = countdown(task.dueAt, now);
@@ -84,7 +84,7 @@ export function TaskBell() {
                     onClick={() => { setOpen(false); router.push(deepLinkFor(task.id)); }}
                   >
                     <span className="block text-sm font-semibold text-foreground">{task.title}</span>
-                    <span className={`text-xs ${clock.overdue ? 'text-[#1E6A83] dark:text-[#3FE0D0]' : 'text-[#1E6A83]'}`}>
+                    <span className={`text-xs ${clock.overdue ? 'text-[#096ab7] dark:text-[#d9efff]' : 'text-[#096ab7]'}`}>
                       {task.slaTier} · {clock.overdue ? clock.label : `${clock.label} left`}
                     </span>
                   </button>

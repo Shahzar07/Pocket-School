@@ -1,3 +1,4 @@
+import { homeDesignEn } from './poket-home';
 /**
  * UI strings. Human catalogs: English, Bahasa Melayu, Chinese (Simplified)
  * and Tamil. Every other interface language is an AI draft in
@@ -1156,6 +1157,7 @@ export const catalogs = Object.fromEntries(
     const reads = readsHuman[language.code];
     if (reads) merged = mergeCatalog(merged, reads);
     merged = mergeCatalog(merged, {
+      homeDesign: homeDesignEn,
       footer: {
         rights: OFFICIAL_RIGHTS,
         ...(HUMAN_CATALOGS.has(language.code) ? {} : { disclaimer: OFFICIAL_DISCLAIMER }),
@@ -1163,7 +1165,7 @@ export const catalogs = Object.fromEntries(
     });
     return [language.code, merged];
   }),
-) as typeof seeded & Record<string, (typeof seeded)['en']>;
+) as { [K in keyof typeof seeded]: (typeof seeded)[K] & typeof chromeEn } & Record<string, (typeof seeded)['en'] & typeof chromeEn>;
 
 /** Human copy versus an AI draft that still needs a reviewer. */
 export const CATALOG_REVIEW: Record<string, 'human' | 'needs-review'> = Object.fromEntries(

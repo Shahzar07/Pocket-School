@@ -193,8 +193,8 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
               {isLive && (
                 <div className="absolute top-3 left-3 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-sm">
                   <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FE0D0] opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FE0D0]" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d9efff] opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[#d9efff]" />
                   </span>
                   <span className="text-[10px] font-bold tracking-widest text-white">LIVE 24/7</span>
                 </div>
@@ -229,7 +229,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 <Icon className="w-7 h-7" strokeWidth={1.7} />
               </div>
               <div className="min-w-0">
-                <h2 className="text-2xl font-black text-[#203337] leading-tight">{teacher.name}</h2>
+                <h2 className="text-2xl font-black text-[#11131b] leading-tight">{teacher.name}</h2>
                 <p className="text-sm text-slate-600 leading-snug mt-1">{teacher.title}</p>
               </div>
             </div>
@@ -253,7 +253,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 style={{
                   backgroundColor: teacher.accentColor,
                   color: accentOnFill(teacher.accentColor),
-                  borderColor: teacher.accentColor.trim().toUpperCase() === '#3FE0D0' ? '#1E6A83' : undefined,
+                  borderColor: teacher.accentColor.trim().toUpperCase() === '#d9efff' ? '#096ab7' : undefined,
                 }}
               >
                 {primaryCtaLabel}
@@ -310,7 +310,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                 <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3">Specialties</p>
                 <div className="flex flex-wrap gap-1.5">
                   {teacher.specialties.map((s) => (
-                    <span key={s} className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#E9F7FA] text-[#1E6A83]">
+                    <span key={s} className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#eaf6ff] text-[#096ab7]">
                       {s}
                     </span>
                   ))}
@@ -324,7 +324,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                   <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-1 flex items-center gap-1">
                     <Clock className="w-3 h-3" /> Experience
                   </p>
-                  <p className="font-bold text-[#203337]">{teacher.yearsExperience}+ years modelled</p>
+                  <p className="font-bold text-[#11131b]">{teacher.yearsExperience}+ years modelled</p>
                 </div>
               )}
               {teacher.languages && teacher.languages.length > 0 && (
@@ -332,7 +332,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
                   <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-1 flex items-center gap-1">
                     <Languages className="w-3 h-3" /> Languages
                   </p>
-                  <p className="font-bold text-[#203337]">{teacher.languages.join(' · ')}</p>
+                  <p className="font-bold text-[#11131b]">{teacher.languages.join(' · ')}</p>
                 </div>
               )}
             </div>
@@ -354,7 +354,7 @@ export function AiTeacherModal({ teacher, open, onOpenChange }: Props) {
             )}
 
             {teacher.teachingStyle && (
-              <div className="mt-6 p-4 rounded-xl bg-[#F4F6F6] border border-slate-100">
+              <div className="mt-6 p-4 rounded-xl bg-[#f8fafc] border border-slate-100">
                 <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-2">Teaching style</p>
                 <p className="text-xs text-slate-700 leading-relaxed italic">“{teacher.teachingStyle}”</p>
               </div>

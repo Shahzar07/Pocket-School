@@ -13,10 +13,10 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ teach
   if (!teacher) {
     return (
       <PublicToolShell>
-        <div className="flex min-h-[50vh] items-center justify-center px-4 text-[#203337]">
+        <div className="flex min-h-[50vh] items-center justify-center px-4 text-[#11131b]">
           <div className="text-center">
             <p className="mb-4 text-lg">Teacher not found.</p>
-            <Link href="/ai-teachers" className="text-[#1E6A83] underline">Back to AI Teachers</Link>
+            <Link href="/ai-teachers" className="text-[#096ab7] underline">Back to AI Teachers</Link>
           </div>
         </div>
       </PublicToolShell>

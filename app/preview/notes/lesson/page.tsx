@@ -28,11 +28,11 @@ const notes: StickyNote[] = [
 
 export default function PreviewLessonNotesPage() {
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-10">
-      <article className="mx-auto max-w-3xl rounded-[28px] border border-[#E7EDED] bg-white p-6 text-[#203337] shadow-[0_16px_40px_rgba(32,51,55,0.06)]">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#1E6A83]">Lesson</p>
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-10">
+      <article className="mx-auto max-w-3xl rounded-[28px] border border-[#e5ebf2] bg-white p-6 text-[#11131b] shadow-[0_16px_40px_rgba(32,51,55,0.06)]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#096ab7]">Lesson</p>
         <h1 className="mt-2 font-heading text-4xl">Photosynthesis</h1>
-        <p className="mt-4 text-sm leading-relaxed text-[#203337]">
+        <p className="mt-4 text-sm leading-relaxed text-[#11131b]">
           Plants trap light in chlorophyll. The light reactions sit in the thylakoid membrane. The Calvin cycle builds sugar in the stroma.
         </p>
       </article>

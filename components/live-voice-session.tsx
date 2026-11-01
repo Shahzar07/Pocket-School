@@ -402,7 +402,7 @@ export function LiveVoiceSession({ teacher, lang, onAsk, onClose, camera = false
         </button>
         <button
           onClick={() => { activeRef.current = false; abortRef.current?.abort(); speakerRef.current?.stop(); onClose(); }}
-          className="w-14 h-14 rounded-full bg-[#1E6A83] text-white flex items-center justify-center hover:scale-105 transition-transform"
+          className="w-14 h-14 rounded-full bg-[#096ab7] text-white flex items-center justify-center hover:scale-105 transition-transform"
           title="End voice call"
         >
           <PhoneOff className="w-6 h-6" />

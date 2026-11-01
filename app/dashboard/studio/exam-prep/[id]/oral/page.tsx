@@ -202,7 +202,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
                   animate={speaking || listening ? { scale: [1, 1.35 + i * 0.12], opacity: [0.5, 0] } : { scale: 1, opacity: 0.15 }}
                   transition={{ repeat: speaking || listening ? Infinity : 0, duration: 1.6, delay: i * 0.4 }} />
               ))}
-              <span className={`absolute inset-0 rounded-full grid place-items-center text-3xl font-bold ${listening ? 'bg-[#1E6A83] text-white' : 'bg-primary text-primary-foreground'}`}>
+              <span className={`absolute inset-0 rounded-full grid place-items-center text-3xl font-bold ${listening ? 'bg-[#096ab7] text-white' : 'bg-primary text-primary-foreground'}`}>
                 {listening ? <Mic className="w-10 h-10" /> : speaking ? <Volume2 className="w-10 h-10" /> : live !== null ? <Loader2 className="w-10 h-10 animate-spin" /> : 'ET AI'}
               </span>
             </div>
@@ -213,7 +213,7 @@ export default function OralExamPage({ params }: { params: Promise<{ id: string 
             {!typing ? (
               <div className="mt-6 flex flex-col items-center gap-3">
                 {listening ? (
-                  <button onClick={stopListening} className="h-12 px-6 rounded-full bg-[#1E6A83] text-white font-semibold inline-flex items-center gap-2"><Square className="w-4 h-4" /> I&apos;ve finished my answer</button>
+                  <button onClick={stopListening} className="h-12 px-6 rounded-full bg-[#096ab7] text-white font-semibold inline-flex items-center gap-2"><Square className="w-4 h-4" /> I&apos;ve finished my answer</button>
                 ) : (
                   <button onClick={listen} disabled={examinerBusy && !speaking} className="h-12 px-6 rounded-full bg-primary text-primary-foreground font-semibold inline-flex items-center gap-2 disabled:opacity-40"><Mic className="w-4 h-4" /> {speaking ? 'Interrupt and answer' : 'Answer'}</button>
                 )}

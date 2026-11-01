@@ -171,8 +171,8 @@ export default function InstitutionBillingPage() {
   return (
     <DashPage className="max-w-3xl">
       <DashHeader eyebrow="Institution" title="Billing" description={`Phase: ${bill?.phase ?? 'pending_payment'}. Programme prices and the live calculator are on the pricing page. A charge is pro-rated for the days left. A credit applies immediately. Cancel keeps the academy open until the period ends. A failed payment still has a 7-day grace, then the academy suspends until it is paid.`} />
-      <p className="text-sm"><Link className="font-semibold text-[#1E6A83]" href="/dashboard/institution/pricing">Open the price calculator</Link></p>
-      {banner && <p role="status" className="rounded-2xl border border-[#1E6A83] bg-[rgba(63,224,208,0.15)] px-4 py-3 text-sm text-[#203337]">{banner}</p>}
+      <p className="text-sm"><Link className="font-semibold text-[#096ab7]" href="/dashboard/institution/pricing">Open the price calculator</Link></p>
+      {banner && <p role="status" className="rounded-2xl border border-[#096ab7] bg-[rgba(63,224,208,0.15)] px-4 py-3 text-sm text-[#11131b]">{banner}</p>}
       {cancelOn && <p className="text-sm">Cancellation is set for {cancelOn}.</p>}
       <ManageSubscription returnPath="/dashboard/institution/billing" institutionId={institutionId || undefined} />
       <Panel>
@@ -189,7 +189,7 @@ export default function InstitutionBillingPage() {
           </>
         )}
         <p className="mt-2 text-sm">Poket Reads add-on {readsBill.currency} {readsBill.reads.addonTotal.toFixed(2)}. Licensed books sit on this same bill. Students on a seat are not charged again.</p>
-        {cliff && <p className="mt-2 text-sm text-[#1E6A83]">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
+        {cliff && <p className="mt-2 text-sm text-[#096ab7]">The next band, {cliff.toLabel}, is cheaper than {cliff.fromLabel}. Banded pricing is there so a school is not pushed off a cliff.</p>}
         {tierNote && !('error' in tierNote) && tierNote.action === 'upgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}
         {tierNote && !('error' in tierNote) && tierNote.action === 'suggest_downgrade' && <p className="mt-2 text-sm">{tierNote.message}</p>}
         {liveNote && !('error' in liveNote) && liveNote.action !== 'stay' && liveNote.message !== (tierNote && !('error' in tierNote) ? tierNote.message : '') && <p className="mt-2 text-sm">{liveNote.message}</p>}

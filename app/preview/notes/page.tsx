@@ -80,8 +80,8 @@ const seed: StickyNote[] = [
 export default function PreviewNotesPage() {
   const [notes, setNotes] = useState(seed);
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-8">
-      <p className="mx-auto mb-4 max-w-5xl text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Rochford demo · Amina Rahman, notes</p>
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-8">
+      <p className="mx-auto mb-4 max-w-5xl text-xs font-bold uppercase tracking-[0.16em] text-[#096ab7]">Rochford demo · Amina Rahman, notes</p>
       <NotesBoard
         notes={notes}
         now={1_700_000_100_000}

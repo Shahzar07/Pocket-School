@@ -254,7 +254,7 @@ export default function TeacherClassesPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-success" /> Passed mastery quiz
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#1E6A83]" /> Below pass mark
+              <span className="w-2.5 h-2.5 rounded-full bg-[#096ab7]" /> Below pass mark
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-border" /> Not attempted

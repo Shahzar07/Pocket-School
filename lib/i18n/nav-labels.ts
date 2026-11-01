@@ -85,7 +85,7 @@ interface Phrase {
   curriculum: string;
 }
 
-function pack(phrase: Phrase, schoolTimetable = PRODUCT.schoolTimetable): ExtraNav {
+function pack(phrase: Phrase, schoolTimetable: string = PRODUCT.schoolTimetable): ExtraNav {
   return {
     ...PRODUCT,
     schoolTimetable,

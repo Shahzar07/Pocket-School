@@ -44,13 +44,13 @@ export function IdCardPanel({ view }: { view: IdCardView }) {
     <div className="space-y-3">
       <IdCard view={view} side={side} />
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" onClick={() => setSide((current) => current === 'front' ? 'back' : 'front')}>{side === 'front' ? 'Show back' : 'Show front'}</button>
-        <button type="button" className="h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" onClick={() => void download('png')}>Download PNG</button>
-        <button type="button" className="h-10 rounded-full border border-[#E7EDED] px-4 text-sm font-semibold text-[#203337]" onClick={() => void download('pdf')}>Download PDF</button>
-        <button type="button" className="h-10 rounded-full border border-[#E7EDED] px-4 text-sm font-semibold text-[#203337]" onClick={() => setNote('Apple Wallet passes are not issued yet.')}>Add to Apple Wallet</button>
-        <button type="button" className="h-10 rounded-full border border-[#E7EDED] px-4 text-sm font-semibold text-[#203337]" onClick={() => setNote('Google Wallet passes are not issued yet.')}>Add to Google Wallet</button>
+        <button type="button" className="h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]" onClick={() => setSide((current) => current === 'front' ? 'back' : 'front')}>{side === 'front' ? 'Show back' : 'Show front'}</button>
+        <button type="button" className="h-10 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" onClick={() => void download('png')}>Download PNG</button>
+        <button type="button" className="h-10 rounded-full border border-[#e5ebf2] px-4 text-sm font-semibold text-[#11131b]" onClick={() => void download('pdf')}>Download PDF</button>
+        <button type="button" className="h-10 rounded-full border border-[#e5ebf2] px-4 text-sm font-semibold text-[#11131b]" onClick={() => setNote('Apple Wallet passes are not issued yet.')}>Add to Apple Wallet</button>
+        <button type="button" className="h-10 rounded-full border border-[#e5ebf2] px-4 text-sm font-semibold text-[#11131b]" onClick={() => setNote('Google Wallet passes are not issued yet.')}>Add to Google Wallet</button>
       </div>
-      {note ? <p role="status" className="text-sm text-[#1E6A83]">{note}</p> : null}
+      {note ? <p role="status" className="text-sm text-[#096ab7]">{note}</p> : null}
     </div>
   );
 }

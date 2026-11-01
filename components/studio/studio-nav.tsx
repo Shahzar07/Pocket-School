@@ -42,7 +42,7 @@ export function StudioNav() {
             key={link.href}
             href={link.href}
             aria-current={active ? 'page' : undefined}
-            className={`whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold ${active ? 'bg-[#3FE0D0] text-[#203337]' : 'text-[#1E6A83] hover:bg-muted'}`}
+            className={`whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold ${active ? 'bg-[#d9efff] text-[#11131b]' : 'text-[#096ab7] hover:bg-muted'}`}
           >
             {link.label}
           </Link>

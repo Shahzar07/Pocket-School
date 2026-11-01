@@ -51,7 +51,7 @@ const TILES: { id: string; label: string; href: string; hint: string; category: 
   { id: 'activity', label: 'Activity', href: '/dashboard/admin/activity', hint: 'Audit chain export', category: 'insights' },
 ];
 
-const buttonClass = 'inline-flex min-h-12 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]';
+const buttonClass = 'inline-flex min-h-12 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]';
 const fieldClass = 'min-h-12 w-full rounded-2xl border border-border bg-card px-3 text-sm';
 
 export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pulse' }) {
@@ -96,7 +96,7 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
 
   return (
     <div className="space-y-5 pb-24">
-      <header className="ps-hero-panel rounded-[24px] px-5 py-6 text-white">
+      <header className="ps-hero-panel rounded-[24px] px-5 py-6 text-foreground">
         <p className="text-sm font-medium">Admin desk</p>
         <h1 className="font-heading text-4xl tracking-tight">{name}</h1>
         <p className="mt-1 max-w-xl text-sm">
@@ -113,7 +113,7 @@ export function AdminDesk({ view }: { view: 'home' | 'queues' | 'platform' | 'pu
       {desk?.comingSoon || note === 'This admin tool is coming soon.' ? (
         <p className="rounded-[18px] bg-card px-4 py-3 text-sm">This admin tool is coming soon.</p>
       ) : null}
-      {note ? <p className="text-sm text-[#1E6A83]">{note}</p> : null}
+      {note ? <p className="text-sm text-[#096ab7]">{note}</p> : null}
 
       {view === 'home' ? (
         <>
@@ -188,7 +188,7 @@ function SearchHits({ hits, reason, onReason, onAct }: {
 function HitList({ title, rows, extra }: { title: string; rows: Row[]; extra?: (row: Row) => ReactNode }) {
   return (
     <div>
-      <h3 className="text-sm font-semibold text-[#1E6A83]">{title}</h3>
+      <h3 className="text-sm font-semibold text-[#096ab7]">{title}</h3>
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">Nothing matched.</p> : (
         <ul className="divide-y divide-border">
           {rows.map(row => (

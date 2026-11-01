@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 
 const WorldMap = dynamic(() => import('@/components/insights/world-map').then((mod) => mod.WorldMap), {
   ssr: false,
-  loading: () => <div className="h-72 animate-pulse rounded-2xl bg-[#203337]" aria-hidden />,
+  loading: () => <div className="h-72 animate-pulse rounded-2xl bg-[#11131b]" aria-hidden />,
 });
 
 const COLOURS = ['#203337', '#1E6A83', '#1E6A83', '#3C8DFF', '#2F6F62', '#7DCEA0'];
@@ -38,10 +38,10 @@ function Card({ title, children, csvName, headers, rows }: {
   rows: (string | number)[][];
 }) {
   return (
-    <section className="rounded-3xl border border-[#203337]/10 bg-white p-4 shadow-sm">
+    <section className="rounded-3xl border border-[#11131b]/10 bg-white p-4 shadow-sm">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold text-[#203337]">{title}</h2>
-        <Button type="button" variant="outline" className="h-8 rounded-full border-[#1E6A83] text-[#203337]" onClick={() => download(csvName, insightsCsv(headers, rows))}>
+        <h2 className="font-semibold text-[#11131b]">{title}</h2>
+        <Button type="button" variant="outline" className="h-8 rounded-full border-[#096ab7] text-[#11131b]" onClick={() => download(csvName, insightsCsv(headers, rows))}>
           Export CSV
         </Button>
       </div>
@@ -124,12 +124,12 @@ export function CensusPanel({
   return (
     <DashPage>
       <DashHeader
-        eyebrow={<span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#1E6A83]">Grouped statistics</span>}
+        eyebrow={<span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#096ab7]">Grouped statistics</span>}
         title="Insights"
         accent={locked ? 'Your institution' : 'Platform'}
         description="Counts update when someone signs up, studies, or spends Sparks. Groups smaller than five people are hidden. Charts never show one student."
       />
-      <form className="grid gap-3 rounded-3xl bg-[#203337] p-4 text-[#E9F7FA] md:grid-cols-3 xl:grid-cols-6" onSubmit={(event) => event.preventDefault()}>
+      <form className="grid gap-3 rounded-3xl bg-[#11131b] p-4 text-[#eaf6ff] md:grid-cols-3 xl:grid-cols-6" onSubmit={(event) => event.preventDefault()}>
         <label className="text-xs font-semibold uppercase tracking-wider">From
           <input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white" aria-label="From date" />
         </label>
@@ -168,9 +168,9 @@ export function CensusPanel({
         )}
       </form>
 
-      {loading && <p className="text-sm text-[#203337]">Loading grouped counts…</p>}
+      {loading && <p className="text-sm text-[#11131b]">Loading grouped counts…</p>}
       {shown?.suppressed && (
-        <p className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm text-[#203337]">This view has fewer than five people, so the charts stay empty.</p>
+        <p className="rounded-2xl bg-[#eaf6ff] px-4 py-3 text-sm text-[#11131b]">This view has fewer than five people, so the charts stay empty.</p>
       )}
 
       {shown && !shown.suppressed && (
@@ -199,7 +199,7 @@ export function CensusPanel({
             ])}
           >
             <WorldMap places={countryRows} selected={country} onPick={(code) => { setCountry(code); setState(''); }} />
-            <p className="mt-2 text-xs text-[#203337]/70">Gold marks more students. Click a country for its states. Cities come from the signup region, never a precise location.</p>
+            <p className="mt-2 text-xs text-[#11131b]/70">Gold marks more students. Click a country for its states. Cities come from the signup region, never a precise location.</p>
             <div className="mt-4 h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stateRows}>
@@ -271,12 +271,12 @@ export function CensusPanel({
                 ['institution students', shown.membership.institution],
               ]}
             >
-              <ul className="grid grid-cols-2 gap-2 text-sm text-[#203337]">
-                <li className="rounded-2xl bg-[#E9F7FA] px-3 py-3">Students <strong className="block text-xl">{shown.roles.student}</strong></li>
-                <li className="rounded-2xl bg-[#E9F7FA] px-3 py-3">Parents <strong className="block text-xl">{shown.roles.parent}</strong></li>
+              <ul className="grid grid-cols-2 gap-2 text-sm text-[#11131b]">
+                <li className="rounded-2xl bg-[#eaf6ff] px-3 py-3">Students <strong className="block text-xl">{shown.roles.student}</strong></li>
+                <li className="rounded-2xl bg-[#eaf6ff] px-3 py-3">Parents <strong className="block text-xl">{shown.roles.parent}</strong></li>
                 <li className="rounded-2xl bg-[#E7F0FF] px-3 py-3">Teachers <strong className="block text-xl">{shown.roles.teacher}</strong></li>
-                <li className="rounded-2xl bg-[#E9F7FA] px-3 py-3">Independent <strong className="block text-xl">{shown.membership.independent}</strong></li>
-                <li className="col-span-2 rounded-2xl bg-[#203337] px-3 py-3 text-[#E9F7FA]">Institution students <strong className="block text-xl">{shown.membership.institution}</strong></li>
+                <li className="rounded-2xl bg-[#eaf6ff] px-3 py-3">Independent <strong className="block text-xl">{shown.membership.independent}</strong></li>
+                <li className="col-span-2 rounded-2xl bg-[#11131b] px-3 py-3 text-[#eaf6ff]">Institution students <strong className="block text-xl">{shown.membership.institution}</strong></li>
               </ul>
             </Card>
           </div>
@@ -287,9 +287,9 @@ export function CensusPanel({
             headers={['school', 'kind', 'country', 'state', 'students']}
             rows={shown.schools.map((row) => [row.name, row.kind, row.country, row.state, row.count])}
           >
-            <table className="w-full text-left text-sm text-[#203337]">
+            <table className="w-full text-left text-sm text-[#11131b]">
               <thead>
-                <tr className="text-[11px] uppercase tracking-wider text-[#203337]/60">
+                <tr className="text-[11px] uppercase tracking-wider text-[#11131b]/60">
                   <th className="py-2">School</th>
                   <th>Kind</th>
                   <th>Place</th>
@@ -298,7 +298,7 @@ export function CensusPanel({
               </thead>
               <tbody>
                 {shown.schools.map((row) => (
-                  <tr key={`${row.kind}-${row.name}`} className="border-t border-[#203337]/10">
+                  <tr key={`${row.kind}-${row.name}`} className="border-t border-[#11131b]/10">
                     <td className="py-2 font-semibold">{row.name}</td>
                     <td>{row.kind === 'verified' ? 'Verified institution' : 'Self-reported'}</td>
                     <td>{row.country} · {row.state}</td>

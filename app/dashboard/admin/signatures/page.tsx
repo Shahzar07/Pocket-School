@@ -64,30 +64,30 @@ export default function SignaturesPage() {
   return (
     <DashPage>
       <DashHeader eyebrow="Admin" title={SIGN.page} description={SIGN.pageHelp} />
-      {!allowed ? <p className="text-sm text-[#1E6A83]">{SIGN.empty}</p> : null}
-      {notice ? <p className="text-sm text-[#1E6A83]">{notice}</p> : null}
+      {!allowed ? <p className="text-sm text-[#096ab7]">{SIGN.empty}</p> : null}
+      {notice ? <p className="text-sm text-[#096ab7]">{notice}</p> : null}
       <div className="flex flex-wrap gap-2">
-        <input value={query} data-signature-search="1" onChange={(event) => setQuery(event.target.value)} aria-label={SIGN.search} placeholder={SIGN.search} className="min-h-11 flex-1 rounded-xl border border-[#1E6A83]/30 px-3" />
+        <input value={query} data-signature-search="1" onChange={(event) => setQuery(event.target.value)} aria-label={SIGN.search} placeholder={SIGN.search} className="min-h-11 flex-1 rounded-xl border border-[#096ab7]/30 px-3" />
         <button type="button" className="min-h-11 rounded-full border px-4 text-sm font-semibold" onClick={() => download('signatures.csv', new Blob([signaturesCsv(shown)], { type: 'text/csv' }))}>{SIGN.exportCsv}</button>
         <button type="button" className="min-h-11 rounded-full border px-4 text-sm font-semibold" onClick={() => download('signatures.pdf', new Blob([new Uint8Array(signaturesPdf(shown))], { type: 'application/pdf' }))}>{SIGN.exportPdf}</button>
       </div>
       <ul className="space-y-2" data-signature-list="1">
-        {shown.length === 0 ? <li className="text-sm text-[#1E6A83]">{SIGN.empty}</li> : null}
+        {shown.length === 0 ? <li className="text-sm text-[#096ab7]">{SIGN.empty}</li> : null}
         {shown.map((row) => (
           <li key={row.id}>
-            <button type="button" className="w-full rounded-2xl border border-[#1E6A83]/20 bg-white px-4 py-3 text-left" onClick={() => setOpen(row)}>
-              <span className="block font-semibold text-[#203337]">{row.typedFullName}</span>
-              <span className="text-xs text-[#1E6A83]">{row.context === 'instructor_application' ? SIGN.contextApplication : SIGN.contextCourse} · {row.signedAt} · {row.courseId || '—'}</span>
+            <button type="button" className="w-full rounded-2xl border border-[#096ab7]/20 bg-white px-4 py-3 text-left" onClick={() => setOpen(row)}>
+              <span className="block font-semibold text-[#11131b]">{row.typedFullName}</span>
+              <span className="text-xs text-[#096ab7]">{row.context === 'instructor_application' ? SIGN.contextApplication : SIGN.contextCourse} · {row.signedAt} · {row.courseId || '—'}</span>
             </button>
           </li>
         ))}
       </ul>
       {open ? (
-        <article className="rounded-3xl border border-[#1E6A83]/20 bg-white p-5 text-sm text-[#203337]" data-signature-detail="1">
+        <article className="rounded-3xl border border-[#096ab7]/20 bg-white p-5 text-sm text-[#11131b]" data-signature-detail="1">
           <h2 className="font-heading text-2xl">{open.typedFullName}</h2>
           <p className="mt-2">{open.signedAt}</p>
           <p>{open.ip}</p>
-          <p className="break-all text-[#1E6A83]">{open.userAgent}</p>
+          <p className="break-all text-[#096ab7]">{open.userAgent}</p>
           <p>{open.courseId}</p>
         </article>
       ) : null}

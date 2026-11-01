@@ -100,7 +100,7 @@ test('pricing and dashboards do not hardcode the old primary', () => {
 
   const pricing = readFileSync(path.join(ROOT, 'app/pricing/page.tsx'), 'utf8');
   assert.match(pricing, /pricing-page/);
-  assert.match(pricing, /from-\[#6FBBCE\] via-\[#A9D7E4\] to-\[#3FE0D0\]/);
+  assert.doesNotMatch(pricing, /bg-clip-text text-transparent/);
   assert.doesNotMatch(pricing, /from-primary via-\[#6FBBCE\]/);
 
   const certificate = readFileSync(path.join(ROOT, 'lib/certificates.ts'), 'utf8');

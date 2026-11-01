@@ -84,7 +84,7 @@ export default function TeacherGoalsPage() {
           ['parent', 'Parent'],
           ['institution', 'School'],
         ] as const).map(([value, label]) => (
-          <button key={value} type="button" className={`h-9 rounded-full px-3 text-sm font-semibold ${source === value ? 'bg-[#3FE0D0] text-[#203337]' : 'border border-[#E7EDED] text-[#1E6A83]'}`} onClick={() => setSource(value)}>{label}</button>
+          <button key={value} type="button" className={`h-9 rounded-full px-3 text-sm font-semibold ${source === value ? 'bg-[#d9efff] text-[#11131b]' : 'border border-[#e5ebf2] text-[#096ab7]'}`} onClick={() => setSource(value)}>{label}</button>
         ))}
       </div>
       {goals.length > 0 && (

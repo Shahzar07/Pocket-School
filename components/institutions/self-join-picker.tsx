@@ -128,7 +128,7 @@ export function SelfJoinPicker({
           data-join-path="independent"
           aria-pressed={path === 'independent'}
           onClick={() => { onPath('independent'); onInstitution(''); }}
-          className={`min-h-12 rounded-2xl border px-3 py-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE] ${
+          className={`min-h-12 rounded-2xl border px-3 py-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8bc9f5] ${
             path === 'independent'
               ? 'border-primary bg-primary/15 text-primary'
               : inverse ? 'border-white/10 bg-white/5 text-white/50' : 'border-border bg-card text-muted-foreground'
@@ -141,7 +141,7 @@ export function SelfJoinPicker({
           data-join-path="institution"
           aria-pressed={path === 'institution'}
           onClick={() => onPath('institution')}
-          className={`min-h-12 rounded-2xl border px-3 py-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE] ${
+          className={`min-h-12 rounded-2xl border px-3 py-3 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8bc9f5] ${
             path === 'institution'
               ? 'border-primary bg-primary/15 text-primary'
               : inverse ? 'border-white/10 bg-white/5 text-white/50' : 'border-border bg-card text-muted-foreground'
@@ -155,13 +155,13 @@ export function SelfJoinPicker({
       )}
       {path === 'institution' && (
         <div className="space-y-3">
-          <p className={inverse ? 'text-xs leading-relaxed text-[#E9F7FA]' : 'text-sm text-[#1E6A83]'}>
+          <p className={inverse ? 'text-xs leading-relaxed text-[#eaf6ff]' : 'text-sm text-[#096ab7]'}>
             {role === 'teacher' ? SIGNUP_SCHOOL.teacherStaff : role === 'parent' ? SIGNUP_SCHOOL.parentNote : SIGNUP_SCHOOL.studentNote}
           </p>
           <CountrySelect tone={tone} label={SIGNUP_SCHOOL.country} value={country} onChange={onCountry} />
           <label className="block space-y-1.5">
             <span className={label}>{SIGNUP_SCHOOL.state}</span>
-            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83]`} value={state} onChange={(event) => onState(event.target.value)} aria-label={SIGNUP_SCHOOL.state}>
+            <select className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#096ab7]`} value={state} onChange={(event) => onState(event.target.value)} aria-label={SIGNUP_SCHOOL.state}>
               <option value="" className="bg-[#0B0F1A]">{SIGNUP_SCHOOL.stateEmpty}</option>
               {states.map((item) => <option key={item} value={item} className="bg-[#0B0F1A]">{item}</option>)}
             </select>
@@ -169,7 +169,7 @@ export function SelfJoinPicker({
           <label className="block space-y-1.5">
             <span className={label}>{SIGNUP_SCHOOL.search}</span>
             <input
-              className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83]`}
+              className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#096ab7]`}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={SIGNUP_SCHOOL.searchPlaceholder}
@@ -184,7 +184,7 @@ export function SelfJoinPicker({
               data-school-id=""
               aria-pressed={!institutionId}
               onClick={() => onInstitution('')}
-              className={`flex min-h-11 w-full items-center rounded-2xl border px-3 text-left text-sm ${!institutionId ? 'border-[#3FE0D0] text-[#3FE0D0]' : 'border-white/10 text-white/70'}`}
+              className={`flex min-h-11 w-full items-center rounded-2xl border px-3 text-left text-sm ${!institutionId ? 'border-[#d9efff] text-[#d9efff]' : 'border-white/10 text-white/70'}`}
             >
               {SIGNUP_SCHOOL.notListed}
             </button>
@@ -195,7 +195,7 @@ export function SelfJoinPicker({
                 data-school-id={item.id}
                 aria-pressed={institutionId === item.id}
                 onClick={() => onInstitution(item.id)}
-                className={`flex min-h-11 w-full items-center gap-3 rounded-2xl border px-3 text-left text-sm ${institutionId === item.id ? 'border-[#3FE0D0] text-white' : 'border-white/10 text-white/80'}`}
+                className={`flex min-h-11 w-full items-center gap-3 rounded-2xl border px-3 text-left text-sm ${institutionId === item.id ? 'border-[#d9efff] text-white' : 'border-white/10 text-white/80'}`}
               >
                 {item.logo ? <img src={item.logo} alt="" className="h-8 w-8 rounded-lg object-cover" /> : null}
                 <span>
@@ -205,21 +205,21 @@ export function SelfJoinPicker({
               </button>
             ))}
           </div>
-          {note ? <p className="text-xs text-[#3FE0D0]">{note}</p> : null}
-          {country && state && rows.length === 0 && !note ? <p className="text-xs text-[#3FE0D0]">{SIGNUP_SCHOOL.listedEmpty}</p> : null}
+          {note ? <p className="text-xs text-[#d9efff]">{note}</p> : null}
+          {country && state && rows.length === 0 && !note ? <p className="text-xs text-[#d9efff]">{SIGNUP_SCHOOL.listedEmpty}</p> : null}
           {!institutionId && (
             <div className="space-y-2">
               <label className="block space-y-1.5">
                 <span className={label}>{SIGNUP_SCHOOL.schoolName}</span>
                 <input
-                  className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83]`}
+                  className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#096ab7]`}
                   value={schoolName}
                   onChange={(event) => onSchoolName?.(event.target.value)}
                   aria-label={SIGNUP_SCHOOL.schoolName}
                   autoComplete="organization"
                   maxLength={80}
                 />
-                <span className={inverse ? 'block text-xs leading-relaxed text-[#3FE0D0]' : 'block text-xs leading-relaxed text-[#1E6A83]'}>{SIGNUP_SCHOOL.schoolNameHint}</span>
+                <span className={inverse ? 'block text-xs leading-relaxed text-[#d9efff]' : 'block text-xs leading-relaxed text-[#096ab7]'}>{SIGNUP_SCHOOL.schoolNameHint}</span>
               </label>
               <label className="block space-y-1.5">
                 <span className={label}>{SIGNUP_SCHOOL.inviteEmail}</span>
@@ -232,23 +232,23 @@ export function SelfJoinPicker({
                   autoComplete="email"
                 />
               </label>
-              <button type="button" data-invite-school="1" onClick={() => void sendInvite()} className="inline-flex h-11 items-center rounded-2xl bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]">
+              <button type="button" data-invite-school="1" onClick={() => void sendInvite()} className="inline-flex h-11 items-center rounded-2xl bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]">
                 {SIGNUP_SCHOOL.inviteSchool}
               </button>
-              {inviteNote ? <p className="text-xs text-[#3FE0D0]">{inviteNote}</p> : null}
+              {inviteNote ? <p className="text-xs text-[#d9efff]">{inviteNote}</p> : null}
             </div>
           )}
-          {chosen ? <p className="text-sm text-[#3FE0D0]">{SIGNUP_SCHOOL.joining} {chosen.displayName}.</p> : null}
+          {chosen ? <p className="text-sm text-[#d9efff]">{SIGNUP_SCHOOL.joining} {chosen.displayName}.</p> : null}
           <label className="block space-y-1.5">
             <span className={label}>{SIGNUP_SCHOOL.code}</span>
-            <input className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={inviteCode} onChange={(event) => onInviteCode(event.target.value.toUpperCase())} aria-label={SIGNUP_SCHOOL.code} autoCapitalize="characters" autoComplete="off" data-invite-code="1" />
+            <input className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8bc9f5]`} value={inviteCode} onChange={(event) => onInviteCode(event.target.value.toUpperCase())} aria-label={SIGNUP_SCHOOL.code} autoCapitalize="characters" autoComplete="off" data-invite-code="1" />
           </label>
         </div>
       )}
       {showChildren && (
         <label className="block space-y-1.5">
           <span className={label}>{SIGNUP_SCHOOL.parentNote}</span>
-          <input className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6FBBCE]`} value={childEmails} onChange={(event) => onChildEmails(event.target.value)} aria-label={SIGNUP_SCHOOL.parentNote} autoComplete="email" inputMode="email" />
+          <input className={`${control} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8bc9f5]`} value={childEmails} onChange={(event) => onChildEmails(event.target.value)} aria-label={SIGNUP_SCHOOL.parentNote} autoComplete="email" inputMode="email" />
         </label>
       )}
     </div>

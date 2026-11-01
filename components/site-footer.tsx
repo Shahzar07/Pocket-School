@@ -10,7 +10,7 @@ import { useWhiteLabel } from "@/components/white-label-provider";
 import { isBrandedLoginPath } from "@/lib/institution-login";
 import { isInstitutionJourneyPath } from "@/lib/institution-journey";
 import { FooterColumns, FooterLegalRow } from "@/components/site-footer-columns";
-import { IconMark } from "@/components/design/icons";
+import { PoketWordmark } from "@/components/poket-wordmark";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import styles from "./home-chrome.module.css";
@@ -54,12 +54,7 @@ export function SiteFooter() {
       <div className={styles.footerGrid}>
         <div>
           <Link href="/" className={styles.brand}>
-            <span className={styles.mark} aria-hidden>
-              <IconMark size={16} />
-            </span>
-            <span>
-              {brandName} <small>/ AI</small>
-            </span>
+            {branding.isWhiteLabel ? <span>{brandName}</span> : <PoketWordmark />}
           </Link>
           {powered && <p className="mt-2 text-xs">Powered by Poket School</p>}
           <p>
@@ -67,13 +62,10 @@ export function SiteFooter() {
             <br />
             {t("footer.tagline2")}
           </p>
+          <p>{t("footer.question")}<br /><a href="mailto:hello@poketschool.ai">hello@poketschool.ai ↗</a></p>
         </div>
         <FooterColumns tone="ink" />
-        <div className={styles.contactCard}>
-          <h2>{t("footer.keepLearning")}</h2>
-          <p>{t("footer.question")}</p>
-          <a href="mailto:hello@poketschool.ai">hello@poketschool.ai ↗</a>
-        </div>
+
       </div>
       <div className={styles.legalLinks}>
         <FooterLegalRow tone="ink" />

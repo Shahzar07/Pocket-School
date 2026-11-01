@@ -48,20 +48,20 @@ export function CopyrightSign({
   };
 
   return (
-    <fieldset className="space-y-3 rounded-2xl border border-[#1E6A83]/30 p-4" data-copyright-sign="1">
-      <legend className="px-1 text-sm font-semibold text-[#203337]">{SIGN.title}</legend>
-      <p className="text-sm leading-6 text-[#203337]/80">{COPYRIGHT_DECLARATION}</p>
-      <p className="text-xs text-[#1E6A83]">{SIGN.body}</p>
-      <label className="block text-sm font-semibold text-[#203337]">
+    <fieldset className="space-y-3 rounded-2xl border border-[#096ab7]/30 p-4" data-copyright-sign="1">
+      <legend className="px-1 text-sm font-semibold text-[#11131b]">{SIGN.title}</legend>
+      <p className="text-sm leading-6 text-[#11131b]/80">{COPYRIGHT_DECLARATION}</p>
+      <p className="text-xs text-[#096ab7]">{SIGN.body}</p>
+      <label className="block text-sm font-semibold text-[#11131b]">
         {SIGN.name}
         <input
           value={typed}
           data-copyright-name="1"
           onChange={(event) => setTyped(event.target.value)}
-          className="mt-1 w-full min-h-11 rounded-xl border border-[#1E6A83]/30 px-3"
+          className="mt-1 w-full min-h-11 rounded-xl border border-[#096ab7]/30 px-3"
         />
       </label>
-      <button type="button" data-copyright-submit="1" disabled={busy} className="min-h-11 rounded-full bg-[#1E6A83] px-4 text-sm font-bold text-white disabled:opacity-40" onClick={() => void sign()}>
+      <button type="button" data-copyright-submit="1" disabled={busy} className="min-h-11 rounded-full bg-[#096ab7] px-4 text-sm font-bold text-white disabled:opacity-40" onClick={() => void sign()}>
         {SIGN.sign}
       </button>
     </fieldset>

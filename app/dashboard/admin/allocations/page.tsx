@@ -60,18 +60,18 @@ export default function AccessAllocationPage() {
   return (
     <div className="max-w-6xl mx-auto px-0 sm:px-2 pb-12 space-y-8">
       <motion.header variants={fadeUp} initial="hidden" animate="visible">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">Access control</p>
-        <h1 className="font-heading text-4xl sm:text-5xl text-[#203337] tracking-tight mt-3">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#096ab7]">Access control</p>
+        <h1 className="font-heading text-4xl sm:text-5xl text-[#11131b] tracking-tight mt-3">
           Allocations
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">
           Give a course or a plan to a school, a class, or a person. Seat rows are listed here. A single email grant is in the people search.
         </p>
         <p className="mt-3 text-sm">
-          <Link href="/dashboard/admin/access" className="font-semibold text-[#1E6A83] underline">Roles and institution admins</Link>
+          <Link href="/dashboard/admin/access" className="font-semibold text-[#096ab7] underline">Roles and institution admins</Link>
         </p>
         <p className="mt-3 text-sm">
-          <Link href="/dashboard/admin/access" className="font-semibold text-[#1E6A83] underline">Roles and institution admins</Link>
+          <Link href="/dashboard/admin/access" className="font-semibold text-[#096ab7] underline">Roles and institution admins</Link>
         </p>
       </motion.header>
 
@@ -226,7 +226,7 @@ function PeoplePanel({ courses }: { courses: Course[] }) {
                   title={t.blurb}
                   className={`px-3 h-9 rounded-full text-xs font-semibold border transition-colors disabled:opacity-50 ${
                     currentTier === t.tier
-                      ? 'bg-[#3FE0D0] text-[#203337] border-[#1E6A83]'
+                      ? 'bg-[#d9efff] text-[#11131b] border-[#096ab7]'
                       : 'border-border text-muted-foreground hover:bg-muted'
                   }`}
                 >

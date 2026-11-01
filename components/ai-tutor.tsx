@@ -79,7 +79,7 @@ export function AITutor() {
                 >
                   AI Teachers
                 </Link>
-                <CloseControl onClose={() => setIsOpen(false)} className="text-[#203337] hover:bg-black/10" />
+                <CloseControl onClose={() => setIsOpen(false)} className="text-[#11131b] hover:bg-black/10" />
               </div>
             </div>
             <div className="px-3 py-2 border-b border-white/10 bg-white/5 flex items-center gap-2 shrink-0">

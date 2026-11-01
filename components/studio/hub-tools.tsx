@@ -39,8 +39,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: 'ET AI',
     kicker: 'Create',
     blurb: 'Turn any topic into a lesson, quiz, flashcards, audio or video, and keep it in your library.',
-    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#12343F] dark:text-[#A7D9E5]',
-    bar: 'bg-[#1E6A83] dark:bg-[#6FBBCE]',
+    well: 'bg-[#eaf6ff] text-[#096ab7] dark:bg-[#12343F] dark:text-[#A7D9E5]',
+    bar: 'bg-[#096ab7] dark:bg-[#8bc9f5]',
     links: [],
   },
   {
@@ -50,7 +50,7 @@ export const STUDIO_TOOLS: StudioTool[] = [
     kicker: 'Solve',
     blurb: 'Snap or type a problem. ET Maths walks you through it, with exam packs and a puzzle for today.',
     well: 'bg-[var(--ps-cyan-soft)] text-[var(--ps-cyan-text)] dark:bg-[var(--ps-cyan-soft)] dark:text-[var(--ps-cyan)]',
-    bar: 'bg-[#1E6A83] dark:border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]',
+    bar: 'bg-[#096ab7] dark:border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)]',
     links: [
       { href: '/dashboard/studio/exams/packs/browse/all/all/mathematics', label: 'Exam packs' },
       { href: `${STUDIO_MATHS}/lab`, label: "Today's puzzle" },
@@ -62,8 +62,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: 'ET Exams',
     kicker: 'Prepare',
     blurb: 'Your notes, slides and past papers become a day-by-day plan, a mock, and an oral with ET AI.',
-    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#121E22] dark:text-[#E9F7FA]',
-    bar: 'bg-[#1E6A83] dark:bg-[#1E6A83]',
+    well: 'bg-[#eaf6ff] text-[#096ab7] dark:bg-[#121E22] dark:text-[#eaf6ff]',
+    bar: 'bg-[#096ab7] dark:bg-[#096ab7]',
     links: [
       { href: '/dashboard/studio/exams/packs', label: 'Official exams' },
       { href: `${STUDIO_EXAM_PREP}/new`, label: 'New plan' },
@@ -75,8 +75,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: 'ET Essays',
     kicker: 'Plan',
     blurb: 'ET AI sets a question and helps you plan. You write the essay. A mark shows a 9–1 grade, a letter from A* to U, and a percentage.',
-    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#121E22] dark:text-[#E9F7FA]',
-    bar: 'bg-[#1E6A83] dark:bg-[#E9F7FA]',
+    well: 'bg-[#eaf6ff] text-[#096ab7] dark:bg-[#121E22] dark:text-[#eaf6ff]',
+    bar: 'bg-[#096ab7] dark:bg-[#eaf6ff]',
     links: [
       { href: '/studio/essays', label: 'Full page' },
       { href: '/dashboard/studio/essays/review', label: 'Teacher review' },
@@ -100,8 +100,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: 'Teacher Toolkit',
     kicker: 'Teach',
     blurb: 'Lesson plans, worksheets, rubrics, the same task in support, core, and stretch, and an exit ticket. Save it as a course draft.',
-    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#121E22] dark:text-[#E9F7FA]',
-    bar: 'bg-[#1E6A83] dark:bg-[#1E6A83]',
+    well: 'bg-[#eaf6ff] text-[#096ab7] dark:bg-[#121E22] dark:text-[#eaf6ff]',
+    bar: 'bg-[#096ab7] dark:bg-[#096ab7]',
     links: [],
     gate: 'teacher-toolkit',
   },
@@ -111,8 +111,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: 'Parent Explainer',
     kicker: 'Home',
     blurb: 'A plain-language week for your own child: what they learned, where they are strong, where they are stuck, and how to help at home.',
-    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#121E22] dark:text-[#E9F7FA]',
-    bar: 'bg-[#1E6A83] dark:bg-[#E9F7FA]',
+    well: 'bg-[#eaf6ff] text-[#096ab7] dark:bg-[#121E22] dark:text-[#eaf6ff]',
+    bar: 'bg-[#096ab7] dark:bg-[#eaf6ff]',
     links: [],
     gate: 'parent-explainer',
   },
@@ -145,8 +145,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: TIMETABLE_COPY.studioTab,
     kicker: 'Week',
     blurb: TIMETABLE_COPY.studioBlurb,
-    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#12343F] dark:text-[#A7D9E5]',
-    bar: 'bg-[#3FE0D0]',
+    well: 'bg-[#eaf6ff] text-[#096ab7] dark:bg-[#12343F] dark:text-[#A7D9E5]',
+    bar: 'bg-[#d9efff]',
     links: [],
     timetabler: true,
   },
@@ -156,8 +156,8 @@ export const STUDIO_TOOLS: StudioTool[] = [
     name: 'AI Teachers',
     kicker: 'Talk',
     blurb: 'Talk with ET Maths, ET Science, and the rest. Type, send voice notes, or open a live voice and video session.',
-    well: 'bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#121E22] dark:text-[#E9F7FA]',
-    bar: 'bg-[#1E6A83] dark:bg-[#E9F7FA]',
+    well: 'bg-[#eaf6ff] text-[#096ab7] dark:bg-[#121E22] dark:text-[#eaf6ff]',
+    bar: 'bg-[#096ab7] dark:bg-[#eaf6ff]',
     links: [],
   },
 ];
@@ -186,7 +186,7 @@ export function StudioTimetableQuick() {
     <Link
       href={href}
       data-action="studio-quick"
-      className="rounded-full bg-white px-3.5 py-2 text-[13px] font-semibold text-[#1E6A83] transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
+      className="rounded-full bg-white px-3.5 py-2 text-[13px] font-semibold text-[#096ab7] transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
     >
       {TIMETABLE_COPY.studioQuick}
     </Link>
@@ -225,14 +225,14 @@ export function StudioToolGrid({ showAll = false }: { showAll?: boolean }) {
               )}
               <Link
                 href={tool.href}
-                className="mt-5 inline-flex h-10 w-fit items-center gap-1.5 rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white transition hover:opacity-90 dark:bg-[#6FBBCE] dark:text-[#0B1417]"
+                className="mt-5 inline-flex h-10 w-fit items-center gap-1.5 rounded-full bg-[#096ab7] px-4 text-sm font-semibold text-white transition hover:opacity-90 dark:bg-[#8bc9f5] dark:text-[#0B1417]"
               >
                 Open {tool.name} <ArrowRight className="h-4 w-4" />
               </Link>
               {tool.links.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
                   {tool.links.map(link => (
-                    <Link key={link.href} href={link.href} className="text-[12px] font-semibold text-[#1E6A83] hover:underline dark:text-[#A7D9E5]">
+                    <Link key={link.href} href={link.href} className="text-[12px] font-semibold text-[#096ab7] hover:underline dark:text-[#A7D9E5]">
                       {link.label}
                     </Link>
                   ))}

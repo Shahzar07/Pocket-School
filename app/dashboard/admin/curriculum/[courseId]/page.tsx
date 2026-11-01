@@ -92,7 +92,7 @@ const STATUS_DOT: Record<string, string> = {
   approved: 'bg-blue-500',
   in_review: 'bg-[var(--ps-cyan)]',
   draft: 'bg-slate-300',
-  archived: 'bg-[#1E6A83]',
+  archived: 'bg-[#096ab7]',
 };
 
 const STATUS_CARD: Record<string, { bg: string; label: string }> = {
@@ -1114,7 +1114,7 @@ export default function ContentBuilderPage() {
         {/* Save status */}
         <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground max-w-sm" role="status" aria-live="polite" data-save-state={saveState}>
           <span className={`w-2 h-2 rounded-full shrink-0 ${
-            saveState === 'saved' ? 'bg-success' : saveState === 'error' ? 'bg-[#1E6A83]' : 'bg-[var(--ps-cyan)] animate-pulse'
+            saveState === 'saved' ? 'bg-success' : saveState === 'error' ? 'bg-[#096ab7]' : 'bg-[var(--ps-cyan)] animate-pulse'
           }`} />
           {saveState === 'saved' && 'All changes saved'}
           {saveState === 'saving' && 'Saving…'}
@@ -1154,7 +1154,7 @@ export default function ContentBuilderPage() {
       {/* ── Three panels ── */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[270px_minmax(0,1fr)_320px]">
         <div className="flex items-center justify-between border-b border-border px-3 py-2 lg:hidden">
-          <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" onClick={() => setTreeOpen(true)}>
+          <button type="button" className="h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]" onClick={() => setTreeOpen(true)}>
             Course structure
           </button>
         </div>
@@ -1508,7 +1508,7 @@ export default function ContentBuilderPage() {
                 aria-selected={rightTab === id}
                 data-right-tab={id}
                 onClick={() => setRightTab(id)}
-                className={`min-h-11 rounded-xl px-2 text-sm font-semibold transition-colors ${rightTab === id ? 'bg-[#203337] text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                className={`min-h-11 rounded-xl px-2 text-sm font-semibold transition-colors ${rightTab === id ? 'bg-[#11131b] text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
               >
                 {label}
               </button>

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 export const CLOSE_LABEL = 'Close';
 
 export const closeControlClass =
-  'inline-grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-full text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E6A83] focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'inline-grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-full text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#096ab7] focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 export function confirmIfDirty(dirty: boolean): boolean {
   if (!dirty) return true;

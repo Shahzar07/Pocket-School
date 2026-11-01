@@ -73,7 +73,7 @@ export function ImportPanel({ onApply }: { onApply: (result: ImportResult) => vo
             <h3 className="font-heading text-[22px]">Cleanup preview{draft.sourceName ? ` · ${draft.sourceName}` : ''}</h3>
             <div className="flex gap-2">
               <button type="button" className="h-9 rounded-full border border-border px-3 text-sm font-semibold" onClick={() => setDraft(null)}>Discard</button>
-              <button type="button" className="h-9 rounded-full bg-[#203337] px-3 text-sm font-bold text-white" onClick={() => { onApply(draft); setDraft(null); }}>Use these sections</button>
+              <button type="button" className="h-9 rounded-full bg-[#11131b] px-3 text-sm font-bold text-white" onClick={() => { onApply(draft); setDraft(null); }}>Use these sections</button>
             </div>
           </div>
           {draft.warnings.length > 0 && (

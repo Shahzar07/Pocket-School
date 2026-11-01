@@ -84,7 +84,7 @@ export function CoverEditor({
       <legend className="px-1 text-sm font-semibold">{BLOG_DESK.banner}</legend>
       <p className="text-xs text-muted-foreground">{BLOG_DESK.bannerHelp}</p>
       <label
-        className={`flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-3 py-4 text-center text-sm ${over ? 'border-[#3FE0D0] bg-[#3FE0D0]/10' : 'border-border'}`}
+        className={`flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-3 py-4 text-center text-sm ${over ? 'border-[#d9efff] bg-[#d9efff]/10' : 'border-border'}`}
         onDragOver={(event) => { event.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
         onDrop={(event) => {

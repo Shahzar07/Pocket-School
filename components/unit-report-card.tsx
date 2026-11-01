@@ -59,7 +59,7 @@ export function UnitReportCard({ report }: { report: UnitReportData }) {
         <div>
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-xs text-muted-foreground">Best quiz score</span>
-            <span className={`text-2xl font-extrabold ${passed ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
+            <span className={`text-2xl font-semibold ${passed ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
               {best.percentage}%
             </span>
           </div>

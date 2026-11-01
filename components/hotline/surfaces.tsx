@@ -44,7 +44,7 @@ const CSS = `
   border-radius: 999px;
   padding: 0 12px;
   background: #E5F6EF;
-  color: #1E6A83;
+  color: #096ab7;
   font-size: 13px;
   font-weight: 700;
 }
@@ -55,9 +55,9 @@ const CSS = `
   padding: 0 16px;
   font: inherit;
   font-weight: 700;
-  background: #3FE0D0;
-  color: #203337;
-  border: 1px solid #1E6A83;
+  background: #d9efff;
+  color: #11131b;
+  border: 1px solid #096ab7;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -65,7 +65,7 @@ const CSS = `
 }
 .hk-btn.ghost { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
 .hk-chip { min-height: 48px; }
-.hk-note { background: #E5F6EF; border-radius: 16px; padding: 12px; color: #1E6A83; }
+.hk-note { background: #E5F6EF; border-radius: 16px; padding: 12px; color: #096ab7; }
 .hk-warn { background: #FDECEA; border-radius: 16px; padding: 12px; color: #17343C; }
 `;
 

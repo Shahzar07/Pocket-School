@@ -39,24 +39,24 @@ export default function JoinClassroomPage() {
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center gap-4 px-4 py-16">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">{JOIN.eyebrow}</p>
-      <h1 className="font-heading text-4xl text-[#203337]">{JOIN.title}</h1>
-      <p className="text-sm leading-relaxed text-[#203337]/80">{JOIN.lede}</p>
-      <p className="font-mono text-lg text-[#203337]" data-join-code="1">{code}</p>
-      {loading ? <p className="text-sm text-[#1E6A83]">{JOIN.signingIn}</p> : null}
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#096ab7]">{JOIN.eyebrow}</p>
+      <h1 className="font-heading text-4xl text-[#11131b]">{JOIN.title}</h1>
+      <p className="text-sm leading-relaxed text-[#11131b]/80">{JOIN.lede}</p>
+      <p className="font-mono text-lg text-[#11131b]" data-join-code="1">{code}</p>
+      {loading ? <p className="text-sm text-[#096ab7]">{JOIN.signingIn}</p> : null}
       {!loading && !user ? (
         <div className="flex flex-wrap gap-2">
-          <p className="w-full text-sm text-[#1E6A83]">{JOIN.needAccount}</p>
-          <Link className="inline-flex min-h-11 items-center rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white" href={`/login?next=/join/class/${encodeURIComponent(code)}`}>{JOIN.signIn}</Link>
-          <Link className="inline-flex min-h-11 items-center rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#203337]" href="/signup">{JOIN.signUp}</Link>
+          <p className="w-full text-sm text-[#096ab7]">{JOIN.needAccount}</p>
+          <Link className="inline-flex min-h-11 items-center rounded-full bg-[#096ab7] px-4 text-sm font-semibold text-white" href={`/login?next=/join/class/${encodeURIComponent(code)}`}>{JOIN.signIn}</Link>
+          <Link className="inline-flex min-h-11 items-center rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#11131b]" href="/signup">{JOIN.signUp}</Link>
         </div>
       ) : null}
       {user ? (
-        <button type="button" data-join-class="1" disabled={busy} onClick={() => void join()} className="min-h-11 w-fit rounded-full bg-[#3FE0D0] px-5 text-sm font-bold text-[#203337]">
+        <button type="button" data-join-class="1" disabled={busy} onClick={() => void join()} className="min-h-11 w-fit rounded-full bg-[#d9efff] px-5 text-sm font-bold text-[#11131b]">
           {JOIN.action}
         </button>
       ) : null}
-      {message ? <p className="text-sm text-[#203337]" data-join-message="1">{message}</p> : null}
+      {message ? <p className="text-sm text-[#11131b]" data-join-message="1">{message}</p> : null}
     </main>
   );
 }

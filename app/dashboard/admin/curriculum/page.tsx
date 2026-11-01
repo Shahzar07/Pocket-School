@@ -651,7 +651,7 @@ export default function AdminCurriculumPage() {
                   <div className="space-y-1.5">
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-[#1E6A83] to-teal-500 transition-all duration-300"
+                        className="h-full bg-gradient-to-r from-[#096ab7] to-teal-500 transition-all duration-300"
                         style={{ width: `${Math.round((archProgress.done / Math.max(1, archProgress.total)) * 100)}%` }}
                       />
                     </div>

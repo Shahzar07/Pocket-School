@@ -20,7 +20,7 @@ import { BLOG_CATEGORIES, SAMPLE_POSTS, isCoverPath, slugify, type BlogFaq, type
 import { EMPTY_SEO, localSeoSuggestion, withSeo } from '@/lib/blog/seo';
 import { authedFetch } from '@/lib/api-client';
 
-const fieldClass = 'mt-1 w-full min-h-11 rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]';
+const fieldClass = 'mt-1 w-full min-h-11 rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#11131b)]';
 
 const EMPTY: BlogPost = withSeo({
   slug: '',
@@ -210,15 +210,15 @@ export function EditorDesk({ slug }: { slug?: string }) {
     <DashPage>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href="/dashboard/admin/blog" className="text-sm font-bold text-[#1E6A83]">Back to essays</Link>
+          <Link href="/dashboard/admin/blog" className="text-sm font-bold text-[#096ab7]">Back to essays</Link>
           <h1 className="mt-1 font-heading text-3xl tracking-tight text-foreground">{slug ? 'Edit essay' : 'New essay'}</h1>
         </div>
-        <button type="button" disabled={busy || !allowed} className="h-11 rounded-full bg-[#3FE0D0] px-5 text-sm font-bold text-[#203337] disabled:opacity-40" onClick={() => void save()}>
+        <button type="button" disabled={busy || !allowed} className="h-11 rounded-full bg-[#d9efff] px-5 text-sm font-bold text-[#11131b] disabled:opacity-40" onClick={() => void save()}>
           {busy ? 'Saving…' : 'Save essay'}
         </button>
       </div>
-      {!allowed ? <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[#1E6A83]">Only a super admin can save or publish.</p> : null}
-      {notice ? <p role="status" className="text-sm text-[#1E6A83]">{notice}</p> : null}
+      {!allowed ? <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[#096ab7]">Only a super admin can save or publish.</p> : null}
+      {notice ? <p role="status" className="text-sm text-[#096ab7]">{notice}</p> : null}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <form className="space-y-3 rounded-3xl border border-border bg-card p-4" onSubmit={(event) => { event.preventDefault(); void save(); }}>
           <label className="block text-sm font-semibold">Title
@@ -291,7 +291,7 @@ export function EditorDesk({ slug }: { slug?: string }) {
               </div>
             ))}
             {draft.faq.length < 8 ? (
-              <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => setDraft({ ...draft, faq: [...draft.faq, { question: '', answer: '' }] })}>Add a question</button>
+              <button type="button" className="h-11 text-sm font-bold text-[#096ab7]" onClick={() => setDraft({ ...draft, faq: [...draft.faq, { question: '', answer: '' }] })}>Add a question</button>
             ) : null}
           </fieldset>
         </form>

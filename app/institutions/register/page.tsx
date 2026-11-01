@@ -236,13 +236,13 @@ export default function InstitutionRegisterPage() {
         ? 'Choose a level, the programmes on that level, and how many student seats. Payment opens the academy and the setup checklist.'
         : 'Start with your admin account and an email code. Then add the organisation, pick a plan, and pay. Poket School opens the academy when payment succeeds.'}
     >
-      <ol className="mb-6 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold uppercase tracking-wide text-[#203337]/50">
-        <li className={step === 'account' ? 'text-[#203337]' : ''}>1. Admin</li>
-        <li className={step === 'code' ? 'text-[#203337]' : ''}>2. Email code</li>
-        <li className={step === 'organisation' ? 'text-[#203337]' : ''}>3. Organisation</li>
-        <li className={step === 'plan' ? 'text-[#203337]' : ''}>4. Plan</li>
+      <ol className="mb-6 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold uppercase tracking-wide text-[#11131b]/50">
+        <li className={step === 'account' ? 'text-[#11131b]' : ''}>1. Admin</li>
+        <li className={step === 'code' ? 'text-[#11131b]' : ''}>2. Email code</li>
+        <li className={step === 'organisation' ? 'text-[#11131b]' : ''}>3. Organisation</li>
+        <li className={step === 'plan' ? 'text-[#11131b]' : ''}>4. Plan</li>
       </ol>
-      {error && step !== 'plan' && <p role="alert" className="mb-4 rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm">{error}</p>}
+      {error && step !== 'plan' && <p role="alert" className="mb-4 rounded-2xl bg-[#eaf6ff] px-4 py-3 text-sm">{error}</p>}
 
       {step === 'account' && (
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void sendCode(); }}>
@@ -273,7 +273,7 @@ export default function InstitutionRegisterPage() {
             <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} className={journeyField} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} required />
           </label>
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="h-11 rounded-full border border-[#203337]/15 px-5 text-sm font-semibold" onClick={() => void sendCode()} disabled={busy}>Resend</button>
+            <button type="button" className="h-11 rounded-full border border-[#11131b]/15 px-5 text-sm font-semibold" onClick={() => void sendCode()} disabled={busy}>Resend</button>
             <button type="submit" className={journeyButton}>Continue</button>
           </div>
         </form>
@@ -304,7 +304,7 @@ export default function InstitutionRegisterPage() {
             </select>
           </label>
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="h-11 rounded-full border border-[#203337]/15 px-5 text-sm font-semibold" onClick={() => setStep('code')}>Back</button>
+            <button type="button" className="h-11 rounded-full border border-[#11131b]/15 px-5 text-sm font-semibold" onClick={() => setStep('code')}>Back</button>
             <button type="submit" className={journeyButton} disabled={busy}>{busy ? 'Creating…' : 'Continue to plans'}</button>
           </div>
         </form>
@@ -325,7 +325,7 @@ export default function InstitutionRegisterPage() {
         />
       )}
 
-      <p className="mt-6 text-sm text-[#203337]/70">
+      <p className="mt-6 text-sm text-[#11131b]/70">
         Already registered? <Link href="/institutions/login" className="font-semibold underline">Institution admin sign-in</Link>
       </p>
     </InstitutionJourneyFrame>

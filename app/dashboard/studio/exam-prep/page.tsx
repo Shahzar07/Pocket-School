@@ -126,7 +126,7 @@ function PrepCard({ prep, index }: { prep: ExamPrep; index: number }) {
           </div>
           <div className="relative h-2 rounded-full bg-muted">
             <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${mastery}%` }} />
-            <span className="absolute -top-1 w-0.5 h-4 bg-[#1E6A83] rounded" style={{ left: `${prep.targetScore}%` }} />
+            <span className="absolute -top-1 w-0.5 h-4 bg-[#096ab7] rounded" style={{ left: `${prep.targetScore}%` }} />
           </div>
         </div>
         <div className="mt-4 flex items-center gap-4 text-[13px]">

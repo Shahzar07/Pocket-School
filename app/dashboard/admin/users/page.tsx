@@ -370,12 +370,12 @@ export default function AdminUsersPage() {
         {[
           { label: 'Total users', value: stats.total, accent: 'bg-primary' },
           { label: 'Students', value: stats.students, accent: 'bg-success' },
-          { label: 'Suspended', value: stats.suspended, accent: 'bg-[#1E6A83]' },
+          { label: 'Suspended', value: stats.suspended, accent: 'bg-[#096ab7]' },
           { label: 'Sparks in circulation', value: stats.sparks.toLocaleString(), accent: 'bg-[var(--ps-cyan)]' },
         ].map(s => (
           <div key={s.label} className="bg-card border border-border rounded-3xl p-5 relative overflow-hidden card-glow">
             <span className={`absolute top-0 left-6 right-6 h-[3px] rounded-b-full ${s.accent} opacity-80`} />
-            <p className="text-2xl font-extrabold text-foreground tabular-nums">{s.value}</p>
+            <p className="text-2xl font-semibold text-foreground tabular-nums">{s.value}</p>
             <p className="text-xs text-muted-foreground mt-1 font-medium">{s.label}</p>
           </div>
         ))}
@@ -542,7 +542,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-[#3FE0D0] grid place-items-center text-white text-xs font-bold shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-[#d9efff] grid place-items-center text-white text-xs font-bold shrink-0">
                           {(r.data.name ?? 'U').charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">

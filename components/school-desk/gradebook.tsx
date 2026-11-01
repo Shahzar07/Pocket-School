@@ -58,13 +58,13 @@ export function GradebookDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'pr
     <DeskFrame title={t.gradebookTitle} lede={t.gradebookLede} state={state} onReset={() => resetToDemo(setState)} syncs="Student dashboard, parent notice, report cards, Report Studio, goals for a weak topic, certificates">
       <DeskLinks base={base} />
       <div className="grid gap-3 sm:grid-cols-3">
-        <p className="rounded-2xl bg-white p-4 text-sm">{state.institution.name}<span className="mt-1 block text-[#1E6A83]">{t.scale}: {SCALE_LABEL[state.institution.defaultScale]}</span></p>
+        <p className="rounded-2xl bg-white p-4 text-sm">{state.institution.name}<span className="mt-1 block text-[#096ab7]">{t.scale}: {SCALE_LABEL[state.institution.defaultScale]}</span></p>
         <ClassSelect state={state} classId={activeId} onChange={setClassId} />
-        <p className="rounded-2xl bg-white p-4 text-sm">{klass?.term} · {klass?.subject}<span className="mt-1 block text-[#1E6A83]">{klass?.level}</span></p>
+        <p className="rounded-2xl bg-white p-4 text-sm">{klass?.term} · {klass?.subject}<span className="mt-1 block text-[#096ab7]">{klass?.level}</span></p>
       </div>
-      <div className="overflow-x-auto rounded-3xl border border-[#1E6A83]/20 bg-white">
+      <div className="overflow-x-auto rounded-3xl border border-[#096ab7]/20 bg-white">
         <table className="min-w-full text-left text-sm">
-          <thead className="text-[#1E6A83]">
+          <thead className="text-[#096ab7]">
             <tr>
               <th className="px-3 py-3">Student</th>
               {assessments.map((item) => (
@@ -77,17 +77,17 @@ export function GradebookDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'pr
             {students.map((pupil) => {
               const result = termResult(state, activeId, pupil.studentId);
               return (
-                <tr key={pupil.studentId} className="border-t border-[#1E6A83]/10">
+                <tr key={pupil.studentId} className="border-t border-[#096ab7]/10">
                   <td className="px-3 py-3 font-semibold">{pupil.studentName}</td>
                   {assessments.map((item) => {
                     const mark = state.marks.find((row) => row.assessmentId === item.id && row.studentId === pupil.studentId);
                     const label = mark ? displayMark(mark.points, item.maxPoints, item.scaleId as ScaleId, state.institution.customBands) : '—';
                     return (
                       <td key={item.id} className="px-3 py-3">
-                        <button type="button" data-action="open-cell" className="rounded-xl border border-[#1E6A83]/20 px-2 py-1" onClick={() => choose(item.id, pupil.studentId)}>
+                        <button type="button" data-action="open-cell" className="rounded-xl border border-[#096ab7]/20 px-2 py-1" onClick={() => choose(item.id, pupil.studentId)}>
                           {label}
-                          {mark && mark.flag !== 'none' ? <span className="ml-1 text-[#1E6A83]">{mark.flag}</span> : null}
-                          {mark?.state === 'draft' ? <span className="ml-1 text-[#1E6A83]">draft</span> : null}
+                          {mark && mark.flag !== 'none' ? <span className="ml-1 text-[#096ab7]">{mark.flag}</span> : null}
+                          {mark?.state === 'draft' ? <span className="ml-1 text-[#096ab7]">draft</span> : null}
                         </button>
                       </td>
                     );
@@ -102,17 +102,17 @@ export function GradebookDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'pr
       {assessment && cell && (
         <section className="rounded-3xl bg-white p-5">
           <h2 className="font-heading text-2xl">{assessment.title}</h2>
-          <p className="text-sm text-[#1E6A83]">{assessment.category} · {assessment.maxPoints} {t.scale.toLowerCase()} {SCALE_LABEL[assessment.scaleId]}</p>
+          <p className="text-sm text-[#096ab7]">{assessment.category} · {assessment.maxPoints} {t.scale.toLowerCase()} {SCALE_LABEL[assessment.scaleId]}</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <label className="text-sm text-[#1E6A83]">{t.points}
+            <label className="text-sm text-[#096ab7]">{t.points}
               <input className={`${deskStyles.field} mt-1 w-full`} value={draftPoints} onChange={(event) => setDraftPoints(event.target.value)} aria-label="Points" />
             </label>
-            <label className="text-sm text-[#1E6A83]">{t.flag}
+            <label className="text-sm text-[#096ab7]">{t.flag}
               <select className={`${deskStyles.field} mt-1 w-full`} value={draftFlag} onChange={(event) => setDraftFlag(event.target.value as MarkFlag)} aria-label={t.flag}>
                 {FLAGS.map((flag) => <option key={flag} value={flag}>{flag}</option>)}
               </select>
             </label>
-            <label className="text-sm text-[#1E6A83] sm:col-span-1">{t.comment}
+            <label className="text-sm text-[#096ab7] sm:col-span-1">{t.comment}
               <input className={`${deskStyles.field} mt-1 w-full`} value={draftComment} onChange={(event) => setDraftComment(event.target.value)} aria-label={t.comment} />
             </label>
           </div>
@@ -120,13 +120,13 @@ export function GradebookDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'pr
             <button type="button" className={deskStyles.ghost} onClick={() => save(false)}>{t.save}</button>
             <button type="button" data-action="publish-mark" className={deskStyles.btn} onClick={() => save(true)}>{t.publish}</button>
           </div>
-          {open ? <p className="mt-2 text-xs text-[#1E6A83]">Last edit {open.updatedAt} · {open.state}</p> : null}
+          {open ? <p className="mt-2 text-xs text-[#096ab7]">Last edit {open.updatedAt} · {open.state}</p> : null}
         </section>
       )}
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-3xl bg-white p-5">
           <h2 className="font-heading text-2xl">{t.importCsv}</h2>
-          <textarea className="mt-3 h-28 w-full rounded-2xl border border-[#1E6A83]/30 p-3 text-sm" value={csv} onChange={(event) => setCsv(event.target.value)} aria-label={t.importCsv} />
+          <textarea className="mt-3 h-28 w-full rounded-2xl border border-[#096ab7]/30 p-3 text-sm" value={csv} onChange={(event) => setCsv(event.target.value)} aria-label={t.importCsv} />
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" className={deskStyles.btn} onClick={() => {
               const result = importMarks(state, csv, state.actorId);
@@ -144,7 +144,7 @@ export function GradebookDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'pr
             }}>{t.exportCsv}</button>
             <button type="button" data-action="publish-all" className={deskStyles.ghost} onClick={() => setState(publishAllDrafts(state, activeId, state.actorId))}>{t.publishAll}</button>
           </div>
-          {notice ? <p className="mt-2 text-sm text-[#1E6A83]">{notice}</p> : null}
+          {notice ? <p className="mt-2 text-sm text-[#096ab7]">{notice}</p> : null}
         </div>
         <div className="rounded-3xl bg-white p-5">
           <h2 className="font-heading text-2xl">{t.drill}</h2>
@@ -160,7 +160,7 @@ export function GradebookDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'pr
             </ul>
           ) : null}
           <h3 className="mt-4 font-semibold">{t.audit}</h3>
-          <ul className="mt-2 space-y-1 text-sm text-[#1E6A83]">
+          <ul className="mt-2 space-y-1 text-sm text-[#096ab7]">
             {state.audit.slice(0, 6).map((item) => <li key={item.id}>{item.actor} · {item.action} · {item.target}</li>)}
           </ul>
         </div>

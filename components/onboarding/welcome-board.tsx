@@ -6,7 +6,7 @@ import type { WelcomeHue, WelcomeLessonView, WelcomeState } from '@/lib/onboardi
 const HUE: Record<WelcomeHue, { wash: string; chip: string; ink: string }> = {
   deep: { wash: 'bg-wash', chip: 'bg-blue-deep text-white', ink: 'text-ink' },
   mid: { wash: 'bg-card', chip: 'bg-brand-primary text-white', ink: 'text-foreground' },
-  bright: { wash: 'bg-wash', chip: 'bg-[#6FBBCE] text-[#203337]', ink: 'text-ink' },
+  bright: { wash: 'bg-wash', chip: 'bg-[#8bc9f5] text-[#11131b]', ink: 'text-ink' },
   mist: { wash: 'bg-card', chip: 'bg-brand-primary text-white', ink: 'text-foreground' },
 };
 
@@ -42,7 +42,7 @@ export function WelcomeResumeCard({
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">{state.blurb}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <WelcomeStars count={state.stars} total={state.total} className="text-foreground" />
-            <span className="rounded-full bg-[#6FBBCE] px-3 py-1 text-xs font-bold text-[#203337]">
+            <span className="rounded-full bg-[#8bc9f5] px-3 py-1 text-xs font-bold text-[#11131b]">
               {state.streak} lesson streak
             </span>
             {next && <span className="text-sm text-foreground">Next: {next.title}</span>}
@@ -98,7 +98,7 @@ export function WelcomeLessonCard({
               key={option}
               type="button"
               onClick={() => onSelect?.(index)}
-              className={`block w-full rounded-2xl border px-4 py-3 text-left text-sm font-medium text-[#203337] ${picked ? 'border-[#1E6A83] bg-white' : 'border-transparent bg-white/70 hover:bg-white'}`}
+              className={`block w-full rounded-2xl border px-4 py-3 text-left text-sm font-medium text-[#11131b] ${picked ? 'border-[#096ab7] bg-white' : 'border-transparent bg-white/70 hover:bg-white'}`}
               aria-pressed={picked}
             >
               {option}

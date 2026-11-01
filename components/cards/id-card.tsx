@@ -44,7 +44,7 @@ function Header({ view }: { view: IdCardView }) {
   return (
     <header
       className="absolute inset-x-0 top-0 flex h-[15.21%] items-center gap-[1.6cqw] px-[2.2cqw] text-white"
-      style={{ background: 'linear-gradient(90deg, #1E6A83 0%, #1E6A83 100%)' }}
+      style={{ background: 'linear-gradient(90deg, #096ab7 0%, #096ab7 100%)' }}
     >
       {view.brand.logoUrl ? (
         <img src={view.brand.logoUrl} alt="" className="h-[9.1cqw] w-[9.1cqw] shrink-0 rounded-[1.4cqw] bg-white object-contain p-[0.6cqw]" />
@@ -57,8 +57,8 @@ function Header({ view }: { view: IdCardView }) {
         <p className="truncate text-[2.7cqw] font-black uppercase leading-none tracking-[0.04em]">{view.brand.institutionName}</p>
         <p className="mt-[0.7cqw] truncate text-[1.7cqw] font-medium leading-tight text-white">{view.brand.tagline}</p>
       </div>
-      <div className="shrink-0 rounded-full bg-[#3FE0D0] px-[1.8cqw] py-[0.85cqw]">
-        <p className="text-[1.85cqw] font-black tracking-[0.03em] text-[#203337]">{CARD_BADGE}</p>
+      <div className="shrink-0 rounded-full bg-[#d9efff] px-[1.8cqw] py-[0.85cqw]">
+        <p className="text-[1.85cqw] font-black tracking-[0.03em] text-[#11131b]">{CARD_BADGE}</p>
       </div>
     </header>
   );
@@ -66,8 +66,8 @@ function Header({ view }: { view: IdCardView }) {
 
 function Footer({ motto }: { motto: string }) {
   return (
-    <footer className="absolute inset-x-0 bottom-0 flex h-[8.75%] items-center justify-center bg-[#3FE0D0] px-[3cqw]">
-      <p className="truncate text-[2.35cqw] font-bold text-[#203337]">{motto}</p>
+    <footer className="absolute inset-x-0 bottom-0 flex h-[8.75%] items-center justify-center bg-[#d9efff] px-[3cqw]">
+      <p className="truncate text-[2.35cqw] font-bold text-[#11131b]">{motto}</p>
     </footer>
   );
 }
@@ -75,8 +75,8 @@ function Footer({ motto }: { motto: string }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[1.55cqw] font-bold uppercase leading-none tracking-[0.08em] text-[#1E6A83]">{label}</p>
-      <p className="mt-[0.35cqw] truncate text-[2.35cqw] font-bold leading-tight text-[#203337]">{value || '—'}</p>
+      <p className="text-[1.55cqw] font-bold uppercase leading-none tracking-[0.08em] text-[#096ab7]">{label}</p>
+      <p className="mt-[0.35cqw] truncate text-[2.35cqw] font-bold leading-tight text-[#11131b]">{value || '—'}</p>
     </div>
   );
 }
@@ -89,7 +89,7 @@ export function IdCard({ view, side = 'front' }: { view: IdCardView; side?: 'fro
 
   return (
     <article
-      className="relative w-full overflow-hidden border border-[#1E6A83] bg-[#F3FEFE]"
+      className="relative w-full overflow-hidden border border-[#096ab7] bg-[#F3FEFE]"
       style={{ aspectRatio: String(CARD_RATIO), containerType: 'inline-size', borderRadius: '3.41cqw' }}
       aria-label={`${view.fullName}, ${CARD_BADGE}`}
     >
@@ -98,16 +98,16 @@ export function IdCard({ view, side = 'front' }: { view: IdCardView; side?: 'fro
         <>
           <div className="absolute inset-x-0 grid grid-cols-[27%_1fr_16%] gap-[2cqw] px-[2.4cqw] py-[1.6cqw]" style={{ top: '15.21%', bottom: '14.85%' }}>
             <div className="flex min-h-0 flex-col">
-              <div className="relative aspect-square w-full overflow-hidden rounded-[1.8cqw] border-[0.7cqw] border-[#1E6A83] bg-white">
+              <div className="relative aspect-square w-full overflow-hidden rounded-[1.8cqw] border-[0.7cqw] border-[#096ab7] bg-white">
                 {view.photoUrl ? (
                   <img src={view.photoUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-[11cqw] font-black text-[#1E6A83]">{initial}</div>
+                  <div className="flex h-full items-center justify-center text-[11cqw] font-black text-[#096ab7]">{initial}</div>
                 )}
                 <span
                   aria-hidden
-                  className="absolute right-[7%] top-[7%] h-[14%] w-[24%] rounded-[0.45cqw] border border-[#1E6A83]/30"
-                  style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #3FE0D0 40%, #F4FEFF 62%, #8FD0E4 100%)' }}
+                  className="absolute right-[7%] top-[7%] h-[14%] w-[24%] rounded-[0.45cqw] border border-[#096ab7]/30"
+                  style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #d9efff 40%, #F4FEFF 62%, #8FD0E4 100%)' }}
                 />
               </div>
               <div className="mt-[1.3cqw] rounded-[1.5cqw] bg-white px-[1.1cqw] py-[0.9cqw]">
@@ -123,24 +123,24 @@ export function IdCard({ view, side = 'front' }: { view: IdCardView; side?: 'fro
               <Field label="VALID UNTIL" value={view.validUntil} />
             </div>
             <div className="flex min-h-0 flex-col items-center justify-between py-[0.2cqw]">
-              <div className="relative flex h-[12.2cqw] w-[12.2cqw] items-center justify-center rounded-full" style={{ boxShadow: 'inset 0 0 0 0.42cqw #3FE0D0' }}>
-                <span className="absolute inset-[0.95cqw] rounded-full" style={{ boxShadow: 'inset 0 0 0 0.28cqw #1E6A83' }} aria-hidden />
-                <span className="text-[2.5cqw] font-black text-[#1E6A83]">{mark}</span>
+              <div className="relative flex h-[12.2cqw] w-[12.2cqw] items-center justify-center rounded-full" style={{ boxShadow: 'inset 0 0 0 0.42cqw #d9efff' }}>
+                <span className="absolute inset-[0.95cqw] rounded-full" style={{ boxShadow: 'inset 0 0 0 0.28cqw #096ab7' }} aria-hidden />
+                <span className="text-[2.5cqw] font-black text-[#096ab7]">{mark}</span>
               </div>
               <div className="w-full overflow-hidden rounded-[1.4cqw] bg-white p-[0.7cqw] [&>svg]:h-auto [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qr }} />
             </div>
           </div>
-          <div className="absolute inset-x-0 flex items-center border-t border-[#1E6A83]/30 px-[2.4cqw]" style={{ bottom: '8.75%', height: '6.1%' }}>
-            <p className="truncate text-[1.7cqw] font-bold text-[#203337]">{SAFELINE_ROW}</p>
+          <div className="absolute inset-x-0 flex items-center border-t border-[#096ab7]/30 px-[2.4cqw]" style={{ bottom: '8.75%', height: '6.1%' }}>
+            <p className="truncate text-[1.7cqw] font-bold text-[#11131b]">{SAFELINE_ROW}</p>
           </div>
         </>
       ) : (
         <div className="absolute inset-x-0 grid grid-cols-[1fr_30%] items-center gap-[3cqw] px-[3.2cqw]" style={{ top: '15.21%', bottom: '8.75%' }}>
           <div className="flex flex-col gap-[1.5cqw]">
-            <p className="text-[2.05cqw] leading-snug text-[#203337]">{BACK_TERMS}</p>
-            <p className="text-[2.2cqw] font-bold leading-snug text-[#203337]">If found, please return to {view.brand.institutionName}.</p>
-            <p className="text-[2.05cqw] leading-snug text-[#203337]">{BACK_SAFELINE}</p>
-            <p className="text-[2.15cqw] font-bold text-[#1E6A83]">{VERIFY_LABEL}</p>
+            <p className="text-[2.05cqw] leading-snug text-[#11131b]">{BACK_TERMS}</p>
+            <p className="text-[2.2cqw] font-bold leading-snug text-[#11131b]">If found, please return to {view.brand.institutionName}.</p>
+            <p className="text-[2.05cqw] leading-snug text-[#11131b]">{BACK_SAFELINE}</p>
+            <p className="text-[2.15cqw] font-bold text-[#096ab7]">{VERIFY_LABEL}</p>
           </div>
           <div className="overflow-hidden rounded-[1.8cqw] bg-white p-[1.2cqw] [&>svg]:h-auto [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qr }} />
         </div>
@@ -148,8 +148,8 @@ export function IdCard({ view, side = 'front' }: { view: IdCardView; side?: 'fro
       <Footer motto={view.brand.motto} />
       {view.sample ? (
         <>
-          <p className="absolute left-[2.6cqw] top-[18%] z-20 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-[1.4cqw] py-[0.3cqw] text-[1.55cqw] font-semibold text-[#203337]">Sample card</p>
-          <p aria-hidden className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-[12cqw] font-black uppercase tracking-[0.28em] text-[#203337]" style={{ opacity: 0.18 }}>SAMPLE</p>
+          <p className="absolute left-[2.6cqw] top-[18%] z-20 rounded-full border border-[#096ab7] bg-[#d9efff] px-[1.4cqw] py-[0.3cqw] text-[1.55cqw] font-semibold text-[#11131b]">Sample card</p>
+          <p aria-hidden className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-[12cqw] font-black uppercase tracking-[0.28em] text-[#11131b]" style={{ opacity: 0.18 }}>SAMPLE</p>
         </>
       ) : null}
     </article>

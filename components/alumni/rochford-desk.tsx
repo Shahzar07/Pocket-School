@@ -131,15 +131,15 @@ export function RochfordAlumniDesk() {
 
   return (
     <div className="space-y-6">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Rochford demo · Alumni desk · Rochford&apos;s International School</p>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#096ab7]">Rochford demo · Alumni desk · Rochford&apos;s International School</p>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-heading text-2xl">Directory</h2>
-          <button type="button" data-action="alumni-join" className="h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" onClick={() => { setJoined(true); save({ joined: true, mentor, giving, group, going }); }}>{joined ? 'Joined' : 'Join this alumni network'}</button>
+          <button type="button" data-action="alumni-join" className="h-10 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" onClick={() => { setJoined(true); save({ joined: true, mentor, giving, group, going }); }}>{joined ? 'Joined' : 'Join this alumni network'}</button>
         </div>
-        {joined ? <p className="mt-1 text-sm text-[#1E6A83]">You are in the Rochford alumni network. This stays after a reload.</p> : null}
-        <p className="mt-1 text-sm text-[#1E6A83]">Opt-in only. Names stay as a first name and last initial.</p>
+        {joined ? <p className="mt-1 text-sm text-[#096ab7]">You are in the Rochford alumni network. This stays after a reload.</p> : null}
+        <p className="mt-1 text-sm text-[#096ab7]">Opt-in only. Names stay as a first name and last initial.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <label className="text-sm font-semibold">Cohort
             <select className="ml-2 h-10 rounded-xl border px-2" value={cohort} onChange={(event) => setCohort(event.target.value)}>
@@ -159,22 +159,22 @@ export function RochfordAlumniDesk() {
             </select>
           </label>
         </div>
-        <ul className="mt-3 divide-y divide-[#E7EDED]">
+        <ul className="mt-3 divide-y divide-[#e5ebf2]">
           {directory.map((person) => (
             <li key={person.name} className="py-2 text-sm">{person.name} · {person.cohort} · {person.className} · {person.destination} · {person.country}</li>
           ))}
         </ul>
       </section>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <h2 className="font-heading text-2xl">Oak class network</h2>
-        <p className="mt-1 text-sm text-[#1E6A83]">The class wall, events, and opt-in mentoring.</p>
-        <a href="/dashboard/community" className="mt-2 inline-flex h-10 items-center text-sm font-semibold text-[#1E6A83]">Open the class wall</a>
+        <p className="mt-1 text-sm text-[#096ab7]">The class wall, events, and opt-in mentoring.</p>
+        <a href="/dashboard/community" className="mt-2 inline-flex h-10 items-center text-sm font-semibold text-[#096ab7]">Open the class wall</a>
         <ul className="mt-3 space-y-2">
           {CLASS_EVENTS.map((event) => (
             <li key={event.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#F7FBFC] px-3 py-2 text-sm">
               <span><span className="font-semibold">{event.title}</span> · {event.when} · {event.place}</span>
-              <button type="button" data-action="alumni-rsvp" className="h-9 rounded-full bg-[#3FE0D0] px-3 text-sm font-semibold text-[#203337]" onClick={() => {
+              <button type="button" data-action="alumni-rsvp" className="h-9 rounded-full bg-[#d9efff] px-3 text-sm font-semibold text-[#11131b]" onClick={() => {
                 const next = going.includes(event.id) ? going : [...going, event.id];
                 setGoing(next);
                 save({ joined, mentor, giving, group, going: next });
@@ -184,14 +184,14 @@ export function RochfordAlumniDesk() {
             </li>
           ))}
         </ul>
-        <button type="button" className="mt-3 h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" onClick={() => { const next = !mentor; setMentor(next); save({ joined, mentor: next, giving, group, going }); }}>
+        <button type="button" className="mt-3 h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]" onClick={() => { const next = !mentor; setMentor(next); save({ joined, mentor: next, giving, group, going }); }}>
           {mentor ? 'Mentoring opted in' : 'Opt in to mentoring'}
         </button>
       </section>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <h2 className="font-heading text-2xl">Yearbook</h2>
-        <p className="mt-1 text-sm text-[#1E6A83]">Lock date 1 July 2026. {approved ? 'School approved.' : 'Waiting for school approval.'}</p>
+        <p className="mt-1 text-sm text-[#096ab7]">Lock date 1 July 2026. {approved ? 'School approved.' : 'Waiting for school approval.'}</p>
         <button type="button" className="mt-2 h-10 rounded-full border px-4 text-sm font-semibold" onClick={() => setApproved((value) => !value)}>{approved ? 'Mark as waiting' : 'Approve for the school'}</button>
         <div className="mt-4">
           <YearbookFlipbook
@@ -204,12 +204,12 @@ export function RochfordAlumniDesk() {
             ]}
           />
         </div>
-        <a className="mt-3 inline-flex h-10 items-center text-sm font-semibold text-[#1E6A83]" href="/preview/yearbook">Open the printable yearbook</a>
+        <a className="mt-3 inline-flex h-10 items-center text-sm font-semibold text-[#096ab7]" href="/preview/yearbook">Open the printable yearbook</a>
       </section>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <h2 className="font-heading text-2xl">Where are they now</h2>
-        <p className="mt-1 text-sm text-[#1E6A83]">Countries with fewer than five opted-in alumni stay hidden.</p>
+        <p className="mt-1 text-sm text-[#096ab7]">Countries with fewer than five opted-in alumni stay hidden.</p>
         <div className="mt-3">
           <WorldMap
             places={countries.map((row): GeoPlace => ({
@@ -234,28 +234,28 @@ export function RochfordAlumniDesk() {
         </ul>
       </section>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <h2 className="font-heading text-2xl">Reunion planner</h2>
         <p className="mt-1 text-sm">12 Dec 2026, 16:00 Asia/Kuala Lumpur, school field. {going.includes('reunion') ? 'You are going.' : 'RSVP from the class network.'}</p>
       </section>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <h2 className="font-heading text-2xl">Alumni career talks</h2>
         <p className="mt-1 text-sm">Omar H. · A day in medicine · 19 Nov 2026 · online.</p>
       </section>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <h2 className="font-heading text-2xl">Alumni giving</h2>
-        <p className="mt-1 text-sm text-[#1E6A83]">{giving ? 'Giving is on for this school. Sandbox only.' : 'Alumni giving is off.'}</p>
+        <p className="mt-1 text-sm text-[#096ab7]">{giving ? 'Giving is on for this school. Sandbox only.' : 'Alumni giving is off.'}</p>
         <button type="button" className="mt-2 h-10 rounded-full border px-4 text-sm font-semibold" onClick={() => { const next = !giving; setGiving(next); save({ joined, mentor, giving: next, group, going }); }}>{giving ? 'Turn giving off' : 'Turn giving on'}</button>
       </section>
 
-      <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+      <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
         <h2 className="font-heading text-2xl">Independent learners</h2>
-        <p className="mt-1 text-sm text-[#1E6A83]">Verify through a school, or join a self-reported group.</p>
+        <p className="mt-1 text-sm text-[#096ab7]">Verify through a school, or join a self-reported group.</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <a className="inline-flex h-10 items-center rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white" href="/institutions/register">Verify through a school</a>
-          <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" onClick={() => { const next = 'Independent learners'; setGroup(next); save({ joined, mentor, giving, group: next, going }); }}>Join a self-reported group</button>
+          <a className="inline-flex h-10 items-center rounded-full bg-[#096ab7] px-4 text-sm font-semibold text-white" href="/institutions/register">Verify through a school</a>
+          <button type="button" className="h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]" onClick={() => { const next = 'Independent learners'; setGroup(next); save({ joined, mentor, giving, group: next, going }); }}>Join a self-reported group</button>
         </div>
         {group ? <p className="mt-2 text-sm">Joined {group}.</p> : null}
       </section>

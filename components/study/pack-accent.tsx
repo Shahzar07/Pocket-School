@@ -16,7 +16,7 @@ export function PackStrip({ board, className = 'h-2' }: { board: string; classNa
 /** Category name. Blue on a light card, cyan on a dark card. */
 export function PackBoardLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <span className={`text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0] ${className}`}>
+    <span className={`text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7] dark:text-[#d9efff] ${className}`}>
       {children}
     </span>
   );

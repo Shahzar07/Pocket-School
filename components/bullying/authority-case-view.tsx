@@ -34,7 +34,7 @@ export function AuthorityCaseView({
       </header>
       <div className="mx-auto grid max-w-3xl gap-4 p-6">
         <article className="rounded-3xl border bg-white p-5 grid gap-2">
-          <p className="text-4xl font-extrabold">Call {emergency}</p>
+          <p className="text-4xl font-semibold">Call {emergency}</p>
           <p className="font-semibold">{DESK_NOT_EMERGENCY}</p>
         </article>
         {state === 'missing' ? (

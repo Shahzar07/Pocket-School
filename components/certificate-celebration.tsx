@@ -9,7 +9,7 @@ import { CertificateDocument } from '@/components/certificate-document';
 import type { CertificateAward } from '@/lib/certificates';
 
 const CONFETTI = [
-  'bg-primary', 'bg-[#1E6A83]', 'bg-[#1E6A83]', 'bg-[#81B29A]', 'bg-[#1E6A83]', 'bg-white',
+  'bg-primary', 'bg-[#096ab7]', 'bg-[#096ab7]', 'bg-[#81B29A]', 'bg-[#096ab7]', 'bg-white',
 ];
 
 export function CertificateCelebration({
@@ -31,7 +31,7 @@ export function CertificateCelebration({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[#f7fbfc] shadow-2xl"
       >
-        <CloseControl onClose={onClose} className="absolute top-2 right-2 z-10 text-[#203337]" />
+        <CloseControl onClose={onClose} className="absolute top-2 right-2 z-10 text-[#11131b]" />
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
           {CONFETTI.concat(CONFETTI, CONFETTI).map((color, index) => (
             <motion.span

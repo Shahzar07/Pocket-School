@@ -27,8 +27,8 @@ export function FlowNav({
   aboveActions?: boolean;
 }) {
   const dockRef = useDockHeight('quiz');
-  const backClass = 'inline-flex h-11 items-center rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] disabled:opacity-40 dark:border-[#3FE0D0] dark:text-[#3FE0D0]';
-  const nextClass = 'inline-flex h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-40';
+  const backClass = 'inline-flex h-11 items-center rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] disabled:opacity-40 dark:border-[#d9efff] dark:text-[#d9efff]';
+  const nextClass = 'inline-flex h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b] disabled:opacity-40';
   const showBackLink = Boolean(backHref) && !backDisabled;
   const showNextLink = Boolean(nextHref) && !nextDisabled;
   const place = aboveActions

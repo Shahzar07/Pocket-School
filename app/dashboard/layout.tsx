@@ -60,6 +60,7 @@ import { isFeatureEnabled, type FeatureFlag } from '@/lib/feature-flags';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { PoketWordmark, PoketMark } from '@/components/poket-wordmark';
 import { AcademySession } from '@/components/academy-session';
 
 type Role = 'student' | 'teacher' | 'parent' | 'admin' | 'institution_admin' | 'partner_merchant';
@@ -68,7 +69,7 @@ const ROLE_ACCENT: Record<Role, { icon: string; bar: string; chip: string; wash:
   student: { icon: 'text-primary', bar: 'bg-primary', chip: 'from-primary to-[var(--ps-blue-bright)]', wash: 'var(--ps-role-student)' },
   teacher: { icon: 'text-[var(--ps-emerald)]', bar: 'bg-[var(--ps-emerald)]', chip: 'from-[var(--ps-mint-ink)] to-[var(--ps-emerald)]', wash: 'var(--ps-role-teacher)' },
   parent:  { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-parent)' },
-  admin:   { icon: 'text-[var(--ps-tile-ink)]', bar: 'bg-[#1E6A83]', chip: 'from-[#1E6A83] to-[#3FE0D0]', wash: 'var(--ps-role-admin)' },
+  admin:   { icon: 'text-[var(--ps-tile-ink)]', bar: 'bg-[#096ab7]', chip: 'from-[#1E6A83] to-[#3FE0D0]', wash: 'var(--ps-role-admin)' },
   institution_admin: { icon: 'text-[var(--ps-sky)]', bar: 'bg-[var(--ps-sky)]', chip: 'from-[var(--ps-sky)] to-[var(--ps-teal)]', wash: 'var(--ps-role-admin)' },
   partner_merchant: { icon: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]', chip: 'from-[var(--ps-cyan)] to-[var(--ps-cyan-text)]', wash: 'var(--ps-role-student)' },
 };
@@ -384,7 +385,7 @@ const NavItem = ({ entry, pathname, onClick, router, compact }: {
         compact ? 'justify-center' : ''
       } ${
         active
-          ? 'bg-muted text-foreground font-semibold shadow-[var(--shadow-card)]'
+          ? 'bg-secondary text-secondary-foreground font-semibold'
           : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground font-medium'
       }`}
     >
@@ -680,7 +681,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const fullBleed = immersive || pathwayDesk;
 
   return (
-    <div className="flex h-dvh overflow-hidden" data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} data-pathway-desk={pathwayDesk ? '1' : undefined} style={pathwayDesk ? { background: 'var(--background)', color: 'var(--foreground)' } : immersive ? undefined : { background: accent.wash }}>
+    <div className="flex h-dvh overflow-hidden" data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} data-pathway-desk={pathwayDesk ? '1' : undefined} style={pathwayDesk ? { background: 'var(--background)', color: 'var(--foreground)' } : immersive ? undefined : { background: 'var(--background)' }}>
       <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
@@ -689,6 +690,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {fullBleed ? null : (
       <aside data-tour="sidebar" className={`relative bg-sidebar border-e border-sidebar-border flex-col motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none shrink-0 ${sidebarOpen ? 'flex w-[264px] max-lg:fixed max-lg:inset-y-0 max-lg:z-50' : 'hidden lg:flex lg:w-[76px]'}`}>
 
+        <Link href="/" aria-label={t("header.home")} className="flex h-20 items-center px-5 shrink-0">
+          {compactNav ? <PoketMark className="h-8 w-8 text-foreground" /> : <PoketWordmark className="!w-32" />}
+        </Link>
         {/* Who you are, at the top — the reference design leads with identity
             rather than a logo lockup. */}
         <div className="px-4 pt-4 pb-3 shrink-0">
@@ -723,7 +727,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </span>
           </AccountMenu>
           {profile.membershipStatus === 'pending' && !compactNav ? (
-            <p className="mt-2 rounded-full bg-[#3FE0D0] px-3 py-1 text-xs font-semibold text-[#203337]" data-pending-approval="1">
+            <p className="mt-2 rounded-full bg-[#d9efff] px-3 py-1 text-xs font-semibold text-[#11131b]" data-pending-approval="1">
               {SIGNUP_SCHOOL.pending}{profile.pendingInstitutionName ? ` · ${profile.pendingInstitutionName}` : ''}
             </p>
           ) : null}
@@ -734,7 +738,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {nav.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
               {(group.sectionLabel || group.sectionKey) && !compactNav && (
-                <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.14em] px-3 pt-5 pb-1.5">
+                <p className="text-[11px] font-medium text-muted-foreground px-3 pt-5 pb-1.5">
                   {group.sectionLabel && (i18n.resolvedLanguage ?? i18n.language).startsWith('en')
                     ? group.sectionLabel
                     : group.sectionKey
@@ -858,7 +862,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
         <main id="dashboard-main" className={fullBleed ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative flex-1 overflow-y-auto pb-20 lg:pb-0'}>
           {fullBleed ? null : (
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(30,106,131,0.06)_0%,transparent_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-transparent" />
           )}
           <OfflineBanner />
           <div className={fullBleed ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden' : 'relative px-4 pb-6 pt-4 lg:px-6 lg:pb-10'}>

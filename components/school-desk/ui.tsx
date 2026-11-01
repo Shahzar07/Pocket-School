@@ -113,9 +113,9 @@ export function useDesk(): DeskApi {
   return shared ?? local;
 }
 
-const btn = 'h-10 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]';
-const ghost = 'h-10 rounded-full border border-[#1E6A83] bg-white px-4 text-sm font-semibold text-[#1E6A83]';
-const field = 'h-10 rounded-xl border border-[#1E6A83]/30 bg-white px-3 text-sm text-[#203337]';
+const btn = 'h-10 rounded-full border border-[#096ab7] bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]';
+const ghost = 'h-10 rounded-full border border-[#096ab7] bg-white px-4 text-sm font-semibold text-[#096ab7]';
+const field = 'h-10 rounded-xl border border-[#096ab7]/30 bg-white px-3 text-sm text-[#11131b]';
 
 export const deskStyles = { btn, ghost, field };
 
@@ -139,18 +139,18 @@ export function DeskFrame({
   const sync = shared?.sync ?? (live ? 'live' : 'sample');
   const ready = shared?.ready ?? true;
   return (
-    <div className="mx-auto max-w-6xl space-y-5 pb-10 text-[#203337]" data-desk-live={live ? 'yes' : 'no'} data-desk-sync={sync} data-desk-ready={ready ? 'yes' : 'no'}>
-      <section className="rounded-3xl border border-[#1E6A83]/30 bg-white p-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">{live ? t.liveBadge : t.demoBadge}</p>
+    <div className="mx-auto max-w-6xl space-y-5 pb-10 text-[#11131b]" data-desk-live={live ? 'yes' : 'no'} data-desk-sync={sync} data-desk-ready={ready ? 'yes' : 'no'}>
+      <section className="rounded-3xl border border-[#096ab7]/30 bg-white p-5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#096ab7]">{live ? t.liveBadge : t.demoBadge}</p>
         <h1 className="mt-1 font-heading text-4xl tracking-tight">{title}</h1>
-        <p className="mt-2 text-sm text-[#1E6A83]">{lede}</p>
-        <p className="mt-2 text-sm text-[#203337]">{live ? state.actorName : state.institution.kind === 'independent' ? t.signedIndependent : t.signedIn}</p>
-        <p className="mt-2 text-sm text-[#1E6A83]">{live ? (state.classes.length === 0 ? t.liveEmpty : t.liveSaved) : t.sample}</p>
+        <p className="mt-2 text-sm text-[#096ab7]">{lede}</p>
+        <p className="mt-2 text-sm text-[#11131b]">{live ? state.actorName : state.institution.kind === 'independent' ? t.signedIndependent : t.signedIn}</p>
+        <p className="mt-2 text-sm text-[#096ab7]">{live ? (state.classes.length === 0 ? t.liveEmpty : t.liveSaved) : t.sample}</p>
         <p className="mt-3 text-sm">{state.institution.name} · {state.institution.campus} · {t.chain}</p>
         {live ? null : <button type="button" className={`${ghost} mt-3`} onClick={() => { onReset(); }}>{t.reset}</button>}
       </section>
       {children}
-      <p className="text-sm text-[#1E6A83]"><span className="font-semibold text-[#203337]">{t.syncTitle}. </span>{syncs}</p>
+      <p className="text-sm text-[#096ab7]"><span className="font-semibold text-[#11131b]">{t.syncTitle}. </span>{syncs}</p>
     </div>
   );
 }
@@ -169,7 +169,7 @@ export function ClassSelect({
   onChange: (id: string) => void;
 }) {
   return (
-    <label className="block text-sm text-[#1E6A83]">
+    <label className="block text-sm text-[#096ab7]">
       {t.classesTitle}
       <select className={`${field} mt-1 block w-full`} value={classId} onChange={(event) => onChange(event.target.value)} aria-label={t.classesTitle}>
         {state.classes.map((item) => (

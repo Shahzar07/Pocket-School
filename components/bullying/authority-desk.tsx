@@ -168,7 +168,7 @@ export function AuthorityDesk({
   return (
     <section className="rounded-3xl border bg-white p-5 grid gap-3" style={{ color: BRAND.ink }}>
       <h2 className="text-2xl font-semibold" style={{ color: BRAND.blueDeep }}>Refer to the authorities</h2>
-      <p className="text-4xl font-extrabold">Call {number}</p>
+      <p className="text-4xl font-semibold">Call {number}</p>
       <p className="font-semibold">{DESK_NOT_EMERGENCY}</p>
       <SafetyTermsNotice sample={sample} emergencyNumber={number} onAcked={() => setTermsAcked(true)} />
       <p>A Desk member sends this. Nothing is sent automatically. The reporter is not named.</p>

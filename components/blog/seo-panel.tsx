@@ -6,7 +6,7 @@ import { jsonLdScript } from '@/lib/blog/posts';
 import { EMPTY_SEO, jsonLdForPost, seoDescription, seoScore, seoTitle, type BlogCustomField, type BlogHowToStep, type CustomFieldKind } from '@/lib/blog/seo';
 
 const TEMPLATES_KEY = 'poket-blog-field-templates';
-const fieldClass = 'mt-1 w-full min-h-11 rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]';
+const fieldClass = 'mt-1 w-full min-h-11 rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#11131b)]';
 
 interface Template {
   name: string;
@@ -67,10 +67,10 @@ export function SeoPanel({
         <div className="mt-3 space-y-3">
           <ul className="space-y-1 text-xs">
             {score.checks.map((item) => (
-              <li key={item.id} className={item.ok ? 'text-[#1E6A83]' : 'text-muted-foreground'}>{item.ok ? 'Ready' : 'Missing'} · {item.label}</li>
+              <li key={item.id} className={item.ok ? 'text-[#096ab7]' : 'text-muted-foreground'}>{item.ok ? 'Ready' : 'Missing'} · {item.label}</li>
             ))}
           </ul>
-          <button type="button" className="h-11 rounded-full bg-[#3FE0D0] px-4 text-sm font-bold text-[#203337] disabled:opacity-40" disabled={suggesting} onClick={onSuggest}>
+          <button type="button" className="h-11 rounded-full bg-[#d9efff] px-4 text-sm font-bold text-[#11131b] disabled:opacity-40" disabled={suggesting} onClick={onSuggest}>
             {suggesting ? 'Suggesting…' : 'Suggest from the essay'}
           </button>
           <label className="block text-sm font-semibold">SEO title
@@ -81,9 +81,9 @@ export function SeoPanel({
             <textarea value={post.seoDescription || ''} maxLength={180} rows={3} onChange={(event) => onChange({ seoDescription: event.target.value })} className={fieldClass} />
             <span className="mt-1 block text-xs font-normal text-muted-foreground">{description.length} / 160</span>
           </label>
-          <div className="rounded-xl bg-white p-3 text-[#203337]" data-blog-snippet="1">
-            <p className="text-sm text-[#1E6A83]">{title || 'Essay title'}</p>
-            <p className="text-xs text-[#203337]/70">poketschool.ai/blog/{post.slug || 'slug'}</p>
+          <div className="rounded-xl bg-white p-3 text-[#11131b]" data-blog-snippet="1">
+            <p className="text-sm text-[#096ab7]">{title || 'Essay title'}</p>
+            <p className="text-xs text-[#11131b]/70">poketschool.ai/blog/{post.slug || 'slug'}</p>
             <p className="mt-1 text-xs leading-5">{description || 'The description readers see in search.'}</p>
           </div>
           <label className="block text-sm font-semibold">Canonical
@@ -127,7 +127,7 @@ export function SeoPanel({
             {takeaways.map((item, index) => (
               <input key={index} aria-label={`Takeaway ${index + 1}`} value={item} onChange={(event) => onChange({ takeaways: takeaways.map((row, rowIndex) => rowIndex === index ? event.target.value : row) })} className={fieldClass} />
             ))}
-            {takeaways.length < 8 ? <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => onChange({ takeaways: [...takeaways, ''] })}>Add a takeaway</button> : null}
+            {takeaways.length < 8 ? <button type="button" className="h-11 text-sm font-bold text-[#096ab7]" onClick={() => onChange({ takeaways: [...takeaways, ''] })}>Add a takeaway</button> : null}
           </fieldset>
           <fieldset className="space-y-2">
             <legend className="text-sm font-semibold">How-to steps</legend>
@@ -138,7 +138,7 @@ export function SeoPanel({
               </div>
             ))}
             {steps.length < 12 ? (
-              <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => onChange({ howto: [...steps, { name: '', text: '' } satisfies BlogHowToStep] })}>Add a step</button>
+              <button type="button" className="h-11 text-sm font-bold text-[#096ab7]" onClick={() => onChange({ howto: [...steps, { name: '', text: '' } satisfies BlogHowToStep] })}>Add a step</button>
             ) : null}
           </fieldset>
           <label className="block text-sm font-semibold">Questions this essay answers
@@ -168,7 +168,7 @@ export function SeoPanel({
                 <input aria-label={`Field ${index + 1} value`} value={item.value} onChange={(event) => onChange({ customFields: fields.map((row, rowIndex) => rowIndex === index ? { ...row, value: event.target.value } : row) })} className={fieldClass} />
               </div>
             ))}
-            <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => onChange({ customFields: [...fields, { key: '', kind: 'text', value: '' }] })}>Add a field</button>
+            <button type="button" className="h-11 text-sm font-bold text-[#096ab7]" onClick={() => onChange({ customFields: [...fields, { key: '', kind: 'text', value: '' }] })}>Add a field</button>
             <div className="flex flex-wrap gap-2">
               <input aria-label="Template name" value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Template name" className={fieldClass} />
               <button type="button" className="h-11 rounded-full border px-3 text-sm font-semibold" onClick={saveTemplate}>Save template</button>
@@ -185,7 +185,7 @@ export function SeoPanel({
               </label>
             ) : null}
           </fieldset>
-          <pre className="max-h-40 overflow-auto rounded-xl bg-[#203337] p-3 text-xs text-white">{jsonLdForPost({ ...EMPTY_SEO, ...post }).map((block) => jsonLdScript(block)).join('\n')}</pre>
+          <pre className="max-h-40 overflow-auto rounded-xl bg-[#11131b] p-3 text-xs text-white">{jsonLdForPost({ ...EMPTY_SEO, ...post }).map((block) => jsonLdScript(block)).join('\n')}</pre>
         </div>
       ) : null}
     </aside>

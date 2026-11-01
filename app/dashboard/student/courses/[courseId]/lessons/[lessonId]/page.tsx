@@ -127,7 +127,7 @@ function FlashcardViewer({ cards }: { cards: { question: string; answer: string 
           </div>
           {/* Back */}
           <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
-            className="bg-gradient-to-br from-primary/5 to-[#6FBBCE] border border-primary/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
+            className="bg-gradient-to-br from-primary/5 to-[#8bc9f5] border border-primary/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-card"
           >
             <Badge className="mb-4 text-xs rounded-full bg-success/10 text-success border-success/20">Answer</Badge>
             <p className="text-base text-foreground leading-relaxed">{card.answer}</p>
@@ -225,7 +225,7 @@ function QuizViewer({
       />
       {graded && (
         <div className={`rounded-3xl p-5 text-center border ${percentage >= 70 ? 'bg-success/10 border-success/20' : 'bg-[var(--ps-cyan-soft)] border-[var(--ps-cyan-border)]/20'}`}>
-          <p className="text-3xl font-extrabold">{percentage}%</p>
+          <p className="text-3xl font-semibold">{percentage}%</p>
           <p className={`text-sm font-semibold mt-1 ${percentage >= 70 ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
             {Object.values(graded).filter(r => r.correct).length}/{questions.length} correct
             {percentage >= 70 ? ' — Great work! 🎉' : ' — Keep studying! 📚'}
@@ -473,15 +473,15 @@ function UnitQuizMode({
 
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-card border border-border rounded-3xl p-4 text-center card-glow">
-            <p className="text-2xl font-extrabold text-foreground">{questions.length}</p>
+            <p className="text-2xl font-semibold text-foreground">{questions.length}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Questions</p>
           </div>
           <div className="bg-card border border-border rounded-3xl p-4 text-center card-glow">
-            <p className="text-2xl font-extrabold text-foreground">{threshold}%</p>
+            <p className="text-2xl font-semibold text-foreground">{threshold}%</p>
             <p className="text-xs text-muted-foreground mt-0.5">Pass mark</p>
           </div>
           <div className="bg-card border border-border rounded-3xl p-4 text-center card-glow">
-            <p className="text-2xl font-extrabold text-foreground">{bestPercentage !== null ? `${bestPercentage}%` : '—'}</p>
+            <p className="text-2xl font-semibold text-foreground">{bestPercentage !== null ? `${bestPercentage}%` : '—'}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{attempts.length ? `Best of ${attempts.length}` : 'No attempts yet'}</p>
           </div>
         </div>
@@ -540,12 +540,12 @@ function UnitQuizMode({
         <div className={`relative overflow-hidden rounded-3xl p-8 text-center border ${
           result.passed
             ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/20'
-            : 'bg-gradient-to-br from-[var(--ps-cyan)]/10 to-[#6FBBCE] border-[var(--ps-cyan-border)]/20'
+            : 'bg-gradient-to-br from-[var(--ps-cyan)]/10 to-[#8bc9f5] border-[var(--ps-cyan-border)]/20'
         }`}>
           {result.passed
             ? <Trophy className="w-10 h-10 mx-auto mb-3 text-success" />
             : <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-[var(--ps-cyan-text)]" />}
-          <p className="text-5xl font-extrabold text-foreground">{result.percentage}%</p>
+          <p className="text-5xl font-semibold text-foreground">{result.percentage}%</p>
           <p className={`text-sm font-semibold mt-2 ${result.passed ? 'text-success' : 'text-[var(--ps-cyan-text)]'}`}>
             {result.marksAwarded ?? result.score}/{result.marksMax ?? result.total} marks · {formatTime(result.timeTakenSeconds)} · attempt #{result.attemptNumber}{result.version ? ` · Version ${result.version}` : ''}
           </p>
@@ -711,7 +711,7 @@ function FormatLockCard({
         </p>
         <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--ps-cyan-soft)] px-3 py-1 mb-5">
           <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
-          <span className="text-base font-extrabold text-[var(--ps-cyan-text)]">⚡{cost}</span>
+          <span className="text-base font-semibold text-[var(--ps-cyan-text)]">⚡{cost}</span>
           <span className="text-xs font-semibold text-[var(--ps-cyan-text)]/80">Sparks</span>
         </div>
         <div>

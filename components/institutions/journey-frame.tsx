@@ -23,7 +23,7 @@ export function InstitutionJourneyFrame({
     <main className="min-h-screen bg-background text-foreground" data-theme-surface="page">
       <div className={column}>
         <p className="mb-4 text-sm font-semibold">
-          <Link href="/" className="underline decoration-[#1E6A83] underline-offset-4">Poket School</Link>
+          <Link href="/" className="underline decoration-[#096ab7] underline-offset-4">Poket School</Link>
         </p>
         <section className="rounded-[28px] border border-border bg-card p-6 text-card-foreground shadow-[0_24px_60px_-36px_rgba(26,60,52,0.45)] sm:p-8">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">{eyebrow}</p>
@@ -38,4 +38,4 @@ export function InstitutionJourneyFrame({
 
 export const journeyField = 'mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
 
-export const journeyButton = 'inline-flex h-11 items-center justify-center rounded-full bg-[#203337] px-5 text-sm font-semibold text-white disabled:opacity-60';
+export const journeyButton = 'inline-flex h-11 items-center justify-center rounded-full bg-[#11131b] px-5 text-sm font-semibold text-white disabled:opacity-60';

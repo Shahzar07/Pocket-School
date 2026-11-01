@@ -45,14 +45,14 @@ export function PerksBoard({
         description="Student discounts from partner businesses. Your card is free. These offers never ask for a paid plan."
       />
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={`rounded-full px-3 py-1.5 text-xs font-semibold ${category === 'all' ? 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'border border-[#E7EDED] text-[#1E6A83]'}`} onClick={() => setCategory('all')}>
+        <button type="button" className={`rounded-full px-3 py-1.5 text-xs font-semibold ${category === 'all' ? 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'border border-[#e5ebf2] text-[#096ab7]'}`} onClick={() => setCategory('all')}>
           All
         </button>
         {PERK_CATEGORIES.map((item) => {
           const Icon = ICONS[item.icon];
           const active = category === item.id;
           return (
-            <button key={item.id} type="button" className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${active ? 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'border border-[#E7EDED] text-[#1E6A83]'}`} onClick={() => setCategory(item.id)}>
+            <button key={item.id} type="button" className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${active ? 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'border border-[#e5ebf2] text-[#096ab7]'}`} onClick={() => setCategory(item.id)}>
               <Icon className="h-3.5 w-3.5" aria-hidden />
               {item.label}
             </button>
@@ -62,15 +62,15 @@ export function PerksBoard({
       <div className="grid gap-4 sm:grid-cols-2">
         {shown.map((offer) => (
           <Panel key={offer.id}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">{offer.partnerName}</p>
-            <h2 className="mt-2 font-heading text-2xl text-[#203337]">{offer.title}</h2>
-            <p className="mt-2 text-sm font-semibold text-[#203337]">{offer.discount}</p>
-            <p className="mt-2 text-sm text-[#5F7074]">{offer.terms}</p>
-            {offer.staticCode ? <p className="mt-3 font-mono text-sm text-[#203337]">Code {offer.staticCode}</p> : null}
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]">{offer.partnerName}</p>
+            <h2 className="mt-2 font-heading text-2xl text-[#11131b]">{offer.title}</h2>
+            <p className="mt-2 text-sm font-semibold text-[#11131b]">{offer.discount}</p>
+            <p className="mt-2 text-sm text-[#626976]">{offer.terms}</p>
+            {offer.staticCode ? <p className="mt-3 font-mono text-sm text-[#11131b]">Code {offer.staticCode}</p> : null}
             {onRedeem ? (
               <button
                 type="button"
-                className="mt-4 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]"
+                className="mt-4 rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]"
                 onClick={() => {
                   void onRedeem(offer).then((code) => setNote(code ? `${offer.title}: ${code}` : 'Perk saved.')).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not use this perk.'));
                 }}
@@ -81,8 +81,8 @@ export function PerksBoard({
           </Panel>
         ))}
       </div>
-      {shown.length === 0 ? <p className="text-sm text-[#5F7074]">No perks in this category right now.</p> : null}
-      {note ? <p className="text-sm text-[#203337]">{note}</p> : null}
+      {shown.length === 0 ? <p className="text-sm text-[#626976]">No perks in this category right now.</p> : null}
+      {note ? <p className="text-sm text-[#11131b]">{note}</p> : null}
     </DashPage>
   );
 }

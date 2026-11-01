@@ -94,7 +94,7 @@ export default function AdminVerificationsPage() {
       {/* Header */}
       <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0} className="pt-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white flex items-center gap-2">
-          <span className="w-5 h-px bg-[#1E6A83] inline-block" /> Identity verification
+          <span className="w-5 h-px bg-[#096ab7] inline-block" /> Identity verification
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
           Parent <span className="gradient-text italic">verifications</span>

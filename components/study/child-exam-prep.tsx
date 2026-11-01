@@ -52,7 +52,7 @@ export function ChildExamPrep({ childId, name }: { childId: string; name?: strin
               </div>
               <div className="mt-3 relative h-2 rounded-full bg-muted">
                 <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${mastery}%` }} />
-                <span className="absolute -top-1 w-0.5 h-4 bg-[#1E6A83] rounded" style={{ left: `${prep.targetScore}%` }} />
+                <span className="absolute -top-1 w-0.5 h-4 bg-[#096ab7] rounded" style={{ left: `${prep.targetScore}%` }} />
               </div>
               <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-[12px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {mastery}% ready · aim {prep.targetGrade}</span>
