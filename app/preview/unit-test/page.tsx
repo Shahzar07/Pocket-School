@@ -97,7 +97,7 @@ function Panel() {
       <h1 className="font-heading text-3xl text-foreground">Unit test and visual blocks</h1>
       {panel === 'review' && (
         <section className="rounded-3xl border border-[var(--ps-cyan-border)]/30 bg-[var(--ps-cyan-soft)] p-6 space-y-4">
-          <p className="text-5xl font-extrabold">60%</p>
+          <p className="text-5xl font-semibold">60%</p>
           <p className="text-sm font-semibold text-[var(--ps-cyan-text)]">3/5 marks · 1m 15s · attempt #1 · Version A</p>
           <p className="font-bold">Not yet — you need 70% to pass. Review these lessons, then the unit test unlocks on Version B.</p>
           <div className="rounded-2xl border border-primary/20 bg-card p-4">

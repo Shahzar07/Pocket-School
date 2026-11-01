@@ -83,15 +83,15 @@ export function FocusTimer({
   const ss = Math.floor(elapsed % 60);
 
   return (
-    <section aria-label={title ? `Focus timer for ${title}` : 'Focus timer'} className="rounded-[28px] border border-[#1E6A83] bg-white p-4 flex flex-wrap items-center gap-3">
+    <section aria-label={title ? `Focus timer for ${title}` : 'Focus timer'} className="rounded-[28px] border border-[#096ab7] bg-white p-4 flex flex-wrap items-center gap-3">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E6A83]">Focus</p>
-        {title ? <p className="text-sm font-semibold text-[#203337]">{title}</p> : null}
-        <p className="text-2xl font-semibold tabular-nums text-[#203337]">{mm}:{String(ss).padStart(2, '0')}</p>
-        <p className="text-[11px] text-[#1E6A83]">{plan.rounds} × {plan.work} min{plan.breakMinutes ? ` · ${plan.breakMinutes} min break` : ''}</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#096ab7]">Focus</p>
+        {title ? <p className="text-sm font-semibold text-[#11131b]">{title}</p> : null}
+        <p className="text-2xl font-semibold tabular-nums text-[#11131b]">{mm}:{String(ss).padStart(2, '0')}</p>
+        <p className="text-[11px] text-[#096ab7]">{plan.rounds} × {plan.work} min{plan.breakMinutes ? ` · ${plan.breakMinutes} min break` : ''}</p>
       </div>
       {!running ? (
-        <Button type="button" onClick={start} className="h-9 border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]">{segments.length ? 'Resume' : 'Start'}</Button>
+        <Button type="button" onClick={start} className="h-9 border border-[#096ab7] bg-[#d9efff] text-[#11131b]">{segments.length ? 'Resume' : 'Start'}</Button>
       ) : (
         <Button type="button" variant="outline" onClick={pause} className="h-9">Pause</Button>
       )}

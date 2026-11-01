@@ -183,7 +183,7 @@ export function ReadsOfferLetter() {
         </div>
         <ul className="mt-10 grid gap-8 lg:grid-cols-3">
           {OFFER_DEVICES.map(device => (
-            <li key={device.src} className="overflow-hidden rounded-3xl bg-[#F4F6F6] ring-1 ring-border">
+            <li key={device.src} className="overflow-hidden rounded-3xl bg-[#f8fafc] ring-1 ring-border">
               <OfferShot src={device.src} alt={device.alt} width={device.width} height={device.height} sizes="(min-width: 1024px) 30vw, 100vw" />
             </li>
           ))}

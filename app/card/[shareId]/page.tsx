@@ -30,14 +30,14 @@ export default async function CardSharePage({ params }: { params: Promise<{ shar
   await recordCardView(shareId).catch(() => undefined);
 
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-12 text-[#203337]">
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-12 text-[#11131b]">
       <div className="mx-auto flex max-w-3xl flex-col gap-8">
         <MemberCardFace card={card} />
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <p className="max-w-md text-sm text-[#203337]">Join Poket School and start with a free member card of your own.</p>
+          <p className="max-w-md text-sm text-[#11131b]">Join Poket School and start with a free member card of your own.</p>
           <Link
             href={card.joinPath}
-            className="inline-flex items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 py-3 text-sm font-semibold text-[#203337]"
+            className="inline-flex items-center rounded-full border border-[#096ab7] bg-[#d9efff] px-5 py-3 text-sm font-semibold text-[#11131b]"
           >
             Join Poket School
           </Link>

@@ -39,7 +39,7 @@ export default function NotesPage() {
   }, [user]);
 
   if (!user) {
-    return <p className="p-8 text-sm text-[#203337]">Sign in to open your notes.</p>;
+    return <p className="p-8 text-sm text-[#11131b]">Sign in to open your notes.</p>;
   }
 
   return (

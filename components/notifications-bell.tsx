@@ -73,13 +73,13 @@ export function NotificationsBell({ tone = 'default' }: { tone?: 'default' | 'on
       <Button
         variant="ghost"
         size="icon"
-        className={`relative ${tone === 'onDark' ? 'text-[#E9F7FA] hover:bg-white/10' : 'text-gray-600'}`}
+        className={`relative ${tone === 'onDark' ? 'text-[#eaf6ff] hover:bg-white/10' : 'text-gray-600'}`}
         aria-label="Notifications"
         onClick={() => setOpen(o => !o)}
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#1E6A83] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#096ab7] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

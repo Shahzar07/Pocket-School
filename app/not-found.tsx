@@ -12,7 +12,7 @@ export default function NotFound() {
   return (
     <main className="relative min-h-screen bg-white dark:bg-[#0B1417] overflow-hidden flex items-center">
       {/* Ambient wash */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#E9F7FA] via-[#F4FBFA] to-white dark:from-[#0B1417] dark:via-[#122226] dark:to-[#0B1417]" aria-hidden />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#eaf6ff] via-[#F4FBFA] to-white dark:from-[#0B1417] dark:via-[#122226] dark:to-[#0B1417]" aria-hidden />
       <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" aria-hidden />
       <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" aria-hidden />
 
@@ -26,10 +26,10 @@ export default function NotFound() {
           404
         </p>
 
-        <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#203337] dark:text-[#E7F4F2] leading-[1.05] mt-6 mb-4">
+        <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#11131b] dark:text-[#E7F4F2] leading-[1.05] mt-6 mb-4">
           This page took a study break.
         </h1>
-        <p className="text-base sm:text-lg text-[#1E6A83] dark:text-[#E7F4F2] leading-relaxed max-w-xl mx-auto">
+        <p className="text-base sm:text-lg text-[#096ab7] dark:text-[#E7F4F2] leading-relaxed max-w-xl mx-auto">
           We could not find what you were looking for — the link may be old, or the page may have moved.
           ET is still here, and so is everything else.
         </p>
@@ -45,15 +45,15 @@ export default function NotFound() {
                 <Icon className="w-4 h-4" />
               </span>
               <span className="flex-1 min-w-0">
-                <span className="block text-sm font-extrabold text-[#203337] dark:text-[#E7F4F2]">{label}</span>
-                <span className="block text-xs text-[#1E6A83] dark:text-[#93A7AB]">{desc}</span>
+                <span className="block text-sm font-semibold text-[#11131b] dark:text-[#E7F4F2]">{label}</span>
+                <span className="block text-xs text-[#096ab7] dark:text-[#93A7AB]">{desc}</span>
               </span>
               <ArrowRight className="w-4 h-4 text-slate-300 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
             </Link>
           ))}
         </div>
 
-        <p className="mt-10 text-xs text-[#1E6A83] dark:text-[#93A7AB]">
+        <p className="mt-10 text-xs text-[#096ab7] dark:text-[#93A7AB]">
           Think something is broken? Email{' '}
           <a
             href="mailto:support@poketschool.ai?subject=Broken%20link%20on%20Poket%20School"

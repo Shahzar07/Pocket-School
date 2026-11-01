@@ -29,7 +29,7 @@ export default function SharedCoursePreviewPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <p className="mb-4 text-sm text-muted-foreground">
-        <Link href="/dashboard/admin/curriculum" className="font-semibold text-[#1E6A83]">Course CMS</Link>
+        <Link href="/dashboard/admin/curriculum" className="font-semibold text-[#096ab7]">Course CMS</Link>
         <span> / Preview course</span>
       </p>
       {missing && <p className="text-sm text-muted-foreground">This preview link has expired or was not found.</p>}

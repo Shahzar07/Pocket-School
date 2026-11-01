@@ -82,7 +82,7 @@ export default function AiTeachersPage() {
           <MarketingHero slug="ai-teachers">
           <div className="min-w-0 text-center lg:text-left">
           <p className="mb-4">
-            <Link href="/" className="text-sm font-semibold text-[#1E6A83]">Home</Link>
+            <Link href="/" className="text-sm font-semibold text-[#096ab7]">Home</Link>
           </p>
           <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">AI TEACHERS LIBRARY</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-foreground leading-[0.95] mb-6 max-w-4xl mx-auto lg:mx-0">
@@ -98,8 +98,8 @@ export default function AiTeachersPage() {
           <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold text-foreground">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card shadow-md border border-black/[0.04]">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FE0D0] opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FE0D0]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d9efff] opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#d9efff]" />
               </span>
               {teacherRosterCount()} AVAILABLE NOW
             </span>
@@ -142,7 +142,7 @@ export default function AiTeachersPage() {
                   onClick={() => setFilter(c)}
                   className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
                     active
-                      ? 'bg-[#203337] text-white shadow-md'
+                      ? 'bg-[#11131b] text-white shadow-md'
                       : 'bg-card text-muted-foreground border border-slate-200 hover:border-primary hover:text-primary'
                   }`}
                 >
@@ -166,7 +166,7 @@ export default function AiTeachersPage() {
               <p className="text-xs font-bold tracking-[0.18em] text-primary mb-3">CEFR · LANGUAGES</p>
               <div className="flex flex-wrap gap-2 mb-3">
                 {CEFR_LEVELS.map((level) => (
-                  <span key={level.code} className="inline-flex items-center gap-1.5 rounded-full bg-[#E9F7FA] px-3 py-1.5 text-xs font-bold text-[#1E6A83]">
+                  <span key={level.code} className="inline-flex items-center gap-1.5 rounded-full bg-[#eaf6ff] px-3 py-1.5 text-xs font-bold text-[#096ab7]">
                     {level.code}
                     <span className="font-semibold text-primary">{level.label}</span>
                   </span>
@@ -195,14 +195,14 @@ export default function AiTeachersPage() {
       </section>
 
       {/* ── Closing CTA ───────────────────────────────────────── */}
-      <section className="py-20 lg:py-28 bg-[#203337] relative overflow-hidden">
+      <section className="py-20 lg:py-28 bg-[#11131b] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(39,134,164,0.25),transparent)]" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">JOIN THE FACULTY</p>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
             Know a great educator?
             <br />
-            <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#6FBBCE] to-[#3FE0D0] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--ps-primary)] via-[#8bc9f5] to-[#d9efff] bg-clip-text text-transparent">
               Help us train the next AI teacher.
             </span>
           </h2>
@@ -270,8 +270,8 @@ function TeacherCard({
         {isLive && (
           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-sm">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FE0D0] opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3FE0D0]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d9efff] opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#d9efff]" />
             </span>
             <span className="text-[9px] font-bold tracking-widest text-white">AVAILABLE NOW</span>
           </div>
@@ -292,7 +292,7 @@ function TeacherCard({
           {teacher.subjects.slice(0, 3).map((s) => (
             <span
               key={s}
-              className="text-[10px] font-bold px-2 py-0.5 rounded text-[var(--chip-ink)] dark:text-[#3FE0D0]"
+              className="text-[10px] font-bold px-2 py-0.5 rounded text-[var(--chip-ink)] dark:text-[#d9efff]"
               style={subjectChipStyle(teacher.accentColor)}
             >
               {s}

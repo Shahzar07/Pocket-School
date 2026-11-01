@@ -45,7 +45,7 @@ export function FlowDesk({ flow }: { flow: FlowId }) {
         <p className="text-sm"><span className="font-semibold">{c.made}. </span>{spec.created}</p>
         <div>
           <h2 className="font-heading text-xl">{c.howTo}</h2>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-[#1E6A83]">
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-[#096ab7]">
             <li>{c.stepClass}</li>
             <li>{spec.created}</li>
             <li>{spec.syncs}</li>
@@ -91,7 +91,7 @@ export function FlowDesk({ flow }: { flow: FlowId }) {
         setDetail('');
       }}>
         <ClassSelect state={state} classId={classId} onChange={setClassId} />
-        <label className="text-sm text-[#1E6A83]">{c.student}
+        <label className="text-sm text-[#096ab7]">{c.student}
           <select className={`${deskStyles.field} mt-1 w-full`} value={studentId} onChange={(event) => setStudentId(event.target.value)} aria-label={c.student}>
             {spec.needsStudent ? null : <option value="">{c.wholeClass}</option>}
             {pupils.map((item) => <option key={item.studentId} value={item.studentId}>{item.studentName}</option>)}
@@ -99,7 +99,7 @@ export function FlowDesk({ flow }: { flow: FlowId }) {
         </label>
         <input className={deskStyles.field} value={title} onChange={(event) => setTitle(event.target.value)} aria-label={spec.titleLabel} placeholder={spec.titleLabel} />
         <input className={deskStyles.field} type="date" value={when} onChange={(event) => setWhen(event.target.value)} aria-label={c.when} />
-        <textarea className="min-h-20 rounded-xl border border-[#1E6A83]/30 p-3 text-sm sm:col-span-2" value={detail} onChange={(event) => setDetail(event.target.value)} aria-label={spec.detailLabel} placeholder={spec.detailLabel} />
+        <textarea className="min-h-20 rounded-xl border border-[#096ab7]/30 p-3 text-sm sm:col-span-2" value={detail} onChange={(event) => setDetail(event.target.value)} aria-label={spec.detailLabel} placeholder={spec.detailLabel} />
         <select className={deskStyles.field} value={status} onChange={(event) => setStatus(event.target.value)} aria-label={c.status}>
           {spec.statuses.map((item) => <option key={item}>{item}</option>)}
         </select>
@@ -108,18 +108,18 @@ export function FlowDesk({ flow }: { flow: FlowId }) {
       {spec.wall ? (
         <section className="rounded-3xl bg-white p-5">
           <h2 className="font-heading text-2xl">{c.wallTitle}</h2>
-          <p className="mt-2 text-sm text-[#1E6A83]">{c.wallBody}</p>
+          <p className="mt-2 text-sm text-[#096ab7]">{c.wallBody}</p>
           <p className="mt-2 text-sm">{c.wallPath}</p>
           <a className={`${deskStyles.ghost} mt-3 inline-flex`} href="https://github.com/Shahzar07/Pocket-School/pull/144">{c.wallLink}</a>
         </section>
       ) : null}
       <section className="space-y-2">
         <h2 className="font-heading text-2xl">{c.list}</h2>
-        {rows.length === 0 ? <p className="text-sm text-[#1E6A83]">{spec.empty}</p> : null}
+        {rows.length === 0 ? <p className="text-sm text-[#096ab7]">{spec.empty}</p> : null}
         {rows.map((row) => (
           <article key={row.id} className="rounded-2xl bg-white p-4 text-sm">
             <p className="font-semibold">{row.title}</p>
-            <p className="text-[#1E6A83]">{row.studentName} · {row.when} · {row.status}</p>
+            <p className="text-[#096ab7]">{row.studentName} · {row.when} · {row.status}</p>
             <p className="mt-1">{row.detail}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" className={deskStyles.ghost} onClick={() => {

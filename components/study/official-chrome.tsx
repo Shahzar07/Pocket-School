@@ -76,12 +76,12 @@ export function OfficialNav({
 
 export function FlowRow({ href, title, meta, trailing }: { href: string; title: string; meta?: string; trailing?: string }) {
   return (
-    <Link href={href} className="flex items-center justify-between gap-3 border-b border-border px-1 py-3 text-[#203337] hover:bg-[#3FE0D0]/10 dark:text-[#E9F7FA]">
+    <Link href={href} className="flex items-center justify-between gap-3 border-b border-border px-1 py-3 text-[#11131b] hover:bg-[#d9efff]/10 dark:text-[#eaf6ff]">
       <span className="min-w-0">
         <span className="block font-semibold">{title}</span>
-        {meta ? <span className="block text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{meta}</span> : null}
+        {meta ? <span className="block text-sm text-[#096ab7] dark:text-[#d9efff]">{meta}</span> : null}
       </span>
-      <span className="shrink-0 font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">
+      <span className="shrink-0 font-semibold text-[#096ab7] dark:text-[#d9efff]">
         {(trailing ?? '→').replace('→', '').trim() ? <span>{(trailing ?? '→').replace('→', '').trim()}</span> : null}
         <span aria-hidden> →</span>
       </span>
@@ -102,9 +102,9 @@ export function QuestionArrows({ index, count, onChange }: { index: number; coun
   }, [count, index, onChange]);
   return (
     <div className="mt-4 flex items-center justify-between gap-3">
-      <button type="button" className="inline-flex h-11 items-center rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] disabled:opacity-40 dark:border-[#3FE0D0] dark:text-[#3FE0D0]" aria-label={flowCopy.previousQuestion} disabled={index <= 0} onClick={() => onChange(index - 1)}>← {flowCopy.previousQuestion}</button>
-      <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{flowCopy.questionCount} {index + 1} {flowCopy.of} {count}</p>
-      <button type="button" className="inline-flex h-11 items-center rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] disabled:opacity-40 dark:border-[#3FE0D0] dark:text-[#3FE0D0]" aria-label={flowCopy.nextQuestion} disabled={index >= count - 1} onClick={() => onChange(index + 1)}>{flowCopy.nextQuestion} →</button>
+      <button type="button" className="inline-flex h-11 items-center rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] disabled:opacity-40 dark:border-[#d9efff] dark:text-[#d9efff]" aria-label={flowCopy.previousQuestion} disabled={index <= 0} onClick={() => onChange(index - 1)}>← {flowCopy.previousQuestion}</button>
+      <p className="text-sm text-[#096ab7] dark:text-[#d9efff]">{flowCopy.questionCount} {index + 1} {flowCopy.of} {count}</p>
+      <button type="button" className="inline-flex h-11 items-center rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] disabled:opacity-40 dark:border-[#d9efff] dark:text-[#d9efff]" aria-label={flowCopy.nextQuestion} disabled={index >= count - 1} onClick={() => onChange(index + 1)}>{flowCopy.nextQuestion} →</button>
     </div>
   );
 }

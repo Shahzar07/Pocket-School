@@ -38,8 +38,8 @@ export function LinkedInCopy({ name, studentNumber, items }: { name: string; stu
   });
   const share = pack.featured ? shareLinks(pack.featured, `${name} on Poket School`) : null;
   return (
-    <section className="rounded-[28px] border border-[#203337]/10 bg-white p-6 text-[#203337]">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">LinkedIn</p>
+    <section className="rounded-[28px] border border-[#11131b]/10 bg-white p-6 text-[#11131b]">
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]">LinkedIn</p>
       <h2 className="mt-1 font-heading text-3xl tracking-tight">Featured and contact</h2>
       <p className="mt-2 text-sm leading-relaxed">Paste the portfolio link into LinkedIn Featured and into Contact info as a website. The text below is ready for About, Experience, and Education.</p>
       {pack.featured ? (
@@ -63,8 +63,8 @@ export function LinkedInCopy({ name, studentNumber, items }: { name: string; stu
 
 function CopyBlock({ title, text }: { title: string; text: string }) {
   return (
-    <div className="mt-4 rounded-2xl bg-[#E9F7FA] p-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E6A83]">{title}</p>
+    <div className="mt-4 rounded-2xl bg-[#eaf6ff] p-4">
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#096ab7]">{title}</p>
       <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
     </div>
   );
@@ -109,7 +109,7 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
 
   return (
     <section className="grid gap-6">
-      <div className="rounded-[28px] border border-[#203337]/10 bg-white p-6 text-[#203337]">
+      <div className="rounded-[28px] border border-[#11131b]/10 bg-white p-6 text-[#11131b]">
         <h2 className="font-heading text-3xl tracking-tight">Job applications</h2>
         <p className="mt-2 text-sm leading-relaxed">Log a company, role, link, status, and date. Attach a share link for that application. Poket School reminds you here. It does not apply on LinkedIn for you.</p>
         {signIn ? (
@@ -124,7 +124,7 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
           </button>
         ) : <p className="mt-3 text-sm">Sign in with LinkedIn appears once the LinkedIn app keys are set.</p>}
         {reminders.length > 0 && (
-          <ul className="mt-4 space-y-1 rounded-2xl bg-[#E9F7FA] p-4 text-sm">
+          <ul className="mt-4 space-y-1 rounded-2xl bg-[#eaf6ff] p-4 text-sm">
             {reminders.map((item) => <li key={item.id}>Reminder: {item.company} · {item.role} · {item.reminderOn}</li>)}
           </ul>
         )}
@@ -146,7 +146,7 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
           </label>
           <Field label="Remind me on" value={reminderOn} onChange={setReminderOn} />
         </div>
-        <button type="button" className="mt-4 h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white" onClick={() => {
+        <button type="button" className="mt-4 h-11 rounded-full bg-[#11131b] px-5 text-sm font-semibold text-white" onClick={() => {
           void authedFetch('/api/applications', {
             method: 'POST',
             body: JSON.stringify({ action: 'save-application', company, role, link, status, date, shareToken, reminderOn }),
@@ -158,7 +158,7 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
         </button>
         <ul className="mt-4 space-y-2 text-sm">
           {applications.map((item) => (
-            <li key={item.id} className="rounded-xl border border-[#203337]/10 px-3 py-2">
+            <li key={item.id} className="rounded-xl border border-[#11131b]/10 px-3 py-2">
               {item.company} · {item.role} · {item.status} · {item.date}
               {item.link ? <a className="ml-2 text-[#3C8DFF]" href={item.link}>Posting</a> : null}
             </li>
@@ -166,13 +166,13 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
         </ul>
       </div>
 
-      <div className="rounded-[28px] border border-[#203337]/10 bg-white p-6 text-[#203337]">
+      <div className="rounded-[28px] border border-[#11131b]/10 bg-white p-6 text-[#11131b]">
         <h2 className="font-heading text-3xl tracking-tight">Employer share links</h2>
         <p className="mt-2 text-sm leading-relaxed">Each link expires. You see when it was opened, how many times, and which verified item was opened. A visitor’s note is stored only if they type one.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <input value={label} onChange={(event) => setLabel(event.target.value)} className="h-11 flex-1 rounded-xl border border-border bg-background px-3" />
           <input value={days} onChange={(event) => setDays(event.target.value)} className="h-11 w-24 rounded-xl border border-border bg-background px-3" />
-          <button type="button" className="h-11 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]" onClick={() => {
+          <button type="button" className="h-11 rounded-full border border-[#096ab7] bg-[#d9efff] px-5 text-sm font-semibold text-[#11131b]" onClick={() => {
             void authedFetch('/api/applications', {
               method: 'POST',
               body: JSON.stringify({ action: 'create-link', label, days: Number(days) }),
@@ -188,7 +188,7 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
         </div>
         <ul className="mt-4 space-y-3 text-sm">
           {links.map((item) => (
-            <li key={item.token} className="rounded-xl border border-[#203337]/10 px-3 py-2">
+            <li key={item.token} className="rounded-xl border border-[#11131b]/10 px-3 py-2">
               <p className="font-medium">{item.label}</p>
               <p>{item.open ? `Open until ${item.expiresOn}` : 'Closed'} · {item.tracker.total} view{item.tracker.total === 1 ? '' : 's'}</p>
               {item.tracker.latest ? <p>Latest {item.tracker.latest}</p> : null}
@@ -210,7 +210,7 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
             <h3 className="text-sm font-semibold">Verification requests</h3>
             <ul className="mt-2 space-y-2 text-sm">
               {requests.filter((item) => item.status === 'open').map((item) => (
-                <li key={item.id} className="rounded-xl bg-[#E9F7FA] px-3 py-2">
+                <li key={item.id} className="rounded-xl bg-[#eaf6ff] px-3 py-2">
                   <p>{item.itemTitle}</p>
                   <p>{item.note}{item.visitorLabel ? ` · ${item.visitorLabel}` : ''}</p>
                   <button type="button" className="mt-1 font-semibold" onClick={() => {
@@ -225,11 +225,11 @@ export function JobTracker({ items }: { items: readonly RecordItem[] }) {
         )}
       </div>
 
-      <div className="rounded-[28px] border border-[#203337]/10 bg-white p-6 text-[#203337]">
+      <div className="rounded-[28px] border border-[#11131b]/10 bg-white p-6 text-[#11131b]">
         <h2 className="font-heading text-3xl tracking-tight">Tailor from the record</h2>
         <p className="mt-2 text-sm leading-relaxed">Paste a job description. ET AI restates verified achievements that already match. It does not add a skill from the posting.</p>
         <textarea value={jobText} onChange={(event) => setJobText(event.target.value)} className="mt-3 min-h-28 w-full rounded-xl border border-border bg-background p-3 text-sm" />
-        <button type="button" className="mt-3 h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white" onClick={() => {
+        <button type="button" className="mt-3 h-11 rounded-full bg-[#11131b] px-5 text-sm font-semibold text-white" onClick={() => {
           void authedFetch('/api/applications', { method: 'POST', body: JSON.stringify({ action: 'tailor', jobText }) })
             .then((data) => setBullets(Array.isArray(data.bullets) ? data.bullets.filter((item): item is string => typeof item === 'string') : []))
             .catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Could not tailor the bullets.'));

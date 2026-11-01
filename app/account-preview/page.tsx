@@ -114,7 +114,7 @@ export default function AccountPreviewPage() {
             <button
               key={item}
               type="button"
-              className={`h-9 rounded-full px-3 text-sm font-semibold ${item === role ? 'bg-[#203337] text-white' : 'border border-border'}`}
+              className={`h-9 rounded-full px-3 text-sm font-semibold ${item === role ? 'bg-[#11131b] text-white' : 'border border-border'}`}
               onClick={() => { setRole(item); setView(viewFor(item)); }}
             >
               {item}

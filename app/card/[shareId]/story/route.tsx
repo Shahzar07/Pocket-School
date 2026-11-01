@@ -29,7 +29,7 @@ export async function GET(_request: Request, context: { params: Promise<{ shareI
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          background: 'linear-gradient(160deg, #1E6A83 0%, #2786A4 48%, #6FBBCE 100%)',
+          background: 'linear-gradient(160deg, #096ab7 0%, #178bee 48%, #8bc9f5 100%)',
           padding: 72,
         }}
       >
@@ -44,11 +44,11 @@ export async function GET(_request: Request, context: { params: Promise<{ shareI
             padding: 64,
           }}
         >
-          <div style={{ display: 'flex', color: '#3FE0D0', fontSize: 36, letterSpacing: 6 }}>{title}</div>
+          <div style={{ display: 'flex', color: '#d9efff', fontSize: 36, letterSpacing: 6 }}>{title}</div>
           <div style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 108, fontWeight: 700, lineHeight: 1 }}>{firstName}</div>
             {level ? <div style={{ display: 'flex', marginTop: 20, fontSize: 44, color: '#E8EFEF' }}>{level}</div> : null}
-            <div style={{ display: 'flex', marginTop: 40, alignSelf: 'flex-start', fontSize: 36, color: '#203337', background: '#3FE0D0', borderRadius: 999, padding: '16px 28px' }}>{marks}</div>
+            <div style={{ display: 'flex', marginTop: 40, alignSelf: 'flex-start', fontSize: 36, color: '#11131b', background: '#d9efff', borderRadius: 999, padding: '16px 28px' }}>{marks}</div>
           </div>
         </div>
         <div style={{ display: 'flex', marginTop: 48, color: '#0B1417', fontSize: 64, fontWeight: 700 }}>

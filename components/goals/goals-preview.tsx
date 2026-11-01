@@ -33,7 +33,7 @@ export function GoalsPreview({ view }: { view: string }) {
   if (view === 'parent') {
     return (
       <main className="mx-auto max-w-3xl p-6">
-        <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Rochford demo · parent plan for Amina Rahman</p>
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-[#096ab7]">Rochford demo · parent plan for Amina Rahman</p>
         <ParentPlanCard childName="Amina Rahman" planned={75} actual={40} onTime={1} open={2} missed={1} rate={33} streak={4} />
         <div className="mt-4"><EscalationLadder missed={1} /></div>
       </main>

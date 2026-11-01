@@ -22,9 +22,9 @@ export default async function PublicCodePage({ params }: { params: Promise<{ cod
   if (found.state === 'published') return <PublicFunnel funnel={found.funnel} mode="public" />;
   if (found.state === 'draft') {
     return (
-      <main className="min-h-screen bg-[#F4FBFA] px-5 py-16 text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2]">
-        <article className="mx-auto max-w-xl rounded-[28px] border border-[#1E6A83]/15 bg-white p-8 dark:bg-[#1A1918]">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.brand}</p>
+      <main className="min-h-screen bg-[#F4FBFA] px-5 py-16 text-[#11131b] dark:bg-[#0B1417] dark:text-[#E7F4F2]">
+        <article className="mx-auto max-w-xl rounded-[28px] border border-[#096ab7]/15 bg-white p-8 dark:bg-[#1A1918]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7] dark:text-[#d9efff]">{COPY.brand}</p>
           <h1 className="mt-2 font-heading text-3xl tracking-tight">{COPY.notPublished}</h1>
         </article>
       </main>
@@ -32,9 +32,9 @@ export default async function PublicCodePage({ params }: { params: Promise<{ cod
   }
   const profile = await alumniProfile(code);
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#203337]">
-      <article className="mx-auto max-w-xl rounded-[28px] border border-[#203337]/10 bg-white p-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Poket School alumni</p>
+    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#11131b]">
+      <article className="mx-auto max-w-xl rounded-[28px] border border-[#11131b]/10 bg-white p-8">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]">Poket School alumni</p>
         {profile === undefined ? <p className="mt-4 text-sm">Opening this record…</p> : null}
         {profile === null ? <p className="mt-4 text-sm leading-relaxed">This profile is private. Certificate pages stay available from each certificate QR.</p> : null}
         {profile ? (

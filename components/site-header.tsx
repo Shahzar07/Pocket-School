@@ -1,10 +1,11 @@
 "use client";
 
+import { PoketWordmark } from "@/components/poket-wordmark";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthSTORE } from "@/hooks/use-auth";
-import { IconArrow, IconClose, IconMark, IconMenu } from "@/components/design/icons";
+import { IconArrow, IconClose, IconMenu } from "@/components/design/icons";
 import { useTranslation } from "react-i18next";
 import { isAdmin } from "@/lib/roles";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -119,18 +120,13 @@ export function SiteHeader() {
       >
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand}>
-            <span className={styles.mark} aria-hidden>
-              <IconMark size={16} />
-            </span>
-            <span>
-              Poket School <small>/ AI</small>
-            </span>
+            <PoketWordmark />
           </Link>
           <nav className={styles.desktopNav} aria-label={t("header.mainNav")}>
               <Link href="/">{t("header.home")}</Link>
               <Link href="/courses">{t("header.courses")}</Link>
               <Link href="/ai-studio">{t("header.aiStudio")}</Link>
-              <Link href="/dashboard/studio/maths">{t("header.etMaths")}</Link>
+              <Link href="/pricing">{t("header.pricing")}</Link>
               <details className={styles.moreMenu}>
                 <summary>{t("header.more")}</summary>
                 <div className={styles.morePanel}>
@@ -140,7 +136,7 @@ export function SiteHeader() {
                   <Link href="/pricing">{t("header.pricing")}</Link>
                   <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
                   <Link href="/institutions/register">{t("header.forSchools")}</Link>
-                  <p className="mt-3 text-[13px] font-normal text-[#5F7074]">{t("header.programmes")}</p>
+                  <p className="mt-3 text-[13px] font-normal text-[#626976]">{t("header.programmes")}</p>
                   {MARKET_LINKS.map((item) => (
                     <Link key={item.href} href={item.href}>{item.label}</Link>
                   ))}

@@ -42,10 +42,10 @@ const ROLES = [
 ];
 
 const INPUT_CLASS =
-  'h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-primary focus:ring-primary/20 transition-all';
+  'h-12 rounded-2xl bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20 transition-all';
 const SELECT_CLASS =
-  'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none focus:border-primary transition-all';
-const LABEL_CLASS = 'text-white/60 text-xs font-semibold uppercase tracking-wider';
+  'w-full h-12 rounded-2xl bg-muted border border-border text-foreground px-4 text-sm outline-none focus:border-primary transition-all';
+const LABEL_CLASS = 'text-muted-foreground text-xs font-semibold uppercase tracking-wider';
 
 function ageFromDob(dob: string): number | null {
   if (!dob) return null;
@@ -609,8 +609,8 @@ export default function SignupPage() {
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="mb-7">
-        <h2 className="text-3xl font-bold text-white mb-2">{heading}</h2>
-        <p className="text-white/45 text-sm">{subheading}</p>
+        <h2 className="text-3xl font-bold text-foreground mb-2">{heading}</h2>
+        <p className="text-muted-foreground text-sm">{subheading}</p>
       </div>
 
       {step === 'form' && (
@@ -627,8 +627,8 @@ export default function SignupPage() {
                   disabled={loading}
                   className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all text-sm font-semibold ${
                     role === r.id
-                      ? 'border-[#1E6A83] bg-[rgba(63,224,208,0.15)] text-[#1E6A83]'
-                      : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70 hover:border-white/20'
+                      ? 'border-[#096ab7] bg-[rgba(63,224,208,0.15)] text-[#096ab7]'
+                      : 'border-border bg-muted text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border'
                   }`}
                 >
                   {r.icon}
@@ -639,7 +639,7 @@ export default function SignupPage() {
           </div>
 
           {joinSlug && (
-            <p className="mb-4 rounded-2xl border border-[#1E6A83]/50 bg-[#203337] px-4 py-3 text-sm leading-relaxed text-[#E9F7FA]">
+            <p className="mb-4 rounded-2xl border border-[#096ab7]/50 bg-[#11131b] px-4 py-3 text-sm leading-relaxed text-[#eaf6ff]">
               This account joins your academy. Everyone else signs up as an individual. Progress stays with the account.
             </p>
           )}
@@ -668,7 +668,7 @@ export default function SignupPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full h-12 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium transition-all flex items-center justify-center gap-3 mb-5"
+            className="w-full h-12 rounded-2xl border border-border bg-muted hover:bg-muted text-foreground hover:text-foreground font-medium transition-all flex items-center justify-center gap-3 mb-5"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -680,9 +680,9 @@ export default function SignupPage() {
           </button>
 
           <div className="flex items-center my-5">
-            <div className="flex-1 border-t border-white/8" />
-            <span className="px-4 text-xs text-white/30 font-medium uppercase tracking-widest">{t('signup.orEmail')}</span>
-            <div className="flex-1 border-t border-white/8" />
+            <div className="flex-1 border-t border-border" />
+            <span className="px-4 text-xs text-muted-foreground font-medium uppercase tracking-widest">{t('signup.orEmail')}</span>
+            <div className="flex-1 border-t border-border" />
           </div>
 
           <form onSubmit={(e) => { e.preventDefault(); submitForm(); }} className="space-y-4">
@@ -696,7 +696,7 @@ export default function SignupPage() {
               <Label htmlFor="email" className={LABEL_CLASS}>{t('signup.email')}</Label>
               <Input id="email" type="email" placeholder={t('signup.emailPlaceholder')} className={INPUT_CLASS}
                 value={email} onChange={e => setEmail(e.target.value)} disabled={loading} />
-              <p className="text-xs text-white/25">{t('signup.emailHint')}</p>
+              <p className="text-xs text-muted-foreground">{t('signup.emailHint')}</p>
             </div>
 
             {/* Date of birth — drives the minor-consent flow */}
@@ -706,7 +706,7 @@ export default function SignupPage() {
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={e => setDob(e.target.value)} disabled={loading} />
               {tooYoung && (
-                <p className="rounded-lg bg-[#E9F7FA] px-3 py-2 text-xs font-semibold text-[#1E6A83] dark:bg-[#122226] dark:text-[#E7F4F2]">{t('signup.tooYoung')}</p>
+                <p className="rounded-lg bg-[#eaf6ff] px-3 py-2 text-xs font-semibold text-[#096ab7] dark:bg-[#122226] dark:text-[#E7F4F2]">{t('signup.tooYoung')}</p>
               )}
               {isMinor && !tooYoung && (
                 <p className="text-xs text-[var(--ps-cyan-text)] flex items-start gap-1.5">
@@ -747,7 +747,7 @@ export default function SignupPage() {
                     ))}
                   </select>
                   {suggestedPlacement && !placementEdited && (
-                    <p className="text-xs text-white/40">{t('signup.suggested')}</p>
+                    <p className="text-xs text-muted-foreground">{t('signup.suggested')}</p>
                   )}
                 </div>
               </div>
@@ -759,7 +759,7 @@ export default function SignupPage() {
                   <Label htmlFor="subject" className={LABEL_CLASS}>{t('signup.subjects')}</Label>
                   <Input id="subject" type="text" placeholder={t('signup.subjectsPlaceholder')} className={INPUT_CLASS}
                     value={subject} onChange={e => setSubject(e.target.value)} disabled={loading} />
-                  <p className="text-xs text-white/25">{t('signup.subjectsHint')}</p>
+                  <p className="text-xs text-muted-foreground">{t('signup.subjectsHint')}</p>
                 </div>
                 <LevelNameSelect tone="inverse" id="teachingLevel" label={t('signup.levelTeach')} value={teachingLevel} onChange={setTeachingLevel} disabled={loading} />
               </>
@@ -768,16 +768,16 @@ export default function SignupPage() {
             {role === 'parent' && (
               <div className="space-y-1.5">
                 <Label htmlFor="childEmail" className={LABEL_CLASS}>
-                  {t('signup.childLink')} <span className="text-white/30 normal-case font-normal">{t('signup.optional')}</span>
+                  {t('signup.childLink')} <span className="text-muted-foreground normal-case font-normal">{t('signup.optional')}</span>
                 </Label>
                 <Input id="childEmail" type="email" placeholder={t('signup.childPlaceholder')} className={INPUT_CLASS}
                   value={childEmail} onChange={e => setChildEmail(e.target.value)} disabled={loading} />
-                <p className="text-xs text-white/25">
+                <p className="text-xs text-muted-foreground">
                   {t('signup.childHint')}
                 </p>
                 {childEmail.trim() && (
-                  <div className="space-y-3 rounded-2xl border border-[#1E6A83]/40 bg-[#203337] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#E9F7FA]">Child details</p>
+                  <div className="space-y-3 rounded-2xl border border-[#096ab7]/40 bg-[#11131b] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#eaf6ff]">Child details</p>
                     <GenderSelect tone="inverse" id="child-gender" value={childGender} onChange={setChildGender} disabled={loading} />
                     <LevelNameSelect tone="inverse" id="child-level" value={childLevel} onChange={setChildLevel} disabled={loading} />
                     <div className="space-y-1.5">
@@ -795,7 +795,7 @@ export default function SignupPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--ps-cyan-text)] flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" /> {t('signup.guardianTitle')}
                 </p>
-                <p className="text-xs text-white/50 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {t('signup.guardianBody')}
                 </p>
                 <div className="space-y-1.5">
@@ -824,36 +824,36 @@ export default function SignupPage() {
               <Label htmlFor="password" className={LABEL_CLASS}>{t('signup.password')}</Label>
               <Input id="password" type="password" placeholder="••••••••" className={INPUT_CLASS}
                 value={password} onChange={e => setPassword(e.target.value)} disabled={loading} />
-              <p className="text-xs text-white/25">{t('signup.passwordHint')}</p>
+              <p className="text-xs text-muted-foreground">{t('signup.passwordHint')}</p>
             </div>
 
-            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer">
+            <label className="flex items-start gap-3 rounded-2xl border border-border bg-white/[0.03] p-4 cursor-pointer">
               <input
                 type="checkbox"
                 checked={timezoneOn}
                 onChange={e => setTimezoneOn(e.target.checked)}
                 disabled={loading}
-                className="mt-0.5 w-4 h-4 shrink-0 accent-[#3FE0D0]"
+                className="mt-0.5 w-4 h-4 shrink-0 accent-[#d9efff]"
                 aria-label={CONSENT_UI.timezone}
                 data-consent="timezone"
               />
-              <span className="text-xs text-white/70 leading-relaxed">{CONSENT_UI.timezone}</span>
+              <span className="text-xs text-foreground leading-relaxed">{CONSENT_UI.timezone}</span>
             </label>
-            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer">
+            <label className="flex items-start gap-3 rounded-2xl border border-border bg-white/[0.03] p-4 cursor-pointer">
               <input
                 type="checkbox"
                 checked={amberOptIn}
                 onChange={e => setAmberOptIn(e.target.checked)}
                 disabled={loading}
-                className="mt-0.5 w-4 h-4 shrink-0 accent-[#3FE0D0]"
+                className="mt-0.5 w-4 h-4 shrink-0 accent-[#d9efff]"
               />
-              <span className="text-xs text-white/70 leading-relaxed">
+              <span className="text-xs text-foreground leading-relaxed">
                 Send me free Amber alerts for my country. No school and no subscription.
               </span>
             </label>
 
             {/* ── Consent checkbox (PDPA requirement) ── */}
-            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 cursor-pointer hover:bg-white/[0.05] transition-colors">
+            <label className="flex items-start gap-3 rounded-2xl border border-border bg-white/[0.03] p-4 cursor-pointer hover:bg-white/[0.05] transition-colors">
               <input
                 type="checkbox"
                 checked={agreed}
@@ -861,11 +861,11 @@ export default function SignupPage() {
                 disabled={loading}
                 className="mt-0.5 w-4 h-4 shrink-0 accent-primary"
               />
-              <span className="text-xs text-white/60 leading-relaxed">
+              <span className="text-xs text-muted-foreground leading-relaxed">
                 {t('signup.agree')}{' '}
-                <Link href="/legal?doc=terms" target="_blank" className="text-[#6FBBCE] hover:underline font-medium">{t('signup.terms')}</Link>
+                <Link href="/legal?doc=terms" target="_blank" className="text-primary hover:underline font-medium">{t('signup.terms')}</Link>
                 {' '}{t('signup.and')}{' '}
-                <Link href="/legal?doc=privacy" target="_blank" className="text-[#6FBBCE] hover:underline font-medium">{t('signup.privacy')}</Link>
+                <Link href="/legal?doc=privacy" target="_blank" className="text-primary hover:underline font-medium">{t('signup.privacy')}</Link>
                 {t('signup.consentData')}
                 {isMinor && t('signup.minorConsent')}
               </span>
@@ -885,7 +885,7 @@ export default function SignupPage() {
       {step === 'consent' && (
         <form onSubmit={verifyGuardianConsent} className="space-y-4">
           <div className="rounded-2xl border border-[var(--ps-cyan-border)]/25 bg-[var(--ps-cyan-soft)] p-4">
-            <p className="text-xs text-white/60 leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {t('signup.consentSent', { name: guardianName, email: guardianEmail })}
             </p>
           </div>
@@ -893,7 +893,7 @@ export default function SignupPage() {
             <Label htmlFor="consentCode" className={LABEL_CLASS}>{t('signup.consentCode')}</Label>
             <Input
               id="consentCode" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
-              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-primary"
+              className="h-14 rounded-2xl bg-muted border-border text-foreground text-center text-2xl tracking-[0.5em] font-bold placeholder:text-muted-foreground focus:border-primary"
               value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} disabled={loading}
             />
           </div>
@@ -902,7 +902,7 @@ export default function SignupPage() {
             {loading ? t('signup.verifying') : t('signup.confirmConsent')}
           </Button>
           <button type="button" onClick={() => setStep('form')} disabled={loading}
-            className="w-full text-xs text-white/40 hover:text-white/70 transition-colors">
+            className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors">
             ← {t('signup.back')}
           </button>
         </form>
@@ -920,7 +920,7 @@ export default function SignupPage() {
             <Label htmlFor="code" className={LABEL_CLASS}>{t('signup.code')}</Label>
             <Input
               id="code" type="text" inputMode="numeric" maxLength={6} placeholder="123456"
-              className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20 focus:border-primary"
+              className="h-14 rounded-2xl bg-muted border-border text-foreground text-center text-2xl tracking-[0.5em] font-bold placeholder:text-muted-foreground focus:border-primary"
               value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} disabled={loading}
             />
           </div>
@@ -929,15 +929,15 @@ export default function SignupPage() {
             {loading ? t('signup.creating') : t('signup.verifyCreate')}
           </Button>
           <button type="button" onClick={() => setStep('form')} disabled={loading}
-            className="w-full text-xs text-white/40 hover:text-white/70 transition-colors">
+            className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors">
             ← {t('signup.back')}
           </button>
         </form>
       )}
 
-      <p className="text-center text-sm text-white/40 mt-6">
+      <p className="text-center text-sm text-muted-foreground mt-6">
         {t('signup.haveAccount')}{' '}
-        <Link href="/login" className="text-[#6FBBCE] hover:underline font-medium">{t('signup.signIn')}</Link>
+        <Link href="/login" className="text-primary hover:underline font-medium">{t('signup.signIn')}</Link>
       </p>
     </motion.div>
   );

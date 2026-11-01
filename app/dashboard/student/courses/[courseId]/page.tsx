@@ -165,7 +165,7 @@ export default function CourseDetailPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70 mb-3">
             {course.subject ?? t('courseUi.subjectFallback')}
           </p>
-          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{courseCopy.values.title || course.title}</h1>
+          <h1 className="font-heading text-3xl sm:text-4xl font-semibold tracking-tight mb-3">{courseCopy.values.title || course.title}</h1>
           <p className="text-primary-foreground/80 text-sm leading-relaxed mb-3 max-w-2xl">{courseCopy.values.description || course.description}</p>
           {courseCopy.autoTranslated && (
             <p className="mb-4 flex flex-wrap items-center gap-2 text-xs text-primary-foreground/80">

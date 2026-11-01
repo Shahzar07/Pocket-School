@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 /** Daily goals and tasks are one page. The query, including ?add=1, is kept. */
 export default function StudentTasksRedirect() {
   return (
-    <Suspense fallback={<p className="p-8 text-sm text-[#1E6A83]">Opening your goals.</p>}>
+    <Suspense fallback={<p className="p-8 text-sm text-[#096ab7]">Opening your goals.</p>}>
       <TasksRedirect />
     </Suspense>
   );
@@ -19,5 +19,5 @@ function TasksRedirect() {
     const query = params.toString();
     router.replace(query ? `/dashboard/student/goals?${query}` : '/dashboard/student/goals');
   }, [router, params]);
-  return <p className="p-8 text-sm text-[#1E6A83]">Opening your goals.</p>;
+  return <p className="p-8 text-sm text-[#096ab7]">Opening your goals.</p>;
 }

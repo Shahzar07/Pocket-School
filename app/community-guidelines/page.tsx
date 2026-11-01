@@ -4,7 +4,7 @@ export const metadata = { title: 'Community guidelines · Poket School' };
 
 export default function CommunityGuidelines() {
   return (
-    <main style={{ maxWidth: 720, margin: '0 auto', padding: '48px 20px', color: '#203337', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+    <main style={{ maxWidth: 720, margin: '0 auto', padding: '48px 20px', color: '#11131b', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <p style={{ letterSpacing: '0.14em', color: BRAND.primary }}>POKET SCHOOL</p>
       <h1>Community guidelines</h1>
       <p>ET AI reads every post, comment, reply, message, profile, and image before it is published. A person still reviews the queue.</p>

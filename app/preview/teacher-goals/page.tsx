@@ -3,9 +3,9 @@ import { EscalationLadder } from '@/components/goals/escalation-ladder';
 
 export default function TeacherGoalsPreview() {
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-8">
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-8">
       <div className="mx-auto max-w-3xl space-y-4">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Rochford demo · Leah Tan, teacher</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#096ab7]">Rochford demo · Leah Tan, teacher</p>
         <EscalationLadder missed={3} />
         <ClassAdherence
           classRate={67}

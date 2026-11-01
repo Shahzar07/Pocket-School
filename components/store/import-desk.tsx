@@ -297,13 +297,13 @@ export function ImportDesk() {
           className="max-w-full text-sm"
           onChange={(event) => { void loadFile(event.target.files?.[0]); }}
         />
-        <button type="button" className="h-10 rounded-xl bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50" data-dry-run="1" disabled={busy || !csv} onClick={() => { void dryRun(); }}>{STORE_COPY.dryRun}</button>
+        <button type="button" className="h-10 rounded-xl bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b] disabled:opacity-50" data-dry-run="1" disabled={busy || !csv} onClick={() => { void dryRun(); }}>{STORE_COPY.dryRun}</button>
         <button type="button" className="h-10 rounded-xl border border-border px-4 text-sm font-semibold disabled:opacity-50" data-import-drafts="1" disabled={busy || reports.length === 0 || blocked} onClick={() => { void runImport(false); }}>{STORE_COPY.importRows}</button>
         <button type="button" className="h-10 rounded-xl border border-border px-4 text-sm font-semibold disabled:opacity-50" data-resume="1" disabled={busy || !resumeReady || reports.length === 0 || blocked} onClick={() => { void runImport(true); }}>{STORE_COPY.resume}</button>
         <button type="button" className="h-10 rounded-xl border border-border px-4 text-sm font-semibold disabled:opacity-50" data-export-errors="1" disabled={!reports.some(row => row.errors.length > 0)} onClick={exportErrors}>{STORE_COPY.exportErrors}</button>
       </div>
       {progress && <p className="text-sm font-semibold" data-import-progress="1">{STORE_COPY.progress} {progress}</p>}
-      {note && <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]" data-import-note="1">{note}</p>}
+      {note && <p className="text-sm text-[#096ab7] dark:text-[#d9efff]" data-import-note="1">{note}</p>}
       {setupResult && <p className="text-sm text-foreground" data-setup-needed="1">{setupResult}</p>}
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full min-w-[640px] text-left text-sm">

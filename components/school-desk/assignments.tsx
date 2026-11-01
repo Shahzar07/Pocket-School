@@ -69,14 +69,14 @@ export function AssignmentsDesk({ base = 'dashboard' }: { base?: 'dashboard' | '
         }}>
           <h2 className="font-heading text-2xl">{t.create}</h2>
           <ClassSelect state={state} classId={activeId} onChange={setClassId} />
-          <label className="block text-sm text-[#1E6A83]">{t.studentsLabel}
+          <label className="block text-sm text-[#096ab7]">{t.studentsLabel}
             <select className={`${deskStyles.field} mt-1 w-full`} value={studentId} onChange={(event) => setStudentId(event.target.value)} aria-label={t.studentsLabel}>
               <option value="">{t.wholeClass}</option>
               {pupils.filter((item) => item.status === 'active').map((item) => <option key={item.studentId} value={item.studentId}>{item.studentName}</option>)}
             </select>
           </label>
           <input className={`${deskStyles.field} w-full`} value={title} onChange={(event) => setTitle(event.target.value)} aria-label={t.titleLabel} />
-          <textarea className="h-20 w-full rounded-2xl border border-[#1E6A83]/30 p-3 text-sm" value={instructions} onChange={(event) => setInstructions(event.target.value)} aria-label={t.titleLabel} />
+          <textarea className="h-20 w-full rounded-2xl border border-[#096ab7]/30 p-3 text-sm" value={instructions} onChange={(event) => setInstructions(event.target.value)} aria-label={t.titleLabel} />
           <input className={`${deskStyles.field} w-full`} value={lesson} onChange={(event) => setLesson(event.target.value)} aria-label={t.lessonLabel} />
           <input className={`${deskStyles.field} w-full`} type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} aria-label={t.due} />
           <div className="grid grid-cols-2 gap-2">
@@ -95,28 +95,28 @@ export function AssignmentsDesk({ base = 'dashboard' }: { base?: 'dashboard' | '
             <input className={deskStyles.field} value={penalty} onChange={(event) => setPenalty(event.target.value)} aria-label={t.penaltyLabel} />
             <input className={deskStyles.field} value={cutoff} onChange={(event) => setCutoff(event.target.value)} aria-label={t.cutoffLabel} />
           </div>
-          <p className="text-xs text-[#1E6A83]">{LEVELS.join(', ')}</p>
+          <p className="text-xs text-[#096ab7]">{LEVELS.join(', ')}</p>
           <button type="submit" className={deskStyles.btn} data-action="create-assessment">{t.create}</button>
-          {message ? <p className="text-sm text-[#1E6A83]">{message}</p> : null}
+          {message ? <p className="text-sm text-[#096ab7]">{message}</p> : null}
         </form>
         <section className="rounded-3xl bg-white p-5">
           <h2 className="font-heading text-2xl">{t.inbox}</h2>
           <ul className="mt-3 space-y-2">
             {inbox.map((item) => (
               <li key={item.id}>
-                <button type="button" data-action="open-inbox" className="w-full rounded-2xl border border-[#1E6A83]/20 px-3 py-2 text-left text-sm" onClick={() => { setOpenId(item.id); setFeedback(item.suggestion?.feedback ?? ''); }}>
+                <button type="button" data-action="open-inbox" className="w-full rounded-2xl border border-[#096ab7]/20 px-3 py-2 text-left text-sm" onClick={() => { setOpenId(item.id); setFeedback(item.suggestion?.feedback ?? ''); }}>
                   {item.studentName} · {item.status}
                 </button>
               </li>
             ))}
-            {inbox.length === 0 ? <li className="text-sm text-[#1E6A83]">{t.noSubmissions}</li> : null}
+            {inbox.length === 0 ? <li className="text-sm text-[#096ab7]">{t.noSubmissions}</li> : null}
           </ul>
           {open && openAssessment ? (
             <div className="mt-4 space-y-2 text-sm">
               <p className="font-semibold">{open.studentName}</p>
               <p>{open.body}</p>
-              {open.suggestion ? <p className="text-[#1E6A83]">{t.suggests} {open.suggestion.points} {t.of} {openAssessment.maxPoints}. {open.suggestion.approved ? t.approved : t.waiting}</p> : null}
-              <textarea className="h-20 w-full rounded-2xl border border-[#1E6A83]/30 p-3" value={feedback} onChange={(event) => setFeedback(event.target.value)} aria-label={t.comment} />
+              {open.suggestion ? <p className="text-[#096ab7]">{t.suggests} {open.suggestion.points} {t.of} {openAssessment.maxPoints}. {open.suggestion.approved ? t.approved : t.waiting}</p> : null}
+              <textarea className="h-20 w-full rounded-2xl border border-[#096ab7]/30 p-3" value={feedback} onChange={(event) => setFeedback(event.target.value)} aria-label={t.comment} />
               <div className="flex flex-wrap gap-2">
                 <button type="button" data-action="approve-ai" className={deskStyles.ghost} onClick={() => setState(approveSuggestion(state, open.id))}>{t.approve}</button>
                 <button type="button" data-action="return-work" className={deskStyles.btn} onClick={() => setState(returnSubmission(state, open.id, state.actorId, feedback))}>{t.returnWork}</button>
@@ -127,8 +127,8 @@ export function AssignmentsDesk({ base = 'dashboard' }: { base?: 'dashboard' | '
       </div>
       <section className="rounded-3xl bg-white p-5">
         <h2 className="font-heading text-2xl">{t.studentView}</h2>
-        <p className="mt-1 text-sm text-[#1E6A83]">{t.studentHelp}</p>
-        <textarea className="mt-3 h-20 w-full rounded-2xl border border-[#1E6A83]/30 p-3 text-sm" value={studentBody} onChange={(event) => setStudentBody(event.target.value)} aria-label={t.submit} />
+        <p className="mt-1 text-sm text-[#096ab7]">{t.studentHelp}</p>
+        <textarea className="mt-3 h-20 w-full rounded-2xl border border-[#096ab7]/30 p-3 text-sm" value={studentBody} onChange={(event) => setStudentBody(event.target.value)} aria-label={t.submit} />
         <button type="button" data-action="student-submit" className={`${deskStyles.btn} mt-3`} onClick={() => {
           const target = work.find((item) => item.title === 'Homework 4') ?? work[0];
           if (!target) return;

@@ -101,14 +101,14 @@ export default function PathwaysDeskPage() {
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background text-foreground" data-pathway-editor="1">
       <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-foreground/15 bg-background px-4 py-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">Admin</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#096ab7] dark:text-[#d9efff]">Admin</p>
           <h1 className="text-2xl" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif' }}>Pathways</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" href="/dashboard/admin">Admin desk</Link>
-          <Link className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" href={`/${draft.slug}`}>View page</Link>
+          <Link className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" href="/dashboard/admin">Admin desk</Link>
+          <Link className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" href={`/${draft.slug}`}>View page</Link>
           <ThemeToggle />
-          <button type="button" className="inline-flex min-h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-bold text-[#203337] disabled:opacity-60" onClick={() => void save()} disabled={!allowed || busy}>
+          <button type="button" className="inline-flex min-h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-bold text-[#11131b] disabled:opacity-60" onClick={() => void save()} disabled={!allowed || busy}>
             {busy ? 'Saving' : 'Save'}
           </button>
         </div>
@@ -119,7 +119,7 @@ export default function PathwaysDeskPage() {
         <div className="grid min-h-0 flex-1 gap-6 px-4 py-6 lg:grid-cols-[220px_minmax(0,1fr)]">
           <nav aria-label="Pathway pages" className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
             {rows.map((item) => (
-              <button key={item.slug} type="button" className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-semibold ${item.slug === draft.slug ? 'bg-[#3FE0D0] text-[#203337]' : 'border border-foreground/15 text-foreground'}`} onClick={() => setSlug(item.slug)}>
+              <button key={item.slug} type="button" className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-semibold ${item.slug === draft.slug ? 'bg-[#d9efff] text-[#11131b]' : 'border border-foreground/15 text-foreground'}`} onClick={() => setSlug(item.slug)}>
                 {item.title}
               </button>
             ))}
@@ -194,13 +194,13 @@ export default function PathwaysDeskPage() {
                           ))}
                         </select>
                       </label>
-                      <button type="button" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => updateStage(stage.id, { subjects: stage.subjects.filter((_, subjectIndex) => subjectIndex !== index) })}>
+                      <button type="button" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => updateStage(stage.id, { subjects: stage.subjects.filter((_, subjectIndex) => subjectIndex !== index) })}>
                         Remove
                       </button>
                     </li>
                   ))}
                 </ul>
-                <button type="button" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => updateStage(stage.id, { subjects: [...stage.subjects, { name: 'New subject', kind: 'optional', teacherId: 'et-english', source: 'standard' }] })}>
+                <button type="button" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => updateStage(stage.id, { subjects: [...stage.subjects, { name: 'New subject', kind: 'optional', teacherId: 'et-english', source: 'standard' }] })}>
                   Add subject
                 </button>
               </fieldset>
@@ -218,7 +218,7 @@ export default function PathwaysDeskPage() {
                 </div>
               ))}
             </fieldset>
-            <button type="button" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => {
+            <button type="button" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => {
               const fresh = PATHWAYS.find((item) => item.slug === draft.slug);
               if (fresh) update(copyPathway(fresh));
               setNotice('Restored the catalogue copy. Save to publish it.');

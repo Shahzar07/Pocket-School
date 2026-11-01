@@ -14,7 +14,7 @@ export default function StudentPerksPage() {
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Perks could not be loaded.'));
   }, []);
 
-  if (error) return <p className="text-sm text-[#203337]">{error}</p>;
+  if (error) return <p className="text-sm text-[#11131b]">{error}</p>;
 
   return (
     <PerksBoard

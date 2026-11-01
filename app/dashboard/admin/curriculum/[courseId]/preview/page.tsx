@@ -47,9 +47,9 @@ export default function CoursePreviewPage() {
   return (
     <div className="space-y-4 pb-12">
       <p className="text-sm text-muted-foreground">
-        <Link href="/dashboard/admin/curriculum" className="font-semibold text-[#1E6A83]">Course CMS</Link>
+        <Link href="/dashboard/admin/curriculum" className="font-semibold text-[#096ab7]">Course CMS</Link>
         <span> / </span>
-        <Link href={`/dashboard/admin/curriculum/${courseId}`} className="font-semibold text-[#1E6A83]">Content Builder</Link>
+        <Link href={`/dashboard/admin/curriculum/${courseId}`} className="font-semibold text-[#096ab7]">Content Builder</Link>
         <span> / Preview course</span>
       </p>
       <ReviewScreen

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { motion, type Variants } from 'motion/react';
@@ -61,69 +61,7 @@ const SAMPLE_CARD: PublicCard = {
 /* ─── Data ──────────────────────────────────────────────────── */
 
 type Billing = BillingInterval;
-
-interface PlanCopy {
-  id: string;
-  name: string;
-  tagline: string;
-  tier: number;
-  popular?: boolean;
-  cta: string;
-  features: string[];
-}
-
-const PREVIEW_EXTRAS = [
-  'ET AI tutor — 20 messages a day',
-  'ET AI generator — 3 items a day',
-  'Buy any marketplace course outright',
-];
-
-const PRIMARY_EXTRAS = [
-  'Unlimited ET AI study materials',
-  'Progress tracking and streaks',
-];
-
-const IGCSE_EXTRAS = [
-  'ET AI tutor, unlimited',
-  "Bloom's progress tracking",
-];
-
-/** Marketing copy for the sold plans. Amounts come from the pricing document. */
-const PLANS: PlanCopy[] = [
-  {
-    id: 'preview',
-    name: 'Free Preview',
-    tier: 0,
-    tagline: 'Browse everything, and take the first lesson of any course. No card, no countdown.',
-    cta: 'Start free',
-    features: PREVIEW_EXTRAS,
-  },
-  {
-    id: 'primary_secondary',
-    name: 'Primary & Lower Secondary',
-    tier: 1,
-    tagline: 'Primary and Lower Secondary. Every core subject, built to the curriculum.',
-    cta: 'Choose this plan',
-    features: PRIMARY_EXTRAS,
-  },
-  {
-    id: 'igcse_alevel',
-    name: 'IGCSE & A-Level',
-    tier: 2,
-    tagline: 'IGCSE to A-Level, with everything below included.',
-    popular: true,
-    cta: 'Choose this plan',
-    features: IGCSE_EXTRAS,
-  },
-  {
-    id: 'professional',
-    name: 'Professional & Degrees',
-    tier: 3,
-    tagline: 'MBBS Medicine, LLB Law (University of London and other universities), Engineering and Nursing.',
-    cta: 'Choose this plan',
-    features: [],
-  },
-];
+import { PLANS, type PlanCopy } from '@/lib/marketing/plan-copy';
 
 const INSTITUTION_FEATURES = [
   { icon: <ShieldCheck className="w-4 h-4" />, label: 'White-label branding', desc: 'Your logo, your colours, your domain.' },
@@ -145,7 +83,12 @@ const FAQ_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 /* ─── Page ──────────────────────────────────────────────────── */
 
 export default function PricingPage() {
+  const { t } = useTranslation();
   const [billing, setBilling] = useState<Billing>('monthly');
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('billing');
+    if (requested === 'annual' || requested === 'monthly') setBilling(requested);
+  }, []);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
   const { config, currency, ready, localMoney } = usePricing();
 
@@ -177,18 +120,16 @@ export default function PricingPage() {
       data-display-currency={currency}
     >
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative pt-24 lg:pt-32 pb-14 bg-gradient-to-b from-[#E9F7FA] via-[#F4FBFA] to-background overflow-hidden dark:from-[#0B1417] dark:via-[#122226] dark:to-[#0B1417]">
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" aria-hidden />
-        <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full bg-[var(--ps-cyan-soft)] blur-3xl" aria-hidden />
+      <section className="relative pt-16 lg:pt-20 pb-12 bg-secondary/60 overflow-hidden">
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.div variants={fadeUp} initial="hidden" animate="visible">
-            <p className="text-xs font-bold tracking-[0.25em] text-primary mb-5">PLANS &amp; PRICING</p>
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-7xl tracking-tight text-foreground leading-[0.98] mb-6">
-              Learn free.
+            <p className="text-sm font-medium text-muted-foreground mb-4">{t("home.v3.priceTag", "Plans for your next step")}</p>
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl tracking-tight text-foreground leading-[0.98] mb-6">
+              Start small.
               <br />
               <span className="ps-ink-gradient">
-                Upgrade when it earns it.
+                Keep going.
               </span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
@@ -227,7 +168,7 @@ export default function PricingPage() {
                       <motion.span
                         layoutId="billing-pill"
                         transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
-                        className="absolute inset-0 rounded-full bg-[#203337]"
+                        className="absolute inset-0 rounded-full bg-[#11131b]"
                       />
                     )}
                     <span className="relative">{b === 'monthly' ? 'Monthly' : 'Annual'}</span>
@@ -286,7 +227,7 @@ export default function PricingPage() {
       <section id="addons" className="bg-card pb-20 lg:pb-24 scroll-mt-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-8">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">Add-ons</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#096ab7]">Add-ons</p>
             <h2 className="font-heading text-3xl sm:text-4xl text-slate-900 tracking-tight mt-2">
               Bought on top of a plan
             </h2>
@@ -316,7 +257,7 @@ export default function PricingPage() {
                 )}
               </div>
               <div className="text-center sm:text-right shrink-0">
-                <p className="text-2xl font-extrabold text-slate-900">
+                <p className="text-2xl font-semibold text-slate-900">
                   {a.priceNote ? a.priceNote : <>{addonQuoteAmount}<span className="text-sm font-medium text-muted-foreground">/mo</span></>}
                 </p>
                 <button
@@ -375,7 +316,7 @@ export default function PricingPage() {
                     key={s.plan}
                     className="rounded-2xl bg-card border border-slate-200 p-4 text-center shadow-sm"
                   >
-                    <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-slate-400 mb-1.5">
+                    <p className="text-[11px] font-medium uppercase text-slate-400 mb-1.5">
                       {s.plan}
                     </p>
                     <p className="font-heading text-3xl text-foreground leading-none flex items-center justify-center gap-1.5">
@@ -406,7 +347,7 @@ export default function PricingPage() {
                     <Zap className="w-4 h-4 text-[var(--ps-cyan-text)] fill-[var(--ps-cyan-text)]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-foreground mb-1">{u.title}</h3>
+                    <h3 className="text-base font-semibold text-foreground mb-1">{u.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{u.desc}</p>
                   </div>
                 </div>
@@ -424,7 +365,7 @@ export default function PricingPage() {
       </section>
 
       {/* ── Institutions ───────────────────────────────────────── */}
-      <section className="py-20 lg:py-28 bg-[#203337] relative overflow-hidden">
+      <section className="py-20 lg:py-28 bg-[#11131b] relative overflow-hidden">
         <div
           className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(30,106,131,0.25),transparent)]"
           aria-hidden
@@ -437,11 +378,11 @@ export default function PricingPage() {
               whileInView="visible"
               viewport={{ once: true, margin: '-60px' }}
             >
-              <p className="text-xs font-bold tracking-[0.25em] text-[#6FBBCE] mb-5">FOR INSTITUTIONS</p>
+              <p className="text-xs font-bold tracking-[0.25em] text-[#8bc9f5] mb-5">FOR INSTITUTIONS</p>
               <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-white leading-[1.05] mb-5">
                 Schools, colleges and
                 <br />
-                <span className="bg-gradient-to-r from-[#6FBBCE] via-[#A9D7E4] to-[#3FE0D0] bg-clip-text text-transparent">
+                <span className="text-white">
                   training providers.
                 </span>
               </h2>
@@ -451,7 +392,7 @@ export default function PricingPage() {
               </p>
               <a
                 href="mailto:institutions@poketschool.ai?subject=Institutional%20Pricing%20Enquiry"
-                className="inline-flex items-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-primary hover:bg-[#1E6A83] text-primary-foreground shadow-xl shadow-primary/40 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full h-12 px-7 text-sm font-bold bg-primary hover:bg-[#096ab7] text-primary-foreground shadow-xl shadow-primary/40 transition-colors"
               >
                 <Building2 className="w-4 h-4" />
                 Talk to us
@@ -475,10 +416,10 @@ export default function PricingPage() {
                   key={f.label}
                   className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-primary/20 text-[#6FBBCE] flex items-center justify-center mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/20 text-[#8bc9f5] flex items-center justify-center mb-3">
                     {f.icon}
                   </div>
-                  <p className="text-sm font-extrabold text-white mb-1">{f.label}</p>
+                  <p className="text-sm font-semibold text-white mb-1">{f.label}</p>
                   <p className="text-xs text-white/60 leading-relaxed">{f.desc}</p>
                 </div>
               ))}
@@ -573,17 +514,20 @@ function PlanCard({
       whileInView="visible"
       viewport={{ once: true, margin: '-40px' }}
       custom={index}
+      id={`plan-${plan.id}`}
+      data-price-card={plan.id}
+      data-featured={plan.popular ? "true" : "false"}
       className={`relative flex flex-col rounded-2xl border transition-all h-full ${
         plan.popular
-          ? 'border-primary bg-card shadow-[0_30px_70px_-30px_rgba(30,106,131,0.55)] lg:-mt-4 lg:mb-4'
-          : 'border-slate-200 bg-card hover:border-primary/40 hover:shadow-[0_20px_50px_-20px_rgba(30,106,131,0.25)]'
+          ? 'border-primary/25 bg-secondary'
+          : 'border-border bg-card hover:border-primary/40'
       }`}
     >
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#1E6A83] bg-[#3FE0D0] text-[#203337] text-[10px] font-bold tracking-[0.15em]">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#096ab7] bg-[#d9efff] text-[#11131b] text-[11px] font-medium">
             <Sparkles className="w-3 h-3 text-foreground" />
-            MOST POPULAR
+            For your next chapter
           </span>
         </div>
       )}
@@ -591,7 +535,7 @@ function PlanCard({
       <div className={`p-7 sm:p-8 ${plan.popular ? 'pt-9 sm:pt-10' : ''}`}>
         <div className="flex items-center gap-2 mb-2">
           <GraduationCap className={`w-4 h-4 ${plan.popular ? 'text-primary' : 'text-slate-400'}`} />
-          <h2 className="text-sm font-bold tracking-[0.15em] uppercase text-foreground">{plan.name}</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">{plan.name}</h2>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed min-h-[3.25rem]">{plan.tagline}</p>
 
@@ -628,7 +572,7 @@ function PlanCard({
         {isFree ? (
           <Link
             href="/signup"
-            className="mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all bg-[#203337] hover:bg-[#1E6A83] text-white"
+            className="mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all bg-[#11131b] hover:bg-[#096ab7] text-white"
           >
             {plan.cta}
             <ArrowRight className="w-4 h-4" />
@@ -640,8 +584,8 @@ function PlanCard({
             disabled={checkingOut || priceUnset}
             className={`mt-6 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full text-sm font-bold transition-all disabled:opacity-60 ${
               plan.popular
-                ? 'bg-primary hover:bg-[#1E6A83] text-primary-foreground shadow-lg shadow-primary/30'
-                : 'bg-[#203337] hover:bg-[#1E6A83] text-white'
+                ? 'bg-foreground hover:opacity-90 text-background'
+                : 'bg-[#11131b] hover:bg-[#096ab7] text-white'
             }`}
           >
             {priceUnset ? 'Price not set' : checkingOut ? 'Starting checkout…' : plan.cta}
@@ -652,7 +596,7 @@ function PlanCard({
 
       <div className="px-7 sm:px-8 pb-8 pt-1 flex-1 flex flex-col">
         <div className="border-t border-slate-100 pt-6">
-          <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-slate-400 mb-4">
+          <p className="text-xs font-medium text-muted-foreground mb-4">
             What&rsquo;s included
           </p>
           <ul className="space-y-3">
@@ -660,12 +604,12 @@ function PlanCard({
               <li key={f} className="flex items-start gap-2.5">
                 <span
                   className={`mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center ${
-                    plan.popular ? 'bg-primary' : 'bg-[#E9F7FA]'
+                    plan.popular ? 'bg-primary' : 'bg-[#eaf6ff]'
                   }`}
                 >
                   <Check className={`w-2.5 h-2.5 ${plan.popular ? 'text-primary-foreground' : 'text-primary'}`} strokeWidth={3.5} />
                 </span>
-                <span className="text-sm text-slate-700 leading-snug">{f}</span>
+                <span className="text-sm text-muted-foreground leading-relaxed">{f}</span>
               </li>
             ))}
           </ul>

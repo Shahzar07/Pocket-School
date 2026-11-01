@@ -21,9 +21,9 @@ export default function AlumniHomePage() {
         ]}
       />
       <div className="flex flex-wrap gap-2">
-        <Link href="/dashboard/alumni" className="inline-flex h-11 items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]">Join</Link>
-        <a href="#alumni-wall" className="inline-flex h-11 items-center rounded-full border border-[#E7EDED] bg-white px-4 text-sm font-semibold text-[#1E6A83]">Browse</a>
-        <Link href="/dashboard/student/network" className="inline-flex h-11 items-center rounded-full border border-[#E7EDED] bg-white px-4 text-sm font-semibold text-[#1E6A83]">Request to join</Link>
+        <Link href="/dashboard/alumni" className="inline-flex h-11 items-center rounded-full border border-[#096ab7] bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]">Join</Link>
+        <a href="#alumni-wall" className="inline-flex h-11 items-center rounded-full border border-[#e5ebf2] bg-white px-4 text-sm font-semibold text-[#096ab7]">Browse</a>
+        <Link href="/dashboard/student/network" className="inline-flex h-11 items-center rounded-full border border-[#e5ebf2] bg-white px-4 text-sm font-semibold text-[#096ab7]">Request to join</Link>
       </div>
       <div id="alumni-wall">
         <WallScreen surface="alumni" />

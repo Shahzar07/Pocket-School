@@ -138,11 +138,11 @@ export default function StudentBillingPage() {
         {typeof profile?.alumniDiscount === 'number' && profile.alumniDiscount > 0 && !profile.institutionId && (() => {
           const offer = individualOffer(profile.academyLevel ?? '', profile.alumniDiscount ?? 0);
           return (
-            <div id="alumni-upgrade" className={`mt-3 max-w-2xl rounded-2xl border bg-card px-4 py-3 ${alumniLink ? 'border-[#1E6A83] ring-2 ring-[#1E6A83]' : 'border-border'}`}>
-              <p className="text-sm text-[#203337]">
+            <div id="alumni-upgrade" className={`mt-3 max-w-2xl rounded-2xl border bg-card px-4 py-3 ${alumniLink ? 'border-[#096ab7] ring-2 ring-[#096ab7]' : 'border-border'}`}>
+              <p className="text-sm text-[#11131b]">
                 Alumni discount of {offer.percent}% on the individual plan. The list price is {formatMoney(offer.listMonthly, 'USD')} a month. Checkout applies the discount when you continue, so the plan is {formatMoney(offer.monthly, 'USD')} a month before tax. Certificates and the transcript stay on this account.
               </p>
-              <Link href={offer.href} className="mt-3 inline-flex h-11 items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]">
+              <Link href={offer.href} className="mt-3 inline-flex h-11 items-center rounded-full border border-[#096ab7] bg-[#d9efff] px-5 text-sm font-semibold text-[#11131b]">
                 Continue with the alumni discount
               </Link>
             </div>

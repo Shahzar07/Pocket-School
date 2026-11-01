@@ -2,13 +2,13 @@ import type { ReactNode } from 'react';
 import { ART, MARKET_ART, PATHWAY_STAGE_LABELS } from '@/lib/marketing/art-copy';
 
 const SANS = 'inherit';
-const INK = '#203337';
-const BLUE = '#1E6A83';
-const CYAN = '#3FE0D0';
+const INK = '#11131b';
+const BLUE = '#096ab7';
+const CYAN = '#d9efff';
 const NAVY = '#0B1417';
-const MINT = '#F4FBFA';
+const MINT = '#f8fafc';
 const WHITE = '#FFFFFF';
-const MIST = '#E7F4F2';
+const MIST = '#eaf6ff';
 
 export function hasMarketArt(slug: string): boolean {
   return Object.prototype.hasOwnProperty.call(MARKET_ART, slug);
@@ -57,7 +57,7 @@ function Scene({ slug }: { slug: string }) {
 }
 
 function Txt({
-  x, y, children, size = 13, fill = INK, weight = 700, anchor = 'start',
+  x, y, children, size = 13, fill = INK, weight = 600, anchor = 'start',
 }: {
   x: number;
   y: number;

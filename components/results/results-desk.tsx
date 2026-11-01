@@ -17,10 +17,10 @@ import {
   type ResultStepId,
 } from '@/lib/results/model';
 
-const panel = 'min-w-0 max-w-full rounded-2xl border border-[#1E6A83]/20 bg-white p-4 text-[#203337] dark:border-[#3FE0D0]/25 dark:bg-[#1A1918] dark:text-[#E7F4F2]';
-const label = 'mb-1 block text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]';
-const field = 'w-full rounded-xl border border-[#1E6A83]/30 bg-white px-3 py-2 text-[#203337] dark:border-[#3FE0D0]/30 dark:bg-[#0B1417] dark:text-[#E7F4F2]';
-const quiet = 'text-sm text-[#1E6A83] dark:text-[#3FE0D0]';
+const panel = 'min-w-0 max-w-full rounded-2xl border border-[#096ab7]/20 bg-white p-4 text-[#11131b] dark:border-[#d9efff]/25 dark:bg-[#1A1918] dark:text-[#E7F4F2]';
+const label = 'mb-1 block text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]';
+const field = 'w-full rounded-xl border border-[#096ab7]/30 bg-white px-3 py-2 text-[#11131b] dark:border-[#d9efff]/30 dark:bg-[#0B1417] dark:text-[#E7F4F2]';
+const quiet = 'text-sm text-[#096ab7] dark:text-[#d9efff]';
 
 interface Draft {
   id: string;
@@ -216,10 +216,10 @@ export function ResultsDesk() {
   return (
     <div data-results-desk="1" data-results-live={ready ? '1' : '0'} data-results-role={role} className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
       <div data-results-panel className={panel}>
-        <h1 className="text-2xl font-semibold text-[#203337] dark:text-[#E7F4F2]">{COPY.title}</h1>
-        <p data-results-disclaimer className="mt-2 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.disclaimer}</p>
-        {error ? <p className="mt-3 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{error}</p> : null}
-        {notice ? <p className="mt-3 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{notice}</p> : null}
+        <h1 className="text-2xl font-semibold text-[#11131b] dark:text-[#E7F4F2]">{COPY.title}</h1>
+        <p data-results-disclaimer className="mt-2 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{COPY.disclaimer}</p>
+        {error ? <p className="mt-3 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{error}</p> : null}
+        {notice ? <p className="mt-3 text-sm text-[#096ab7] dark:text-[#d9efff]">{notice}</p> : null}
         {!ready ? <p className={`mt-4 ${quiet}`}>{COPY.opening}</p> : null}
 
         {ready && mode === 'list' ? (
@@ -231,7 +231,7 @@ export function ResultsDesk() {
                 <label className="min-w-0 flex-1" htmlFor="result-learner">{COPY.lookup}
                   <input id="result-learner" className={`${field} mt-1`} value={lookup} onChange={(event) => setLookup(event.target.value)} />
                 </label>
-                <button type="submit" className="h-11 self-end rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]">{COPY.openLearner}</button>
+                <button type="submit" className="h-11 self-end rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]">{COPY.openLearner}</button>
               </form>
             ) : null}
             {(desk?.children.length ?? 0) > 1 ? (
@@ -242,16 +242,16 @@ export function ResultsDesk() {
               </label>
             ) : null}
             {desk?.canEdit ? (
-              <button type="button" className="h-11 w-fit rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" onClick={startNew}>{COPY.record}</button>
+              <button type="button" className="h-11 w-fit rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" onClick={startNew}>{COPY.record}</button>
             ) : null}
             {desk?.share ? (
-              <div data-results-share={desk.share.enabled ? 'on' : 'off'} className="rounded-xl border border-[#1E6A83]/20 p-3">
+              <div data-results-share={desk.share.enabled ? 'on' : 'off'} className="rounded-xl border border-[#096ab7]/20 p-3">
                 <p className="text-sm font-semibold">{desk.share.enabled ? COPY.sharingOn : COPY.sharingOff}</p>
                 {desk.share.enabled && desk.share.path ? (
-                  <a className="mt-1 block break-all text-sm font-semibold text-[#1E6A83] underline dark:text-[#3FE0D0]" href={desk.share.path} data-results-link>{desk.share.path}</a>
+                  <a className="mt-1 block break-all text-sm font-semibold text-[#096ab7] underline dark:text-[#d9efff]" href={desk.share.path} data-results-link>{desk.share.path}</a>
                 ) : null}
                 <p className={`mt-1 ${quiet}`}>{COPY.filePrivate}</p>
-                <button type="button" className="mt-2 h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0] dark:text-[#3FE0D0]" onClick={() => void share(!desk.share?.enabled)}>
+                <button type="button" className="mt-2 h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] dark:border-[#d9efff] dark:text-[#d9efff]" onClick={() => void share(!desk.share?.enabled)}>
                   {desk.share.enabled ? COPY.turnOff : COPY.turnOn}
                 </button>
               </div>
@@ -259,17 +259,17 @@ export function ResultsDesk() {
             {desk && desk.rows.length === 0 && !desk.needsStudent ? <p className={quiet}>{COPY.empty}</p> : null}
             <ul className="flex flex-col gap-3">
               {desk?.rows.map((row) => (
-                <li key={row.id} data-result-id={row.id} data-result-subject={row.subject} data-result-status={row.status} className="rounded-xl border border-[#1E6A83]/20 p-3">
+                <li key={row.id} data-result-id={row.id} data-result-subject={row.subject} data-result-status={row.status} className="rounded-xl border border-[#096ab7]/20 p-3">
                   <p className="font-semibold">{row.subject}</p>
                   <p className={quiet}>{row.levelLabel} · {row.board} · {row.grade} · {row.session}</p>
                   <p className="mt-1 text-sm font-semibold">{row.statusLabel}</p>
                   {row.hasFile ? (
-                    <button type="button" className="mt-2 text-sm font-semibold text-[#1E6A83] underline dark:text-[#3FE0D0]" onClick={() => void openCertificate(row.id, row.fileName || 'certificate')}>{COPY.fileOpen}</button>
+                    <button type="button" className="mt-2 text-sm font-semibold text-[#096ab7] underline dark:text-[#d9efff]" onClick={() => void openCertificate(row.id, row.fileName || 'certificate')}>{COPY.fileOpen}</button>
                   ) : null}
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {desk.canEdit ? <button type="button" className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => startEdit(row.id)}>{COPY.edit}</button> : null}
-                    {desk.canEdit && row.status === 'self-reported' ? <button type="button" className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => void remove(row.id)}>{COPY.remove}</button> : null}
-                    {desk.canVerify && row.status !== 'verified' ? <button type="button" className="h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" onClick={() => void verify(row.id)}>{COPY.verify}</button> : null}
+                    {desk.canEdit ? <button type="button" className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => startEdit(row.id)}>{COPY.edit}</button> : null}
+                    {desk.canEdit && row.status === 'self-reported' ? <button type="button" className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => void remove(row.id)}>{COPY.remove}</button> : null}
+                    {desk.canVerify && row.status !== 'verified' ? <button type="button" className="h-10 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" onClick={() => void verify(row.id)}>{COPY.verify}</button> : null}
                   </div>
                 </li>
               ))}
@@ -311,8 +311,8 @@ export function ResultsDesk() {
                       data-result-level={level.value}
                       aria-pressed={draft.level === level.value}
                       className={draft.level === level.value
-                        ? 'rounded-full bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]'
-                        : 'rounded-full border border-[#1E6A83] px-4 py-2 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0] dark:text-[#3FE0D0]'}
+                        ? 'rounded-full bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]'
+                        : 'rounded-full border border-[#096ab7] px-4 py-2 text-sm font-semibold text-[#096ab7] dark:border-[#d9efff] dark:text-[#d9efff]'}
                       onClick={() => setDraft((current) => ({
                         ...current,
                         level: level.value,

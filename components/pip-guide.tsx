@@ -436,12 +436,12 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
               style={cardStyle}
             >
               {/* header */}
-              <div className="flex items-start gap-3 p-5 pb-3 bg-gradient-to-br from-primary/8 to-[#1E6A83]/8">
+              <div className="flex items-start gap-3 p-5 pb-3 bg-gradient-to-br from-primary/8 to-[#096ab7]/8">
                 <div className="shrink-0 -mt-1">
                   <PipCharacter size={56} mood={moving || asking ? 'thinking' : 'happy'} />
                 </div>
                 <div className="min-w-0 flex-1 pt-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#1E6A83]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#096ab7]">
                     Pip · your guide
                   </p>
                   <h3 className="font-heading text-lg text-foreground leading-snug mt-0.5">
@@ -453,7 +453,7 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
 
               <div className="px-5 pb-4">
                 {intro && index === 0 && (
-                  <p className="text-xs text-[#1E6A83] font-semibold mb-2">{intro}</p>
+                  <p className="text-xs text-[#096ab7] font-semibold mb-2">{intro}</p>
                 )}
                 <p className="text-sm text-foreground/80 leading-relaxed">
                   {(step && notes[step.id]) || step?.body}
@@ -468,7 +468,7 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
                     placeholder="Ask me anything — e.g. how do I add a course?"
                     aria-label="Ask Pip what you want to learn"
                     disabled={asking}
-                    className="flex-1 min-w-0 h-9 rounded-full border border-border bg-background px-3.5 text-xs outline-none focus:border-[#1E6A83] disabled:opacity-60"
+                    className="flex-1 min-w-0 h-9 rounded-full border border-border bg-background px-3.5 text-xs outline-none focus:border-[#096ab7] disabled:opacity-60"
                   />
                   <button
                     onClick={ask} disabled={asking || !question.trim()}
@@ -486,7 +486,7 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
                   {steps.map((s, i) => (
                     <span key={s.id}
                       className={`h-1.5 rounded-full transition-all ${
-                        i === index ? 'w-5 bg-[#1E6A83]' : i < index ? 'w-1.5 bg-[#1E6A83]/40' : 'w-1.5 bg-border'
+                        i === index ? 'w-5 bg-[#096ab7]' : i < index ? 'w-1.5 bg-[#096ab7]/40' : 'w-1.5 bg-border'
                       }`} />
                   ))}
                 </div>

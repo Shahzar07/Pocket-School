@@ -42,11 +42,11 @@ export function SafeLineBanner({ snapshot }: { snapshot?: BannerSnapshot }) {
   if (!live.show || live.count < 1) return null;
   const noun = live.count === 1 ? 'ticket' : 'tickets';
   return (
-    <aside className="rounded-[20px] border-[3px] border-[#1E6A83] bg-white px-4 py-4 text-[#203337]" role="status">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#1E6A83]">Poket SafeLine</p>
+    <aside className="rounded-[20px] border-[3px] border-[#096ab7] bg-white px-4 py-4 text-[#11131b]" role="status">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#096ab7]">Poket SafeLine</p>
       <p className="mt-1 font-heading text-2xl">{live.count} open emergency or high-priority {noun}</p>
       <p className="mt-1 text-sm">Oldest timer: {live.oldestLabel}</p>
-      <Link href={live.href} className="mt-3 inline-flex min-h-11 items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]">
+      <Link href={live.href} className="mt-3 inline-flex min-h-11 items-center rounded-full border border-[#096ab7] bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]">
         Open Poket SafeLine
       </Link>
     </aside>

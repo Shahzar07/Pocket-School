@@ -300,7 +300,7 @@ export default function ParentDashboard() {
         card={linkCard}
         message={linkMessage}
         busy={linkBusy}
-        extra={<Link href="/ai-studio?mode=parent-explainer" className="inline-flex text-sm font-semibold text-[#203337] underline">Open Parent Explainer</Link>}
+        extra={<Link href="/ai-studio?mode=parent-explainer" className="inline-flex text-sm font-semibold text-[#11131b] underline">Open Parent Explainer</Link>}
       />
       </div>
 
@@ -317,7 +317,7 @@ export default function ParentDashboard() {
         <button
           key={child.id}
           type="button"
-          className="rounded-full bg-[#203337] px-4 py-2 text-sm font-semibold text-white"
+          className="rounded-full bg-[#11131b] px-4 py-2 text-sm font-semibold text-white"
           onClick={() => {
             void authedFetch('/api/portfolio', { method: 'POST', body: JSON.stringify({ action: 'parent-approve', studentId: child.id }) })
               .then(() => toast.success('The public portfolio can be turned on.'))
@@ -455,10 +455,10 @@ export default function ParentDashboard() {
                 className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.08)]"
               >
                 {/* Child hero band */}
-                <div className="relative bg-[#203337] p-7 sm:p-8 text-white overflow-hidden">
+                <div className="relative bg-[#11131b] p-7 sm:p-8 text-white overflow-hidden">
                   <div className="pointer-events-none absolute inset-0">
                     <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-primary/25 blur-[80px]" />
-                    <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#1E6A83]/20 blur-[80px]" />
+                    <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-[#096ab7]/20 blur-[80px]" />
                   </div>
                   <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
                     <Avatar className="w-16 h-16 border-2 border-white/20 shadow-[0_0_30px_rgba(30,106,131,0.35)] shrink-0">
@@ -544,7 +544,7 @@ export default function ParentDashboard() {
                             </p>
                             {cert.studentNumber ? <p className="font-mono text-[11px] text-foreground mt-1">{cert.studentNumber}</p> : null}
                             <p className="font-mono text-[11px] text-muted-foreground break-all mt-1">{cert.id}</p>
-                            <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#1E6A83]' : 'text-[#0F6E56]'}`}>
+                            <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${certificateStatus(cert.status) === 'revoked' ? 'text-[#096ab7]' : 'text-[#0F6E56]'}`}>
                               {certificateStatus(cert.status) === 'revoked' ? 'Revoked' : 'Valid'}
                             </p>
                           </div>

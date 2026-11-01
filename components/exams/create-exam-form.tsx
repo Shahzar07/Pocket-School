@@ -26,8 +26,8 @@ export interface ExamDraft {
 
 const field = 'mt-1 h-11 w-full rounded-xl border border-[var(--studio-border)] bg-[var(--studio-surface)] px-3 text-sm text-[var(--studio-text)]';
 const label = 'text-xs font-semibold text-[var(--studio-dim)]';
-const quiet = 'inline-flex h-10 items-center justify-center rounded-full border border-[#1E6A83] bg-transparent px-4 text-sm font-semibold text-[var(--studio-accent-text)]';
-const publish = 'inline-flex h-10 items-center justify-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]';
+const quiet = 'inline-flex h-10 items-center justify-center rounded-full border border-[#096ab7] bg-transparent px-4 text-sm font-semibold text-[var(--studio-accent-text)]';
+const publish = 'inline-flex h-10 items-center justify-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]';
 
 function TypeIcon({ type }: { type: ExamQuestion['type'] }) {
   const Icon = type === 'true_false' ? Scale : type === 'short_answer' ? AlignLeft : ListChecks;

@@ -35,13 +35,13 @@ const CSS = `
   gap: 8px; padding: 0 16px; font-weight: 700; font-size: 15px; text-decoration: none; border: 0; cursor: pointer;
 }
 .sf-shield { background: #17343C; color: #fff; }
-.sf-danger { background: #1E6A83; color: #fff; width: 100%; }
+.sf-danger { background: #096ab7; color: #fff; width: 100%; }
 .sf-chip { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
-.sf-btn { background: #3FE0D0; color: #203337; border: 1px solid #1E6A83; }
+.sf-btn { background: #d9efff; color: #11131b; border: 1px solid #096ab7; }
 .sf-btn.ghost { background: #fff; color: #17343C; border: 1px solid #D5E3E7; }
 .sf-call { margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; }
 .sf-note { margin: 6px 0 0; color: #4E6A72; font-size: 14px; }
-.sf-stage { min-height: 44px; border-radius: 999px; padding: 0 12px; display: inline-flex; align-items: center; font-size: 13px; font-weight: 700; background: #E7F1F4; color: #1E6A83; }
+.sf-stage { min-height: 44px; border-radius: 999px; padding: 0 12px; display: inline-flex; align-items: center; font-size: 13px; font-weight: 700; background: #E7F1F4; color: #096ab7; }
 .sf-stage.on { background: #1F8A70; color: #fff; }
 .sf-input, .sf-area { width: 100%; border: 1px solid #D5E3E7; border-radius: 14px; padding: 12px 14px; font: inherit; color: #17343C; background: #fff; }
 .sf-area { min-height: 88px; resize: vertical; }
@@ -103,8 +103,8 @@ export function TrackerCard({
     <section className="sf-card" aria-label="Report tracker">
       <h2 style={{ margin: '0 0 8px', fontSize: 18 }}>Your report</h2>
       <p className="sf-note">You can see where it stands. Staff notes stay with the safeguarding lead.</p>
-      {schoolInformed ? <p className="sf-note" style={{ color: '#1E6A83', fontWeight: 700 }}>Your school has been informed</p> : null}
-      {authorityReferred ? <p className="sf-note" style={{ color: '#1E6A83', fontWeight: 700 }}>Referred to authorities</p> : null}
+      {schoolInformed ? <p className="sf-note" style={{ color: '#096ab7', fontWeight: 700 }}>Your school has been informed</p> : null}
+      {authorityReferred ? <p className="sf-note" style={{ color: '#096ab7', fontWeight: 700 }}>Referred to authorities</p> : null}
       <div className="sf-row" style={{ marginTop: 12 }}>
         {TRACKER_STAGES.map(item => (
           <span key={item} className={item === stage ? 'sf-stage on' : 'sf-stage'}>{STAGE_LABEL[item]}</span>
@@ -124,7 +124,7 @@ export function DangerCard({
   const number = emergencyNumber(country);
   return (
     <section className="sf-card" aria-label="I'm in danger now">
-      <p className="sf-kicker" style={{ color: '#1E6A83' }}>Emergency</p>
+      <p className="sf-kicker" style={{ color: '#096ab7' }}>Emergency</p>
       <p className="sf-call">Call {number}</p>
       <p className="sf-note">The Safety Desk does not replace emergency services.</p>
       <p className="sf-note">This is the emergency number for your country. Call it now if you can. Poket School is not a replacement for emergency services.</p>

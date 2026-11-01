@@ -552,7 +552,7 @@ export function Reader({ bookId, initialLang, preview = false }: { bookId: strin
                                 type="button"
                                 onClick={() => setQuizPick(s => ({ ...s, [qi]: option }))}
                                 className="rounded-xl border px-3 py-2 text-left text-sm"
-                                style={{ borderColor: right ? '#1F7A4D' : wrong ? '#1E6A83' : theme.muted }}
+                                style={{ borderColor: right ? '#1F7A4D' : wrong ? '#096ab7' : theme.muted }}
                               >
                                 {option}
                               </button>

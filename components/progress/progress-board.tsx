@@ -11,7 +11,7 @@ const LIGHT: Record<AlertSeverity, string> = {
   low: 'bg-[var(--ps-cyan)]',
   medium: 'bg-[var(--ps-tile-ink)]',
   high: 'bg-[var(--ps-tile-ink)]',
-  critical: 'bg-[#1E6A83]',
+  critical: 'bg-[#096ab7]',
 };
 
 const WORD: Record<AlertSeverity, string> = {

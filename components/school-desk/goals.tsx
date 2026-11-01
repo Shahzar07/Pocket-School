@@ -51,7 +51,7 @@ export function GoalRoster({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-[#1E6A83]">{t.goalRule}</p>
+      <p className="text-sm text-[#096ab7]">{t.goalRule}</p>
       <div className="grid gap-3 sm:grid-cols-3">
         <p className="rounded-2xl bg-white p-4 text-sm">{t.completed} {done}/{classGoals.length}</p>
         <p className="rounded-2xl bg-white p-4 text-sm">{t.overdue} {overdue}</p>
@@ -120,11 +120,11 @@ export function GoalRoster({
           return (
             <li key={goal.id} className="rounded-2xl bg-white p-3 text-sm" data-source={goalSourceGroup(goal.source)}>
               <p className="font-semibold">{goal.studentName} · {goal.title}</p>
-              <p className="text-[#1E6A83]">
+              <p className="text-[#096ab7]">
                 {t.goalSources[goalSourceGroup(goal.source)]} · {t.goalStatus[goal.status]} · {t.due} {goal.due} {goal.dueTime} · {t.focusLabel} {goal.focusMinutes} {t.focusUnit} · {t.reschedules} {goal.rescheduleCount}
               </p>
-              <p className="text-[#1E6A83]">{goal.assignedByName}</p>
-              {move ? <p className="text-[#1E6A83]">{t.lastMove} {move.fromDate} {move.fromTime ?? ''} {move.toDate} {move.toTime ?? ''}</p> : null}
+              <p className="text-[#096ab7]">{goal.assignedByName}</p>
+              {move ? <p className="text-[#096ab7]">{t.lastMove} {move.fromDate} {move.fromTime ?? ''} {move.toDate} {move.toTime ?? ''}</p> : null}
               {editable ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button type="button" data-action="edit-goal" className={deskStyles.ghost} onClick={() => { setEditing(goal.id); setTitle(goal.title); setDue(goal.due); setDueTime(goal.dueTime); setStudentId(goal.studentId); }}>{t.editGoal}</button>
@@ -138,13 +138,13 @@ export function GoalRoster({
                   }}>{t.deleteGoal}</button>
                 </div>
               ) : (
-                <p className="mt-2 text-[#1E6A83]">{t.readOnlyGoal}</p>
+                <p className="mt-2 text-[#096ab7]">{t.readOnlyGoal}</p>
               )}
             </li>
           );
         })}
       </ul>
-      {error ? <p className="text-sm text-[#1E6A83]">{error}</p> : null}
+      {error ? <p className="text-sm text-[#096ab7]">{error}</p> : null}
     </div>
   );
 }

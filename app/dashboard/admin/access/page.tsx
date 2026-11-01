@@ -93,23 +93,23 @@ export default function AdminAccessConfig() {
       {/* Header */}
       <motion.header variants={fadeUp} initial="hidden" animate="visible" custom={0} className="pt-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-tile-ink)] flex items-center gap-2">
-          <span className="w-5 h-px bg-[#1E6A83] inline-block" /> Security & access
+          <span className="w-5 h-px bg-[#096ab7] inline-block" /> Security & access
         </p>
         <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
           Access <span className="gradient-text italic">configuration</span>
         </h1>
         <p className="text-muted-foreground mt-2 text-[15px]">Manage role-based access control and security policies.</p>
         <p className="mt-3 text-sm">
-          <Link href="/dashboard/admin/allocations" className="font-semibold text-[#1E6A83] underline">Tier, course, and coupon grants</Link>
+          <Link href="/dashboard/admin/allocations" className="font-semibold text-[#096ab7] underline">Tier, course, and coupon grants</Link>
         </p>
       </motion.header>
 
       {/* Role capabilities overview */}
       <motion.section variants={fadeUp} initial="hidden" animate="visible" custom={1}>
         <div className="bg-card border border-border rounded-3xl p-6 sm:p-7 relative overflow-hidden card-glow">
-          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#1E6A83] opacity-80" />
+          <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[#096ab7] opacity-80" />
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1E6A83] to-[#3FE0D0] flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#096ab7] to-[#d9efff] flex items-center justify-center shadow-md">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>

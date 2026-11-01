@@ -112,22 +112,22 @@ export default function BlogDeskPage() {
         eyebrow="Journal"
         title="Blog"
         description="Write, schedule, and publish. Site drafts stay off the public site until you publish them."
-        actions={<Link href="/dashboard/admin/blog/new" className="inline-flex h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-bold text-[#203337]">New essay</Link>}
+        actions={<Link href="/dashboard/admin/blog/new" className="inline-flex h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-bold text-[#11131b]">New essay</Link>}
       />
-      {!allowed ? <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[#1E6A83]">Only a super admin can save or publish. You can still open a draft.</p> : null}
-      {notice ? <p role="status" className="text-sm text-[#1E6A83]">{notice}</p> : null}
+      {!allowed ? <p className="rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-4 py-3 text-sm text-[#096ab7]">Only a super admin can save or publish. You can still open a draft.</p> : null}
+      {notice ? <p role="status" className="text-sm text-[#096ab7]">{notice}</p> : null}
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="text-sm font-semibold">Search
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#11131b)]" />
         </label>
         <label className="text-sm font-semibold">Category
-          <select value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]">
+          <select value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#11131b)]">
             <option>All</option>
             {BLOG_CATEGORIES.map((name) => <option key={name}>{name}</option>)}
           </select>
         </label>
         <label className="text-sm font-semibold">Status
-          <select value={status} onChange={(event) => setStatus(event.target.value as 'All' | BlogStatus)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#203337)]">
+          <select value={status} onChange={(event) => setStatus(event.target.value as 'All' | BlogStatus)} className="mt-1 h-11 w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 text-[var(--studio-text,#11131b)]">
             <option>All</option>
             <option value="draft">Draft</option>
             <option value="scheduled">Scheduled</option>
@@ -138,14 +138,14 @@ export default function BlogDeskPage() {
       <ul className="grid gap-3 md:grid-cols-2">
         {posts.map((post) => (
           <li key={post.slug} className="rounded-2xl border border-border bg-card p-4" data-blog-row={post.slug}>
-            <p className="text-[11px] font-bold tracking-wider text-[#1E6A83]">{post.sample ? 'SITE DRAFT' : post.status.toUpperCase()}</p>
+            <p className="text-[11px] font-bold tracking-wider text-[#096ab7]">{post.sample ? 'SITE DRAFT' : post.status.toUpperCase()}</p>
             <h2 className="mt-1 font-semibold">{post.title}</h2>
             <p className="mt-1 text-xs text-muted-foreground">{post.category}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Link href={`/dashboard/admin/blog/${post.slug}/edit`} className="inline-flex h-11 items-center text-sm font-bold text-[#1E6A83]">Edit</Link>
-              <Link href={`/dashboard/admin/blog/${post.slug}/edit#preview`} className="inline-flex h-11 items-center text-sm font-bold text-[#1E6A83]">Preview</Link>
-              <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => void duplicate(post)}>Duplicate</button>
-              <button type="button" className="h-11 text-sm font-bold text-[#1E6A83]" onClick={() => void remove(post)}>Delete</button>
+              <Link href={`/dashboard/admin/blog/${post.slug}/edit`} className="inline-flex h-11 items-center text-sm font-bold text-[#096ab7]">Edit</Link>
+              <Link href={`/dashboard/admin/blog/${post.slug}/edit#preview`} className="inline-flex h-11 items-center text-sm font-bold text-[#096ab7]">Preview</Link>
+              <button type="button" className="h-11 text-sm font-bold text-[#096ab7]" onClick={() => void duplicate(post)}>Duplicate</button>
+              <button type="button" className="h-11 text-sm font-bold text-[#096ab7]" onClick={() => void remove(post)}>Delete</button>
             </div>
           </li>
         ))}

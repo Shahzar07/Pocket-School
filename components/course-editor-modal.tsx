@@ -461,7 +461,7 @@ export default function CourseEditorModal({
                 <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-52 object-cover" />
               )}
               {!thumbnailPreview && (
-                <div className="w-full h-52 bg-gradient-to-br from-blue-50 to-[#6FBBCE] flex items-center justify-center">
+                <div className="w-full h-52 bg-gradient-to-br from-blue-50 to-[#8bc9f5] flex items-center justify-center">
                   <ImageIcon className="w-14 h-14 text-blue-300" />
                 </div>
               )}

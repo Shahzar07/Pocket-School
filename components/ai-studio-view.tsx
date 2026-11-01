@@ -574,7 +574,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                           </div>
                           <div className="flex-1 min-w-0">
                             {t.kind === 'chat' ? (
-                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#3FE0D0] prose-code:text-[#3FE0D0]">
+                              <div className="prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-p:text-[#D8D4CC] prose-p:text-[15px] prose-p:leading-relaxed prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#d9efff] prose-code:text-[#d9efff]">
                                 <MathMarkdown>{t.text}</MathMarkdown>
                               </div>
                             ) : (
@@ -622,7 +622,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             {/* ── Composer ── */}
             <div className="shrink-0 px-4 sm:px-6 pb-5 pt-2">
               <div className="max-w-3xl mx-auto">
-                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#3FE0D0]/50 transition-colors`}>
+                <div className={`rounded-3xl border ${C.border} ${C.surface} shadow-[0_8px_40px_rgba(0,0,0,0.35)] focus-within:border-[#d9efff]/50 transition-colors`}>
                   {/* Selected skill chip */}
                   {activeFormat && (
                     <div className="px-4 pt-3 -mb-1">
@@ -824,7 +824,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
 
 /* ─── Generation output renderer ───────────────────────────── */
 
-const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#3FE0D0] prose-blockquote:border-l-[#3FE0D0] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#3FE0D0]';
+const PROSE_CLASSES = 'prose prose-sm prose-invert max-w-none prose-headings:font-heading prose-headings:text-white prose-p:text-[#D8D4CC] prose-strong:text-white prose-li:text-[#D8D4CC] prose-a:text-[#d9efff] prose-blockquote:border-l-[#d9efff] prose-blockquote:text-[#A8A296] prose-hr:border-[#3A3733] prose-code:text-[#d9efff]';
 
 function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   if (format === 'flashcards' && Array.isArray(data)) {
@@ -832,7 +832,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <div className="grid sm:grid-cols-2 gap-3">
         {data.map((card: any, i: number) => (
           <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#3FE0D0' }}>Question</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#d9efff' }}>Question</p>
             <p className="text-sm text-white mb-3">{card.question}</p>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-success mb-2">Answer</p>
             <p className="text-sm text-[#D8D4CC]">{card.answer}</p>
@@ -869,7 +869,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
             <h3 className="font-heading text-2xl text-white mb-3">{slide.title}</h3>
             <ul className="space-y-2">
               {slide.bullets?.map((b: string, j: number) => (
-                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#3FE0D0' }} />{b}</li>
+                <li key={j} className="text-sm text-[#D8D4CC] flex gap-2"><ChevronRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#d9efff' }} />{b}</li>
               ))}
             </ul>
           </div>
@@ -882,7 +882,7 @@ function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
       <div className="space-y-2">
         {data.map((g: any, i: number) => (
           <div key={i} className="rounded-xl bg-[#1F1E1C] border border-[#2E2B28] p-4">
-            <p className="text-sm font-bold mb-1" style={{ color: '#3FE0D0' }}>{g.term}</p>
+            <p className="text-sm font-bold mb-1" style={{ color: '#d9efff' }}>{g.term}</p>
             <p className="text-xs text-[#D8D4CC]">{g.definition}</p>
           </div>
         ))}

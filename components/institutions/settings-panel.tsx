@@ -478,7 +478,7 @@ export function InstitutionSettings({
             <label className="text-sm">iOS bundle id<Input value={draft.iosBundleId} onChange={(event) => setDraft({ ...draft, iosBundleId: event.target.value })} placeholder="ai.poketschool.north" className="mt-1 h-11 rounded-xl" /></label>
             <label className="text-sm">Android package<Input value={draft.androidPackage} onChange={(event) => setDraft({ ...draft, androidPackage: event.target.value })} placeholder="ai.poketschool.north" className="mt-1 h-11 rounded-xl" /></label>
           </div>
-          <article className="mx-auto w-[220px] rounded-[2rem] border border-border p-3" style={{ background: draft.splashColor || '#1E6A83' }}>
+          <article className="mx-auto w-[220px] rounded-[2rem] border border-border p-3" style={{ background: draft.splashColor || '#096ab7' }}>
             <div className="rounded-[1.4rem] bg-white p-4 text-center text-slate-900">
               <p className="text-xs uppercase tracking-wider">App</p>
               <p className="mt-2 font-semibold">{draft.mobileAppName || name}</p>

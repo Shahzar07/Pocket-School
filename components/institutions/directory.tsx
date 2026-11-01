@@ -110,7 +110,7 @@ export function InstitutionDirectory({
             </Button>
           </div>
         )}
-        {formError && !creating ? <p className="text-sm text-[#203337]">{formError}</p> : null}
+        {formError && !creating ? <p className="text-sm text-[#11131b]">{formError}</p> : null}
       </header>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -371,7 +371,7 @@ export function InstitutionDirectory({
               Seats
               <Input type="number" min={1} value={profile.seatCount || ''} onChange={(event) => setProfile({ ...profile, seatCount: Number(event.target.value) })} className="mt-1 h-11 rounded-xl" />
             </label>
-            {formError ? <p className="text-sm text-[#203337]">{formError}</p> : null}
+            {formError ? <p className="text-sm text-[#11131b]">{formError}</p> : null}
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1 rounded-full" onClick={() => { if (confirmIfDirty(formDirty)) closeCreate(); }}>Cancel</Button>
               <Button type="submit" className="flex-1 rounded-full" disabled={busy}>Create</Button>

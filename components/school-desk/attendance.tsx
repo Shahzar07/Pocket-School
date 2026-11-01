@@ -58,14 +58,14 @@ export function AttendanceDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'p
       <DeskLinks base={base} />
       <div className="grid gap-3 sm:grid-cols-3">
         <ClassSelect state={state} classId={activeId} onChange={setClassId} />
-        <label className="text-sm text-[#1E6A83]">{t.session}
+        <label className="text-sm text-[#096ab7]">{t.session}
           <input className={`${deskStyles.field} mt-1 w-full`} type="date" value={date} onChange={(event) => setDate(event.target.value)} aria-label={t.session} />
         </label>
-        <label className="text-sm text-[#1E6A83]">{t.tabs.attendance}
+        <label className="text-sm text-[#096ab7]">{t.tabs.attendance}
           <input className={`${deskStyles.field} mt-1 w-full`} value={session} onChange={(event) => setSession(event.target.value)} aria-label={t.tabs.attendance} />
         </label>
       </div>
-      <p className="text-sm text-[#1E6A83]">{klass?.name} · {rate}% · {t.frequent}</p>
+      <p className="text-sm text-[#096ab7]">{klass?.name} · {rate}% · {t.frequent}</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={deskStyles.ghost} onClick={() => {
           const next: Record<string, { status: AttStatus; reason: string }> = {};
@@ -102,18 +102,18 @@ export function AttendanceDesk({ base = 'dashboard' }: { base?: 'dashboard' | 'p
                 </div>
               </div>
               <input className={`${deskStyles.field} mt-2 w-full`} value={row.reason} onChange={(event) => setOne(pupil.studentId, { reason: event.target.value })} aria-label={t.reason} />
-              {note ? <p className="mt-1 text-xs text-[#1E6A83]">{t.parentNote} {note.parentNote}</p> : null}
+              {note ? <p className="mt-1 text-xs text-[#096ab7]">{t.parentNote} {note.parentNote}</p> : null}
             </li>
           );
         })}
       </ul>
-      {saved ? <p className="text-sm text-[#1E6A83]">{saved}</p> : null}
+      {saved ? <p className="text-sm text-[#096ab7]">{saved}</p> : null}
       <section className="rounded-3xl bg-white p-5 text-sm">
         <h2 className="font-heading text-2xl">{t.frequent}</h2>
         <ul className="mt-2">
           {frequent.map((item) => <li key={item.studentId}>{item.studentName}</li>)}
         </ul>
-        <p className="mt-3 text-[#1E6A83]">{t.rates} {rate}%</p>
+        <p className="mt-3 text-[#096ab7]">{t.rates} {rate}%</p>
       </section>
     </DeskFrame>
   );

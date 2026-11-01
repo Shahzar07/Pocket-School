@@ -163,7 +163,7 @@ export default function TeacherAnalytics() {
                     { label: 'Avg Score', value: cs.avgScore !== null ? `${cs.avgScore}%` : '—' },
                   ].map((stat, j) => (
                     <div key={j} className="bg-muted/50 rounded-2xl p-3.5 text-center">
-                      <p className="text-xl font-extrabold text-foreground">{stat.value}</p>
+                      <p className="text-xl font-semibold text-foreground">{stat.value}</p>
                       <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-wide">{stat.label}</p>
                     </div>
                   ))}

@@ -195,7 +195,7 @@ function studioToolLinks(embedded: boolean, role: string | undefined, showTimeta
   return links;
 }
 
-const CHIP = 'rounded-full border border-[var(--studio-border)] bg-[var(--studio-surface)] px-2.5 py-1 text-[11px] font-semibold leading-none text-[var(--studio-text)] hover:border-[#3FE0D0]';
+const CHIP = 'rounded-full border border-[var(--studio-border)] bg-[var(--studio-surface)] px-2.5 py-1 text-[11px] font-semibold leading-none text-[var(--studio-text)] hover:border-[#d9efff]';
 
 /** Students land on /dashboard. Other roles open their own home. */
 function dashboardHomeHref(role: string | undefined): string {
@@ -771,7 +771,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   }
 
   return (
-    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden ${FOCUS} [&_a]:focus-visible:outline [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-[#3FE0D0] [&_button]:focus-visible:outline [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-[#3FE0D0] [&_select]:focus-visible:outline [&_select]:focus-visible:outline-2 [&_select]:focus-visible:outline-[#3FE0D0] [&_input]:focus-visible:outline [&_input]:focus-visible:outline-2 [&_input]:focus-visible:outline-[#3FE0D0] [&_textarea]:focus-visible:outline [&_textarea]:focus-visible:outline-2 [&_textarea]:focus-visible:outline-[#3FE0D0]`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'}>
+    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden ${FOCUS} [&_a]:focus-visible:outline [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-[#d9efff] [&_button]:focus-visible:outline [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-[#d9efff] [&_select]:focus-visible:outline [&_select]:focus-visible:outline-2 [&_select]:focus-visible:outline-[#d9efff] [&_input]:focus-visible:outline [&_input]:focus-visible:outline-2 [&_input]:focus-visible:outline-[#d9efff] [&_textarea]:focus-visible:outline [&_textarea]:focus-visible:outline-2 [&_textarea]:focus-visible:outline-[#d9efff]`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'}>
 
       <ShellSidebar
         open={sidebarOpen}
@@ -920,7 +920,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                   <div className="relative text-center" data-testid="studio-greeting">
                     <div className="pointer-events-none absolute inset-x-6 top-0 h-36 rounded-full opacity-50 blur-3xl" style={{ background: HERO }} aria-hidden />
                     <div className="relative mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full" style={{ background: FILL, boxShadow: '0 0 48px rgba(63,224,208,0.35)' }}>
-                      <Asterisk className="h-6 w-6 text-[#203337]" />
+                      <Asterisk className="h-6 w-6 text-[#11131b]" />
                     </div>
                     <h1 className="relative font-heading text-2xl leading-tight tracking-tight sm:text-3xl">
                       Hi, I&apos;m <span style={{ color: C.accent }}>ET AI</span>.
@@ -933,7 +933,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                         <button
                           key={s.label}
                           onClick={() => { setSkill(s.format); submit(s.text, s.format); }}
-                          className={`flex items-center gap-2.5 rounded-2xl border ${C.border} ${C.surface} px-3 py-2 text-left text-sm ${C.text} transition hover:-translate-y-0.5 hover:border-[#3FE0D0] motion-reduce:transform-none`}
+                          className={`flex items-center gap-2.5 rounded-2xl border ${C.border} ${C.surface} px-3 py-2 text-left text-sm ${C.text} transition hover:-translate-y-0.5 hover:border-[#d9efff] motion-reduce:transform-none`}
                         >
                           {s.format
                             ? <span style={{ color: C.accent }}>{FORMATS.find(f => f.id === s.format)?.icon}</span>
@@ -980,7 +980,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                       return (
                         <div key={i} className="flex gap-3">
                           <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: FILL }}>
-                            <Asterisk className="w-4 h-4 text-[#203337]" />
+                            <Asterisk className="w-4 h-4 text-[#11131b]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             {t.kind === 'chat' ? (
@@ -1028,7 +1028,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     {streamText ? (
                       <div className="flex gap-3" data-assistant="1" data-streaming="1">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: FILL }}>
-                          <Asterisk className="w-4 h-4 text-[#203337]" />
+                          <Asterisk className="w-4 h-4 text-[#11131b]" />
                         </div>
                         <div className={PROSE_CLASSES}><MathMarkdown>{streamText}</MathMarkdown></div>
                       </div>
@@ -1044,7 +1044,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             <div className="shrink-0 px-4 pb-3 pt-1 sm:px-6" data-studio-composer="1">
               <div className="max-w-3xl mx-auto">
                 <div
-                  className={`rounded-3xl border ${dragOver ? 'border-[#3FE0D0]' : C.border} ${C.surface} shadow-[0_8px_30px_rgba(63,224,208,0.12)] focus-within:border-[#3FE0D0] transition-colors`}
+                  className={`rounded-3xl border ${dragOver ? 'border-[#d9efff]' : C.border} ${C.surface} shadow-[0_8px_30px_rgba(63,224,208,0.12)] focus-within:border-[#d9efff] transition-colors`}
                   onDragOver={(event) => { event.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={(event) => {
@@ -1087,7 +1087,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                     <button type="button" onClick={() => fileRef.current?.click()} className="rounded-full border border-[#3A3733] px-2.5 py-1.5 text-xs font-semibold text-[var(--studio-accent-text)] md:hidden">
                       Upload photo
                     </button>
-                    <button type="button" onClick={() => void startRecording()} aria-pressed={recording} aria-label={ET_COPY.mic} data-mic="1" className={`flex h-9 w-9 items-center justify-center rounded-full border ${recording ? 'border-[#3FE0D0] bg-[#3FE0D0] text-[#203337]' : 'border-[#3A3733] text-[var(--studio-accent-text)]'}`}>
+                    <button type="button" onClick={() => void startRecording()} aria-pressed={recording} aria-label={ET_COPY.mic} data-mic="1" className={`flex h-9 w-9 items-center justify-center rounded-full border ${recording ? 'border-[#d9efff] bg-[#d9efff] text-[#11131b]' : 'border-[#3A3733] text-[var(--studio-accent-text)]'}`}>
                       <Mic className="h-4 w-4" aria-hidden />
                     </button>
                     <button type="button" onClick={() => fileRef.current?.click()} aria-label={ET_COPY.photo} data-attach="1" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#3A3733] text-[var(--studio-accent-text)]">
@@ -1190,7 +1190,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                       onClick={() => submit()}
                       disabled={busy || (!input.trim() && !pendingImage)}
                       type="button"
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[#203337] disabled:opacity-30 transition-all hover:scale-105 active:scale-95 motion-reduce:transform-none"
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-[#11131b] disabled:opacity-30 transition-all hover:scale-105 active:scale-95 motion-reduce:transform-none"
                       style={{ background: FILL }}
                       aria-label="Send"
                     >
@@ -1226,19 +1226,19 @@ function AllToolsView({
   onEssays: () => void;
   onDesk: (tool: DeskToolId) => void;
 }) {
-  const card = 'block rounded-2xl border border-[#D5DEDE] bg-white px-4 py-4 text-left text-sm font-semibold text-[#203337] shadow-sm transition hover:border-[#3FE0D0]';
+  const card = 'block rounded-2xl border border-[#D5DEDE] bg-white px-4 py-4 text-left text-sm font-semibold text-[#11131b] shadow-sm transition hover:border-[#d9efff]';
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F4F6F6] text-[#203337]" data-studio-view="tools">
+    <div className="flex-1 overflow-y-auto bg-[#f8fafc] text-[#11131b]" data-studio-view="tools">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#203337]">All ET AI Studio tools</p>
-        <h1 className="mt-2 font-heading text-3xl tracking-tight text-[#203337]">What should ET AI make today</h1>
-        <p className="mt-2 max-w-xl text-sm text-[#203337]">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#11131b]">All ET AI Studio tools</p>
+        <h1 className="mt-2 font-heading text-3xl tracking-tight text-[#11131b]">What should ET AI make today</h1>
+        <p className="mt-2 max-w-xl text-sm text-[#11131b]">
           The chat is the home. These cards open the same tools, desks, planner, and library.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <button type="button" onClick={onChat} className="rounded-full px-4 py-2 text-sm font-bold" style={{ background: FILL, color: C.accentInk }}>Back to chat</button>
-          <button type="button" onClick={onLibrary} className="rounded-full border border-[#D5DEDE] bg-white px-4 py-2 text-sm font-semibold text-[#203337]">Library</button>
-          <button type="button" onClick={onEssays} className="rounded-full border border-[#D5DEDE] bg-white px-4 py-2 text-sm font-semibold text-[#203337]">ET Essays</button>
+          <button type="button" onClick={onLibrary} className="rounded-full border border-[#D5DEDE] bg-white px-4 py-2 text-sm font-semibold text-[#11131b]">Library</button>
+          <button type="button" onClick={onEssays} className="rounded-full border border-[#D5DEDE] bg-white px-4 py-2 text-sm font-semibold text-[#11131b]">ET Essays</button>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {links.map((link) => (
@@ -1269,7 +1269,7 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
           </div>
           <button
             onClick={onNew}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#203337] text-sm font-semibold transition-transform hover:scale-105"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#11131b] text-sm font-semibold transition-transform hover:scale-105"
             style={{ background: FILL }}
           >
             <Plus className="w-4 h-4" /> New chat

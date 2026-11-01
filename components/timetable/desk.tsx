@@ -28,10 +28,10 @@ import { applyWorkspace } from '@/lib/google-calendar/workspace';
 type Surface = 'institution' | 'personal' | 'teacher' | 'student' | 'parent';
 type Tab = 'setup' | 'options' | 'generate' | 'grid' | 'cover' | 'publish';
 
-const button = 'h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50';
-const ghost = 'h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0]/50 dark:text-[#3FE0D0]';
-const field = 'h-10 w-full rounded-xl border border-[#1E6A83]/30 bg-white px-3 text-sm text-[#203337] dark:border-[#3FE0D0]/30 dark:bg-[#0B1417] dark:text-[#E7F4F2] dark:[color-scheme:dark]';
-const panel = 'rounded-3xl border border-[#1E6A83]/20 bg-white p-4 text-[#203337] dark:border-[#3FE0D0]/25 dark:bg-[#122226] dark:text-[#E7F4F2]';
+const button = 'h-10 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b] disabled:opacity-50';
+const ghost = 'h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] dark:border-[#d9efff]/50 dark:text-[#d9efff]';
+const field = 'h-10 w-full rounded-xl border border-[#096ab7]/30 bg-white px-3 text-sm text-[#11131b] dark:border-[#d9efff]/30 dark:bg-[#0B1417] dark:text-[#E7F4F2] dark:[color-scheme:dark]';
+const panel = 'rounded-3xl border border-[#096ab7]/20 bg-white p-4 text-[#11131b] dark:border-[#d9efff]/25 dark:bg-[#122226] dark:text-[#E7F4F2]';
 const card = `${panel} space-y-3`;
 
 function stamp(): string {
@@ -197,17 +197,17 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         : ['grid', 'publish'];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 bg-white p-4 text-[#203337] dark:bg-[#0B1417] dark:text-[#E7F4F2] md:p-6" data-timetable={surface} data-timetable-ready={ready ? '1' : '0'} data-generated={generated === null ? undefined : String(generated)} data-edition={privateMode ? 'personal' : edition} data-sample={sample ? '1' : '0'} data-editing={editing || privateMode ? '1' : '0'} data-place={surface === 'institution' ? 'institution' : surface}>
+    <div className="mx-auto max-w-6xl space-y-5 bg-white p-4 text-[#11131b] dark:bg-[#0B1417] dark:text-[#E7F4F2] md:p-6" data-timetable={surface} data-timetable-ready={ready ? '1' : '0'} data-generated={generated === null ? undefined : String(generated)} data-edition={privateMode ? 'personal' : edition} data-sample={sample ? '1' : '0'} data-editing={editing || privateMode ? '1' : '0'} data-place={surface === 'institution' ? 'institution' : surface}>
       <header className="tt-no-print">
-        {surface === 'institution' ? <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83] dark:text-[#3FE0D0]">{TIMETABLE_COPY.institutionPlace}</p> : null}
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1E6A83] dark:text-[#3FE0D0]">{TIMETABLE_COPY.title}</p>
+        {surface === 'institution' ? <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#096ab7] dark:text-[#d9efff]">{TIMETABLE_COPY.institutionPlace}</p> : null}
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#096ab7] dark:text-[#d9efff]">{TIMETABLE_COPY.title}</p>
         <h1 className="mt-1 text-3xl font-semibold">{TIMETABLE_COPY.title}</h1>
-        <p className="mt-2 max-w-3xl text-sm text-[#1E6A83] dark:text-[#3FE0D0]">
+        <p className="mt-2 max-w-3xl text-sm text-[#096ab7] dark:text-[#d9efff]">
           {surface === 'personal' || privateMode ? TIMETABLE_COPY.personalLede : editing ? TIMETABLE_COPY.schoolLede : surface === 'parent' ? TIMETABLE_COPY.parentWeek : surface === 'student' ? TIMETABLE_COPY.studentWeek : TIMETABLE_COPY.viewLede}
         </p>
         {sample ? (
-          <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#1E6A83] dark:text-[#3FE0D0]">
-            <span className="rounded-full bg-[#3FE0D0] px-2 py-0.5 font-bold text-[#203337]">{TIMETABLE_COPY.sampleBadge}</span>
+          <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#096ab7] dark:text-[#d9efff]">
+            <span className="rounded-full bg-[#d9efff] px-2 py-0.5 font-bold text-[#11131b]">{TIMETABLE_COPY.sampleBadge}</span>
             {TIMETABLE_COPY.sampleNote}
           </p>
         ) : null}
@@ -269,7 +269,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
           </label>
           <button type="button" className={ghost} data-action="constraint" onClick={applyConstraint}>{TIMETABLE_COPY.constraintButton}</button>
           <p className="text-sm" data-explanation="1">{doc.explanation || notice}</p>
-          <p className="text-xs text-[#1E6A83] dark:text-[#E7F4F2]">{TIMETABLE_COPY.modelNote}</p>
+          <p className="text-xs text-[#096ab7] dark:text-[#E7F4F2]">{TIMETABLE_COPY.modelNote}</p>
           <Quality doc={doc} fixes={fixes} />
         </section>
       ) : null}
@@ -376,7 +376,7 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
         <ul className="mt-2 space-y-1 text-sm">
           {doc.audit.slice(0, 8).map(entry => <li key={entry.id}>{entry.action}: {entry.detail}</li>)}
         </ul>
-        {notice ? <p className="mt-2 text-sm text-[#1E6A83]" data-notice="1">{notice}</p> : null}
+        {notice ? <p className="mt-2 text-sm text-[#096ab7]" data-notice="1">{notice}</p> : null}
       </section>
       <style>{'@media print { .tt-no-print { display: none !important; } }'}</style>
     </div>
@@ -386,8 +386,8 @@ export function TimetableDesk({ surface, actor }: { surface: Surface; actor: Tim
 function Locked() {
   return (
     <div className="mx-auto max-w-xl p-6" data-timetable-locked="1">
-      <h1 className="text-2xl font-semibold text-[#203337]">{TIMETABLE_COPY.title}</h1>
-      <p className="mt-2 text-sm text-[#1E6A83]">{TIMETABLE_COPY.locked}</p>
+      <h1 className="text-2xl font-semibold text-[#11131b]">{TIMETABLE_COPY.title}</h1>
+      <p className="mt-2 text-sm text-[#096ab7]">{TIMETABLE_COPY.locked}</p>
     </div>
   );
 }
@@ -401,7 +401,7 @@ function Quality({ doc, fixes }: { doc: TimetableDoc; fixes: string[] }) {
       {doc.unmet.length === 0 ? <p className="text-sm">{TIMETABLE_COPY.noneUnmet}</p> : (
         <ul className="text-sm">{doc.unmet.map(line => <li key={line}>{line}</li>)}</ul>
       )}
-      {fixes.length > 0 ? <ul className="text-sm text-[#1E6A83] dark:text-[#E7F4F2]">{fixes.map(line => <li key={line}>{line}</li>)}</ul> : null}
+      {fixes.length > 0 ? <ul className="text-sm text-[#096ab7] dark:text-[#E7F4F2]">{fixes.map(line => <li key={line}>{line}</li>)}</ul> : null}
     </div>
   );
 }

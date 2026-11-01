@@ -232,7 +232,7 @@ export default function StudentDashboard() {
         {AI_TEACHERS.slice(0, 12).map((teacher) => (
           <Link key={teacher.id} href={`/dashboard/studio/teachers/${teacher.id}`} className="w-20 shrink-0 text-center">
             <TeacherPortrait teacher={teacher} size={72} className="mx-auto h-[72px] w-[72px] rounded-full object-cover" />
-            <span className="mt-1 block truncate text-[11px] font-semibold text-[#1E6A83]">{teacher.name}</span>
+            <span className="mt-1 block truncate text-[11px] font-semibold text-[#096ab7]">{teacher.name}</span>
           </Link>
         ))}
       </div>

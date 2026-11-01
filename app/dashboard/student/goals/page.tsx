@@ -25,7 +25,7 @@ import { EscalationLadder } from '@/components/goals/escalation-ladder';
 
 export default function StudentGoalsPage() {
   return (
-    <Suspense fallback={<p className="p-8 text-sm text-[#1E6A83]">Opening your goals.</p>}>
+    <Suspense fallback={<p className="p-8 text-sm text-[#096ab7]">Opening your goals.</p>}>
       <StudentGoalsDesk />
     </Suspense>
   );
@@ -142,11 +142,11 @@ function StudentGoalsDesk() {
     }).catch(() => toast.error('Could not reschedule that goal.'));
   };
 
-  if (!user) return <p className="p-8 text-sm text-[#1E6A83]">Sign in to set a goal.</p>;
+  if (!user) return <p className="p-8 text-sm text-[#096ab7]">Sign in to set a goal.</p>;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-[#1E6A83]">Teachers and linked parents can see your goals, including ones you set yourself.</p>
+      <p className="text-sm text-[#096ab7]">Teachers and linked parents can see your goals, including ones you set yourself.</p>
       <GoalsWorkspace
         viewer="student"
         goals={workspaceGoals}
@@ -171,13 +171,13 @@ function StudentGoalsDesk() {
       />
       <WeeklyPlan columns={week} />
       <EscalationLadder missed={goals.filter((goal) => goal.status === 'overdue').length} />
-      <section className="rounded-[28px] border border-[#E7EDED] bg-white p-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Assigned goals</p>
-        <p className="mt-1 text-sm text-[#203337]">Assigned goals stay on the plan. Move one to tomorrow if the day will not fit.</p>
+      <section className="rounded-[28px] border border-[#e5ebf2] bg-white p-4">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]">Assigned goals</p>
+        <p className="mt-1 text-sm text-[#11131b]">Assigned goals stay on the plan. Move one to tomorrow if the day will not fit.</p>
         <ul className="mt-3 space-y-2">
           {goals.filter((goal) => goal.dateKey === today).map((goal) => (
-            <li key={goal.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E7EDED] px-3 py-2">
-              <span className="text-sm font-semibold text-[#203337]">{goal.title}</span>
+            <li key={goal.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#e5ebf2] px-3 py-2">
+              <span className="text-sm font-semibold text-[#11131b]">{goal.title}</span>
               <Button type="button" variant="outline" className="h-8 rounded-full text-xs" onClick={() => { void reschedule(goal); }}>
                 Reschedule
               </Button>

@@ -5,7 +5,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false }, tit
 
 export default function CommunityPreviewPage() {
   return (
-    <main className="min-h-screen bg-[#F4F6F6]">
+    <main className="min-h-screen bg-[#f8fafc]">
       <WallScreen />
     </main>
   );

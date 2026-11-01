@@ -21,15 +21,15 @@ export function StudentJoinPreview({ panel }: { panel: string }) {
   const [path, setPath] = useState<'independent' | 'institution'>('independent');
 
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-4 py-8 text-[#203337]">
+    <main className="min-h-screen bg-[#F6F1E7] px-4 py-8 text-[#11131b]">
       <div className="mx-auto max-w-3xl space-y-6">
         {panel === 'register' && (
           <section className="rounded-3xl bg-[#102820] p-5 sm:p-8">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#1E6A83]">Create your account</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#096ab7]">Create your account</p>
             <h1 className="mt-2 font-heading text-3xl text-white">Join Poket School</h1>
             <div className="mt-4 grid grid-cols-3 gap-2">
               {['Student', 'Teacher', 'Parent'].map((role) => (
-                <div key={role} className={`rounded-2xl border px-3 py-4 text-center text-sm font-semibold ${role === 'Student' ? 'border-[#1E6A83] bg-[#203337] text-[#E9F7FA]' : 'border-white/10 text-white/50'}`}>{role}</div>
+                <div key={role} className={`rounded-2xl border px-3 py-4 text-center text-sm font-semibold ${role === 'Student' ? 'border-[#096ab7] bg-[#11131b] text-[#eaf6ff]' : 'border-white/10 text-white/50'}`}>{role}</div>
               ))}
             </div>
             <div className="mt-5">
@@ -77,7 +77,7 @@ export function StudentJoinPreview({ panel }: { panel: string }) {
             card={SAMPLE}
             message="Check the name, level, and photo, then approve membership."
             busy={false}
-            extra={<button type="button" className="h-11 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]">Approve membership</button>}
+            extra={<button type="button" className="h-11 rounded-full border border-[#096ab7] bg-[#d9efff] px-5 text-sm font-semibold text-[#11131b]">Approve membership</button>}
           />
         )}
       </div>

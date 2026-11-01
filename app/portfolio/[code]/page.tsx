@@ -59,9 +59,9 @@ export default function PublicPortfolioPage({ params }: { params: Promise<{ code
   }, [profile]);
 
   return (
-    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#203337]">
+    <main className="min-h-screen bg-[#F6F1E7] px-5 py-12 text-[#11131b]">
       <article className="mx-auto max-w-3xl">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Poket School portfolio</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]">Poket School portfolio</p>
         {profile === undefined ? <p className="mt-4 text-sm">Opening this portfolio…</p> : null}
         {profile === null ? <p className="mt-4 text-sm leading-relaxed">This portfolio is private. A learner under 18 stays private until a parent approves sharing.</p> : null}
         {profile && doc ? (

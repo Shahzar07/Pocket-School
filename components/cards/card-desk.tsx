@@ -111,15 +111,15 @@ export function CardDesk() {
 
   if (error) {
     const local = accountFace(profile);
-    if (!local) return <p className="text-sm text-[#203337]">{error}</p>;
+    if (!local) return <p className="text-sm text-[#11131b]">{error}</p>;
     return (
       <div className="space-y-4">
         <IdCardPanel view={local} />
-        <p className="text-sm text-[#1E6A83]">The share link is unavailable right now. This card still shows the signed-in account.</p>
+        <p className="text-sm text-[#096ab7]">The share link is unavailable right now. This card still shows the signed-in account.</p>
       </div>
     );
   }
-  if (!card) return <p className="text-sm text-[#5F7074]">Loading your card…</p>;
+  if (!card) return <p className="text-sm text-[#626976]">Loading your card…</p>;
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   const link = card.sharePath ? `${origin}${card.sharePath}` : '';
@@ -143,23 +143,23 @@ export function CardDesk() {
     <div className="space-y-6">
       <IdCardPanel view={view} />
       {proof?.code ? <CardQr path={proof.verifyPath} code={proof.code} codeValidUntil={proof.codeValidUntil} /> : null}
-      <p className="text-sm text-[#203337]">
+      <p className="text-sm text-[#11131b]">
         Your number is <span className="font-semibold">{card.studentNumber}</span>. It stays on this page. A shared card never shows it.
       </p>
       {card.parentRequired && !card.canShare ? (
-        <p className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm text-[#1E6A83]">A verified parent turns sharing on for this card. The public page uses an avatar, not a photo.</p>
+        <p className="rounded-2xl bg-[#eaf6ff] px-4 py-3 text-sm text-[#096ab7]">A verified parent turns sharing on for this card. The public page uses an avatar, not a photo.</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {!card.shareId ? (
-            <button type="button" className="rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]" onClick={() => act({ action: 'share' }).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not create the link.'))}>
+            <button type="button" className="rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]" onClick={() => act({ action: 'share' }).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not create the link.'))}>
               Create share link
             </button>
           ) : (
             <>
-              <button type="button" className="rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]" onClick={() => act({ action: 'regenerate' }).then(() => setNote('New link ready. The old one no longer opens.')).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not replace the link.'))}>
+              <button type="button" className="rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]" onClick={() => act({ action: 'regenerate' }).then(() => setNote('New link ready. The old one no longer opens.')).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not replace the link.'))}>
                 New link
               </button>
-              <button type="button" className="rounded-full border border-[#E7EDED] px-4 py-2 text-sm font-semibold text-[#203337]" onClick={() => act({ action: 'revoke' }).then(() => setNote('Share link turned off.')).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not turn the link off.'))}>
+              <button type="button" className="rounded-full border border-[#e5ebf2] px-4 py-2 text-sm font-semibold text-[#11131b]" onClick={() => act({ action: 'revoke' }).then(() => setNote('Share link turned off.')).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not turn the link off.'))}>
                 Turn off
               </button>
             </>
@@ -168,13 +168,13 @@ export function CardDesk() {
       )}
       {link ? (
         <div className="space-y-3">
-          <p className="break-all text-sm text-[#1E6A83]">{link}</p>
+          <p className="break-all text-sm text-[#096ab7]">{link}</p>
           <div className="flex flex-wrap gap-2">
             {CHANNELS.map(([channel, label]) => (
               <button
                 key={channel}
                 type="button"
-                className="rounded-full border border-[#E7EDED] px-3 py-1.5 text-xs font-semibold text-[#203337]"
+                className="rounded-full border border-[#e5ebf2] px-3 py-1.5 text-xs font-semibold text-[#11131b]"
                 onClick={() => {
                   const url = link;
                   if (channel === 'copy') void navigator.clipboard.writeText(url);
@@ -192,7 +192,7 @@ export function CardDesk() {
         </div>
       ) : null}
       {card.ageTier === 'adult' ? (
-        <label className="flex items-center gap-2 text-sm text-[#203337]">
+        <label className="flex items-center gap-2 text-sm text-[#11131b]">
           <input
             type="checkbox"
             checked={card.indexed}
@@ -201,17 +201,17 @@ export function CardDesk() {
           Let search engines index this card
         </label>
       ) : (
-        <p className="text-sm text-[#5F7074]">This card is not indexed by search engines.</p>
+        <p className="text-sm text-[#626976]">This card is not indexed by search engines.</p>
       )}
       {children.length > 0 ? (
         <section className="space-y-3">
-          <h3 className="font-heading text-xl text-[#203337]">Under-13 sharing</h3>
+          <h3 className="font-heading text-xl text-[#11131b]">Under-13 sharing</h3>
           {children.map((child) => (
-            <div key={child.uid} className="flex items-center justify-between gap-3 rounded-2xl border border-[#E7EDED] px-4 py-3">
-              <span className="text-sm font-semibold text-[#203337]">{child.name}</span>
+            <div key={child.uid} className="flex items-center justify-between gap-3 rounded-2xl border border-[#e5ebf2] px-4 py-3">
+              <span className="text-sm font-semibold text-[#11131b]">{child.name}</span>
               <button
                 type="button"
-                className="rounded-full border border-[#1E6A83] px-3 py-1.5 text-xs font-semibold text-[#1E6A83]"
+                className="rounded-full border border-[#096ab7] px-3 py-1.5 text-xs font-semibold text-[#096ab7]"
                 onClick={() => act({ action: 'parent-share', childUid: child.uid, enabled: !child.sharing }).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : 'Could not update sharing.'))}
               >
                 {child.sharing ? 'Turn sharing off' : 'Turn sharing on'}
@@ -220,7 +220,7 @@ export function CardDesk() {
           ))}
         </section>
       ) : null}
-      {note ? <p className="text-sm text-[#203337]">{note}</p> : null}
+      {note ? <p className="text-sm text-[#11131b]">{note}</p> : null}
     </div>
   );
 }

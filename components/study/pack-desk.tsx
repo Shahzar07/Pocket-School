@@ -175,20 +175,20 @@ export function PackDesk({ step }: { step: AdminStepId }) {
   return (
     <DashPage className="w-full px-4 sm:px-6">
       <div data-exam-pack-desk data-pack-desk-step={step} className="flex min-h-[70vh] flex-col">
-        <p className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{flowCopy.deskTitle}</p>
+        <p className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{flowCopy.deskTitle}</p>
         <h1 className="mt-2 font-heading text-3xl">{flowCopy.adminTrail}</h1>
         <div className="mt-3"><AdminTrail currentId={step} /></div>
-        {notice ? <p className="mt-3 text-sm text-[#1E6A83] dark:text-[#3FE0D0]" role="status" data-draft-status>{notice}</p> : null}
+        {notice ? <p className="mt-3 text-sm text-[#096ab7] dark:text-[#d9efff]" role="status" data-draft-status>{notice}</p> : null}
         {step === 'pack' ? (
           <div className="mt-6">
-            <p className="text-sm"><Link className="font-semibold text-[#1E6A83]" href="/dashboard/studio/exams/packs">{copy.studentLink} →</Link></p>
+            <p className="text-sm"><Link className="font-semibold text-[#096ab7]" href="/dashboard/studio/exams/packs">{copy.studentLink} →</Link></p>
             <ul className="mt-4 divide-y divide-border rounded-2xl border" data-exam-pack-list>
               {packs.map((pack) => (
                 <li key={pack.id} className="flex items-center justify-between gap-3 px-3 py-3">
-                  <span><span className="block font-semibold">{pack.name}</span><span className="text-sm text-[#1E6A83]">{pack.subject || 'Mathematics'} · {pack.level}</span></span>
+                  <span><span className="block font-semibold">{pack.name}</span><span className="text-sm text-[#096ab7]">{pack.subject || 'Mathematics'} · {pack.level}</span></span>
                   <span className="flex shrink-0 gap-3">
-                    <button type="button" className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => setDraft(editable(pack))}>{copy.edit} →</button>
-                    <button type="button" className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" aria-label={copy.delete} disabled={saving} onClick={() => void remove(pack.id)}>{copy.delete} →</button>
+                    <button type="button" className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => setDraft(editable(pack))}>{copy.edit} →</button>
+                    <button type="button" className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" aria-label={copy.delete} disabled={saving} onClick={() => void remove(pack.id)}>{copy.delete} →</button>
                   </span>
                 </li>
               ))}
@@ -236,10 +236,10 @@ export function PackDesk({ step }: { step: AdminStepId }) {
                     <label className="text-sm font-semibold">{copy.weight}<input className={field} type="number" min={1} max={5} value={topic.weight} onChange={(event) => updateTopic(unitIndex, topicIndex, { ...topic, weight: Number(event.target.value) || 1 })} /></label>
                   </div>
                 ))}
-                <button type="button" className="h-10 justify-self-start text-sm font-semibold text-[#1E6A83]" onClick={() => updateUnit(unitIndex, { ...unit, topics: [...unit.topics, { id: `topic-${unit.topics.length + 1}`, title: '', weight: 3, questions: [blankQuestion()] }] })}>{copy.addTopic} →</button>
+                <button type="button" className="h-10 justify-self-start text-sm font-semibold text-[#096ab7]" onClick={() => updateUnit(unitIndex, { ...unit, topics: [...unit.topics, { id: `topic-${unit.topics.length + 1}`, title: '', weight: 3, questions: [blankQuestion()] }] })}>{copy.addTopic} →</button>
               </fieldset>
             ))}
-            <button type="button" className="mt-3 text-sm font-semibold text-[#1E6A83]" onClick={() => setDraft({ ...draft, units: [...draft.units, { id: `unit-${draft.units.length + 1}`, title: '', topics: [{ id: 'topic-1', title: '', weight: 3, questions: [blankQuestion()] }] }] })}>{copy.addUnit} →</button>
+            <button type="button" className="mt-3 text-sm font-semibold text-[#096ab7]" onClick={() => setDraft({ ...draft, units: [...draft.units, { id: `unit-${draft.units.length + 1}`, title: '', topics: [{ id: 'topic-1', title: '', weight: 3, questions: [blankQuestion()] }] }] })}>{copy.addUnit} →</button>
           </div>
         ) : null}
         {step === 'questions' ? (
@@ -286,14 +286,14 @@ export function PackDesk({ step }: { step: AdminStepId }) {
                     }} /></label>
                   </div>
                 ))}
-                <button type="button" className="h-10 justify-self-start text-sm font-semibold text-[#1E6A83]" onClick={() => updateTopic(unitIndex, topicIndex, { ...topic, questions: [...(topic.questions ?? []), blankQuestion()] })}>{copy.addQuestion} →</button>
+                <button type="button" className="h-10 justify-self-start text-sm font-semibold text-[#096ab7]" onClick={() => updateTopic(unitIndex, topicIndex, { ...topic, questions: [...(topic.questions ?? []), blankQuestion()] })}>{copy.addQuestion} →</button>
               </fieldset>
             )))}
           </div>
         ) : null}
         {step === 'preview' ? (
           <div className="mt-6" data-pack-preview>
-            <p className="text-sm text-[#1E6A83]">{flowCopy.previewNote}</p>
+            <p className="text-sm text-[#096ab7]">{flowCopy.previewNote}</p>
             <h2 className="mt-3 font-heading text-2xl">{draft.name || copy.name}</h2>
             <p className="text-sm">{draft.subject} · {draft.level} · {draft.board}</p>
             {draft.units.map((unit) => (
@@ -308,8 +308,8 @@ export function PackDesk({ step }: { step: AdminStepId }) {
         ) : null}
         {step === 'publish' ? (
           <div className="mt-6 flex flex-wrap gap-3" data-pack-publish>
-            <button type="button" className="h-11 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" disabled={saving} onClick={() => void save('draft')}>{flowCopy.saveDraft}</button>
-            <button type="button" className="h-11 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" disabled={saving} onClick={() => void save('published')}>{flowCopy.publish} →</button>
+            <button type="button" className="h-11 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]" disabled={saving} onClick={() => void save('draft')}>{flowCopy.saveDraft}</button>
+            <button type="button" className="h-11 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" disabled={saving} onClick={() => void save('published')}>{flowCopy.publish} →</button>
           </div>
         ) : null}
         <OfficialNav

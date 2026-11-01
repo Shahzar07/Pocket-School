@@ -111,7 +111,7 @@ export default function TeacherLiveClassesPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Live Classes</h1>
+        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Live Classes</h1>
         <p className="text-muted-foreground text-sm mt-1">Schedule and manage virtual sessions for your courses.</p>
       </div>
 
@@ -194,7 +194,7 @@ export default function TeacherLiveClassesPage() {
                   <Badge className={`rounded-full text-[10px] capitalize ${STATUS_STYLES[cls.status]}`}>{cls.status}</Badge>
                   {cls.status === 'scheduled' && (
                     <Button size="sm" onClick={() => handleStatusChange(cls, 'live')} disabled={updatingId === cls.id}
-                      className="rounded-full gap-1.5 text-xs font-bold bg-[#1E6A83] hover:bg-[#1E6A83] text-white"
+                      className="rounded-full gap-1.5 text-xs font-bold bg-[#096ab7] hover:bg-[#096ab7] text-white"
                     >
                       {updatingId === cls.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Radio className="w-3.5 h-3.5" />}
                       Go Live

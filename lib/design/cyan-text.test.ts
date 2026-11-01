@@ -9,8 +9,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 test('the signup age message is blue on a light chip and readable in dark mode', () => {
   const source = readFileSync(path.join(ROOT, 'app/(auth)/signup/page.tsx'), 'utf8');
   const line = source.split('\n').find(row => row.includes("t('signup.tooYoung')")) ?? '';
-  assert.match(line, /text-\[#1E6A83\]/);
-  assert.match(line, /bg-\[#E9F7FA\]/);
+  assert.match(line, /text-\[#096ab7\]/);
+  assert.match(line, /bg-\[#eaf6ff\]/);
   assert.match(line, /dark:text-\[#E7F4F2\]/);
   assert.equal(line.includes('text-[#3FE0D0]'), false);
 });

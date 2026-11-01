@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { flowCopy } from '@/lib/flow/copy';
 import { flowIndex, flowStepOpen, type FlowStep } from '@/lib/flow/steps';
 
-const future = 'text-sm font-semibold text-[#203337]/45 dark:text-[#E9F7FA]/45';
-const done = 'text-sm font-semibold text-[#1E6A83] underline-offset-4 hover:underline dark:text-[#3FE0D0]';
-const current = 'rounded-full bg-[#3FE0D0] px-3 py-1 text-sm font-semibold text-[#203337]';
+const future = 'text-sm font-semibold text-[#11131b]/45 dark:text-[#eaf6ff]/45';
+const done = 'text-sm font-semibold text-[#096ab7] underline-offset-4 hover:underline dark:text-[#d9efff]';
+const current = 'rounded-full bg-[#d9efff] px-3 py-1 text-sm font-semibold text-[#11131b]';
 
 export function FlowTrail({
   steps,
@@ -38,7 +38,7 @@ export function FlowTrail({
           const mark = dataAttr ? { [dataAttr]: step.id } : {};
           return (
             <li key={step.id} className="flex items-center gap-1">
-              {stepIndex > 0 ? <span aria-hidden className="px-0.5 text-[#1E6A83] dark:text-[#3FE0D0]">→</span> : null}
+              {stepIndex > 0 ? <span aria-hidden className="px-0.5 text-[#096ab7] dark:text-[#d9efff]">→</span> : null}
               {active ? (
                 <span data-flow-step={step.id} aria-current="step" className={current} {...mark}>{step.label}</span>
               ) : href ? (

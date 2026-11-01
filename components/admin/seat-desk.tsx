@@ -17,7 +17,7 @@ interface Row {
   status: string;
 }
 
-const fieldClass = 'mt-1 min-h-11 w-full rounded-xl border border-[#D5E6EA] bg-white px-3 text-sm text-[#203337]';
+const fieldClass = 'mt-1 min-h-11 w-full rounded-xl border border-[#D5E6EA] bg-white px-3 text-sm text-[#11131b]';
 
 export function SeatDesk() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -69,40 +69,40 @@ export function SeatDesk() {
     <section className="space-y-4 rounded-[24px] border border-[#D5E6EA] bg-white p-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-heading text-2xl text-[#203337]">Seat allocations</h2>
-          <p className="mt-1 max-w-xl text-sm text-[#1E6A83]">An allocation gives a course or a plan to an institution, a class, or a user, for a number of seats and a date range.</p>
+          <h2 className="font-heading text-2xl text-[#11131b]">Seat allocations</h2>
+          <p className="mt-1 max-w-xl text-sm text-[#096ab7]">An allocation gives a course or a plan to an institution, a class, or a user, for a number of seats and a date range.</p>
         </div>
         {canCreate ? (
-          <button type="button" className="rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]" onClick={() => setOpen(true)}>New allocation</button>
+          <button type="button" className="rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]" onClick={() => setOpen(true)}>New allocation</button>
         ) : null}
       </div>
-      {comingSoon ? <p className="text-sm text-[#203337]">{note}</p> : null}
+      {comingSoon ? <p className="text-sm text-[#11131b]">{note}</p> : null}
       {rows.length === 0 && !comingSoon ? (
         <div className="rounded-2xl bg-[#F4F7F8] px-4 py-6">
-          <p className="font-semibold text-[#203337]">No allocations yet</p>
-          <p className="mt-1 text-sm text-[#1E6A83]">When a school, class, or person is given seats, the row appears here. Course grants for one email stay in the people search below.</p>
+          <p className="font-semibold text-[#11131b]">No allocations yet</p>
+          <p className="mt-1 text-sm text-[#096ab7]">When a school, class, or person is given seats, the row appears here. Course grants for one email stay in the people search below.</p>
         </div>
       ) : null}
       {rows.length > 0 ? (
         <ul className="space-y-2">
           {rows.map((row) => (
-            <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#F4F7F8] px-3 py-3 text-sm text-[#203337]">
+            <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#F4F7F8] px-3 py-3 text-sm text-[#11131b]">
               <span>{row.targetLabel} · {row.kind === 'plan' ? row.plan : row.courseId} · {row.seats} seats</span>
-              <span className="text-[#1E6A83]">{row.startsOn} to {row.endsOn} · {row.status}</span>
+              <span className="text-[#096ab7]">{row.startsOn} to {row.endsOn} · {row.status}</span>
             </li>
           ))}
         </ul>
       ) : null}
-      {note && !comingSoon ? <p className="text-sm text-[#203337]">{note}</p> : null}
+      {note && !comingSoon ? <p className="text-sm text-[#11131b]">{note}</p> : null}
       {open ? (
         <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); void create(); }}>
-          <label className="text-sm text-[#203337]">What
+          <label className="text-sm text-[#11131b]">What
             <select aria-label="Allocation kind" className={fieldClass} value={kind} onChange={(event) => setKind(event.target.value as AllocationKind)}>
               <option value="course">Course</option>
               <option value="plan">Plan</option>
             </select>
           </label>
-          <label className="text-sm text-[#203337]">Who
+          <label className="text-sm text-[#11131b]">Who
             <select aria-label="Allocation target" className={fieldClass} value={targetType} onChange={(event) => setTargetType(event.target.value as AllocationTarget)}>
               <option value="institution">Institution</option>
               <option value="class">Class</option>
@@ -110,35 +110,35 @@ export function SeatDesk() {
             </select>
           </label>
           {kind === 'course' ? (
-            <label className="text-sm text-[#203337]">Course id
+            <label className="text-sm text-[#11131b]">Course id
               <input className={fieldClass} aria-label="Course id" value={courseId} onChange={(event) => setCourseId(event.target.value)} />
             </label>
           ) : (
-            <label className="text-sm text-[#203337]">Plan
+            <label className="text-sm text-[#11131b]">Plan
               <input className={fieldClass} aria-label="Plan" value={plan} onChange={(event) => setPlan(event.target.value)} />
             </label>
           )}
-          <label className="text-sm text-[#203337]">Seats
+          <label className="text-sm text-[#11131b]">Seats
             <input className={fieldClass} aria-label="Seats" type="number" min={1} value={seats} onChange={(event) => setSeats(Number(event.target.value))} />
           </label>
-          <label className="text-sm text-[#203337]">Name
+          <label className="text-sm text-[#11131b]">Name
             <input className={fieldClass} aria-label="Recipient name" value={targetLabel} onChange={(event) => setTargetLabel(event.target.value)} />
           </label>
-          <label className="text-sm text-[#203337]">Record id
+          <label className="text-sm text-[#11131b]">Record id
             <input className={fieldClass} aria-label="Recipient id" value={targetId} onChange={(event) => setTargetId(event.target.value)} />
           </label>
-          <label className="text-sm text-[#203337]">Institution id
+          <label className="text-sm text-[#11131b]">Institution id
             <input className={fieldClass} aria-label="Institution id" value={institutionId} onChange={(event) => setInstitutionId(event.target.value)} />
           </label>
-          <label className="text-sm text-[#203337]">Starts
+          <label className="text-sm text-[#11131b]">Starts
             <input className={fieldClass} aria-label="Start date" type="date" value={startsOn} onChange={(event) => setStartsOn(event.target.value)} />
           </label>
-          <label className="text-sm text-[#203337]">Ends
+          <label className="text-sm text-[#11131b]">Ends
             <input className={fieldClass} aria-label="End date" type="date" value={endsOn} onChange={(event) => setEndsOn(event.target.value)} />
           </label>
           <div className="flex gap-2 sm:col-span-2">
             <button type="button" className="rounded-full border border-[#D5E6EA] px-4 py-2 text-sm" onClick={() => setOpen(false)}>Cancel</button>
-            <button type="submit" className="rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]">Save allocation</button>
+            <button type="submit" className="rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]">Save allocation</button>
           </div>
         </form>
       ) : null}

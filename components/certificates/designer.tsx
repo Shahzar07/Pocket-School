@@ -25,8 +25,8 @@ import { certificatePdf } from '@/lib/certificates/pdf';
 import { decorateSample } from '@/lib/certificates/sample-placeholders';
 import { CertificateSheet } from '@/components/certificates/sheet';
 
-const fieldClass = 'mt-1 min-h-11 w-full rounded-xl border border-[#D5E6EA] bg-white px-3 text-sm text-[#203337] dark:border-white/20 dark:bg-[#0B1417] dark:text-[#E8F4F6]';
-const cardClass = 'space-y-4 rounded-[24px] border border-[#D5E6EA] bg-white p-4 text-[#203337] dark:border-white/15 dark:bg-[#1A1918] dark:text-[#E8F4F6]';
+const fieldClass = 'mt-1 min-h-11 w-full rounded-xl border border-[#D5E6EA] bg-white px-3 text-sm text-[#11131b] dark:border-white/20 dark:bg-[#0B1417] dark:text-[#E8F4F6]';
+const cardClass = 'space-y-4 rounded-[24px] border border-[#D5E6EA] bg-white p-4 text-[#11131b] dark:border-white/15 dark:bg-[#1A1918] dark:text-[#E8F4F6]';
 
 const IMAGE_LIMIT = 80_000;
 
@@ -86,7 +86,7 @@ function ImageField({
         />
       </label>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">
+        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-[#096ab7] px-3 text-xs font-semibold text-[#096ab7] dark:text-[#d9efff]">
           Upload image
           <input
             className="sr-only"
@@ -107,13 +107,13 @@ function ImageField({
           />
         </label>
         {uploaded ? (
-          <button type="button" className="min-h-11 text-xs font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => onChange('')}>
+          <button type="button" className="min-h-11 text-xs font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => onChange('')}>
             Remove upload
           </button>
         ) : null}
       </div>
       {uploaded ? <img src={value} alt="" className="mt-2 h-12 w-auto max-w-full object-contain" /> : null}
-      {error || fileError ? <p role="alert" className="mt-1 text-xs text-[#1E6A83]">{error || fileError}</p> : null}
+      {error || fileError ? <p role="alert" className="mt-1 text-xs text-[#096ab7]">{error || fileError}</p> : null}
     </div>
   );
 }
@@ -303,29 +303,29 @@ export function CertificateDesigner({
               role="tab"
               aria-selected={item.id === current.id}
               onClick={() => { setCurrentId(item.id); setConfirmDelete(false); }}
-              className={`min-h-11 rounded-full px-3 py-2 text-xs font-semibold ${item.id === current.id ? 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'border border-[#D5E6EA] text-[#1E6A83] dark:border-white/20 dark:text-[#3FE0D0]'}`}
+              className={`min-h-11 rounded-full px-3 py-2 text-xs font-semibold ${item.id === current.id ? 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'border border-[#D5E6EA] text-[#096ab7] dark:border-white/20 dark:text-[#d9efff]'}`}
             >
               {item.name}{item.isDefault ? ' · default' : ''}{item.institutionId ? ' · school' : ''}
             </button>
           ))}
-          <button type="button" onClick={addTemplate} className="min-h-11 rounded-full border border-[#1E6A83] px-3 py-2 text-xs font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">Add template</button>
+          <button type="button" onClick={addTemplate} className="min-h-11 rounded-full border border-[#096ab7] px-3 py-2 text-xs font-semibold text-[#096ab7] dark:text-[#d9efff]">Add template</button>
         </div>
         <label className="block text-sm">Template name
           <input className={fieldClass} aria-label="Template name" value={current.name} onChange={(event) => patch({ name: event.target.value })} />
         </label>
-        <p className="text-xs text-[#1E6A83] dark:text-[#3FE0D0]">Renaming updates the tab. Duplicate keeps the original.</p>
+        <p className="text-xs text-[#096ab7] dark:text-[#d9efff]">Renaming updates the tab. Duplicate keeps the original.</p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={duplicate} className="min-h-11 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">Duplicate</button>
+          <button type="button" onClick={duplicate} className="min-h-11 rounded-full border border-[#096ab7] px-3 text-xs font-semibold text-[#096ab7] dark:text-[#d9efff]">Duplicate</button>
           {isBuiltinTemplate(current.id) ? (
-            <p className="self-center text-xs text-[#1E6A83] dark:text-[#3FE0D0]">Poket cyan and Poket blue stay on the page. Duplicate one to make your own.</p>
+            <p className="self-center text-xs text-[#096ab7] dark:text-[#d9efff]">Poket cyan and Poket blue stay on the page. Duplicate one to make your own.</p>
           ) : confirmDelete ? (
             <div role="alertdialog" aria-label="Delete template" className="flex flex-wrap items-center gap-2">
               <p className="text-sm">Delete {current.name}?</p>
-              <button type="button" onClick={() => void remove()} className="min-h-11 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83]">Delete</button>
-              <button type="button" onClick={() => setConfirmDelete(false)} className="min-h-11 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">Cancel</button>
+              <button type="button" onClick={() => void remove()} className="min-h-11 rounded-full border border-[#096ab7] px-3 text-xs font-semibold text-[#096ab7]">Delete</button>
+              <button type="button" onClick={() => setConfirmDelete(false)} className="min-h-11 rounded-full border border-[#096ab7] px-3 text-xs font-semibold text-[#096ab7] dark:text-[#d9efff]">Cancel</button>
             </div>
           ) : (
-            <button type="button" onClick={() => setConfirmDelete(true)} disabled={designs.length < 2} className="min-h-11 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#1E6A83] disabled:opacity-40">Delete</button>
+            <button type="button" onClick={() => setConfirmDelete(true)} disabled={designs.length < 2} className="min-h-11 rounded-full border border-[#096ab7] px-3 text-xs font-semibold text-[#096ab7] disabled:opacity-40">Delete</button>
           )}
         </div>
         <label className="block text-sm">Title
@@ -342,7 +342,7 @@ export function CertificateDesigner({
           <legend className="text-sm font-semibold">Brand palette</legend>
           <div className="flex gap-2">
             {(['blue', 'cyan'] as CertificatePalette[]).map((palette) => (
-              <button key={palette} type="button" onClick={() => patch({ palette })} className={`min-h-11 rounded-full px-3 py-2 text-xs font-semibold capitalize ${current.palette === palette ? 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'border border-[#D5E6EA] text-[#1E6A83] dark:border-white/20 dark:text-[#3FE0D0]'}`}>{palette}</button>
+              <button key={palette} type="button" onClick={() => patch({ palette })} className={`min-h-11 rounded-full px-3 py-2 text-xs font-semibold capitalize ${current.palette === palette ? 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'border border-[#D5E6EA] text-[#096ab7] dark:border-white/20 dark:text-[#d9efff]'}`}>{palette}</button>
             ))}
           </div>
         </fieldset>
@@ -385,7 +385,7 @@ export function CertificateDesigner({
             </div>
           ))}
           {current.signatories.length < 3 ? (
-            <button type="button" className="min-h-11 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => patch({ signatories: [...current.signatories, { name: '', title: '', imageUrl: '' }] })}>Add signatory</button>
+            <button type="button" className="min-h-11 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => patch({ signatories: [...current.signatories, { name: '', title: '', imageUrl: '' }] })}>Add signatory</button>
           ) : null}
         </fieldset>
         {canEditDefault ? (
@@ -405,17 +405,17 @@ export function CertificateDesigner({
             Default template
           </label>
         ) : (
-          <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]">This override belongs to your institution. The platform default stays with a super admin.</p>
+          <p className="text-sm text-[#096ab7] dark:text-[#d9efff]">This override belongs to your institution. The platform default stays with a super admin.</p>
         )}
         <div className="flex flex-wrap gap-2">
-          <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]">{busy ? 'Saving…' : 'Save template'}</button>
-          <button type="button" onClick={() => void download()} disabled={busy} className="min-h-11 rounded-full border border-[#1E6A83] px-4 py-2 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">Download PDF</button>
+          <button type="submit" disabled={busy} className="min-h-11 rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]">{busy ? 'Saving…' : 'Save template'}</button>
+          <button type="button" onClick={() => void download()} disabled={busy} className="min-h-11 rounded-full border border-[#096ab7] px-4 py-2 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">Download PDF</button>
         </div>
         <p role="status" aria-live="polite" data-certificate-status={phase} className="text-sm">{note}</p>
-        <p className="text-xs text-[#1E6A83] dark:text-[#3FE0D0]">The PDF is this sheet: border, palette, logos, signatures, QR, and the copyright line.</p>
+        <p className="text-xs text-[#096ab7] dark:text-[#d9efff]">The PDF is this sheet: border, palette, logos, signatures, QR, and the copyright line.</p>
       </form>
       <div className="w-full self-start lg:sticky lg:top-4" data-certificate-preview="1" style={{ color: colours.ink }}>
-        <p className="mb-2 text-center text-xs text-[#1E6A83] dark:text-[#3FE0D0]" data-certificate-sample="1">Template sample. North Academy, Harbour and the drawn signature stay on this preview. A student certificate leaves them off.</p>
+        <p className="mb-2 text-center text-xs text-[#096ab7] dark:text-[#d9efff]" data-certificate-sample="1">Template sample. North Academy, Harbour and the drawn signature stay on this preview. A student certificate leaves them off.</p>
         <div className="mx-auto w-full" style={{ width: `min(100%, calc(70vh * ${CERTIFICATE_PAGE_POINTS[current.pageSize].width} / ${CERTIFICATE_PAGE_POINTS[current.pageSize].height}))` }}>
           <CertificateSheet design={previewDesign ?? current} sample={sample} />
         </div>

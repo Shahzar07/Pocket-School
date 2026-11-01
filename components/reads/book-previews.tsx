@@ -20,8 +20,8 @@ const FRAME: Record<Device, string> = {
 export function BookStatusBadge({ status }: { status: Book['status'] }) {
   const label = status === 'published' ? PREVIEW.published : status === 'review' ? PREVIEW.review : PREVIEW.draft;
   const tone = status === 'published'
-    ? 'bg-[#1E6A83] text-white'
-    : 'bg-[#E9F7FA] text-[#1E6A83]';
+    ? 'bg-[#096ab7] text-white'
+    : 'bg-[#eaf6ff] text-[#096ab7]';
   return (
     <span data-book-status={status} className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${tone}`}>
       {label}
@@ -52,7 +52,7 @@ export function CoverLibraryCard({ book }: { book: Book }) {
       )}
       <p className="mt-2 line-clamp-2 text-[13px] font-semibold leading-snug">{book.title}</p>
       <p className="text-[12px] text-muted-foreground">{book.author}</p>
-      <p className="text-[12px] text-[#1E6A83]">{level}</p>
+      <p className="text-[12px] text-[#096ab7]">{level}</p>
     </div>
   );
 }
@@ -64,11 +64,11 @@ export function LibraryDetailPreview({ book }: { book: Book }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
       <div data-library-preview="1">
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">{PREVIEW.library}</p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]">{PREVIEW.library}</p>
         <CoverLibraryCard book={book} />
       </div>
       <article data-detail-preview="1" className="space-y-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]">{PREVIEW.detail}</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]">{PREVIEW.detail}</p>
         <h3 className="font-heading text-[28px] tracking-[-0.03em]">{book.title}</h3>
         <p className="text-sm text-muted-foreground">{book.author}</p>
         <p className="max-w-xl text-sm leading-relaxed">{book.blurb.trim() || PREVIEW.emptyBlurb}</p>
@@ -100,19 +100,19 @@ export function BookReaderPreview({ book }: { book: Book }) {
               data-device={item}
               aria-pressed={device === item}
               onClick={() => setDevice(item)}
-              className={`h-8 rounded-full px-3 text-[12px] font-semibold ${device === item ? 'bg-[#1E6A83] text-white' : 'border border-border'}`}
+              className={`h-8 rounded-full px-3 text-[12px] font-semibold ${device === item ? 'bg-[#096ab7] text-white' : 'border border-border'}`}
             >
               {PREVIEW[item]}
             </button>
           ))}
         </div>
       </div>
-      <div className={`mx-auto overflow-hidden rounded-[28px] border border-border bg-[#E9F7FA] ${FRAME[device]}`}>
+      <div className={`mx-auto overflow-hidden rounded-[28px] border border-border bg-[#eaf6ff] ${FRAME[device]}`}>
         <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[12px] text-muted-foreground">
           <span>{page?.chapterTitle}</span>
           <span data-page-counter="1">{pageLabel(at, pages.length || 1)}</span>
         </div>
-        <div data-reader-page="1" className="min-h-64 px-5 py-4 text-[15px] leading-relaxed text-[#203337]">
+        <div data-reader-page="1" className="min-h-64 px-5 py-4 text-[15px] leading-relaxed text-[#11131b]">
           {page?.markdown?.trim() ? <ChapterProse markdown={page.markdown} quotes={[]} /> : <p>{PREVIEW.emptyPage}</p>}
         </div>
         <div className="flex items-center justify-between border-t border-border px-3 py-2">
@@ -135,7 +135,7 @@ export function PublishGate({ book, onPublish }: { book: Book; onPublish: () => 
         )}
       </div>
       {issues.length > 0 && book.status !== 'published' && (
-        <ul data-publish-block="1" className="space-y-1 text-sm text-[#1E6A83]">
+        <ul data-publish-block="1" className="space-y-1 text-sm text-[#096ab7]">
           {issues.map(issue => <li key={issue}>{issue}</li>)}
         </ul>
       )}

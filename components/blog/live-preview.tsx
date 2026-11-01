@@ -7,18 +7,18 @@ export function BlogLivePreview({ post }: { post: BlogPost }) {
   const takeaways = (post.takeaways || []).map((item) => item.trim()).filter(Boolean);
   const steps = (post.howto || []).filter((step) => step.name.trim() && step.text.trim());
   return (
-    <div data-blog-preview="1" className="rounded-[2rem] bg-[#E9F7FA] text-[#203337]">
-      <p className="px-4 pt-4 text-xs font-bold tracking-[0.18em] text-[#1E6A83] sm:px-6">Live preview · {post.status}</p>
+    <div data-blog-preview="1" className="rounded-[2rem] bg-[#eaf6ff] text-[#11131b]">
+      <p className="px-4 pt-4 text-xs font-bold tracking-[0.18em] text-[#096ab7] sm:px-6">Live preview · {post.status}</p>
       <div className="mt-4">
         <PostHero post={post} />
       </div>
       <article className="mx-auto max-w-3xl px-4 pb-10 pt-8 sm:px-6">
-        <p className="text-sm text-[#203337]/70">
+        <p className="text-sm text-[#11131b]/70">
           {post.author || 'Poket School'}
           {` · ${readingMinutes(post.body)} min read`}
         </p>
         {post.tldr ? <p className="mt-4 text-lg leading-8" data-blog-tldr="1">{post.tldr}</p> : null}
-        {post.excerpt ? <p className="mt-4 text-base leading-7 text-[#203337]/80">{post.excerpt}</p> : null}
+        {post.excerpt ? <p className="mt-4 text-base leading-7 text-[#11131b]/80">{post.excerpt}</p> : null}
         {takeaways.length > 0 ? (
           <section className="mt-6">
             <h2 className="font-heading text-xl">Key takeaways</h2>

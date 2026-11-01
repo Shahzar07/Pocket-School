@@ -35,7 +35,7 @@ export function EarningsDesk() {
           {months.map(([month, amount]) => (
             <li key={month}>
               <div className="flex justify-between text-sm"><span>{month}</span><span>RM {amount}</span></div>
-              <div className="mt-1 h-2 rounded-full bg-[#f4f7f8]"><div className="h-2 rounded-full bg-[#3FE0D0]" style={{ width: `${Math.round((amount / max) * 100)}%` }} /></div>
+              <div className="mt-1 h-2 rounded-full bg-[#f4f7f8]"><div className="h-2 rounded-full bg-[#d9efff]" style={{ width: `${Math.round((amount / max) * 100)}%` }} /></div>
             </li>
           ))}
         </ul>
@@ -48,14 +48,14 @@ export function EarningsDesk() {
       </section>
       <section className="rounded-3xl bg-white p-5">
         <h2 className="font-heading text-2xl">{t.payout}</h2>
-        <p className="mt-2 text-sm text-[#1E6A83]">{state.payout.schedule}</p>
-        <p className="text-sm text-[#1E6A83]">{state.payout.method}</p>
+        <p className="mt-2 text-sm text-[#096ab7]">{state.payout.schedule}</p>
+        <p className="text-sm text-[#096ab7]">{state.payout.method}</p>
       </section>
       <section className="rounded-3xl bg-white p-5">
         <h2 className="font-heading text-2xl">{t.invoice}</h2>
         <p className="mt-2 text-sm">{state.payout.invoice}</p>
-        <p className="text-sm text-[#1E6A83]">{state.payout.tin}</p>
-        <p className="text-sm text-[#1E6A83]">{state.payout.sst}</p>
+        <p className="text-sm text-[#096ab7]">{state.payout.tin}</p>
+        <p className="text-sm text-[#096ab7]">{state.payout.sst}</p>
       </section>
       <section className="rounded-3xl bg-white p-5">
         <h2 className="font-heading text-2xl">{t.payoutHistory}</h2>
@@ -84,7 +84,7 @@ export function EarningsDesk() {
       </div>
       <div className="overflow-x-auto rounded-3xl bg-white">
         <table className="w-full text-left text-sm">
-          <thead className="text-[#1E6A83]">
+          <thead className="text-[#096ab7]">
             <tr>
               <th className="px-3 py-3">{t.saleCourse}</th>
               <th className="px-3 py-3">{t.saleDate}</th>
@@ -97,7 +97,7 @@ export function EarningsDesk() {
           </thead>
           <tbody>
             {rows.map((item) => (
-              <tr key={item.id} className="border-t border-[#1E6A83]/10">
+              <tr key={item.id} className="border-t border-[#096ab7]/10">
                 <td className="px-3 py-3 font-semibold">{item.label}</td>
                 <td className="px-3 py-3">{item.date}</td>
                 <td className="px-3 py-3">RM {item.gross}</td>

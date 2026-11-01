@@ -11,7 +11,7 @@ test('premium light text is ink or blue, never the cyan fill', () => {
   assert.equal(premiumLightText.ink, '#203337');
   assert.equal(premiumLightText.blue, '#1E6A83');
   assert.equal(premiumFill.cyan, '#3FE0D0');
-  assert.equal(Object.values(premiumLightText).includes(premiumFill.cyan), false);
+  assert.equal(new Set<string>(Object.values(premiumLightText)).has(premiumFill.cyan), false);
 });
 
 test('the landing does not paint cyan as text on a light surface', () => {

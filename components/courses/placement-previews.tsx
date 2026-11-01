@@ -24,17 +24,17 @@ export function CataloguePreview({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-4">
         <p className="text-sm text-muted-foreground">{PLACE.hiddenNote}</p>
-        <Link href="/courses" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+        <Link href="/courses" className="mt-2 inline-flex text-sm font-semibold text-[#096ab7]">{PLACE.openLive}</Link>
       </div>
     );
   }
   return (
     <div className="max-w-xs rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <div className="mb-3 h-24 rounded-xl bg-[linear-gradient(160deg,#1E6A83,#0B1417)]" />
-      <p className="font-semibold text-[#203337]">{title}</p>
-      <p className="mt-1 text-sm font-semibold text-[#1E6A83]">{priceLabel || PLACE.included}</p>
-      <span className="mt-3 inline-flex min-h-9 items-center rounded-lg bg-[#1E6A83] px-3 text-xs font-bold text-white">{PLACE.buy}</span>
-      <Link href="/courses" className="mt-3 block text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+      <div className="mb-3 h-24 rounded-xl bg-[linear-gradient(160deg,#096ab7,#0B1417)]" />
+      <p className="font-semibold text-[#11131b]">{title}</p>
+      <p className="mt-1 text-sm font-semibold text-[#096ab7]">{priceLabel || PLACE.included}</p>
+      <span className="mt-3 inline-flex min-h-9 items-center rounded-lg bg-[#096ab7] px-3 text-xs font-bold text-white">{PLACE.buy}</span>
+      <Link href="/courses" className="mt-3 block text-sm font-semibold text-[#096ab7]">{PLACE.openLive}</Link>
     </div>
   );
 }
@@ -70,7 +70,7 @@ export function FeaturedPreview({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-4">
         <p className="text-sm text-muted-foreground">{PLACE.notFeatured}</p>
-        <Link href="/courses#E9F7FAtured" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+        <Link href="/courses#E9F7FAtured" className="mt-2 inline-flex text-sm font-semibold text-[#096ab7]">{PLACE.openLive}</Link>
       </div>
     );
   }
@@ -78,7 +78,7 @@ export function FeaturedPreview({
   return (
     <div className="space-y-2">
       <FeaturedCarousel slides={[slide]} variant="preview" />
-      <Link href="/courses#E9F7FAtured" className="inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+      <Link href="/courses#E9F7FAtured" className="inline-flex text-sm font-semibold text-[#096ab7]">{PLACE.openLive}</Link>
     </div>
   );
 }
@@ -90,11 +90,11 @@ export function ProgrammePreview({ title, levels }: { title: string; levels: Pro
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       {levels.map((level) => (
-        <div key={level} className="rounded-2xl border border-[#1E6A83]/15 bg-[#F4FBFA] p-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#1E6A83]">{PLACE.yourProgramme}</p>
-          <p className="text-xs text-[#1E6A83]">{LEVEL_LABEL[level]}</p>
-          <p className="mt-1 text-sm font-semibold text-[#203337]">{title}</p>
-          <Link href="/dashboard/student#programme" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+        <div key={level} className="rounded-2xl border border-[#096ab7]/15 bg-[#F4FBFA] p-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#096ab7]">{PLACE.yourProgramme}</p>
+          <p className="text-xs text-[#096ab7]">{LEVEL_LABEL[level]}</p>
+          <p className="mt-1 text-sm font-semibold text-[#11131b]">{title}</p>
+          <Link href="/dashboard/student#programme" className="mt-2 inline-flex text-sm font-semibold text-[#096ab7]">{PLACE.openLive}</Link>
         </div>
       ))}
     </div>
@@ -108,8 +108,8 @@ export function InstitutionPreview({ title, schools }: { title: string; schools:
       {schools.map((school) => (
         <div key={school.id} className="rounded-2xl border border-border bg-card p-3">
           <p className="text-xs text-muted-foreground">{school.name}</p>
-          <p className="font-semibold text-[#203337]">{title}</p>
-          <Link href="/dashboard/institution/publishing" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+          <p className="font-semibold text-[#11131b]">{title}</p>
+          <Link href="/dashboard/institution/publishing" className="mt-2 inline-flex text-sm font-semibold text-[#096ab7]">{PLACE.openLive}</Link>
         </div>
       ))}
     </div>

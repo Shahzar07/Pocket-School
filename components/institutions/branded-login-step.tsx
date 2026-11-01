@@ -227,9 +227,9 @@ export function BrandedLoginStep({
           </button>
         </div>
       )}
-      {error && <p role="alert" className="rounded-xl bg-[#E9F7FA] px-3 py-2 text-sm">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-[#eaf6ff] px-3 py-2 text-sm">{error}</p>}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className="h-11 rounded-full bg-[#203337] px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => void save(published)}>
+        <button type="button" className="h-11 rounded-full bg-[#11131b] px-5 text-sm font-semibold text-white disabled:opacity-60" disabled={busy} onClick={() => void save(published)}>
           Save login page
         </button>
         <label className="inline-flex items-center gap-2 text-sm font-semibold">

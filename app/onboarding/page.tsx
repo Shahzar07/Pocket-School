@@ -176,7 +176,7 @@ export default function OnboardingPage() {
             <div className="w-16 h-16 rounded-2xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Users className="w-8 h-8 text-[var(--ps-cyan-ink)]" />
             </div>
-            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Welcome, {profile.name}!</h1>
+            <h1 className="text-3xl font-semibold text-foreground tracking-tight">Welcome, {profile.name}!</h1>
             <p className="text-muted-foreground mt-2 text-base">Ask your child to approve a link, or share an invite code from settings.</p>
           </div>
 
@@ -259,7 +259,7 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which programme are you on?</h1>
+                <h1 className="text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">Which programme are you on?</h1>
                 <p className="text-muted-foreground mt-2 text-base">Your year or level depends on the programme.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -299,7 +299,7 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <GraduationCap className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Which level are you on?</h1>
+                <h1 className="text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">Which level are you on?</h1>
                 <p className="text-muted-foreground mt-2 text-base">Your level depends on {programme}.</p>
               </div>
               <LevelMenu ariaLabel="Level" value={yearGroup} onChange={setYearGroup} />
@@ -318,7 +318,7 @@ export default function OnboardingPage() {
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-success flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Brain className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">How do you learn best?</h1>
+                <h1 className="text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">How do you learn best?</h1>
                 <p className="text-muted-foreground mt-2 text-base">We'll prioritise the formats that suit your style — you can always change this later.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
