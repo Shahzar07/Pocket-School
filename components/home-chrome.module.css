@@ -19,18 +19,27 @@
   left: 0;
   right: 0;
   z-index: 50;
-  color: #fff;
-  padding: 16px 40px;
+  height: 64px;
+  color: #203337;
+  padding: 0 24px;
   font-family: var(--font-sans), Arial, sans-serif;
+  background: #F4F6F6;
+  border-bottom: 1px solid rgba(32, 51, 55, 0.08);
 }
 .headerInner {
-  max-width: 1180px;
+  max-width: 1120px;
+  height: 64px;
   margin: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .brand {
   display: inline-flex;
@@ -38,18 +47,16 @@
   flex-shrink: 0;
   gap: 10px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 500;
   white-space: nowrap;
 }
 .mark {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   place-items: center;
-  border-radius: 10px;
-  background: #1E6A83;
-  color: #fff;
-  box-shadow: 0 0 0 3px #6FBBCE, 0 8px 18px var(--ps-glow);
+  color: #203337;
+  background: transparent;
 }
 .brand small {
   font-weight: 400;
@@ -61,13 +68,12 @@
   flex: 0 1 auto;
   min-width: 0;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   overflow: visible;
-  background: #ffffff26;
-  border: 1px solid #ffffff30;
-  padding: 9px 16px;
-  border-radius: 12px;
-  backdrop-filter: blur(12px);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
 }
 .moreMenu {
   position: relative;
@@ -107,16 +113,17 @@
   align-items: center;
   min-height: 32px;
   flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
 }
 .desktopNav a,
 .desktopNav summary {
   white-space: nowrap;
-  font-size: 12px;
-  line-height: 1.2;
-  color: #f2fbff;
+  font-size: 14px;
+  line-height: 20px;
+  color: #203337;
+  font-weight: 500;
 }
 .desktopNav .morePanel a {
   display: block;
@@ -146,15 +153,16 @@
   display: flex;
   gap: 10px;
   align-items: center;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   text-decoration: none;
-  color: var(--ps-cyan-ink);
-  background: var(--ps-cyan);
-  border: 1px solid var(--ps-cyan-border);
-  border-radius: 999px;
-  padding: 8px 14px;
-  box-shadow: 0 8px 18px var(--ps-glow);
+  color: #203337;
+  background: #3FE0D0;
+  border: 0;
+  border-radius: 8px;
+  height: 36px;
+  padding: 0 16px;
+  box-shadow: none;
 }
 .headerTools {
   display: flex;
@@ -179,24 +187,19 @@
 }
 .scrolled {
   position: fixed;
-  background: #fffefa;
-  color: #254b57;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  box-shadow: 0 3px 20px #193e4510;
-  backdrop-filter: blur(15px);
+  background: transparent;
+  color: #203337;
+  box-shadow: none;
 }
 .scrolled .desktopNav {
-  background: #edf4f5;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  background: transparent;
 }
 .scrolled .desktopNav a,
 .scrolled .desktopNav summary {
-  color: #315b68;
+  color: #203337;
 }
 .headerFlow {
-  position: absolute;
+  position: fixed;
 }
 .mobileNav {
   display: none;
@@ -205,28 +208,28 @@
   background: var(--ps-bg);
   color: var(--ps-ink);
   font-family: var(--font-sans), Arial, sans-serif;
-  padding: 55px max(24px, calc((100% - 1132px) / 2)) 0;
+  padding: 56px max(24px, calc((100% - 1132px) / 2)) 0;
   overflow: hidden;
 }
 .footerGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px;
+  gap: 24px;
 }
 .footerGrid p {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.7;
-  color: #7b8987;
-  margin: 19px 0;
+  color: #5F7074;
+  margin: 20px 0;
 }
 .footerGrid h2 {
   font-size: 13px;
-  font-weight: 600;
-  margin: 0 0 17px;
+  font-weight: 500;
+  margin: 0 0 16px;
 }
 .footerGrid > div > a:not(.brand) {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   margin: 12px 0;
 }
 .footerGrid a:hover {
@@ -234,9 +237,10 @@
 }
 .contactCard {
   grid-column: 1 / -1;
-  background: #ecefee;
-  border-radius: 14px;
-  padding: 21px;
+  background: #fff;
+  border: 1px solid rgba(32, 51, 55, 0.08);
+  border-radius: 16px;
+  padding: 20px;
 }
 .contactCard h2 {
   margin-bottom: 10px;
@@ -247,41 +251,41 @@
 .legalLinks {
   display: flex;
   flex-wrap: wrap;
-  gap: 9px 15px;
+  gap: 8px 16px;
   padding-top: 16px;
-  border-top: 1px solid #dfe7e4;
-  margin-top: 22px;
-  font-size: 9px;
+  border-top: 1px solid rgba(32, 51, 55, 0.08);
+  margin-top: 24px;
+  font-size: 12px;
 }
 .footerLegal {
-  margin-top: 35px;
-  color: #7c8987;
-  font-size: 9px;
-  line-height: 1.8;
+  margin-top: 32px;
+  color: #5F7074;
+  font-size: 12px;
+  line-height: 1.7;
 }
 .footerLegal p + p {
-  margin-top: 13px;
+  margin-top: 12px;
 }
 .footerWordmark {
   font-size: clamp(75px, 14.2vw, 215px);
-  font-weight: 600;
-  letter-spacing: -0.07em;
+  font-weight: 500;
+  letter-spacing: -0.03em;
   line-height: 1;
-  color: #fff;
+  color: rgba(32, 51, 55, 0.07);
   white-space: nowrap;
-  margin: 25px -30px -25px;
+  margin: 24px -32px -24px;
   user-select: none;
 }
 @media (max-width: 900px) {
   .header {
-    padding: 16px 25px;
+    padding: 0 24px;
   }
   .brand {
     font-size: 14px;
   }
   .desktopNav {
-    gap: 17px;
-    padding: 9px 17px;
+    gap: 12px;
+    padding: 0;
   }
   .footerGrid {
     gap: 20px;
@@ -297,14 +301,18 @@
 }
 @media (max-width: 800px) {
   .header {
-    padding: 12px;
+    height: auto;
+    padding: 8px 16px;
   }
   .headerInner {
-    gap: 12px;
+    height: auto;
+    min-height: 44px;
+    gap: 8px;
+    padding: 0;
   }
   .brand {
-    font-size: 13px;
-    gap: 7px;
+    font-size: 14px;
+    gap: 8px;
   }
   .brand > svg {
     width: 22px;
@@ -335,10 +343,11 @@
     flex-shrink: 0;
     display: grid;
     place-items: center;
-    width: 32px;
-    height: 32px;
-    background: #ffffff20;
-    border-radius: 7px;
+    width: 36px;
+    height: 36px;
+    background: #F4F6F6;
+    color: #203337;
+    border-radius: 8px;
     cursor: pointer;
   }
   .menuButton svg {
@@ -424,19 +433,34 @@
   }
 }
 
-:global(.dark) .scrolled {
-  background: var(--ps-bg);
-  color: var(--ps-ink);
-  box-shadow: 0 3px 20px #00000055;
+:global(.dark) .header,
+:global(.dark) .scrolled,
+:global(.dark) .headerFlow {
+  background: #0B1417;
+  color: #E7F4F2;
+  border-bottom-color: rgba(231, 244, 242, 0.08);
 }
 
-:global(.dark) .scrolled .desktopNav {
-  background: var(--ps-mist);
-  border-color: var(--ps-line);
+:global(.dark) .headerInner {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
-:global(.dark) .scrolled .desktopNav a {
-  color: var(--ps-ink);
+:global(.dark) .mark {
+  color: #E7F4F2;
+}
+
+:global(.dark) .desktopNav a,
+:global(.dark) .desktopNav summary,
+:global(.dark) .scrolled .desktopNav a,
+:global(.dark) .scrolled .desktopNav summary {
+  color: #E7F4F2;
+}
+
+:global(.dark) .menuButton {
+  background: #122226;
+  color: #E7F4F2;
 }
 
 :global(.dark) .mobileNav {

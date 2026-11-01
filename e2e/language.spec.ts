@@ -19,14 +19,14 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
   await expect(stats).toContainText('Plus continuous professional development and independent learning');
   await expect(stats).not.toContainText('degree foundation');
   const statColor = await stats.locator('dt').first().evaluate((el) => getComputedStyle(el).color);
-  expect(statColor).toBe('rgb(255, 255, 255)');
+  expect(statColor).toBe('rgb(32, 51, 55)');
   const captionColor = await stats.locator('dd').first().evaluate((el) => getComputedStyle(el).color);
-  expect(captionColor).toBe('rgb(255, 255, 255)');
+  expect(captionColor).toBe('rgb(95, 112, 116)');
   await page.evaluate(() => document.documentElement.classList.add('dark'));
   const darkValue = await stats.locator('dt').nth(3).evaluate((el) => getComputedStyle(el).color);
   const darkCaption = await stats.locator('dd').nth(3).evaluate((el) => getComputedStyle(el).color);
-  expect(darkValue).toBe('rgb(255, 255, 255)');
-  expect(darkCaption).toBe('rgb(255, 255, 255)');
+  expect(darkValue).toBe('rgb(231, 244, 242)');
+  expect(darkCaption).toBe('rgb(147, 167, 171)');
   await page.evaluate(() => document.documentElement.classList.remove('dark'));
   for (const width of [390, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -37,7 +37,7 @@ test('Bahasa Melayu changes the public nav and the homepage hero', async ({ page
     for (const extra of cells) expect(extra).toBeLessThanOrEqual(1);
   }
   await page.setViewportSize({ width: 1280, height: 900 });
-  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Home', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Start for free' })).toBeVisible();
   await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
   const nav = page.getByRole('navigation', { name: 'Main navigation' });

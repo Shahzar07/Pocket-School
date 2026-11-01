@@ -94,10 +94,10 @@ export function CookieConsent() {
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 40 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 260 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="fixed bottom-0 inset-x-0 z-[200] p-3 sm:p-5 print:hidden"
           role="dialog"
           aria-label={t('cookie.dialog')}
