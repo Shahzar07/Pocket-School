@@ -2,7 +2,7 @@ import type { ReactNode, SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
-function Stroke({ size = 24, children, ...props }: IconProps & { children: ReactNode }) {
+function Stroke({ size = 16, children, ...props }: IconProps & { children: ReactNode }) {
   return (
     <svg
       width={size}
@@ -10,7 +10,7 @@ function Stroke({ size = 24, children, ...props }: IconProps & { children: React
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.75}
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden

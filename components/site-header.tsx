@@ -140,7 +140,7 @@ export function SiteHeader() {
                   <Link href="/pricing">{t("header.pricing")}</Link>
                   <Link href="/blog" aria-current={pathname.startsWith("/blog") ? "page" : undefined}>{t("header.blog")}</Link>
                   <Link href="/institutions/register">{t("header.forSchools")}</Link>
-                  <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-[#1E6A83]">{t("header.programmes")}</p>
+                  <p className="mt-3 text-[13px] font-normal text-[#5F7074]">{t("header.programmes")}</p>
                   {MARKET_LINKS.map((item) => (
                     <Link key={item.href} href={item.href}>{item.label}</Link>
                   ))}
@@ -156,7 +156,7 @@ export function SiteHeader() {
             <Link className={styles.headerSign} href="/login">{t("header.signIn")}</Link>
           )}
           <Link className={styles.headerCta} href={user ? dashPath : "/signup"}>
-            {user ? t("header.dashboard") : t("header.startFree")} <IconArrow size={14} className="ps-dir-icon" />
+            {user ? t("header.dashboard") : t("header.startFree")} <IconArrow size={16} className="ps-dir-icon" />
           </Link>
           <button
             className={styles.menuButton}
@@ -167,7 +167,7 @@ export function SiteHeader() {
             aria-controls="site-navigation"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <IconClose size={18} /> : <IconMenu size={18} />}
+            {mobileOpen ? <IconClose size={16} /> : <IconMenu size={16} />}
           </button>
         </div>
         {mobileOpen && (
