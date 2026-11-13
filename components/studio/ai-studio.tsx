@@ -28,6 +28,8 @@ import {
   RefreshCw, X, Menu, Mic, Volume2, Camera, Paperclip,
   Video, Headphones, Asterisk, Check,
 } from 'lucide-react';
+import { greeting } from '@/lib/greeting';
+import './iris.css';
 import { AI_TEACHERS, ET_AI_TUTOR, type AiTeacher } from '@/lib/ai-teachers';
 import { TeacherPortrait } from '@/components/teachers/portrait';
 import { ET_COPY } from '@/lib/studio/et-copy';
@@ -696,11 +698,13 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
 
   const activeFormat = skill ? FORMATS.find(f => f.id === skill) : null;
   const empty = chat.turns.length === 0;
+  const firstName = String(profile?.displayName || profile?.name || '').trim().split(/\s+/)[0] ?? '';
+  const recentChats = chats.filter(item => item.id !== chat.id && item.turns.length > 0).slice(-4).reverse();
 
   // ── Auth gate: AI Studio is a paid feature and must not run anonymously ──
   if (!authReady) {
     return (
-      <div className={`flex ${frame} items-center justify-center ${C.bg}`} style={shellVars}>
+      <div className={`iris flex ${frame} items-center justify-center ${C.bg}`} style={shellVars}>
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: C.accent }} />
       </div>
     );
@@ -708,7 +712,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
 
   if (!user) {
     return (
-      <div className={`flex ${frame} items-center justify-center px-5 ${C.bg} ${C.text}`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'}>
+      <div className={`iris flex ${frame} items-center justify-center px-5 ${C.bg} ${C.text}`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'}>
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -771,7 +775,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
   }
 
   return (
-    <div className={`relative flex ${frame} ${C.bg} ${C.text} overflow-hidden ${FOCUS} [&_a]:focus-visible:outline [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-[#d9efff] [&_button]:focus-visible:outline [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-[#d9efff] [&_select]:focus-visible:outline [&_select]:focus-visible:outline-2 [&_select]:focus-visible:outline-[#d9efff] [&_input]:focus-visible:outline [&_input]:focus-visible:outline-2 [&_input]:focus-visible:outline-[#d9efff] [&_textarea]:focus-visible:outline [&_textarea]:focus-visible:outline-2 [&_textarea]:focus-visible:outline-[#d9efff]`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'}>
+    <div className={`iris relative flex ${frame} ${C.bg} ${C.text} overflow-hidden ${FOCUS} [&_a]:focus-visible:outline [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-[#d9efff] [&_button]:focus-visible:outline [&_button]:focus-visible:outline-2 [&_button]:focus-visible:outline-offset-2 [&_button]:focus-visible:outline-[#d9efff] [&_select]:focus-visible:outline [&_select]:focus-visible:outline-2 [&_select]:focus-visible:outline-[#d9efff] [&_input]:focus-visible:outline [&_input]:focus-visible:outline-2 [&_input]:focus-visible:outline-[#d9efff] [&_textarea]:focus-visible:outline [&_textarea]:focus-visible:outline-2 [&_textarea]:focus-visible:outline-[#d9efff]`} style={shellVars} data-studio-layout={light ? 'light' : 'dark'} data-studio-theme={light ? 'light' : 'dark'}>
 
       <ShellSidebar
         open={sidebarOpen}
@@ -840,7 +844,8 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
       {sidebarOpen && <button type="button" className="fixed inset-0 bg-black/50 z-30 lg:hidden" aria-label="Close menu" onClick={() => setSidebarOpen(false)} />}
 
       {/* ── Main ── */}
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <main className="iris-stage flex min-h-0 min-w-0 flex-1 flex-col">
+        {view === 'chat' ? <div className="iris-glow" aria-hidden /> : null}
         {view !== 'chat' ? (
           <div className={`flex shrink-0 items-center justify-end overflow-hidden border-b px-2 py-1 ${C.borderSoft}`}>
             <ShellEssentials />
@@ -911,50 +916,30 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
               </select>
               <div className="ms-auto min-w-0 shrink-0 max-sm:max-w-[62%]"><ShellEssentials /></div>
             </header>
+            <div className={empty ? 'iris-home' : 'contents'}>
             {/* Thread */}
-            <div className="min-h-0 flex-1 overflow-y-auto" data-et-chat="1">
-              <div className="max-w-3xl mx-auto px-4 pb-2 pt-3 sm:px-6">
+            <div className={empty ? 'shrink-0' : 'min-h-0 flex-1 overflow-y-auto'} data-et-chat="1">
+              <div className={empty ? 'iris-col pb-5 pt-2' : 'max-w-3xl mx-auto px-4 pb-2 pt-3 sm:px-6'}>
                 {empty ? (
                   <div className="relative text-center" data-testid="studio-greeting">
-                    <div className="pointer-events-none absolute inset-x-6 top-0 h-36 rounded-full opacity-50 blur-3xl" style={{ background: HERO }} aria-hidden />
-                    <div className="relative mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full" style={{ background: FILL, boxShadow: '0 0 48px rgba(63,224,208,0.35)' }}>
-                      <Asterisk className="h-6 w-6 text-[#11131b]" />
+                    <div className="iris-orb iris-in" aria-hidden>
+                      <div className="iris-orb__glass">
+                        <div className="iris-orb__core" />
+                        <div className="iris-orb__core iris-orb__core--b" />
+                        <div className="iris-orb__shine" />
+                      </div>
                     </div>
-                    <h1 className="relative font-heading text-2xl leading-tight tracking-tight sm:text-3xl">
-                      Hi, I&apos;m <span style={{ color: C.accent }}>ET AI</span>.
-                    </h1>
-                    <p className={`relative mx-auto mt-1 max-w-md text-sm ${C.dim} sm:text-base`}>
-                      Ask anything, or pick a skill. ET AI turns a topic into a lesson, quiz, video, audio and more.
+                    <p className="iris-hello iris-in" style={{ animationDelay: '120ms' }}>
+                      {greeting()}{firstName ? `, ${firstName}` : ''}
                     </p>
-                    <div className="relative mt-3 grid w-full gap-2 text-left sm:grid-cols-2">
-                      {SUGGESTIONS.map(s => (
-                        <button
-                          key={s.label}
-                          onClick={() => { setSkill(s.format); submit(s.text, s.format); }}
-                          className={`flex items-center gap-2.5 rounded-2xl border ${C.border} ${C.surface} px-3 py-2 text-left text-sm ${C.text} transition hover:-translate-y-0.5 hover:border-[#d9efff] motion-reduce:transform-none`}
-                        >
-                          {s.format
-                            ? <span style={{ color: C.accent }}>{FORMATS.find(f => f.id === s.format)?.icon}</span>
-                            : <MessageSquare className="w-4 h-4" style={{ color: C.accent }} />}
-                          {s.label}
-                        </button>
+                    <h1 className="iris-title">
+                      {"What's on your mind?".split(' ').map((word, i) => (
+                        <span key={i}><i style={{ animationDelay: `${220 + i * 70}ms` }}>{word}&nbsp;</i></span>
                       ))}
-                    </div>
-                    <div className="relative mt-3 flex flex-wrap justify-center gap-2" data-studio-tools="chips">
-                      {studioToolLinks(embedded, profile?.role, timetableGate !== 'hidden').map((link) => (
-                        <Link key={link.label} href={link.href} className={CHIP}>{link.label}</Link>
-                      ))}
-                      {canUseDeskTool(profile, 'teacher-toolkit') && (
-                        <button type="button" className={CHIP} onClick={() => setView('teacher-toolkit')}>Teacher Toolkit</button>
-                      )}
-                      {canUseDeskTool(profile, 'parent-explainer') && (
-                        <button type="button" className={CHIP} onClick={() => setView('parent-explainer')}>Parent Explainer</button>
-                      )}
-                      {canUseDeskTool(profile, 'research-helper') && (
-                        <button type="button" className={CHIP} onClick={() => setView('research-helper')}>Research Helper</button>
-                      )}
-                      <button type="button" className={CHIP} onClick={() => setView('tools')}>All tools</button>
-                    </div>
+                    </h1>
+                    <p className="iris-sub iris-in" style={{ animationDelay: '520ms' }}>
+                      Ask {teacher.name} anything, or turn a topic into a lesson, quiz, video or flashcards.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-7">
@@ -1039,10 +1024,10 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
             </div>
 
             {/* ── Composer ── */}
-            <div className="shrink-0 px-4 pb-3 pt-1 sm:px-6" data-studio-composer="1">
-              <div className="max-w-3xl mx-auto">
+            <div className={empty ? 'shrink-0' : 'shrink-0 px-4 pb-3 pt-1 sm:px-6'} data-studio-composer="1">
+              <div className={empty ? 'iris-col iris-in' : 'max-w-3xl mx-auto'} style={empty ? { animationDelay: '600ms' } : undefined}>
                 <div
-                  className={`rounded-3xl border ${dragOver ? 'border-[#d9efff]' : C.border} ${C.surface} shadow-[0_8px_30px_rgba(63,224,208,0.12)] focus-within:border-[#d9efff] transition-colors`}
+                  className={`iris-composer rounded-3xl border ${dragOver ? 'border-[#d9efff]' : C.border} ${C.surface} shadow-[0_8px_30px_rgba(63,224,208,0.12)] focus-within:border-[#d9efff] transition-colors`}
                   onDragOver={(event) => { event.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={(event) => {
@@ -1199,6 +1184,65 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                   ET AI can make mistakes. Check important answers.
                 </p>
               </div>
+            </div>
+            {empty ? (
+              <div className="iris-col shrink-0">
+                <div className="iris-cards">
+                  {SUGGESTIONS.map((s, i) => {
+                    const format = FORMATS.find(f => f.id === s.format);
+                    return (
+                      <button
+                        key={s.label}
+                        type="button"
+                        aria-label={s.label}
+                        onClick={() => { setSkill(s.format); submit(s.text, s.format); }}
+                        className="iris-card iris-in"
+                        style={{ animationDelay: `${700 + i * 70}ms` }}
+                      >
+                        <span className={`iris-card__icon iris-card__icon--${i}`}>
+                          {format ? format.icon : <MessageSquare className="h-4 w-4" />}
+                        </span>
+                        <span>
+                          <span className="iris-card__title block">{format ? format.label : 'Tutor chat'}</span>
+                          <span className="iris-card__hint block">{s.label}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="iris-chips iris-in" style={{ animationDelay: '980ms' }} data-studio-tools="chips">
+                  {studioToolLinks(embedded, profile?.role, timetableGate !== 'hidden').map((link) => (
+                    <Link key={link.label} href={link.href} className={CHIP}>{link.label}</Link>
+                  ))}
+                  {canUseDeskTool(profile, 'teacher-toolkit') && (
+                    <button type="button" className={CHIP} onClick={() => setView('teacher-toolkit')}>Teacher Toolkit</button>
+                  )}
+                  {canUseDeskTool(profile, 'parent-explainer') && (
+                    <button type="button" className={CHIP} onClick={() => setView('parent-explainer')}>Parent Explainer</button>
+                  )}
+                  {canUseDeskTool(profile, 'research-helper') && (
+                    <button type="button" className={CHIP} onClick={() => setView('research-helper')}>Research Helper</button>
+                  )}
+                  <button type="button" className={CHIP} onClick={() => setView('tools')}>All tools</button>
+                </div>
+                {recentChats.length > 0 ? (
+                  <section className="iris-recent iris-in" style={{ animationDelay: '1080ms' }} aria-label="Recent conversations">
+                    <div className="iris-recent__head">
+                      <span>Recent Conversations</span>
+                      <button type="button" className="iris-more" onClick={() => setSidebarOpen(true)}>See More →</button>
+                    </div>
+                    <div className="iris-recent__list">
+                      {recentChats.map(item => (
+                        <button key={item.id} type="button" className="iris-recent__row" onClick={() => { setActiveChatId(item.id); setView('chat'); }}>
+                          <span className="min-w-0 truncate">{item.title}</span>
+                          <span>{item.turns.length} {item.turns.length === 1 ? 'message' : 'messages'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+              </div>
+            ) : null}
             </div>
           </>
         )}

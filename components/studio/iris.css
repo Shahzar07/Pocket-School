@@ -1,0 +1,123 @@
+/* ET AI home: blue light from the top centre, a glass orb, one centred column. */
+
+.iris {
+  /* Poket's own palette. Surfaces and text come from the studio theme variables,
+     so the layout follows light and dark mode. */
+  --iris-a: #178bee;
+  --iris-b: #096ab7;
+  --iris-c: #8bc9f5;
+  --iris-ink: var(--studio-text);
+  --iris-dim: var(--studio-dim);
+  --iris-faint: var(--studio-faint);
+  --iris-surface: var(--studio-surface);
+  --iris-line: var(--studio-border-soft);
+}
+.iris[data-studio-theme="light"] { --iris-dim: #626976; --iris-faint: #7a8190; }
+
+/* Top light */
+.iris-stage { position: relative; isolation: isolate; }
+.iris-glow {
+  position: absolute; inset: 0 0 auto 0; height: min(64vh, 620px); z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(46% 62% at 50% -8%, rgba(23, 139, 238, .34), transparent 70%),
+    radial-gradient(34% 48% at 68% -6%, rgba(139, 201, 245, .5), transparent 72%),
+    radial-gradient(30% 44% at 30% -8%, rgba(217, 239, 255, .9), transparent 72%);
+}
+
+/* Home: one centred column that scrolls as a whole */
+.iris-home { display: flex; min-height: 0; flex: 1 1 0%; flex-direction: column; overflow-y: auto; padding: 8px 0 28px; }
+.iris-home > :first-child { margin-top: auto; }
+.iris-home > :last-child { margin-bottom: auto; }
+.iris-col { width: 100%; max-width: 740px; margin-inline: auto; padding-inline: 16px; }
+
+/* Orb */
+.iris-orb { position: relative; width: 84px; height: 84px; margin: 0 auto 18px; border-radius: 50%; }
+.iris-orb::before {
+  content: ""; position: absolute; inset: -34px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(23, 139, 238, .45), rgba(139, 201, 245, .2) 55%, transparent 76%);
+  filter: blur(6px); animation: iris-pulse 4s ease-in-out infinite;
+}
+.iris-orb__glass {
+  position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 50% 55%, #0c4f8a 0%, #063358 70%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), inset 0 -10px 22px rgba(23, 139, 238, .6), inset 0 8px 18px rgba(255, 255, 255, .3), 0 14px 40px rgba(23, 139, 238, .38);
+}
+.iris-orb__core {
+  position: absolute; inset: -30%; border-radius: 50%;
+  background: conic-gradient(from 0deg, #178bee, #d9efff, #8bc9f5, #096ab7, #5fb4f3, #178bee);
+  filter: blur(9px) saturate(1.25); opacity: .95;
+  animation: iris-spin 8s linear infinite;
+}
+.iris-orb__core--b { inset: -10%; animation-duration: 5s; animation-direction: reverse; mix-blend-mode: screen; opacity: .6; filter: blur(12px); }
+.iris-orb__shine {
+  position: absolute; inset: 0; border-radius: 50%;
+  background:
+    radial-gradient(60% 38% at 38% 18%, rgba(255, 255, 255, .75), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle at 50% 50%, transparent 56%, rgba(6, 51, 88, .45) 82%);
+}
+@keyframes iris-spin { to { transform: rotate(360deg); } }
+@keyframes iris-pulse { 0%, 100% { opacity: .65; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.08); } }
+
+/* Hero copy */
+.iris-hello { color: var(--iris-dim); font-size: 17px; line-height: 1.3; }
+.iris-title { margin-top: 6px; color: var(--iris-ink); font-size: clamp(22px, 3.4vw, 30px); line-height: 1.15; font-weight: 500; letter-spacing: .01em; text-transform: uppercase; }
+.iris-title span { display: inline-block; overflow: hidden; vertical-align: bottom; }
+.iris-title span > i { display: inline-block; font-style: normal; animation: iris-rise .9s cubic-bezier(.16, 1, .3, 1) both; }
+.iris-sub { margin-top: 8px; color: var(--iris-dim); font-size: 14px; }
+
+/* Composer: a gradient hairline around a dark field */
+.iris .iris-composer {
+  border: 1.2px solid transparent !important; border-radius: 14px !important;
+  background: linear-gradient(var(--iris-surface), var(--iris-surface)) padding-box, linear-gradient(90deg, #178bee, #096ab7, #8bc9f5, #178bee) border-box !important;
+  box-shadow: 0 22px 60px -28px rgba(23, 139, 238, .55) !important;
+}
+.iris .iris-composer textarea { min-height: 52px; }
+.iris .iris-composer button[aria-label="Send"] { color: #fff; background: linear-gradient(135deg, #178bee, #096ab7) !important; box-shadow: 0 6px 18px rgba(23, 139, 238, .4); }
+.iris .iris-composer .border-\[\#3A3733\] { border-color: var(--studio-border); }
+
+/* Quick actions */
+.iris-cards { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+@media (min-width: 900px) { .iris-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.iris-card {
+  display: flex; flex-direction: column; gap: 14px; padding: 14px; text-align: left; border-radius: 14px;
+  background: var(--iris-surface); border: 1px solid var(--iris-line); color: var(--iris-ink); box-shadow: 0 1px 2px rgba(17, 19, 27, .04);
+  transition: transform .25s cubic-bezier(.2, .8, .2, 1), border-color .25s, background-color .25s;
+}
+.iris-card:hover { transform: translateY(-2px); border-color: var(--iris-a); box-shadow: 0 14px 30px -18px rgba(23, 139, 238, .55); }
+.iris-card__icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #fff; }
+.iris-card__icon--0 { background: #178bee; }
+.iris-card__icon--1 { background: #096ab7; }
+.iris-card__icon--2 { background: #11131b; }
+.iris-card__icon--3 { background: #5fb4f3; }
+.iris-card__title { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+.iris-card__hint { margin-top: 3px; font-size: 12px; color: var(--iris-dim); line-height: 1.3; }
+
+.iris-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+.iris-chips > *:hover { border-color: var(--iris-a) !important; }
+
+/* Recent conversations */
+.iris-recent { margin-top: 26px; }
+.iris-recent__head { display: flex; align-items: center; justify-content: space-between; color: var(--iris-dim); font-size: 13px; }
+.iris-recent__list { position: relative; margin: 10px 0 0 6px; padding-left: 18px; border-left: 1px solid var(--studio-border); -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent); }
+.iris-recent__row { position: relative; display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 16px; padding: 7px 0; text-align: left; color: var(--iris-ink); font-size: 13.5px; }
+.iris-recent__row::before { content: ""; position: absolute; left: -18px; top: 50%; width: 12px; height: 1px; background: var(--studio-border); }
+.iris-recent__row:hover { color: var(--iris-b); }
+.iris-recent__row span:last-child { flex: none; color: var(--iris-faint); font-size: 12px; }
+.iris-more { color: var(--studio-accent-text); font-size: 13px; font-weight: 600; }
+.iris-more:hover { text-decoration: underline; }
+
+/* Entrance */
+.iris-in { animation: iris-settle .7s cubic-bezier(.22, 1, .36, 1) both; }
+.iris-orb.iris-in { animation: iris-orb-in 1s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes iris-settle { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes iris-rise { from { transform: translateY(115%); } to { transform: none; } }
+@keyframes iris-orb-in { from { clip-path: circle(0% at 50% 50%); transform: scale(.92); } to { clip-path: circle(120% at 50% 50%); transform: none; } }
+
+@media (max-width: 639px) {
+  .iris-recent__row { flex-direction: column; gap: 2px; }
+  .iris-cards { grid-template-columns: 1fr; }
+  .iris-card { flex-direction: row; align-items: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iris-in, .iris-orb.iris-in, .iris-title span > i, .iris-orb::before, .iris-orb__core { animation: none !important; }
+}
