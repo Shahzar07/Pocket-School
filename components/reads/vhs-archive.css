@@ -1,0 +1,195 @@
+/* Leon Vasari film archive: a curved shelf of tapes. Everything is scoped to .lva. */
+
+.lva {
+  --paper: #ECE8E0;
+  --sheet: #F3F0EA;
+  --ink: #141414;
+  --muted: #6D6A63;
+  --cobalt: #1F3FB0;
+  --rule: rgba(20, 20, 20, .9);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --H: min(47vh, 33vw);
+  --cy: 41%;
+  --sans: var(--lva-sans), "Inter Tight", var(--lva-jp), "Noto Sans JP", system-ui, sans-serif;
+  --serif: var(--lva-serif), "Newsreader", Georgia, serif;
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.lva *, .lva *::before, .lva *::after { box-sizing: border-box; }
+.lva a { color: inherit; text-decoration: none; }
+.lva button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.lva i { font-style: normal; display: block; }
+.lva.lva-fine, .lva.lva-fine a, .lva.lva-fine button { cursor: none; }
+.lva-defs { position: absolute; }
+
+.lva-grain {
+  position: absolute; inset: 0; z-index: 40; pointer-events: none;
+  mix-blend-mode: multiply; opacity: .6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .42 0 0 0 0 .38 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+.lva-probe { position: absolute; left: -9999px; top: 0; width: 1px; height: var(--H); visibility: hidden; }
+
+.lva-lbl { font-family: var(--sans); font-weight: 600; font-size: 10.5px; line-height: 1; letter-spacing: .14em; text-transform: uppercase; }
+.lva-box { display: inline-flex; align-items: center; height: 21px; padding: 0 8px; border: 1px solid var(--rule); }
+
+/* Top bar */
+.lva-top { position: absolute; inset: 0 0 auto 0; z-index: 30; height: 76px; padding: 0 36px; display: flex; align-items: center; justify-content: space-between; color: var(--cobalt); }
+.lva-brand, .lva-d-brand { display: flex; align-items: center; gap: 16px; color: var(--cobalt); }
+.lva-brand-line { width: 40px; height: 1px; background: currentColor; }
+.lva-nav { display: flex; align-items: center; gap: 34px; }
+.lva-burger { width: 26px; height: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+.lva-burger i { height: 1.5px; background: var(--cobalt); }
+
+/* Halftone kanji */
+.lva-kanji {
+  position: absolute; z-index: 1; pointer-events: none;
+  writing-mode: vertical-rl;
+  font-family: var(--lva-jp), "Noto Sans JP", sans-serif; font-weight: 800;
+  font-size: min(19vh, 12.5vw); line-height: 1.02; letter-spacing: .02em;
+  color: transparent;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(64, 82, 138, .55) 0 36%, transparent 40%) 0 0 / 3px 3px,
+    linear-gradient(rgba(110, 122, 160, .26), rgba(110, 122, 160, .26));
+  -webkit-background-clip: text; background-clip: text;
+}
+.lva-k1 { left: 2.4vw; top: 13vh; }
+.lva-k2 { right: 2.4vw; top: 9vh; }
+
+/* Floor shadow */
+.lva-floor {
+  position: absolute; z-index: 2; pointer-events: none;
+  left: 50%; top: calc(var(--cy) + var(--H) * .47);
+  width: min(96vw, calc(var(--H) * 3.6)); height: calc(var(--H) * .26);
+  transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 40%, rgba(40, 32, 20, .30), rgba(40, 32, 20, .10) 55%, transparent 72%);
+}
+
+/* Shelf */
+.lva-shelf {
+  position: absolute; z-index: 10; left: 0; right: 0;
+  top: calc(var(--cy) - var(--H) / 2 - 50px); height: calc(var(--H) + 100px);
+  perspective: 1400px; perspective-origin: 50% 50%;
+  touch-action: pan-y;
+}
+.lva-stage { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; }
+.lva-tape { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-style: preserve-3d; will-change: transform; }
+.lva-face {
+  position: absolute; top: calc(var(--H) / -2); height: var(--H);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: 2px; background-repeat: no-repeat; background-color: #2A2722;
+  --shade: 0;
+}
+.lva-face::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: #000; opacity: var(--shade); pointer-events: none; }
+.lva-cv { box-shadow: 0 34px 60px -30px rgba(20, 16, 10, .6); }
+
+/* Play ring */
+.lva-ring {
+  position: absolute; z-index: 20; width: 42px; height: 42px; margin: -21px 0 0 -21px;
+  border-radius: 50%; border: 1px solid var(--cobalt); background: rgba(236, 232, 224, .8);
+  display: grid; place-items: center; transform: scale(0);
+}
+.lva-ring i { width: 0; height: 0; margin-left: 3px; border-left: 12px solid var(--cobalt); border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+
+/* Caption */
+.lva-cap {
+  position: absolute; z-index: 20; left: 50%; top: calc(var(--cy) + var(--H) / 2 + 4.2vh);
+  transform: translateX(-50%); display: grid; justify-items: center; gap: 10px; text-align: center; pointer-events: none;
+}
+.lva-mask { position: relative; overflow: hidden; width: min(80vw, 640px); }
+.lva-mask::before { content: "\00a0"; visibility: hidden; }
+.lva-mask > span { position: absolute; inset: 0; display: block; white-space: nowrap; }
+.lva-cap-title { font-weight: 600; font-size: clamp(28px, 3.4vw, 46px); line-height: 1.12; letter-spacing: -.015em; color: var(--cobalt); }
+.lva-cap-sub { font-size: 9.5px; letter-spacing: .24em; color: var(--cobalt); line-height: 1.4; }
+.lva-cap-rule { width: 18px; height: 1px; background: var(--cobalt); }
+.lva-cap-year { font-weight: 500; font-size: 10.5px; letter-spacing: .08em; line-height: 1.4; color: var(--ink); }
+
+/* Arrows */
+.lva-arr {
+  position: absolute; z-index: 21; width: 44px; height: 44px; display: grid; place-items: center; color: var(--cobalt);
+  top: calc(var(--cy) + var(--H) / 2 + 4.2vh + clamp(28px, 3.4vw, 46px) * .56 - 22px);
+}
+.lva-prev { left: calc(50% - min(19vw, 250px) - 22px); }
+.lva-next { left: calc(50% + min(19vw, 250px) - 22px); }
+
+/* Timeline */
+.lva-tl { position: absolute; z-index: 20; left: 36px; right: 36px; bottom: 64px; height: 40px; color: var(--cobalt); }
+.lva-tl-line { position: absolute; left: 0; right: 0; top: 12px; height: 1px; background: var(--cobalt); opacity: .75; }
+.lva-tl-ticks { position: absolute; inset: 0; }
+.lva-tick { position: absolute; top: 12px; width: 1px; height: 7px; background: var(--cobalt); opacity: .4; }
+.lva-tick.lva-major { height: 13px; opacity: .75; }
+.lva-year { position: absolute; top: 30px; transform: translateX(-50%); font-weight: 500; font-size: 9.5px; line-height: 1; }
+.lva-year.lva-first { transform: none; }
+.lva-year.lva-last { transform: translateX(-100%); }
+.lva-tl-dot { position: absolute; top: 12px; width: 9px; height: 9px; margin: -4px 0 0 -4.5px; border-radius: 50%; background: var(--cobalt); }
+.lva-tl-hit { position: absolute; inset: -6px 0; }
+
+/* Footer */
+.lva-foot { position: absolute; z-index: 20; left: 36px; right: 36px; bottom: 24px; display: flex; justify-content: space-between; color: var(--cobalt); }
+
+/* Cursor */
+.lva-cursor { position: absolute; left: 0; top: 0; z-index: 100; width: 58px; height: 58px; pointer-events: none; display: none; }
+.lva-fine .lva-cursor { display: block; }
+.lva-cur-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--ink); transition: transform .5s var(--ease), background-color .4s, border-color .4s; }
+.lva-cur-dot { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: var(--ink); transition: transform .4s var(--ease); }
+.lva-cur-label { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: #fff; font-weight: 600; font-size: 10px; line-height: 1.25; letter-spacing: .08em; transform: scale(0); transition: transform .45s var(--ease); }
+.lva-cursor.lva-spine .lva-cur-ring { transform: scale(.72); }
+.lva-cursor.lva-btn .lva-cur-ring { transform: scale(.55); }
+.lva-cursor.lva-btn .lva-cur-dot { transform: scale(0); }
+.lva-cursor.lva-open .lva-cur-ring { transform: scale(1.75); background: var(--cobalt); border-color: var(--cobalt); }
+.lva-cursor.lva-open .lva-cur-dot { transform: scale(0); }
+.lva-cursor.lva-open .lva-cur-label { transform: scale(1); }
+
+/* Detail sheet */
+.lva-detail {
+  position: absolute; inset: 0; z-index: 60; background: var(--sheet);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4vw; padding: 110px 6vw 56px 7vw;
+}
+.lva-detail[hidden] { display: none; }
+.lva-close { position: absolute; left: 36px; top: 28px; }
+.lva-d-brand { position: absolute; right: 36px; top: 33px; }
+.lva-d-left { align-self: center; max-width: 520px; display: grid; gap: 18px; justify-items: start; }
+.lva-ln { overflow: hidden; }
+.lva-ln > * { margin: 0; }
+.lva-d-sub { color: var(--cobalt); line-height: 1.4; }
+.lva-d-title { font-weight: 600; font-size: clamp(44px, 5.2vw, 80px); line-height: 1; letter-spacing: -.03em; color: var(--cobalt); padding-bottom: .08em; }
+.lva-d-meta { color: var(--muted); line-height: 1.4; }
+.lva-d-syn { font-family: var(--serif); font-size: 17px; line-height: 1.5; max-width: 42ch; user-select: text; -webkit-user-select: text; }
+.lva-d-credit { font-family: var(--serif); font-style: italic; font-size: 15px; line-height: 1.5; color: var(--muted); }
+.lva-watch { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border: 1px solid var(--cobalt); color: var(--cobalt); }
+.lva-d-right { display: grid; place-items: center; min-height: 0; }
+.lva-poster { height: min(100%, 78vh); max-width: 100%; aspect-ratio: 474 / 900; }
+
+/* Phones */
+@media (max-width: 767px) {
+  .lva { --H: min(68vw, 40svh); --cy: 43%; }
+  .lva-top { height: 60px; padding: 0 16px; }
+  .lva-nav a { display: none; }
+  .lva-brand-line { width: 22px; }
+  .lva-kanji { font-size: 22vw; opacity: .8; }
+  .lva-cap-title { font-size: 27px; }
+  .lva-arr { top: auto; bottom: 118px; }
+  .lva-prev { left: 8px; }
+  .lva-next { left: auto; right: 8px; }
+  .lva-tl { left: 16px; right: 16px; bottom: 54px; }
+  .lva-year.lva-odd { display: none; }
+  .lva-foot { left: 16px; right: 16px; }
+  .lva-detail { display: flex; flex-direction: column; overflow-y: auto; padding: 84px 20px 40px; gap: 0; }
+  .lva-d-right { order: -1; flex: none; }
+  .lva-detail[hidden] { display: none; }
+  .lva-close { left: 16px; top: 20px; }
+  .lva-d-brand { right: 16px; top: 25px; }
+  .lva-d-right { height: 46svh; margin-bottom: 28px; }
+  .lva-poster { height: 100%; }
+  .lva-d-left { max-width: none; }
+  .lva-d-title { font-size: 42px; }
+}
