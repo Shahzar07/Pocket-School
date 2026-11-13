@@ -323,7 +323,7 @@ export function VideoBlock({ lesson, videoConfig, onConfig, script, onScriptChan
               placeholder='e.g. "Explain atomic structure with animated diagrams aimed at IGCSE students"'
               className="h-10 rounded-xl text-sm"
             />
-            <Button className="rounded-xl gap-1.5 shrink-0 bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] text-white" disabled={busy}
+            <Button className="rounded-xl gap-1.5 shrink-0 bg-gradient-to-r from-[#096ab7] to-[#d9efff] text-white" disabled={busy}
               onClick={run}>
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {script ? 'Regenerate script' : 'Generate'}
@@ -765,12 +765,12 @@ export function AudioBlock({
           <p className="text-sm text-muted-foreground">
             {writing ? 'The audio script is being written.' : scriptStatus === 'failed' ? 'The audio script failed. Try again.' : 'No audio summary yet.'}
           </p>
-          <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] text-white" disabled={writing} onClick={run}>
+          <Button size="sm" className="rounded-xl gap-1.5 bg-gradient-to-r from-[#096ab7] to-[#d9efff] text-white" disabled={writing} onClick={run}>
             {writing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             {writing ? 'Writing the audio script…' : 'Generate Audio Script'}
           </Button>
         </div>
-        {writing && <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full w-2/3 bg-[#1E6A83] animate-pulse" /></div>}
+        {writing && <div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full w-2/3 bg-[#096ab7] animate-pulse" /></div>}
       </div>
     );
   }

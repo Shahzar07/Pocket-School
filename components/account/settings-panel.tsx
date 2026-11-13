@@ -343,16 +343,16 @@ export function SettingsPanel({
           <LevelNameSelect value={draft.level} onChange={level => setDraft({ ...draft, level })} />
         )}
         <DemographicConsent checked={draft.demographicConsent !== false} onChange={checked => setDraft({ ...draft, demographicConsent: checked })} />
-        <label className="flex items-start gap-3 rounded-xl border border-[#1E6A83]/40 bg-[#E9F7FA]/40 p-3">
+        <label className="flex items-start gap-3 rounded-xl border border-[#096ab7]/40 bg-[#eaf6ff]/40 p-3">
           <input
             type="checkbox"
             checked={draft.timezoneConsent !== false}
             onChange={(event) => setDraft({ ...draft, timezoneConsent: event.target.checked })}
-            className="mt-0.5 h-4 w-4 accent-[#1E6A83]"
+            className="mt-0.5 h-4 w-4 accent-[#096ab7]"
             aria-label={CONSENT_UI.timezone}
             data-consent="timezone"
           />
-          <span className="text-xs leading-relaxed text-[#203337]">{CONSENT_UI.timezone}</span>
+          <span className="text-xs leading-relaxed text-[#11131b]">{CONSENT_UI.timezone}</span>
         </label>
         <Field label="Timezone">
           <Input value={zoneQuery} onChange={event => setZoneQuery(event.target.value)} placeholder="Search timezones" aria-label="Search timezones" className="mb-2 h-10 rounded-xl" />

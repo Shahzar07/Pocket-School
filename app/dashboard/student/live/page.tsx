@@ -63,7 +63,7 @@ export default function StudentLiveClasses() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Live Classes</h1>
+        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Live Classes</h1>
         <p className="text-muted-foreground text-sm mt-1">Join the room when your teacher is live. A class without a link stays here until they share one.</p>
       </div>
 
@@ -102,7 +102,7 @@ export default function StudentLiveClasses() {
                   </div>
                   <Button
                     onClick={() => handleJoin(cls)}
-                    className={`shrink-0 ${cls.status === 'live' ? 'bg-[#1E6A83] hover:bg-[#1E6A83] text-white' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
+                    className={`shrink-0 ${cls.status === 'live' ? 'bg-[#096ab7] hover:bg-[#096ab7] text-white' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}`}
                   >
                     {cls.status === 'live' ? 'Join Now' : 'Join Class'}
                   </Button>

@@ -80,9 +80,9 @@ export function HomeView({
       <header className="ps-hero-panel rounded-[24px] px-5 py-6 shadow-[var(--shadow-card)]">
         <span className="ps-blob" style={{ insetInlineStart: 'auto' }} aria-hidden />
         <span className="ps-blob-warm" style={{ insetInlineStart: 'auto', insetInlineEnd: '8%' }} aria-hidden />
-        <p className="relative text-sm font-medium text-white">{greetingFor(hour)}</p>
-        <h1 className="relative font-heading text-4xl tracking-tight text-white">{name}</h1>
-        <p className="relative mt-1 max-w-xl text-sm text-white">{home.blurb}</p>
+        <p className="relative text-sm font-medium text-foreground">{greetingFor(hour)}</p>
+        <h1 className="relative font-heading text-4xl tracking-tight text-foreground">{name}</h1>
+        <p className="relative mt-1 max-w-xl text-sm text-foreground">{home.blurb}</p>
         {children.length > 0 ? (
           <div className="relative mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Your children">
             {children.map(child => {
@@ -94,7 +94,7 @@ export function HomeView({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setChildId(child.id)}
-                  className={`min-h-12 shrink-0 rounded-full px-4 text-sm font-semibold ${active ? 'bg-card text-foreground' : 'bg-card/25 text-primary-foreground'}`}
+                  className={`min-h-12 shrink-0 rounded-full px-4 text-sm font-semibold ${active ? 'bg-card text-foreground' : 'bg-card/60 text-muted-foreground'}`}
                 >
                   {child.name}
                   <span className="ms-2 text-xs font-medium opacity-80">{child.level}</span>

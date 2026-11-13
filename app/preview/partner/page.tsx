@@ -9,7 +9,7 @@ const offers: PartnerOfferRow[] = [
 
 export default function PreviewPartnerPage() {
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-8">
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-8">
       <PartnerDesk name="Harbour Cafe" status="approved" offers={offers} onCreate={async () => undefined} />
     </main>
   );

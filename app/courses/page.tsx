@@ -238,7 +238,7 @@ export default function MarketplacePage() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="relative max-w-3xl mx-auto rounded-2xl border border-border bg-card overflow-hidden shadow-[var(--shadow-card-hover)]"
             >
-              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary via-[#6FBBCE] to-[#3FE0D0]" />
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary via-[#8bc9f5] to-[#d9efff]" />
               <div className="p-8 sm:p-12 text-center">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary border border-primary/20 text-[10px] font-bold tracking-[0.15em] text-secondary-foreground">
                   <ShieldCheck className="w-3 h-3" />
@@ -261,7 +261,7 @@ export default function MarketplacePage() {
                       <Sparkles className="w-4 h-4" />
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-extrabold text-foreground mb-0.5">
+                      <span className="block text-sm font-semibold text-foreground mb-0.5">
                         {t('market.meanwhile')}
                       </span>
                       <span className="block text-xs text-muted-foreground leading-relaxed">
@@ -282,7 +282,7 @@ export default function MarketplacePage() {
                       <Mail className="w-4 h-4" />
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-extrabold text-foreground mb-0.5">
+                      <span className="block text-sm font-semibold text-foreground mb-0.5">
                         {t('market.teach')}
                       </span>
                       <span className="block text-xs text-muted-foreground leading-relaxed">
@@ -372,7 +372,7 @@ export default function MarketplacePage() {
                         </p>
 
                         <div className="mt-auto flex items-baseline gap-2">
-                          <span className={`text-lg font-extrabold ${c.price ? 'text-foreground' : 'text-success'}`}>
+                          <span className={`text-lg font-semibold ${c.price ? 'text-foreground' : 'text-success'}`}>
                             {!c.price || c.price <= 0 ? t('market.free') : courseLabel(c.price, c.currency)}
                           </span>
                           {courseConversion(c.price, c.currency) && (

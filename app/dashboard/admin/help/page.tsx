@@ -62,8 +62,8 @@ function ArticleEditor() {
 
   return (
     <Panel>
-      <h2 className="font-heading text-xl text-[#203337]">Help articles</h2>
-      <p className="mt-1 text-sm text-[#1E6A83]">Published articles are what the help centre and ET AI answer from. OPENROUTER_API_KEY is required for live replies.</p>
+      <h2 className="font-heading text-xl text-[#11131b]">Help articles</h2>
+      <p className="mt-1 text-sm text-[#096ab7]">Published articles are what the help centre and ET AI answer from. OPENROUTER_API_KEY is required for live replies.</p>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <ul className="space-y-2">
           {articles.map((article) => (

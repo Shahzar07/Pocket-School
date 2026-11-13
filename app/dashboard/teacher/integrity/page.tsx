@@ -176,11 +176,11 @@ export default function IntegrityPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">AI Detection Score</p>
-                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-[#1E6A83]' : r.aiScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
+                <ScoreBar value={r.aiScore} color={r.aiScore >= 70 ? 'bg-[#096ab7]' : r.aiScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
               </div>
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">Plagiarism Score</p>
-                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-[#1E6A83]' : r.plagiarismScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
+                <ScoreBar value={r.plagiarismScore} color={r.plagiarismScore >= 70 ? 'bg-[#096ab7]' : r.plagiarismScore >= 40 ? 'bg-[var(--ps-cyan)]' : 'bg-success'} />
               </div>
             </div>
 

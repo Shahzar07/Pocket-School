@@ -69,12 +69,12 @@ export function ProgrammeTiles({ level }: { level: string }) {
 
   return (
     <section id="programme" className="space-y-3">
-      <h2 className="text-sm font-semibold text-[#1E6A83]">{PLACE.yourProgramme}</h2>
+      <h2 className="text-sm font-semibold text-[#096ab7]">{PLACE.yourProgramme}</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {mine.map((course) => (
-          <Link key={course.id} href={`/courses/${course.id}`} className="rounded-2xl border border-[#1E6A83]/15 bg-white p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-[#1E6A83]">{LEVEL_LABEL[plan]}</p>
-            <p className="mt-1 font-semibold text-[#203337]">{course.title}</p>
+          <Link key={course.id} href={`/courses/${course.id}`} className="rounded-2xl border border-[#096ab7]/15 bg-white p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#096ab7]">{LEVEL_LABEL[plan]}</p>
+            <p className="mt-1 font-semibold text-[#11131b]">{course.title}</p>
           </Link>
         ))}
       </div>
@@ -107,8 +107,8 @@ export function AllocatedLibrary({ institutionId }: { institutionId: string }) {
         {mine.map((course) => (
           <li key={course.id} className="rounded-2xl border border-border bg-card p-4">
             <p className="font-semibold">{course.title}</p>
-            <p className="text-sm text-[#1E6A83]">{course.price && course.price > 0 ? `$${course.price}` : PLACE.included}</p>
-            <Link href={`/courses/${course.id}`} className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">{PLACE.openLive}</Link>
+            <p className="text-sm text-[#096ab7]">{course.price && course.price > 0 ? `$${course.price}` : PLACE.included}</p>
+            <Link href={`/courses/${course.id}`} className="mt-2 inline-flex text-sm font-semibold text-[#096ab7]">{PLACE.openLive}</Link>
           </li>
         ))}
       </ul>

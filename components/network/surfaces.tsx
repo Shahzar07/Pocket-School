@@ -232,10 +232,10 @@ const CSS = `
   font-size: 14px;
   text-align: left;
 }
-.pk-navbtn.is-on { background: var(--mint); color: #1E6A83; }
-.pk-dark .pk-navbtn.is-on { color: #6FBBCE; }
+.pk-navbtn.is-on { background: var(--mint); color: #096ab7; }
+.pk-dark .pk-navbtn.is-on { color: #8bc9f5; }
 .pk-navbtn:focus-visible, .pk-task:focus-visible, .pk-tile:focus-visible, .pk-tab:focus-visible, .pk-iconbtn:focus-visible, .pk-action:focus-visible, .pk-choice:focus-visible {
-  outline: 3px solid #6FBBCE;
+  outline: 3px solid #8bc9f5;
   outline-offset: 2px;
 }
 .pk-label { white-space: nowrap; }
@@ -246,7 +246,7 @@ const CSS = `
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #1E6A83;
+  background: #096ab7;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -327,10 +327,10 @@ const CSS = `
   display: grid;
   place-items: center;
   background: var(--mint);
-  color: #1E6A83;
+  color: #096ab7;
   margin-bottom: 12px;
 }
-.pk-dark .pk-ico { color: #6FBBCE; }
+.pk-dark .pk-ico { color: #8bc9f5; }
 .pk-badge {
   position: absolute;
   top: 12px;
@@ -338,7 +338,7 @@ const CSS = `
   min-width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: #1E6A83;
+  background: #096ab7;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -361,18 +361,18 @@ const CSS = `
   align-items: center;
   min-height: 36px;
   background: var(--mint);
-  color: #1E6A83;
+  color: #096ab7;
   border-radius: 999px;
   padding: 0 12px;
   font-size: 13px;
   font-weight: 700;
 }
-.pk-dark .pk-pill { color: #6FBBCE; }
+.pk-dark .pk-pill { color: #8bc9f5; }
 .pk-mint {
   background: var(--mint);
   border-radius: 16px;
   padding: 12px;
-  color: #1E6A83;
+  color: #096ab7;
 }
 .pk-dark .pk-mint { color: #E7F2F5; }
 .pk-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -388,7 +388,7 @@ const CSS = `
   color: var(--ink);
   font-weight: 700;
 }
-.pk-choice.is-primary { background: #3FE0D0; color: #203337; border-color: #1E6A83; }
+.pk-choice.is-primary { background: #d9efff; color: #11131b; border-color: #096ab7; }
 .pk-tabs {
   position: fixed;
   left: 0;
@@ -416,7 +416,7 @@ const CSS = `
   font-size: 11px;
   font-weight: 700;
 }
-.pk-tab.is-on { color: #1E6A83; background: var(--mint); }
+.pk-tab.is-on { color: #096ab7; background: var(--mint); }
 .pk-days { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 0 8px; }
 .pk-ring-wrap { display: flex; align-items: center; gap: 16px; }
 @media (min-width: 800px) {

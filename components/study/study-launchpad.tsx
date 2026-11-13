@@ -35,7 +35,7 @@ export function StudyLaunchpad() {
   return (
     <div className="grid md:grid-cols-[1.35fr_1fr] gap-4">
       <motion.div data-tour="study-exam-prep" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl p-5 sm:p-6 text-white bg-gradient-to-br from-[#0f2f3a] via-[#15475a] to-[#1E6A83] shadow-[var(--shadow-card)]">
+        className="relative overflow-hidden rounded-2xl p-5 sm:p-6 text-white bg-gradient-to-br from-[#0f2f3a] via-[#15475a] to-[#096ab7] shadow-[var(--shadow-card)]">
         <div className="absolute -right-16 -bottom-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         {next === undefined ? (
           <div className="h-32 animate-pulse rounded-xl bg-white/10" />
@@ -49,7 +49,7 @@ export function StudyLaunchpad() {
             </div>
             <div className="mt-4 relative h-2 rounded-full bg-white/15">
               <div className="absolute inset-y-0 left-0 rounded-full bg-white" style={{ width: `${mastery}%` }} />
-              <span className="absolute -top-1 w-0.5 h-4 bg-[#1E6A83] rounded" style={{ left: `${next.targetScore}%` }} />
+              <span className="absolute -top-1 w-0.5 h-4 bg-[#096ab7] rounded" style={{ left: `${next.targetScore}%` }} />
             </div>
             <p className="text-[12px] text-white/60 mt-1.5">{mastery}% mastered · target {next.targetGrade}</p>
             <Link href={`/dashboard/studio/exam-prep/${next.id}`} className="mt-4 inline-flex h-10 px-4 rounded-full bg-white text-[#0f2f3a] text-[13px] font-semibold items-center gap-1.5 hover:bg-white/90">

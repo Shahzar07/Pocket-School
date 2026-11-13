@@ -98,7 +98,7 @@ export default function SchoolLeadsPage() {
       <Panel>
         <PanelHeader title="Homepage threshold" />
         <div className="flex flex-wrap items-end gap-3 p-5">
-          <label className="text-sm font-medium text-[#203337]">
+          <label className="text-sm font-medium text-[#11131b]">
             Minimum students
             <Input
               type="number"
@@ -110,7 +110,7 @@ export default function SchoolLeadsPage() {
               aria-label="Minimum students before a school can appear"
             />
           </label>
-          <Button type="button" disabled={busy} onClick={saveMinimum} className="rounded-full bg-[#203337] text-[#E9F7FA]">
+          <Button type="button" disabled={busy} onClick={saveMinimum} className="rounded-full bg-[#11131b] text-[#eaf6ff]">
             Save threshold
           </Button>
           <p className="max-w-xl text-sm text-muted-foreground">
@@ -156,7 +156,7 @@ export default function SchoolLeadsPage() {
             <tbody>
               {leads.map((lead) => (
                 <tr key={lead.key} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-semibold text-[#203337]">
+                  <td className="px-4 py-3 font-semibold text-[#11131b]">
                     {lead.name}
                     {lead.alumniCount ? <span className="mt-1 block text-xs font-medium text-muted-foreground">{lead.alumniCount} alumni asked to join</span> : null}
                     {lead.registeredInstitutionId ? <span className="mt-1 block text-xs font-medium text-muted-foreground">Now on Poket School</span> : null}

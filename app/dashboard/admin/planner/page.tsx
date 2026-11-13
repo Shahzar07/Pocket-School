@@ -46,26 +46,26 @@ export default function PlannerDefaultsPage() {
         title={PLANNER_COPY.pageTitle}
         description="These caps tighten the age limits. A younger learner never goes above their own cap."
       />
-      <form className="max-w-lg space-y-4 rounded-[28px] border border-[#E7EDED] bg-white p-5" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+      <form className="max-w-lg space-y-4 rounded-[28px] border border-[#e5ebf2] bg-white p-5" onSubmit={(event) => { event.preventDefault(); void save(); }}>
         {([
           ['maxDailyMinutes', 'Maximum minutes in a day'],
           ['maxGoalsPerDay', 'Maximum goals in a day'],
           ['rescheduleLimit', 'Reschedules for an assigned goal'],
           ['missFlagAfter', 'Misses before a teacher flag'],
         ] as const).map(([key, label]) => (
-          <label key={key} className="block text-sm font-semibold text-[#203337]">
+          <label key={key} className="block text-sm font-semibold text-[#11131b]">
             {label}
             <input
               type="number"
               min={1}
-              className="mt-1 h-10 w-full rounded-xl border border-[#E7EDED] px-3"
+              className="mt-1 h-10 w-full rounded-xl border border-[#e5ebf2] px-3"
               value={limits[key]}
               disabled={!superAdmin}
               onChange={(event) => setLimits((current) => ({ ...current, [key]: Number(event.target.value) }))}
             />
           </label>
         ))}
-        <button type="submit" disabled={!superAdmin || saving} className="rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337] disabled:bg-[#E7EDED]">
+        <button type="submit" disabled={!superAdmin || saving} className="rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b] disabled:bg-[#e5ebf2]">
           {saving ? 'Saving…' : 'Save defaults'}
         </button>
       </form>

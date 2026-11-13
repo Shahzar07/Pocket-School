@@ -13,8 +13,8 @@ import type { TimetableDoc } from '@/lib/timetable/types';
 import { TimetableDesk } from './desk';
 import { TimetableGrid } from './grid';
 
-const button = 'h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-50';
-const ghost = 'h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]';
+const button = 'h-10 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b] disabled:opacity-50';
+const ghost = 'h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]';
 
 function docFor(gate: StudioTimetableGate, sample: boolean, actor: TimetableActor): TimetableDoc {
   const bundle = loadBundle({ sample, ownerId: actor.uid, institutionId: actor.institutionId });
@@ -24,12 +24,12 @@ function docFor(gate: StudioTimetableGate, sample: boolean, actor: TimetableActo
 export function TimetableUpsell({ gate }: { gate: StudioTimetableGate }) {
   const locked = gate === 'hidden' || gate === 'upsell-personal' || gate === 'upsell-school';
   return (
-    <section className="rounded-3xl border border-[#1E6A83]/20 bg-white p-5 text-[#203337]" data-timetable-locked={locked ? '1' : '0'} data-upsell={gate.startsWith('upsell') ? '1' : '0'}>
+    <section className="rounded-3xl border border-[#096ab7]/20 bg-white p-5 text-[#11131b]" data-timetable-locked={locked ? '1' : '0'} data-upsell={gate.startsWith('upsell') ? '1' : '0'}>
       <h2 className="font-heading text-2xl">{TIMETABLE_COPY.studioTab}</h2>
-      <p className="mt-2 text-sm text-[#1E6A83]">{gate === 'hidden' ? TIMETABLE_COPY.studioHidden : TIMETABLE_COPY.studioUpsell}</p>
+      <p className="mt-2 text-sm text-[#096ab7]">{gate === 'hidden' ? TIMETABLE_COPY.studioHidden : TIMETABLE_COPY.studioUpsell}</p>
       {gate === 'upsell-school' ? <p className="mt-2 text-sm">{TIMETABLE_COPY.studioUpsellSchool}</p> : null}
       {gate === 'upsell-personal' ? <p className="mt-2 text-sm">{TIMETABLE_COPY.studioUpsellPersonal}</p> : null}
-      <Link href="/pricing" className="mt-4 inline-flex h-10 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]">{TIMETABLE_COPY.priceNote}</Link>
+      <Link href="/pricing" className="mt-4 inline-flex h-10 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]">{TIMETABLE_COPY.priceNote}</Link>
     </section>
   );
 }
@@ -196,12 +196,12 @@ export function StudioTimetableChat({
   const live = pending?.doc ?? docFor(gate, sample, actor);
 
   return (
-    <div className="w-full max-w-5xl rounded-3xl bg-white p-4 text-start text-[#203337]" data-studio-chat="1" data-applied={applied}>
+    <div className="w-full max-w-5xl rounded-3xl bg-white p-4 text-start text-[#11131b]" data-studio-chat="1" data-applied={applied}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-heading text-2xl">{TIMETABLE_COPY.studioTab}</h2>
         <Link href={editorHref} className={ghost + ' inline-flex items-center'} data-action="open-grid">{TIMETABLE_COPY.studioOpen}</Link>
       </div>
-      <p className="mt-1 text-sm text-[#1E6A83]">{TIMETABLE_COPY.studioNeedsConfirm}</p>
+      <p className="mt-1 text-sm text-[#096ab7]">{TIMETABLE_COPY.studioNeedsConfirm}</p>
       <form
         className="mt-4 flex flex-wrap gap-2"
         onSubmit={(event) => {
@@ -214,7 +214,7 @@ export function StudioTimetableChat({
           onChange={event => setText(event.target.value)}
           aria-label={TIMETABLE_COPY.studioBlurb}
           data-action="timetable-text"
-          className="h-10 min-w-[16rem] flex-1 rounded-xl border border-[#1E6A83]/30 px-3 text-sm"
+          className="h-10 min-w-[16rem] flex-1 rounded-xl border border-[#096ab7]/30 px-3 text-sm"
         />
         <button type="button" className={ghost} data-action="mic-timetable" onClick={() => {
           setListening(true);
@@ -248,7 +248,7 @@ export function StudioTimetableChat({
       {pending ? (
         <div className="mt-4 space-y-3" data-preview-diff="1" data-diff={pending.changes.length} data-confirmable={pending.confirmable ? '1' : '0'}>
           <h3 className="font-semibold">{TIMETABLE_COPY.studioPreview}</h3>
-          <ul className="text-sm text-[#1E6A83]">
+          <ul className="text-sm text-[#096ab7]">
             {pending.changes.map((change, index) => <li key={`${change.kind}-${index}`}>{change.label}</li>)}
           </ul>
           <div className="max-h-[50vh] overflow-auto">

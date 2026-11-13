@@ -31,9 +31,9 @@ export default async function VerifyPage({ params }: { params: Promise<{ uuid: s
     }
     : isAdminConfigured() ? await verifyCardToken(uuid).catch(() => null) : null;
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-12">
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-12">
       {face ? <VerifyFace face={face} /> : (
-        <p className="mx-auto max-w-md text-center text-sm text-[#203337]">This student ID is not active. Ask the student to refresh their card.</p>
+        <p className="mx-auto max-w-md text-center text-sm text-[#11131b]">This student ID is not active. Ask the student to refresh their card.</p>
       )}
     </main>
   );

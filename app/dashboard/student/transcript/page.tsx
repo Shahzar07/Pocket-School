@@ -272,7 +272,7 @@ export default function TranscriptPage() {
           className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
         >
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-primary opacity-80" />
-          <p className="text-3xl font-extrabold text-foreground">{overallGPA}</p>
+          <p className="text-3xl font-semibold text-foreground">{overallGPA}</p>
           <p className="text-muted-foreground text-xs mt-1 font-medium">Cumulative GPA</p>
         </motion.div>
         <motion.div
@@ -283,7 +283,7 @@ export default function TranscriptPage() {
           className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
         >
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-success opacity-80" />
-          <p className="text-3xl font-extrabold text-foreground">{records.length}</p>
+          <p className="text-3xl font-semibold text-foreground">{records.length}</p>
           <p className="text-muted-foreground text-xs mt-1 font-medium">Courses</p>
         </motion.div>
         <motion.div
@@ -294,7 +294,7 @@ export default function TranscriptPage() {
           className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
         >
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-[var(--ps-cyan)] opacity-80" />
-          <p className="text-3xl font-extrabold text-foreground">{records.filter(r => r.status === 'Completed').length}</p>
+          <p className="text-3xl font-semibold text-foreground">{records.filter(r => r.status === 'Completed').length}</p>
           <p className="text-muted-foreground text-xs mt-1 font-medium">Completed</p>
         </motion.div>
         <motion.div
@@ -305,7 +305,7 @@ export default function TranscriptPage() {
           className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow text-center"
         >
           <span className="absolute top-0 left-6 right-6 h-[3px] rounded-b-full bg-sky-500 opacity-80" />
-          <p className="text-3xl font-extrabold text-foreground">
+          <p className="text-3xl font-semibold text-foreground">
             {attendanceRate !== null ? `${attendanceRate}%` : '—'}
           </p>
           <p className="text-muted-foreground text-xs mt-1 font-medium">Attendance</p>

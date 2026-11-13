@@ -57,7 +57,7 @@ export function BoardMenu({
         className="mt-1 flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-border bg-background px-3 text-left text-sm font-normal"
       >
         <span className="truncate">{current.label}</span>
-        <span aria-hidden className="text-[#1E6A83]">▾</span>
+        <span aria-hidden className="text-[#096ab7]">▾</span>
       </button>
       {open ? (
         <div id={listId} role="listbox" aria-label="Exam board style" data-board-options className="absolute z-50 mt-1 max-h-80 w-full overflow-auto rounded-2xl border border-border bg-card p-2 shadow-lg">
@@ -77,7 +77,7 @@ export function BoardMenu({
               aria-selected={item.id === current.id}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => { onChange(item.id); setOpen(false); setQuery(''); }}
-              className={`block w-full rounded-xl px-3 py-2 text-left text-sm ${item.id === current.id ? 'bg-[#3FE0D0] font-semibold text-[#203337]' : 'hover:bg-muted'}`}
+              className={`block w-full rounded-xl px-3 py-2 text-left text-sm ${item.id === current.id ? 'bg-[#d9efff] font-semibold text-[#11131b]' : 'hover:bg-muted'}`}
             >
               {item.label}
             </button>

@@ -123,7 +123,7 @@ export function CertificateDocument({
             <p className="text-[11px] font-bold tracking-[0.28em]">{header.brand}</p>
           </div>
           <h2 className="font-heading text-3xl sm:text-4xl mt-3 text-[#1c2b30]">Certificate of Achievement</h2>
-          <p className={`inline-block mt-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] ${status === 'revoked' ? 'bg-[#E9F7FA] text-[#1E6A83]' : 'bg-[#E7F6F1] text-[#0F6E56]'}`}>
+          <p className={`inline-block mt-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] ${status === 'revoked' ? 'bg-[#eaf6ff] text-[#096ab7]' : 'bg-[#E7F6F1] text-[#0F6E56]'}`}>
             {status === 'revoked' ? 'Revoked' : 'Valid'}
           </p>
           <p className="text-sm text-[#526066] mt-4">This is to certify that</p>
@@ -163,7 +163,7 @@ export function CertificateDocument({
               <p className={`text-[10px] font-bold uppercase tracking-[0.16em] text-[#526066] ${studentNumber ? 'mt-3' : ''}`}>Certificate ID</p>
               <p className="font-mono text-sm break-all text-[#1c2b30]">{certificate.id}</p>
               <p className="text-[11px] text-[#526066] mt-2">Scanning the QR code opens</p>
-              <p className="font-mono text-[11px] break-all text-[#1E6A83] mt-1">{verify}</p>
+              <p className="font-mono text-[11px] break-all text-[#096ab7] mt-1">{verify}</p>
             </div>
           </div>
           <p className="text-[11px] text-[#6b7c82] mt-6 max-w-md mx-auto leading-relaxed">{CERTIFICATE_DISCLAIMER}</p>

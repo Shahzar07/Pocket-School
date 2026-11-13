@@ -22,9 +22,9 @@ import {
 } from '@/lib/funnels/model';
 import { PublicFunnel } from '@/components/funnels/public-funnel';
 
-const field = 'mt-1 min-h-11 w-full rounded-2xl border border-[#1E6A83]/20 bg-white px-3 text-sm text-[#203337] dark:border-[#3FE0D0]/30 dark:bg-[#0B1417] dark:text-[#E7F4F2]';
-const button = 'inline-flex min-h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337] disabled:opacity-40';
-const quiet = 'inline-flex min-h-11 items-center rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] disabled:opacity-40 dark:border-[#3FE0D0] dark:text-[#3FE0D0]';
+const field = 'mt-1 min-h-11 w-full rounded-2xl border border-[#096ab7]/20 bg-white px-3 text-sm text-[#11131b] dark:border-[#d9efff]/30 dark:bg-[#0B1417] dark:text-[#E7F4F2]';
+const button = 'inline-flex min-h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b] disabled:opacity-40';
+const quiet = 'inline-flex min-h-11 items-center rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] disabled:opacity-40 dark:border-[#d9efff] dark:text-[#d9efff]';
 
 function patchItem(items: FunnelItem[], index: number, patch: Partial<FunnelItem>): FunnelItem[] {
   return items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item));
@@ -203,15 +203,15 @@ export function FunnelDesk() {
   };
 
   if (!ready) {
-    return <p data-funnel-desk="loading" className="p-6 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.opening}</p>;
+    return <p data-funnel-desk="loading" className="p-6 text-sm text-[#096ab7] dark:text-[#d9efff]">{COPY.opening}</p>;
   }
 
   return (
-    <div data-funnel-desk="1" className="mx-auto flex min-h-[70vh] min-w-0 max-w-3xl flex-col gap-4 p-4 text-[#203337] dark:text-[#E7F4F2] sm:p-6">
+    <div data-funnel-desk="1" className="mx-auto flex min-h-[70vh] min-w-0 max-w-3xl flex-col gap-4 p-4 text-[#11131b] dark:text-[#E7F4F2] sm:p-6">
       <header className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.brand}</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7] dark:text-[#d9efff]">{COPY.brand}</p>
         <h1 className="font-heading text-3xl tracking-tight">{COPY.pageTitle}</h1>
-        <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.pageLede}</p>
+        <p className="mt-1 text-sm text-[#096ab7] dark:text-[#d9efff]">{COPY.pageLede}</p>
       </header>
       {step !== 'list' ? (
         <FlowTrail
@@ -221,7 +221,7 @@ export function FunnelDesk() {
           onSelect={(id) => { if (isFunnelStep(id)) void go(id); }}
         />
       ) : null}
-      {note ? <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{note}</p> : null}
+      {note ? <p className="text-sm text-[#096ab7] dark:text-[#d9efff]">{note}</p> : null}
 
       {step === 'list' ? (
         <section className="grid gap-3">
@@ -229,10 +229,10 @@ export function FunnelDesk() {
           {rows.length === 0 ? <p className="text-sm">{COPY.empty}</p> : null}
           <ul className="grid gap-2">
             {rows.map((row) => (
-              <li key={row.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#1E6A83]/15 p-3">
+              <li key={row.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#096ab7]/15 p-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{row.title}</p>
-                  <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{row.status === 'published' ? COPY.published : COPY.draft}{row.slug ? ` · /p/${row.slug}` : ''}</p>
+                  <p className="text-sm text-[#096ab7] dark:text-[#d9efff]">{row.status === 'published' ? COPY.published : COPY.draft}{row.slug ? ` · /p/${row.slug}` : ''}</p>
                 </div>
                 <div className="flex gap-2">
                   <button type="button" className={quiet} onClick={() => void openRow(row.id)}>{COPY.open}</button>
@@ -251,12 +251,12 @@ export function FunnelDesk() {
             <button
               key={template}
               type="button"
-              className="rounded-[28px] border border-[#1E6A83]/15 p-4 text-left"
+              className="rounded-[28px] border border-[#096ab7]/15 p-4 text-left"
               disabled={busy}
               onClick={() => (funnel ? setConfirmTemplate(template) : void chooseTemplate(template))}
             >
               <span className="block font-semibold">{COPY.templates[template].title}</span>
-              <span className="mt-1 block text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.templates[template].body}</span>
+              <span className="mt-1 block text-sm text-[#096ab7] dark:text-[#d9efff]">{COPY.templates[template].body}</span>
             </button>
           ))}
           {confirmTemplate ? (
@@ -267,13 +267,13 @@ export function FunnelDesk() {
 
       {step === 'sections' && funnel ? (
         <section className="grid gap-4">
-          <label className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">
+          <label className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">
             {COPY.titleLabel}
             <input className={field} value={title} maxLength={80} onChange={(event) => setTitle(event.target.value)} />
           </label>
           {sections.map((section, index) => (
-            <fieldset key={section.id} className="grid gap-2 rounded-[28px] border border-[#1E6A83]/15 p-4">
-              <legend className="px-1 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.kinds[section.kind]}</legend>
+            <fieldset key={section.id} className="grid gap-2 rounded-[28px] border border-[#096ab7]/15 p-4">
+              <legend className="px-1 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{COPY.kinds[section.kind]}</legend>
               <label className="text-sm font-semibold">
                 {COPY.headingLabel}
                 <input className={field} value={section.heading} maxLength={120} onChange={(event) => updateSection(section.id, { heading: event.target.value })} />
@@ -302,12 +302,12 @@ export function FunnelDesk() {
                   </label>
                 </>
               ) : null}
-              {section.kind === 'testimonials' ? <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.quotePlaceholder}</p> : null}
-              {section.kind === 'pricing' ? <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.planNote}</p> : null}
+              {section.kind === 'testimonials' ? <p className="text-sm text-[#096ab7] dark:text-[#d9efff]">{COPY.quotePlaceholder}</p> : null}
+              {section.kind === 'pricing' ? <p className="text-sm text-[#096ab7] dark:text-[#d9efff]">{COPY.planNote}</p> : null}
               {section.kind === 'benefits' || section.kind === 'faq' || section.kind === 'pricing' ? (
                 <div className="grid gap-2">
                   {section.items.map((item, itemIndex) => (
-                    <div key={`${section.id}-${itemIndex}`} className="grid gap-2 rounded-2xl border border-[#1E6A83]/10 p-3">
+                    <div key={`${section.id}-${itemIndex}`} className="grid gap-2 rounded-2xl border border-[#096ab7]/10 p-3">
                       <label className="text-sm font-semibold">
                         {section.kind === 'faq' ? COPY.questionLabel : COPY.itemTitle}
                         <input className={field} maxLength={80} value={item.title} onChange={(event) => updateSection(section.id, { items: patchItem(section.items, itemIndex, { title: event.target.value }) })} />
@@ -365,26 +365,26 @@ export function FunnelDesk() {
       {step === 'publish' && funnel ? (
         <section className="grid gap-3">
           <p data-funnel-status={funnel.status} className="text-sm">{funnel.status === 'published' ? COPY.published : COPY.draft}</p>
-          <label className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">
+          <label className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">
             {COPY.slugLabel}
             <input className={field} value={slug} maxLength={48} onChange={(event) => setSlug(event.target.value)} />
           </label>
-          <p className="text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{COPY.slugHint}</p>
+          <p className="text-sm text-[#096ab7] dark:text-[#d9efff]">{COPY.slugHint}</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={button} disabled={busy} onClick={() => void publish()}>{COPY.publish}</button>
             <button type="button" className={quiet} disabled={busy || funnel.status !== 'published'} onClick={() => void unpublish()}>{COPY.unpublish}</button>
             <button type="button" className={quiet} disabled={busy} onClick={() => void duplicate(funnel.id)}>{COPY.duplicate}</button>
           </div>
           {funnel.status === 'published' && funnel.slug ? (
-            <a className="text-sm font-semibold text-[#1E6A83] underline dark:text-[#3FE0D0]" href={`/p/${funnel.slug}`}>{COPY.publicLink}</a>
+            <a className="text-sm font-semibold text-[#096ab7] underline dark:text-[#d9efff]" href={`/p/${funnel.slug}`}>{COPY.publicLink}</a>
           ) : null}
           <h2 className="font-heading text-2xl">{COPY.leadsTitle}</h2>
           {leads.length === 0 ? <p className="text-sm">{COPY.leadsEmpty}</p> : (
             <ul className="grid gap-2">
               {leads.map((lead) => (
-                <li key={lead.id} data-funnel-lead={lead.email} className="rounded-2xl border border-[#1E6A83]/15 p-3 text-sm">
+                <li key={lead.id} data-funnel-lead={lead.email} className="rounded-2xl border border-[#096ab7]/15 p-3 text-sm">
                   <p className="font-semibold">{lead.name}</p>
-                  <p className="text-[#1E6A83] dark:text-[#3FE0D0]">{lead.email}</p>
+                  <p className="text-[#096ab7] dark:text-[#d9efff]">{lead.email}</p>
                   {lead.note ? <p className="mt-1">{lead.note}</p> : null}
                 </li>
               ))}

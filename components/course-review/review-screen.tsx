@@ -125,7 +125,7 @@ export function ReviewScreen({
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-foreground/70">
             {[course.subject, course.level, course.language].filter(Boolean).join(' · ') || 'Poket School'}
           </p>
-          <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">{course.title}</h1>
+          <h1 className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">{course.title}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-foreground/80">{course.description}</p>
         </header>
         {course.modules.map((module, moduleIndex) => {
@@ -191,8 +191,8 @@ export function ReviewScreen({
                   </div>
                 ))}
               </div>
-              <div className="m-5 rounded-3xl border border-[#1E6A83]/20 bg-gradient-to-br from-[#F4FBFC] to-white p-6 text-center">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#1E6A83]">Certificate</p>
+              <div className="m-5 rounded-3xl border border-[#096ab7]/20 bg-gradient-to-br from-[#F4FBFC] to-white p-6 text-center">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#096ab7]">Certificate</p>
                 <p className="mt-2 font-heading text-2xl text-foreground">{certificate.courseTitle}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{certificate.moduleTitle}</p>
                 <p className="mt-4 text-sm text-foreground">Awarded to {certificate.studentName}</p>
@@ -215,7 +215,7 @@ export function ReviewScreen({
                 const current = index === here;
                 return (
                   <li key={step} className="flex items-center gap-2 text-sm">
-                    <span className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold ${current ? 'bg-[#1E6A83] text-white' : done ? 'bg-success text-white' : 'bg-muted text-muted-foreground'}`}>{index + 1}</span>
+                    <span className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold ${current ? 'bg-[#096ab7] text-white' : done ? 'bg-success text-white' : 'bg-muted text-muted-foreground'}`}>{index + 1}</span>
                     <span className={current ? 'font-semibold text-foreground' : 'text-muted-foreground'}>{REVIEW_LABEL[step]}</span>
                   </li>
                 );
@@ -295,7 +295,7 @@ export function ReviewScreen({
             </ul>
             <label className="mt-3 block text-xs font-semibold text-muted-foreground" htmlFor="lesson-comment">Add a comment</label>
             <textarea id="lesson-comment" value={draft} onChange={event => setDraft(event.target.value)} className="mt-1 min-h-20 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="What should change before this lesson is approved?" />
-            <button type="button" className="mt-2 h-9 rounded-xl bg-[#1E6A83] px-3 text-sm font-semibold text-white" onClick={() => void addNote()}>Save comment</button>
+            <button type="button" className="mt-2 h-9 rounded-xl bg-[#096ab7] px-3 text-sm font-semibold text-white" onClick={() => void addNote()}>Save comment</button>
           </section>
         </aside>
       )}

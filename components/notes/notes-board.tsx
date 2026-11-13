@@ -91,17 +91,17 @@ export function NotesBoard({
         description="Sticky notes sync across web and the app. They stay on your account until you share one."
       />
       <form
-        className="rounded-[24px] border border-[#E7EDED] bg-white/80 p-4 shadow-[0_12px_30px_rgba(32,51,55,0.06)] backdrop-blur"
+        className="rounded-[24px] border border-[#e5ebf2] bg-white/80 p-4 shadow-[0_12px_30px_rgba(32,51,55,0.06)] backdrop-blur"
         onSubmit={(event) => { event.preventDefault(); void add(); }}
       >
-        <label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E6A83]" htmlFor="note-draft">Quick add</label>
+        <label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#096ab7]" htmlFor="note-draft">Quick add</label>
         <textarea
           id="note-draft"
           value={draft}
           maxLength={2000}
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Write a note"
-          className="mt-2 min-h-20 w-full resize-none rounded-2xl border border-[#E7EDED] bg-white px-3 py-2 text-sm text-[#203337]"
+          className="mt-2 min-h-20 w-full resize-none rounded-2xl border border-[#e5ebf2] bg-white px-3 py-2 text-sm text-[#11131b]"
         />
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {NOTE_COLOURS.map((item) => (
@@ -112,7 +112,7 @@ export function NotesBoard({
               aria-pressed={colour === item.id}
               onClick={() => setColour(item.id)}
               className="h-8 w-8 rounded-full border"
-              style={{ background: item.fill, borderColor: colour === item.id ? '#1E6A83' : '#E7EDED' }}
+              style={{ background: item.fill, borderColor: colour === item.id ? '#096ab7' : '#e5ebf2' }}
             />
           ))}
           <input
@@ -120,17 +120,17 @@ export function NotesBoard({
             value={board}
             maxLength={80}
             onChange={(event) => setBoard(event.target.value)}
-            className="rounded-full border border-[#E7EDED] px-3 py-1.5 text-sm text-[#203337]"
+            className="rounded-full border border-[#e5ebf2] px-3 py-1.5 text-sm text-[#11131b]"
           />
           <button
             type="button"
             aria-pressed={checklist}
             onClick={() => setChecklist((value) => !value)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${checklist ? 'border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'border-[#E7EDED] text-[#1E6A83]'}`}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${checklist ? 'border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'border-[#e5ebf2] text-[#096ab7]'}`}
           >
             Checklist
           </button>
-          <button type="submit" className="inline-flex items-center gap-1 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-1.5 text-sm font-semibold text-[#203337]">
+          <button type="submit" className="inline-flex items-center gap-1 rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-1.5 text-sm font-semibold text-[#11131b]">
             <Plus className="h-4 w-4" aria-hidden />
             Add note
           </button>
@@ -139,29 +139,29 @@ export function NotesBoard({
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-48 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#1E6A83]" aria-hidden />
+          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#096ab7]" aria-hidden />
           <input
             aria-label="Search notes"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search"
-            className="w-full rounded-full border border-[#E7EDED] bg-white py-2 pl-9 pr-3 text-sm text-[#203337]"
+            className="w-full rounded-full border border-[#e5ebf2] bg-white py-2 pl-9 pr-3 text-sm text-[#11131b]"
           />
         </label>
-        <select aria-label="Filter by board" value={boardFilter} onChange={(event) => setBoardFilter(event.target.value)} className="rounded-full border border-[#E7EDED] bg-white px-3 py-2 text-sm text-[#203337]">
+        <select aria-label="Filter by board" value={boardFilter} onChange={(event) => setBoardFilter(event.target.value)} className="rounded-full border border-[#e5ebf2] bg-white px-3 py-2 text-sm text-[#11131b]">
           <option value="all">All boards</option>
           {boards.map((name) => <option key={name} value={name}>{name}</option>)}
         </select>
-        <select aria-label="Filter by link" value={link} onChange={(event) => setLink(event.target.value as NoteLinkType | 'all')} className="rounded-full border border-[#E7EDED] bg-white px-3 py-2 text-sm text-[#203337]">
+        <select aria-label="Filter by link" value={link} onChange={(event) => setLink(event.target.value as NoteLinkType | 'all')} className="rounded-full border border-[#e5ebf2] bg-white px-3 py-2 text-sm text-[#11131b]">
           {LINKS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select>
-        <button type="button" aria-pressed={trash} onClick={() => setTrash((value) => !value)} className={`rounded-full border px-3 py-2 text-sm font-semibold ${trash ? 'border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'border-[#E7EDED] text-[#1E6A83]'}`}>
+        <button type="button" aria-pressed={trash} onClick={() => setTrash((value) => !value)} className={`rounded-full border px-3 py-2 text-sm font-semibold ${trash ? 'border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'border-[#e5ebf2] text-[#096ab7]'}`}>
           Trash
         </button>
       </div>
 
-      {notice ? <p className="text-sm text-[#203337]">{notice}</p> : null}
-      {shown.length === 0 ? <p className="text-sm text-[#5F7074]">{trash ? 'Trash is empty. Deleted notes stay for 30 days.' : 'No notes on this board yet.'}</p> : null}
+      {notice ? <p className="text-sm text-[#11131b]">{notice}</p> : null}
+      {shown.length === 0 ? <p className="text-sm text-[#626976]">{trash ? 'Trash is empty. Deleted notes stay for 30 days.' : 'No notes on this board yet.'}</p> : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {shown.map((item, index) => {
@@ -186,14 +186,14 @@ export function NotesBoard({
                   type="button"
                   draggable={!trash}
                   aria-label="Drag to reorder"
-                  className="cursor-grab text-[#1E6A83]"
+                  className="cursor-grab text-[#096ab7]"
                   onDragStart={() => setDragId(item.id)}
                 >
                   <GripVertical className="h-4 w-4" aria-hidden />
                 </button>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E6A83]">{item.board}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#096ab7]">{item.board}</p>
                 <button type="button" aria-label={item.pinned ? 'Unpin note' : 'Pin note'} aria-pressed={item.pinned} onClick={() => { void onPatch(item.id, { pinned: !item.pinned }); }}>
-                  <Pin className="h-4 w-4" style={{ color: item.pinned ? '#1E6A83' : '#5F7074' }} />
+                  <Pin className="h-4 w-4" style={{ color: item.pinned ? '#096ab7' : '#626976' }} />
                 </button>
               </div>
               <textarea
@@ -204,7 +204,7 @@ export function NotesBoard({
                 onBlur={(event) => {
                   if (event.target.value !== item.text) void onPatch(item.id, { text: event.target.value });
                 }}
-                className="min-h-24 w-full resize-none bg-transparent text-sm text-[#203337] outline-none"
+                className="min-h-24 w-full resize-none bg-transparent text-sm text-[#11131b] outline-none"
               />
               {(item.checklist ?? []).length > 0 ? (
                 <ul className="mt-2 space-y-1">
@@ -212,39 +212,39 @@ export function NotesBoard({
                     <li key={check.id}>
                       <button
                         type="button"
-                        className="flex items-start gap-2 text-left text-sm text-[#203337]"
+                        className="flex items-start gap-2 text-left text-sm text-[#11131b]"
                         onClick={() => {
                           const checklist = (item.checklist ?? []).map((row) => row.id === check.id ? { ...row, done: !row.done } : row);
                           void onPatch(item.id, { checklist });
                         }}
                       >
-                        <span className="mt-0.5 grid h-4 w-4 place-items-center rounded border border-[#1E6A83]">{check.done ? <Check className="h-3 w-3" /> : null}</span>
+                        <span className="mt-0.5 grid h-4 w-4 place-items-center rounded border border-[#096ab7]">{check.done ? <Check className="h-3 w-3" /> : null}</span>
                         <span className={check.done ? 'line-through opacity-70' : ''}>{check.text}</span>
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : null}
-              <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-[#1E6A83]">
+              <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-[#096ab7]">
                 {item.linkedTo.type === 'none' ? 'Not linked' : item.linkedTo.type}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <label className="text-[11px] text-[#1E6A83]">
+                <label className="text-[11px] text-[#096ab7]">
                   Remind
                   <input
                     aria-label="Reminder"
                     type="datetime-local"
-                    className="ml-2 rounded-full border border-[#1E6A83]/30 bg-white/70 px-2 py-1 text-[11px] text-[#203337]"
+                    className="ml-2 rounded-full border border-[#096ab7]/30 bg-white/70 px-2 py-1 text-[11px] text-[#11131b]"
                     onChange={(event) => {
                       const value = event.target.value ? new Date(event.target.value).getTime() : null;
                       void onPatch(item.id, { remindAt: value });
                     }}
                   />
                 </label>
-                <button type="button" className="text-[#1E6A83]" aria-label={trash ? 'Restore note' : 'Move to trash'} onClick={() => { void onPatch(item.id, { deletedAt: trash ? null : now }); }}>
+                <button type="button" className="text-[#096ab7]" aria-label={trash ? 'Restore note' : 'Move to trash'} onClick={() => { void onPatch(item.id, { deletedAt: trash ? null : now }); }}>
                   <Trash2 className="h-4 w-4" />
                 </button>
-                <label className="inline-flex items-center gap-1 text-[11px] text-[#203337]">
+                <label className="inline-flex items-center gap-1 text-[11px] text-[#11131b]">
                   <input
                     type="checkbox"
                     checked={selected.includes(item.id)}
@@ -255,14 +255,14 @@ export function NotesBoard({
               </div>
               {onShare ? (
                 <div className="mt-3">
-                  <p className="text-[11px] text-[#5F7074]">Sharing is off until you choose a study group.</p>
+                  <p className="text-[11px] text-[#626976]">Sharing is off until you choose a study group.</p>
                   {item.share?.status === 'live' ? (
-                    <button type="button" className="mt-1 text-xs font-semibold text-[#1E6A83]" onClick={() => { void onUnshare?.(item.id); }}>Stop sharing</button>
+                    <button type="button" className="mt-1 text-xs font-semibold text-[#096ab7]" onClick={() => { void onUnshare?.(item.id); }}>Stop sharing</button>
                   ) : (
                     <select
                       aria-label="Share with a study group"
                       defaultValue=""
-                      className="mt-1 w-full rounded-full border border-[#E7EDED] bg-white/80 px-2 py-1 text-xs text-[#203337]"
+                      className="mt-1 w-full rounded-full border border-[#e5ebf2] bg-white/80 px-2 py-1 text-xs text-[#11131b]"
                       onChange={(event) => {
                         const spaceId = event.target.value;
                         if (!spaceId) return;
@@ -290,7 +290,7 @@ export function NotesBoard({
             <button
               key={action}
               type="button"
-              className="rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]"
+              className="rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]"
               onClick={() => {
                 if (selected.length === 0) {
                   setNote('Choose at least one note first.');
@@ -307,15 +307,15 @@ export function NotesBoard({
       {answer?.cards.length ? (
         <ul className="grid gap-2 sm:grid-cols-2">
           {answer.cards.map((card) => (
-            <li key={card.front} className="rounded-2xl border border-[#E7EDED] bg-white p-3 text-sm text-[#203337]">
+            <li key={card.front} className="rounded-2xl border border-[#e5ebf2] bg-white p-3 text-sm text-[#11131b]">
               <p className="font-semibold">{card.front}</p>
-              <p className="mt-1 text-[#1E6A83]">{card.back}</p>
+              <p className="mt-1 text-[#096ab7]">{card.back}</p>
             </li>
           ))}
         </ul>
       ) : null}
-      {answer?.text ? <p className="rounded-2xl bg-white p-4 text-sm text-[#203337]">{answer.text}</p> : null}
-      {note ? <p className="text-sm text-[#203337]">{note}</p> : null}
+      {answer?.text ? <p className="rounded-2xl bg-white p-4 text-sm text-[#11131b]">{answer.text}</p> : null}
+      {note ? <p className="text-sm text-[#11131b]">{note}</p> : null}
     </DashPage>
   );
 }

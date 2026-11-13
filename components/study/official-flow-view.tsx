@@ -122,7 +122,7 @@ export function OfficialFlow({ step }: { step: OfficialScreen }) {
   return (
     <DashPage className="w-full px-4 sm:px-6">
         <div data-official-exams data-flow-step-page={step} className="flex min-h-[70vh] flex-col">
-        <p className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{copy.headline}</p>
+        <p className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{copy.headline}</p>
         <div className="mt-3">
           <OfficialTrail choice={choice} currentId={trailStep} hrefFor={(id) => studentCrumbHref(id as StudentStepId, choice)} />
         </div>
@@ -165,7 +165,7 @@ export function OfficialFlow({ step }: { step: OfficialScreen }) {
             }}
           />
         ) : null}
-        {notice ? <p className="mt-3 text-sm text-[#1E6A83] dark:text-[#3FE0D0]" role="status">{notice}</p> : null}
+        {notice ? <p className="mt-3 text-sm text-[#096ab7] dark:text-[#d9efff]" role="status">{notice}</p> : null}
         <StepNav step={step} pack={pack} packs={packs} topicId={params.topicId} level={level} board={board} subject={subjectParam} progress={progress} />
       </div>
     </DashPage>
@@ -175,10 +175,10 @@ export function OfficialFlow({ step }: { step: OfficialScreen }) {
 function LevelStep({ saved }: { saved: SavedExam[] }) {
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{copy.choose}</h1>
+      <h1 className="font-heading text-3xl text-[#11131b] dark:text-[#eaf6ff]">{copy.choose}</h1>
       {saved.length ? (
         <div className="mt-6">
-          <h2 className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{copy.myExams}</h2>
+          <h2 className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{copy.myExams}</h2>
           <div className="mt-2" data-my-exams>
             {saved.map((exam) => (
               <FlowRow
@@ -195,7 +195,7 @@ function LevelStep({ saved }: { saved: SavedExam[] }) {
       <div className="mt-6" data-level-list>
         {LEVEL_GROUPS.map((group) => (
           <div key={group.id} className="mt-4">
-            <h2 className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{group.label}</h2>
+            <h2 className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{group.label}</h2>
             {LEARNER_LEVELS.filter((item) => item.group === group.id).map((item) => (
               <FlowRow key={item.id} href={boardHref(item.id)} title={item.label} trailing="→" />
             ))}
@@ -210,8 +210,8 @@ function BoardStep({ level }: { level: string }) {
   const boards = level === 'all' ? BOARD_STYLES : boardsForLevel(level);
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{copy.board}</h1>
-      <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{levelLabel(level) || level}</p>
+      <h1 className="font-heading text-3xl text-[#11131b] dark:text-[#eaf6ff]">{copy.board}</h1>
+      <p className="mt-1 text-sm text-[#096ab7] dark:text-[#d9efff]">{levelLabel(level) || level}</p>
       <div className="mt-4" data-board-list>
         {boards.map((item) => (
           <FlowRow key={item.id} href={subjectHref(level || 'all', item.id)} title={item.label} trailing="→" />
@@ -225,8 +225,8 @@ function SubjectStep({ level, board }: { level: string; board: string }) {
   const label = BOARD_STYLES.find((item) => item.id === board)?.label || board;
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{copy.subject}</h1>
-      <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{label}</p>
+      <h1 className="font-heading text-3xl text-[#11131b] dark:text-[#eaf6ff]">{copy.subject}</h1>
+      <p className="mt-1 text-sm text-[#096ab7] dark:text-[#d9efff]">{label}</p>
       <div className="mt-4" data-subject-list>
         {officialSubjectOptions().map((item) => (
           <FlowRow key={item.slug} href={browseHref(level || 'all', board || 'all', item.slug)} title={item.label} trailing="→" />
@@ -245,11 +245,11 @@ function BrowseStep({ packs, level, board, subject }: { packs: ExamPack[]; level
   const label = officialSubjectOptions().find((item) => item.slug === subjectSlug(subject))?.label || subject;
   return (
     <section className="mt-6">
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{label}</h1>
+      <h1 className="font-heading text-3xl text-[#11131b] dark:text-[#eaf6ff]">{label}</h1>
       {visible.length === 0 ? (
         <div data-coming-soon className="mt-6 rounded-2xl border border-border px-6 py-12 text-center">
           <p className="font-heading text-2xl">{copy.comingSoon}</p>
-          <p className="mt-2 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{copy.comingSoonDetail}</p>
+          <p className="mt-2 text-sm text-[#096ab7] dark:text-[#d9efff]">{copy.comingSoonDetail}</p>
         </div>
       ) : (
         <div className="mt-4" data-exam-pack-list>
@@ -276,17 +276,17 @@ function PackStep({
   const last = progress.lastTopic && topics.some((topic) => topic.id === progress.lastTopic) ? progress.lastTopic : topics[0]?.id;
   return (
     <section className="mt-6" data-pack-overview>
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{pack.name}</h1>
-      <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{pack.blurb}</p>
+      <h1 className="font-heading text-3xl text-[#11131b] dark:text-[#eaf6ff]">{pack.name}</h1>
+      <p className="mt-1 text-sm text-[#096ab7] dark:text-[#d9efff]">{pack.blurb}</p>
       <label className="mt-4 block text-sm font-semibold">
         {copy.examDate}
         <input className="mt-1 h-11 rounded-xl border border-border bg-card px-3" type="date" value={examDate} aria-label={copy.examDate} onChange={(event) => onDate(event.target.value)} />
       </label>
-      <p className="mt-1 text-xs text-[#1E6A83] dark:text-[#3FE0D0]">{copy.examDateHint}</p>
+      <p className="mt-1 text-xs text-[#096ab7] dark:text-[#d9efff]">{copy.examDateHint}</p>
       {last ? <div className="mt-4"><FlowRow href={topicHref(pack.id, last)} title={copy.startLeft} trailing="→" /></div> : null}
       {pack.units.map((unit) => (
         <div key={unit.id} className="mt-6">
-          <h2 className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{unit.title}</h2>
+          <h2 className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{unit.title}</h2>
           {unit.topics.map((topic) => {
             const free = isFreeTopic(pack, topic.id);
             const score = progress.mastery[topic.id];
@@ -368,7 +368,7 @@ function AssignPanel({ pack, setNotice }: { pack: ExamPack; setNotice: (value: s
           {courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
         </select>
       </label>
-      <button type="submit" className="mt-4 inline-flex h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]">{copy.assign} →</button>
+      <button type="submit" className="mt-4 inline-flex h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]">{copy.assign} →</button>
       <div className="mt-4" data-class-results>
         {rows.map((row) => (
           <FlowRow key={row.id} href="/dashboard/teacher/assignments" title={row.title} meta={`${row.count}`} trailing="→" />
@@ -385,14 +385,14 @@ function TopicStep({ pack, topicId, progress }: { pack: ExamPack; topicId: strin
   const first = pack.units[0]?.topics[0]?.id ?? '';
   return (
     <section className="mt-6" data-topic-step>
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{topic.title}</h1>
-      <p className="mt-1 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{topic.unit} · {locked ? copy.locked : copy.unlocked}</p>
+      <h1 className="font-heading text-3xl text-[#11131b] dark:text-[#eaf6ff]">{topic.title}</h1>
+      <p className="mt-1 text-sm text-[#096ab7] dark:text-[#d9efff]">{topic.unit} · {locked ? copy.locked : copy.unlocked}</p>
       {progress.mastery[topicId] !== undefined ? <p className="mt-2 text-sm">{progress.mastery[topicId]}%</p> : null}
       {locked ? (
-        <div data-upgrade className="mt-6 rounded-2xl border border-[#3FE0D0] p-4">
+        <div data-upgrade className="mt-6 rounded-2xl border border-[#d9efff] p-4">
           <p className="font-heading text-xl">{copy.upgradeTitle}</p>
           <p className="mt-2 text-sm">{copy.upgradeBody}</p>
-          <p className="mt-2 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{STUDY_COSTS.packSet}</p>
+          <p className="mt-2 text-sm text-[#096ab7] dark:text-[#d9efff]">{STUDY_COSTS.packSet}</p>
           <div className="mt-3">
             <FlowRow href="/dashboard/student/billing" title={copy.seePlans} trailing="→" />
             {first ? <FlowRow href={topicHref(pack.id, first)} title={copy.freeTopicLink} trailing="→" /> : null}
@@ -469,12 +469,12 @@ function PracticeStep({ pack, topicId, difficulty }: { pack: ExamPack; topicId: 
   }
   return (
     <section className="mt-6" data-practice>
-      <h1 className="font-heading text-3xl text-[#203337] dark:text-[#E9F7FA]">{topic?.title}</h1>
-      <button type="button" className="mt-3 h-11 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0] dark:text-[#3FE0D0]" aria-pressed={timer} aria-label={copy.timer} onClick={() => setTimer((value) => !value)}>{copy.timer} {timer ? seconds : ''}</button>
+      <h1 className="font-heading text-3xl text-[#11131b] dark:text-[#eaf6ff]">{topic?.title}</h1>
+      <button type="button" className="mt-3 h-11 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] dark:border-[#d9efff] dark:text-[#d9efff]" aria-pressed={timer} aria-label={copy.timer} onClick={() => setTimer((value) => !value)}>{copy.timer} {timer ? seconds : ''}</button>
       {!attempt ? (
         <div className="mt-6">
           <p>{copy.noQuestions}</p>
-          <button type="button" className="mt-3 inline-flex h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" disabled={busy} onClick={() => void prepare()}>{busy ? copy.preparing : copy.prepare} →</button>
+          <button type="button" className="mt-3 inline-flex h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" disabled={busy} onClick={() => void prepare()}>{busy ? copy.preparing : copy.prepare} →</button>
           {error ? <p className="mt-2 text-sm">{error}</p> : null}
         </div>
       ) : question ? (
@@ -490,11 +490,11 @@ function PracticeStep({ pack, topicId, difficulty }: { pack: ExamPack; topicId: 
               setAttempt(next);
             }} />
           </label>
-          <button type="button" className="mt-3 h-11 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0] dark:text-[#3FE0D0]" onClick={() => setHintCount((count) => count > 0 ? 0 : 1)}>{hintCount ? copy.hideHint : copy.hint}</button>
+          <button type="button" className="mt-3 h-11 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] dark:border-[#d9efff] dark:text-[#d9efff]" onClick={() => setHintCount((count) => count > 0 ? 0 : 1)}>{hintCount ? copy.hideHint : copy.hint}</button>
           {hintCount > 0 ? (
             <div className="mt-3 space-y-2" data-hints>
-              {hints.slice(0, hintCount).map((hint) => <p key={hint} className="rounded-xl bg-[#3FE0D0]/15 px-3 py-2 text-sm">{hint}</p>)}
-              {hintCount < hints.length ? <button type="button" className="text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]" onClick={() => setHintCount((count) => count + 1)}>{copy.hint} →</button> : null}
+              {hints.slice(0, hintCount).map((hint) => <p key={hint} className="rounded-xl bg-[#d9efff]/15 px-3 py-2 text-sm">{hint}</p>)}
+              {hintCount < hints.length ? <button type="button" className="text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]" onClick={() => setHintCount((count) => count + 1)}>{copy.hint} →</button> : null}
             </div>
           ) : null}
           <QuestionArrows index={attempt.index} count={attempt.questions.length} onChange={changeIndex} />
@@ -583,7 +583,7 @@ function ResultsStep({ pack, topicId }: { pack: ExamPack; topicId: string }) {
     <section className="mt-6" data-topic-results>
       <h1 className="font-heading text-3xl">{copy.results}</h1>
       <p className="mt-2 text-2xl font-semibold">{copy.score} {percent}%</p>
-      <h2 className="mt-6 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{copy.weak}</h2>
+      <h2 className="mt-6 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{copy.weak}</h2>
       {weak.length === 0 ? <p className="mt-2 text-sm">{copy.noWeak}</p> : weak.map((question) => <p key={question.question} className="mt-2 text-sm">{question.question}</p>)}
       <div className="mt-4">
         <FlowRow href={practiceHref(pack.id, topicId)} title={copy.retry} trailing="→" />
@@ -630,13 +630,13 @@ function MockStep({ pack }: { pack: ExamPack }) {
           <p className="mt-2 text-sm">{copy.mockFromPack}</p>
           {!started ? (
             <div className="mt-4">
-              <button type="button" className="inline-flex h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" aria-label={copy.fullPaper} onClick={() => begin('full')}>{copy.fullPaper} · {full.papers.join(', ')} <span aria-hidden>→</span></button>
-              <button type="button" className="mt-3 inline-flex h-11 items-center rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0] dark:text-[#3FE0D0]" aria-label={copy.halfPaper} onClick={() => begin('half')}>{copy.halfPaper} <span aria-hidden>→</span></button>
+              <button type="button" className="inline-flex h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" aria-label={copy.fullPaper} onClick={() => begin('full')}>{copy.fullPaper} · {full.papers.join(', ')} <span aria-hidden>→</span></button>
+              <button type="button" className="mt-3 inline-flex h-11 items-center rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] dark:border-[#d9efff] dark:text-[#d9efff]" aria-label={copy.halfPaper} onClick={() => begin('half')}>{copy.halfPaper} <span aria-hidden>→</span></button>
             </div>
           ) : question ? (
             <div className="mt-4">
-              <button type="button" className="h-11 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold" aria-pressed={timer} aria-label={copy.timer} onClick={() => setTimer((value) => !value)}>{copy.timer} {seconds}</button>
-              <p className="mt-2 text-sm text-[#1E6A83] dark:text-[#3FE0D0]">{question.paper}</p>
+              <button type="button" className="h-11 rounded-full border border-[#096ab7] px-4 text-sm font-semibold" aria-pressed={timer} aria-label={copy.timer} onClick={() => setTimer((value) => !value)}>{copy.timer} {seconds}</button>
+              <p className="mt-2 text-sm text-[#096ab7] dark:text-[#d9efff]">{question.paper}</p>
               <div className="mt-2"><MathMarkdown>{question.question}</MathMarkdown></div>
               <textarea className="mt-3 w-full rounded-xl border px-3 py-2" rows={4} aria-label={copy.yourAnswer} value={answers[index] ?? ''} onChange={(event) => {
                 const next = [...answers];
@@ -672,19 +672,19 @@ function ReadinessStep({
   return (
     <section className="mt-6" data-readiness>
       <h1 className="font-heading text-3xl">{copy.readiness}</h1>
-      <h2 className="mt-6 text-sm font-semibold text-[#1E6A83] dark:text-[#3FE0D0]">{copy.heatMap}</h2>
+      <h2 className="mt-6 text-sm font-semibold text-[#096ab7] dark:text-[#d9efff]">{copy.heatMap}</h2>
       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3" data-heat-map>
         {topics.map((topic) => {
           const score = progress.mastery[topic.id] ?? 0;
-          return <div key={topic.id} className="rounded-xl px-3 py-2 text-sm text-[#203337]" style={{ background: `rgba(63, 224, 208, ${0.15 + score / 140})` }}>{topic.title} {score}%</div>;
+          return <div key={topic.id} className="rounded-xl px-3 py-2 text-sm text-[#11131b]" style={{ background: `rgba(63, 224, 208, ${0.15 + score / 140})` }}>{topic.title} {score}%</div>;
         })}
       </div>
       <p className="mt-4 text-lg font-semibold" data-estimate>{copy.estimate} · {GRADE_SCALES[pack.scale].label} · {estimate.grade}{mockPercent !== null ? ` · ${mockPercent}%` : ''}</p>
       <h2 className="mt-6 text-sm font-semibold">{copy.revision}</h2>
       {plan.length === 0 ? <p className="mt-2 text-sm">{copy.setDate}</p> : plan.map((row) => <p key={row.day} className="mt-1 text-sm">{row.day} · {row.title}</p>)}
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" className="h-11 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" onClick={onSave}>{copy.saveResults} →</button>
-        <button type="button" className="h-11 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83] dark:border-[#3FE0D0] dark:text-[#3FE0D0]" onClick={onShare}>{copy.share} →</button>
+        <button type="button" className="h-11 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" onClick={onSave}>{copy.saveResults} →</button>
+        <button type="button" className="h-11 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7] dark:border-[#d9efff] dark:text-[#d9efff]" onClick={onShare}>{copy.share} →</button>
       </div>
       <div className="mt-3"><FlowRow href="/dashboard/student/transcript" title={copy.openTranscript} trailing="→" /></div>
     </section>

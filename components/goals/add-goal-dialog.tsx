@@ -264,7 +264,7 @@ export function AddGoalDialog({
           Sparks bonus when this is finished on time
         </label>
         <Input value={reward} onChange={e => setReward(e.target.value)} placeholder="Optional reward, for example a film night" aria-label="Reward" />
-        <p className="text-sm text-[#1E6A83]">Teachers and linked parents can see this goal.</p>
+        <p className="text-sm text-[#096ab7]">Teachers and linked parents can see this goal.</p>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => { if (confirmIfDirty(dirty)) onClose(); }}>Cancel</Button>
           <Button type="button" onClick={submit} disabled={saving || !title.trim()}>{saving ? 'Saving…' : 'Save goal'}</Button>

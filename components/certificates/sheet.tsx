@@ -77,7 +77,7 @@ export function CertificateSheet({
           font-display: swap;
         }
       `}</style>
-      <div style={{ ...place(layout.band, page), background: 'linear-gradient(90deg, #1E6A83 0%, #3FE0D0 100%)' }} />
+      <div style={{ ...place(layout.band, page), background: 'linear-gradient(90deg, #096ab7 0%, #d9efff 100%)' }} />
       {design.border === 'line' || design.border === 'double' ? (
         <div style={{ ...place(layout.outer, page), border: `${design.border === 'double' ? 3 : 1.5}px solid ${colours.line}`, boxSizing: 'border-box' }} />
       ) : null}

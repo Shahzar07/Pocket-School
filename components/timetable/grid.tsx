@@ -18,26 +18,26 @@ export function TimetableGrid({
 }) {
   return (
     <div className="overflow-x-auto" data-print-root="1">
-      <table className="w-full min-w-[720px] border-collapse text-sm text-[#203337] dark:text-[#E7F4F2]">
+      <table className="w-full min-w-[720px] border-collapse text-sm text-[#11131b] dark:text-[#E7F4F2]">
         <thead>
           <tr>
-            <th className="border border-[#1E6A83]/20 bg-[#E9F7FA] p-2 text-left dark:border-[#3FE0D0]/25 dark:bg-[#122226]">{TIMETABLE_COPY.setupPeriods}</th>
+            <th className="border border-[#096ab7]/20 bg-[#eaf6ff] p-2 text-left dark:border-[#d9efff]/25 dark:bg-[#122226]">{TIMETABLE_COPY.setupPeriods}</th>
             {doc.days.map(day => (
-              <th key={day} className="border border-[#1E6A83]/20 bg-[#E9F7FA] p-2 text-left dark:border-[#3FE0D0]/25 dark:bg-[#122226]">{DAY_LABEL[day]}</th>
+              <th key={day} className="border border-[#096ab7]/20 bg-[#eaf6ff] p-2 text-left dark:border-[#d9efff]/25 dark:bg-[#122226]">{DAY_LABEL[day]}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {doc.periods.map(period => (
             <tr key={period.id}>
-              <th className="border border-[#1E6A83]/15 p-2 text-left font-semibold">
+              <th className="border border-[#096ab7]/15 p-2 text-left font-semibold">
                 {period.label}
-                <span className="mt-1 block text-xs font-normal text-[#1E6A83]">{period.start}</span>
+                <span className="mt-1 block text-xs font-normal text-[#096ab7]">{period.start}</span>
               </th>
               {doc.days.map(day => {
                 const cell = lessons.filter(lesson => lesson.day === day && lesson.periodId === period.id);
                 return (
-                  <td key={`${day}:${period.id}`} className="border border-[#1E6A83]/15 align-top p-1">
+                  <td key={`${day}:${period.id}`} className="border border-[#096ab7]/15 align-top p-1">
                     <div
                       data-slot={`${day}:${period.id}`}
                       className="min-h-16 rounded-xl"
@@ -64,10 +64,10 @@ export function TimetableGrid({
                               if (selectedId && selectedId !== lesson.id) onMove(selectedId, day, period.id);
                               else onSelect(lesson.id);
                             }}
-                            className={`mb-1 w-full rounded-xl px-2 py-1 text-left text-[#203337] ${selectedId === lesson.id ? 'bg-[#3FE0D0]' : 'bg-[#E9F7FA] dark:bg-[#1A3338] dark:text-[#E7F4F2]'}`}
+                            className={`mb-1 w-full rounded-xl px-2 py-1 text-left text-[#11131b] ${selectedId === lesson.id ? 'bg-[#d9efff]' : 'bg-[#eaf6ff] dark:bg-[#1A3338] dark:text-[#E7F4F2]'}`}
                           >
                             <span className="block font-semibold">{subject ? `${subject.name} — ${subject.level}` : lesson.subjectId}</span>
-                            <span className="block text-xs text-[#1E6A83] dark:text-[#E7F4F2]">{teacher?.name} · {room?.name}</span>
+                            <span className="block text-xs text-[#096ab7] dark:text-[#E7F4F2]">{teacher?.name} · {room?.name}</span>
                           </button>
                         );
                       })}
@@ -76,7 +76,7 @@ export function TimetableGrid({
                           type="button"
                           data-empty-slot={`${day}:${period.id}`}
                           aria-label={`${DAY_LABEL[day]} ${period.label}`}
-                          className="h-16 w-full rounded-xl text-xs text-[#1E6A83]"
+                          className="h-16 w-full rounded-xl text-xs text-[#096ab7]"
                           onClick={() => { if (selectedId) onMove(selectedId, day, period.id); }}
                         >
                           {period.start}

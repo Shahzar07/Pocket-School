@@ -525,7 +525,7 @@ export function TeacherConversation({
   };
 
   return (
-    <div className={`${frame} overflow-hidden flex flex-col ${lightChat ? 'bg-[#F7FBFC] text-[#203337]' : 'bg-[#121E22] text-white'}`} data-teacher-theme={lightChat ? 'light' : 'dark'} dir={textDirection(lang)}>
+    <div className={`${frame} overflow-hidden flex flex-col ${lightChat ? 'bg-[#F7FBFC] text-[#11131b]' : 'bg-[#121E22] text-white'}`} data-teacher-theme={lightChat ? 'light' : 'dark'} dir={textDirection(lang)}>
       <AnimatePresence>
         {livePrompt && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-black/70 grid place-items-center p-4" onClick={() => setLivePrompt(false)}>
@@ -533,7 +533,7 @@ export function TeacherConversation({
               <Phone className="w-6 h-6 mx-auto mb-3" />
               <h3 className="font-bold text-lg">{liveAddon?.name ?? 'ET AI Live'}</h3>
               <p className="text-white/60 text-sm mt-2">{liveAddon?.blurb ?? 'Live voice and video with your teacher are part of ET AI Live.'}</p>
-              <p className="text-2xl font-extrabold mt-4">{liveQuote ? formatMoney(liveQuote.amount, liveQuote.currency) : ''}<span className="text-sm font-medium text-white/50">/month</span></p>
+              <p className="text-2xl font-semibold mt-4">{liveQuote ? formatMoney(liveQuote.amount, liveQuote.currency) : ''}<span className="text-sm font-medium text-white/50">/month</span></p>
               <p className="text-white/40 text-[11px] mt-1">Text, voice notes, and photos stay available. Live voice and video need ET AI Live.</p>
               <Link href="/pricing#addons" className="mt-5 block w-full h-11 rounded-full font-bold text-black grid place-items-center" style={{ background: accent }}>See ET AI Live</Link>
               <button type="button" onClick={() => setLivePrompt(false)} className="mt-3 text-white/50 text-xs font-semibold">Keep chatting</button>
@@ -695,7 +695,7 @@ export function TeacherConversation({
               <button type="button" onClick={() => fileRef.current?.click()} className="w-11 h-11 rounded-full border border-white/15 grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="Attach a photo"><Camera className="w-4 h-4" /></button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label="Photo upload" data-photo-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
               <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" aria-label="Camera photo" data-camera-file="1" onChange={event => { onPhoto(event.target.files?.[0]); event.target.value = ''; }} />
-              <button type="button" data-mic="1" onClick={() => void startRecording()} aria-pressed={recording} className={`w-11 h-11 rounded-full grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${recording ? 'bg-[#1E6A83]' : 'border border-white/15'}`} aria-label={recording ? 'Stop and send voice note' : 'Record a voice note'}>
+              <button type="button" data-mic="1" onClick={() => void startRecording()} aria-pressed={recording} className={`w-11 h-11 rounded-full grid place-items-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${recording ? 'bg-[#096ab7]' : 'border border-white/15'}`} aria-label={recording ? 'Stop and send voice note' : 'Record a voice note'}>
                 {recording ? <PhoneOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
               <label htmlFor={`teacher-reply-${teacher.id}`} className="text-[11px] text-white/60 self-center shrink-0">

@@ -31,7 +31,7 @@ export function GenderSelect({
           onChange(next === 'male' || next === 'female' ? next : '');
         }}
         className={inverse
-          ? 'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E6A83]'
+          ? 'w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-white px-4 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#096ab7]'
           : 'h-11 w-full rounded-xl border border-border bg-background px-3 text-sm'}
       >
         <option value="" className="bg-[#0B0F1A]">Choose</option>
@@ -89,17 +89,17 @@ export function DemographicConsent({
   const inverse = tone === 'inverse';
   return (
     <label className={inverse
-      ? 'flex items-start gap-3 rounded-2xl border border-[#1E6A83]/40 bg-[#203337] p-4 cursor-pointer'
-      : 'flex items-start gap-3 rounded-xl border border-[#1E6A83]/40 bg-[#E9F7FA]/40 p-3 cursor-pointer'}>
+      ? 'flex items-start gap-3 rounded-2xl border border-[#096ab7]/40 bg-[#11131b] p-4 cursor-pointer'
+      : 'flex items-start gap-3 rounded-xl border border-[#096ab7]/40 bg-[#eaf6ff]/40 p-3 cursor-pointer'}>
       <input
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 accent-[#1E6A83]"
+        className="mt-0.5 h-4 w-4 shrink-0 accent-[#096ab7]"
         aria-label="Demographic statistics consent"
       />
-      <span className={inverse ? 'text-xs leading-relaxed text-[#E9F7FA]' : 'text-xs leading-relaxed text-[#203337]'}>
+      <span className={inverse ? 'text-xs leading-relaxed text-[#eaf6ff]' : 'text-xs leading-relaxed text-[#11131b]'}>
         {DEMOGRAPHIC_CONSENT}
       </span>
     </label>

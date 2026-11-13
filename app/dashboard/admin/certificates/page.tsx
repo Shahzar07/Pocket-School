@@ -31,18 +31,18 @@ export default function AdminCertificatesPage() {
   }, []);
 
   if (hidden || (profile && String(profile.role) === 'partner_merchant')) {
-    return <p className="text-sm text-[#203337]">Partners do not design certificates.</p>;
+    return <p className="text-sm text-[#11131b]">Partners do not design certificates.</p>;
   }
   if (profile?.role === 'teacher') {
-    return <p className="text-sm text-[#203337]">Teachers issue class work from their classroom. Certificate templates stay with the institution admin.</p>;
+    return <p className="text-sm text-[#11131b]">Teachers issue class work from their classroom. Certificate templates stay with the institution admin.</p>;
   }
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
       <header>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83] dark:text-[#3FE0D0]">Admin</p>
-        <h1 className="mt-2 font-heading text-4xl text-[#203337] dark:text-[#E8F4F6]">Certificates</h1>
-        <p className="mt-2 max-w-2xl text-sm text-[#1E6A83] dark:text-[#3FE0D0]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#096ab7] dark:text-[#d9efff]">Admin</p>
+        <h1 className="mt-2 font-heading text-4xl text-[#11131b] dark:text-[#E8F4F6]">Certificates</h1>
+        <p className="mt-2 max-w-2xl text-sm text-[#096ab7] dark:text-[#d9efff]">
           Design the certificate, keep more than one template, and set a default. An institution admin saves an override for their school only.
         </p>
       </header>
@@ -53,7 +53,7 @@ export default function AdminCertificatesPage() {
           institutionId={profile?.institutionId ?? ''}
           comingSoon={comingSoon}
         />
-      ) : <p className="text-sm text-[#1E6A83]">Loading templates.</p>}
+      ) : <p className="text-sm text-[#096ab7]">Loading templates.</p>}
       {platform ? <IssuanceDesk mode="admin" /> : null}
     </div>
   );

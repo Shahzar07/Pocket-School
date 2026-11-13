@@ -31,11 +31,11 @@ const fadeUp: Record<string, any> = {
 
 const TYPE_COLORS: Record<string, string> = {
   assignment: 'bg-primary',
-  exam: 'bg-[#1E6A83]',
+  exam: 'bg-[#096ab7]',
   event: 'bg-success',
   holiday: 'bg-[var(--ps-cyan)]',
   class: 'bg-teal-500',
-  payment: 'bg-[#1E6A83]',
+  payment: 'bg-[#096ab7]',
 };
 
 const TYPE_BADGE: Record<string, string> = {

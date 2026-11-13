@@ -7,7 +7,7 @@ import { TaskList } from './task-list';
 import { useAdminTasks } from './use-admin-tasks';
 
 const fieldClass = 'min-h-11 w-full rounded-2xl border border-border bg-card px-3 text-sm text-foreground';
-const buttonClass = 'inline-flex min-h-11 items-center rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]';
+const buttonClass = 'inline-flex min-h-11 items-center rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]';
 
 const TYPES: Array<AdminTaskType | 'all'> = ['all', ...ADMIN_TASK_TYPES];
 const TYPE_LABEL: Record<AdminTaskType, string> = {
@@ -85,7 +85,7 @@ export function ActionCentrePage() {
 
   return (
     <div className="space-y-5 pb-24" data-admin-tasks="1">
-      <header className="ps-hero-panel rounded-[24px] px-5 py-6 text-white">
+      <header className="ps-hero-panel rounded-[24px] px-5 py-6 text-foreground">
         <p className="text-sm font-medium">Admin desk</p>
         <h1 className="font-heading text-4xl tracking-tight">Action Centre</h1>
         <p className="mt-1 max-w-xl text-sm">Work that is waiting on an admin. SafeLine names stay on the source document.</p>
@@ -96,13 +96,13 @@ export function ActionCentrePage() {
             <li key={row.type}>
               <button type="button" className="rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground" onClick={() => setType(row.type)}>
                 {row.type.replace(/_/g, ' ')} {row.total}
-                {row.urgent > 0 ? <span className="text-[#1E6A83] dark:text-[#3FE0D0]"> · {row.urgent} urgent</span> : null}
+                {row.urgent > 0 ? <span className="text-[#096ab7] dark:text-[#d9efff]"> · {row.urgent} urgent</span> : null}
               </button>
             </li>
           ))}
         </ul>
       ) : null}
-      {note ? <p className="text-sm text-[#1E6A83]" role="status">{note}</p> : null}
+      {note ? <p className="text-sm text-[#096ab7]" role="status">{note}</p> : null}
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="text-sm font-semibold text-foreground">
           Type

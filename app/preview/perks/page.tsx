@@ -10,7 +10,7 @@ const offers: PerkOffer[] = [
 
 export default function PreviewPerksPage() {
   return (
-    <main className="min-h-screen bg-[#F4F6F6] px-4 py-8">
+    <main className="min-h-screen bg-[#f8fafc] px-4 py-8">
       <PerksBoard offers={offers} />
     </main>
   );

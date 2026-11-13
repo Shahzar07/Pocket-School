@@ -1,0 +1,406 @@
+/* Poket's shared visual language. Layouts retain their own density and controls. */
+:root:root {
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), system-ui, sans-serif;
+  --font-dm-sans: var(--font-jakarta);
+  --font-dm-serif: var(--font-jakarta);
+  --background: #f8fafc;
+  --foreground: #11131b;
+  --card: #fff;
+  --card-foreground: #11131b;
+  --popover: #fff;
+  --popover-foreground: #11131b;
+  --primary: #096ab7;
+  --primary-foreground: #fff;
+  --secondary: #eaf6ff;
+  --secondary-foreground: #096ab7;
+  --muted: #f1f5f9;
+  --muted-foreground: #626976;
+  --accent: #eaf6ff;
+  --accent-foreground: #096ab7;
+  --border: #e5ebf2;
+  --input: #dbe4ed;
+  --ring: #178bee;
+  --ink: #11131b;
+  --blue-deep: #096ab7;
+  --blue-bright: #8bc9f5;
+  --brand-primary: #178bee;
+  --bg: #f8fafc;
+  --wash: #eaf6ff;
+  --line: #e5ebf2;
+  --muted-ink: #626976;
+  --teacher: #fff0e6;
+  --parent: #f3eaff;
+  --admin: #eaf6ff;
+  --sidebar: #fff;
+  --sidebar-foreground: #11131b;
+  --sidebar-primary: #096ab7;
+  --sidebar-primary-foreground: #fff;
+  --sidebar-accent: #eaf6ff;
+  --sidebar-accent-foreground: #096ab7;
+  --sidebar-border: #e5ebf2;
+  --sidebar-ring: #178bee;
+  --ps-bg: #f8fafc;
+  --ps-card: #fff;
+  --ps-ink: #11131b;
+  --ps-muted: #626976;
+  --ps-faint: #7a8190;
+  --ps-wash: #eaf6ff;
+  --ps-mist: #f1f7fc;
+  --ps-line: #e5ebf2;
+  --ps-primary: #096ab7;
+  --ps-blue-deep: #096ab7;
+  --ps-blue-bright: #8bc9f5;
+  --ps-on-primary: #fff;
+  --ps-cyan: #d9efff;
+  --ps-cyan-strong: #178bee;
+  --ps-cyan-text: #096ab7;
+  --ps-cyan-ink: #11131b;
+  --ps-cyan-border: #a4c9e6;
+  --ps-cyan-soft: #eaf6ff;
+  --ps-amber: #d9efff;
+  --ps-on-amber: #11131b;
+  --ps-amber-fill: #d9efff;
+  --ps-amber-soft: #eaf6ff;
+  --ps-tile-wash: #eaf6ff;
+  --ps-tile-ink: #096ab7;
+  --ps-urgent-wash: #096ab7;
+  --ps-urgent-ink: #fff;
+  --ps-teal: #096ab7;
+  --ps-on-teal: #fff;
+  --ps-on-cyan: #11131b;
+  --ps-role-student: #eaf6ff;
+  --ps-role-teacher: #fff0e6;
+  --ps-role-parent: #f3eaff;
+  --ps-role-admin: #f1f7fc;
+  --ps-glass: #ffffffed;
+  --ps-card-edge: #e5ebf2;
+  --ps-glow: transparent;
+  --ps-hero: #096ab7;
+  --ps-card-face: #096ab7;
+  --ps-band: #096ab7;
+  --hero-gradient: #096ab7;
+  --shadow-card: 0 2px 8px #14233505;
+  --shadow-card-hover: 0 6px 20px #1423350a;
+}
+.dark.dark {
+  color-scheme: dark;
+  --background: #101720;
+  --foreground: #eff5fa;
+  --card: #17212d;
+  --card-foreground: #eff5fa;
+  --popover: #17212d;
+  --popover-foreground: #eff5fa;
+  --primary: #8bc9f5;
+  --primary-foreground: #101720;
+  --secondary: #213348;
+  --secondary-foreground: #acd9ff;
+  --muted: #1d2a39;
+  --muted-foreground: #b0bdcc;
+  --accent: #213348;
+  --accent-foreground: #acd9ff;
+  --border: #2b3b4d;
+  --input: #374b60;
+  --ring: #8bc9f5;
+  --ink: #eff5fa;
+  --bg: #101720;
+  --wash: #213348;
+  --line: #2b3b4d;
+  --muted-ink: #b0bdcc;
+  --sidebar: #141e29;
+  --sidebar-foreground: #eff5fa;
+  --sidebar-border: #2b3b4d;
+  --sidebar-accent: #213348;
+  --sidebar-accent-foreground: #acd9ff;
+  --sidebar-primary: #8bc9f5;
+  --ps-bg: #101720;
+  --ps-card: #17212d;
+  --ps-ink: #eff5fa;
+  --ps-muted: #b0bdcc;
+  --ps-faint: #92a4b8;
+  --ps-wash: #213348;
+  --ps-mist: #1d2a39;
+  --ps-line: #2b3b4d;
+  --ps-primary: #8bc9f5;
+  --ps-blue-deep: #8bc9f5;
+  --ps-on-primary: #101720;
+  --ps-cyan: #8bc9f5;
+  --ps-cyan-ink: #101720;
+  --ps-cyan-text: #8bc9f5;
+  --ps-cyan-border: #527ea4;
+  --ps-cyan-soft: #213348;
+  --ps-amber: #8bc9f5;
+  --ps-on-amber: #101720;
+  --ps-amber-fill: #8bc9f5;
+  --ps-amber-soft: #213348;
+  --ps-tile-wash: #213348;
+  --ps-tile-ink: #acd9ff;
+  --ps-urgent-wash: #8bc9f5;
+  --ps-urgent-ink: #101720;
+  --ps-teal: #8bc9f5;
+  --ps-on-teal: #101720;
+  --ps-on-cyan: #101720;
+  --ps-role-student: #213348;
+  --ps-role-teacher: #272c35;
+  --ps-role-parent: #282b3e;
+  --ps-role-admin: #1d2a39;
+  --ps-glass: #17212d;
+  --ps-card-edge: #2b3b4d;
+  --ps-glow: transparent;
+  --shadow-card: 0 0 0 1px #2b3b4d;
+  --shadow-card-hover: 0 0 0 1px #527ea4;
+}
+html .font-heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+body {
+  font-family: var(--font-sans);
+  line-height: 1.55;
+}
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+html .ps-surface {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+  border-radius: 20px;
+}
+html .ps-hero-panel {
+  color: var(--foreground);
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+html .ps-hero-panel::after {
+  display: none;
+}
+html .ps-blob,
+html .ps-blob-warm {
+  display: none;
+}
+html .ps-ink-gradient {
+  color: var(--foreground);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.poket-wordmark {
+  display: block;
+  width: 144px;
+  height: auto;
+  overflow: hidden;
+  mix-blend-mode: multiply;
+  flex-shrink: 0;
+}
+.dark .poket-wordmark,
+.poket-wordmark--inverse {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+.poket-home .poket-logo {
+  filter: none;
+  mix-blend-mode: multiply;
+}
+[data-dashboard-role] aside[data-tour="sidebar"] {
+  box-shadow: 4px 0 24px #14233503;
+}
+[data-dashboard-role] aside nav a {
+  min-height: 36px;
+  border-radius: 10px;
+}
+[data-dashboard-role] aside nav a[aria-current="page"] {
+  box-shadow: none;
+}
+[data-dashboard-role] aside nav svg {
+  stroke-width: 1.5;
+}
+[data-dashboard-role] #dashboard-main {
+  background: var(--background);
+}
+[data-dashboard-role] #dashboard-main > .relative:not(.flex) {
+  max-width: 1600px;
+  margin-inline: auto;
+  width: 100%;
+}
+.poket-auth {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--card);
+}
+.poket-auth__story {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  overflow: hidden;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+  background: #eaf6ff;
+  color: #11131b;
+}
+.poket-auth__sky {
+  position: absolute;
+  inset: 0;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.poket-auth__sky .scene-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.poket-auth__brand,
+.poket-auth__copy {
+  position: relative;
+  z-index: 1;
+}
+.poket-auth__copy {
+  max-width: 480px;
+  margin: auto 0;
+  padding: 64px 0;
+}
+.poket-auth__copy h1 {
+  font-size: clamp(36px, 3.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -2px;
+  font-weight: 600;
+}
+.poket-auth__copy p {
+  margin-top: 24px;
+  max-width: 380px;
+  color: #526376;
+  line-height: 1.7;
+}
+.poket-auth__features {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.poket-auth__features > div {
+  background: #ffffffcf;
+  border: 1px solid #dcecf8;
+  padding: 20px;
+  border-radius: 16px;
+}
+.poket-auth__features svg {
+  width: 20px;
+  height: 20px;
+  color: #096ab7;
+  stroke-width: 1.5;
+  margin-bottom: 12px;
+}
+.poket-auth__features strong {
+  font-size: 13px;
+  font-weight: 600;
+  display: block;
+}
+.poket-auth__features p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #626976;
+  margin-top: 4px;
+}
+.poket-auth__form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 88px 48px;
+  background: var(--card);
+}
+.poket-auth__form-inner {
+  width: 100%;
+  max-width: 440px;
+}
+.poket-auth__mobile-brand {
+  display: none;
+}
+.poket-auth__language {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+.poket-auth input,
+.poket-auth select {
+  border-radius: 10px;
+}
+.poket-auth h2 {
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+.poket-auth button[type="submit"] {
+  background: var(--foreground);
+  color: var(--background);
+  box-shadow: none;
+  border-radius: 12px;
+}
+.pricing-page [data-price-card] {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: none;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
+}
+.pricing-page [data-price-card]:hover {
+  border-color: #a4c9e6;
+  transform: translateY(-2px);
+}
+.pricing-page [data-price-card][data-featured="true"] {
+  border-color: #b5dafa;
+  background: var(--secondary);
+  box-shadow: 0 6px 24px #14233506;
+}
+@media (max-width: 1000px) {
+  .poket-auth {
+    grid-template-columns: 1fr;
+  }
+  .poket-auth__story {
+    display: none;
+  }
+  .poket-auth__mobile-brand {
+    display: block;
+    margin-bottom: 40px;
+  }
+  .poket-auth__form {
+    min-height: 100dvh;
+    padding: 88px 24px 48px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+.poket-symbol {
+  display: block;
+  overflow: hidden;
+  mix-blend-mode: multiply;
+}
+.dark .poket-symbol {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+html .poket-auth__story .poket-wordmark {
+  filter: none;
+  mix-blend-mode: multiply;
+}
+html .ps-hero-panel [class*="text-primary-foreground"] {
+  color: var(--foreground);
+}
+.pricing-page [data-price-card] {scroll-margin-top:108px}

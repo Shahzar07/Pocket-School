@@ -220,7 +220,7 @@ Write encouraging, constructive feedback in 2-3 sentences that acknowledges what
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-extrabold text-foreground text-lg">{selected.lessonTitle}</h2>
+                <h2 className="font-semibold text-foreground text-lg">{selected.lessonTitle}</h2>
                 <p className="text-sm text-muted-foreground">
                   {selected.studentName || 'Student'} · {selected.answers.filter(a => a.correct).length}/{selected.maxScore} correct
                 </p>

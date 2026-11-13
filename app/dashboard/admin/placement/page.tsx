@@ -369,7 +369,7 @@ export default function CoursePlacementPage() {
                   >
                     <span className="block font-medium">{course.title}</span>
                     <span className="block text-xs text-muted-foreground">{line}</span>
-                    {year ? <span className="block text-xs text-[#1E6A83]">{year}</span> : null}
+                    {year ? <span className="block text-xs text-[#096ab7]">{year}</span> : null}
                   </button>
                 </li>
               );
@@ -393,7 +393,7 @@ export default function CoursePlacementPage() {
                   {hint ? (
                     <div className="mt-2 rounded-xl bg-[#F4FBFA] p-3 text-sm">
                       <p>{PLACE.yearFlag}</p>
-                      <p className="text-[#1E6A83]">{`${PLACE.suggested}: ${hint}`}</p>
+                      <p className="text-[#096ab7]">{`${PLACE.suggested}: ${hint}`}</p>
                       <Button type="button" variant="outline" className="mt-2 h-9" onClick={() => void rename(selected, hint)}>{PLACE.rename}</Button>
                     </div>
                   ) : null}
@@ -438,7 +438,7 @@ export default function CoursePlacementPage() {
                       </label>
                     </span>
                     <p className="mt-1 text-xs text-muted-foreground">{PLACE.featuredHelp}</p>
-                    {featuredLocked ? <p className="mt-1 text-xs text-[#1E6A83]">{PLACE.featuredLock}</p> : null}
+                    {featuredLocked ? <p className="mt-1 text-xs text-[#096ab7]">{PLACE.featuredLock}</p> : null}
                     <label className="mt-3 block text-sm">
                       {PLACE.priority}
                       <input
@@ -513,7 +513,7 @@ export default function CoursePlacementPage() {
                         />
                         <span>
                           {school.name}
-                          {school.duplicateIds.length > 0 ? <span className="mt-0.5 block text-xs text-[#1E6A83]">{PLACE.duplicateInstitution}</span> : null}
+                          {school.duplicateIds.length > 0 ? <span className="mt-0.5 block text-xs text-[#096ab7]">{PLACE.duplicateInstitution}</span> : null}
                         </span>
                       </label>
                     ))}

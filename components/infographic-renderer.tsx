@@ -236,17 +236,17 @@ function markdownToHtml(md: string): string {
 const DOC_STYLES = `
   * { box-sizing: border-box; }
   body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #16181d; margin: 0; padding: 36px 40px; line-height: 1.6; }
-  .ps-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 3px solid #1E6A83; padding-bottom: 10px; margin-bottom: 26px; }
-  .ps-mark { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: #1E6A83; }
+  .ps-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 3px solid #096ab7; padding-bottom: 10px; margin-bottom: 26px; }
+  .ps-mark { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; color: #096ab7; }
   .ps-mark span { color: #16181d; }
   .ps-kind { font-size: 11px; text-transform: uppercase; letter-spacing: .18em; color: #6b7280; }
   h1 { font-size: 26px; margin: 0 0 18px; letter-spacing: -0.02em; }
-  h2 { font-size: 19px; margin: 26px 0 8px; color: #1f2937; border-left: 4px solid #1E6A83; padding-left: 10px; }
+  h2 { font-size: 19px; margin: 26px 0 8px; color: #1f2937; border-left: 4px solid #096ab7; padding-left: 10px; }
   h3, h4, h5, h6 { font-size: 15px; margin: 18px 0 6px; color: #374151; }
   p { margin: 0 0 10px; font-size: 13.5px; }
   ul { margin: 0 0 12px; padding-left: 20px; }
   li { font-size: 13.5px; margin-bottom: 5px; }
-  blockquote { margin: 14px 0; padding: 12px 16px; background: #f3f4f6; border-left: 4px solid #1E6A83; font-style: italic; font-size: 13.5px; }
+  blockquote { margin: 14px 0; padding: 12px 16px; background: #f3f4f6; border-left: 4px solid #096ab7; font-style: italic; font-size: 13.5px; }
   hr { border: none; border-top: 1px solid #e5e7eb; margin: 22px 0; }
   code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 12.5px; }
   .ps-foot { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 10.5px; color: #9ca3af; }
@@ -468,7 +468,7 @@ export function InfographicRenderer({ content, dark = false }: InfographicRender
       {/* Eyebrow + export toolbar */}
       <div className="mb-5 flex flex-col gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1E6A83] to-[#203337] flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#096ab7] to-[#11131b] flex items-center justify-center shrink-0">
             <BarChart3 className="w-4 h-4 text-white" />
           </div>
           <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] truncate ${dark ? 'text-slate-400' : 'text-muted-foreground'}`}>
@@ -483,7 +483,7 @@ export function InfographicRenderer({ content, dark = false }: InfographicRender
         <h2 className={`text-2xl sm:text-3xl font-bold leading-tight tracking-tight ${dark ? 'text-white' : 'text-foreground'}`}>
           {doc.title}
         </h2>
-        <div className="mt-3 h-1 w-20 rounded-full bg-gradient-to-r from-[#1E6A83] via-[#3FE0D0] to-[#3FE0D0]" />
+        <div className="mt-3 h-1 w-20 rounded-full bg-gradient-to-r from-[#096ab7] via-[#d9efff] to-[#d9efff]" />
       </div>
 
       {/* Lead paragraphs */}

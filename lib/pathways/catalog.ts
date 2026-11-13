@@ -52,7 +52,7 @@ export interface PathwayRecord {
   priceDetail: string;
   included: string[];
   progression: PathwayLink[];
-  boards: string[];
+  boards: readonly string[];
   boardNote: string;
   disclaimer: string;
   stages: PathwayStage[];

@@ -37,7 +37,7 @@ export default function DestinationsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (!institutionId) return <p className="p-6 text-sm text-[#203337]">This page opens once your account is tied to an academy.</p>;
+  if (!institutionId) return <p className="p-6 text-sm text-[#11131b]">This page opens once your account is tied to an academy.</p>;
 
   return (
     <DashPage className="max-w-5xl">
@@ -48,11 +48,11 @@ export default function DestinationsPage() {
       />
       <DestinationBoardView board={board} />
       {requests.length > 0 && (
-        <section className="mt-6 rounded-[28px] border border-[#203337]/10 bg-white p-6 text-[#203337]">
+        <section className="mt-6 rounded-[28px] border border-[#11131b]/10 bg-white p-6 text-[#11131b]">
           <h2 className="font-heading text-2xl">Verification requests</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {requests.map((item) => (
-              <li key={item.id} className="rounded-xl bg-[#E9F7FA] px-3 py-2">
+              <li key={item.id} className="rounded-xl bg-[#eaf6ff] px-3 py-2">
                 <p className="font-medium">{item.itemTitle}</p>
                 <p>{item.note}{item.visitorLabel ? ` · ${item.visitorLabel}` : ''}</p>
                 <button type="button" className="mt-1 font-semibold" onClick={() => {

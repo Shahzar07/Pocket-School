@@ -46,9 +46,9 @@ export function JoinByCode({
   };
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-[#1E6A83]/40 bg-card shadow-[var(--shadow-card)]">
-      <div className="bg-gradient-to-r from-[#203337] via-[#1E6A83] to-[#1E6A83] px-5 py-4 text-white">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#E9F7FA]">Poket School</p>
+    <section className="overflow-hidden rounded-3xl border border-[#096ab7]/40 bg-card shadow-[var(--shadow-card)]">
+      <div className="bg-gradient-to-r from-[#11131b] via-[#096ab7] to-[#096ab7] px-5 py-4 text-white">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#eaf6ff]">Poket School</p>
         <h2 className="mt-1 font-heading text-2xl">{title}</h2>
         <p className="mt-1 max-w-xl text-sm text-white/80">{body}</p>
       </div>
@@ -61,31 +61,31 @@ export function JoinByCode({
             aria-label="Student number"
             autoCapitalize="characters"
             autoComplete="off"
-            className="h-12 flex-1 rounded-2xl border border-[#203337]/20 bg-background px-4 font-mono text-sm tracking-wider outline-none focus:border-[#1E6A83]"
+            className="h-12 flex-1 rounded-2xl border border-[#11131b]/20 bg-background px-4 font-mono text-sm tracking-wider outline-none focus:border-[#096ab7]"
           />
-          <button type="submit" disabled={busy} className="h-12 rounded-2xl bg-[#203337] px-4 text-sm font-semibold text-white disabled:opacity-60">
+          <button type="submit" disabled={busy} className="h-12 rounded-2xl bg-[#11131b] px-4 text-sm font-semibold text-white disabled:opacity-60">
             {actionLabel}
           </button>
-          <button type="button" onClick={() => setScanning((open) => !open)} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#1E6A83] px-4 text-sm font-semibold text-[#203337]">
+          <button type="button" onClick={() => setScanning((open) => !open)} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#096ab7] px-4 text-sm font-semibold text-[#11131b]">
             <Camera className="h-4 w-4" /> {scanning ? 'Hide camera' : 'Scan QR'}
           </button>
         </form>
         {scanning && <CodeScanner onCode={submit} onClose={() => setScanning(false)} />}
-        {message && <p className="rounded-2xl bg-[#E9F7FA] px-4 py-3 text-sm text-[#203337]">{message}</p>}
+        {message && <p className="rounded-2xl bg-[#eaf6ff] px-4 py-3 text-sm text-[#11131b]">{message}</p>}
         {card && (
-          <article className="flex items-center gap-4 rounded-2xl border border-[#3C8DFF]/30 bg-gradient-to-br from-[#E8F2FF] to-[#E9F7FA] p-4">
+          <article className="flex items-center gap-4 rounded-2xl border border-[#3C8DFF]/30 bg-gradient-to-br from-[#E8F2FF] to-[#eaf6ff] p-4">
             {card.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={card.photoUrl} alt="" className="h-16 w-16 rounded-2xl object-cover" />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1E6A83] text-xl font-bold text-white">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#096ab7] text-xl font-bold text-white">
                 {card.name.slice(0, 1).toUpperCase()}
               </div>
             )}
             <div className="min-w-0">
-              <p className="font-semibold text-[#203337]">{card.name}</p>
-              <p className="text-sm text-[#203337]/70">{card.level}</p>
-              <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 font-mono text-xs text-[#203337]">
+              <p className="font-semibold text-[#11131b]">{card.name}</p>
+              <p className="text-sm text-[#11131b]/70">{card.level}</p>
+              <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 font-mono text-xs text-[#11131b]">
                 <ScanLine className="h-3 w-3" /> {card.studentNumber}
               </p>
             </div>

@@ -68,7 +68,7 @@ export function MindmapRenderer({ content, dark = false, compact = false }: Mind
     if (pointers.current.size < 2) pinch.current = null;
   };
 
-  const panel = dark ? 'border-white/10 bg-[#1c1915]' : 'border-border bg-[#E9F7FA]';
+  const panel = dark ? 'border-white/10 bg-[#1c1915]' : 'border-border bg-[#eaf6ff]';
   const button = dark
     ? 'border-white/15 text-slate-200 hover:bg-white/10'
     : 'border-border bg-white/80 text-foreground hover:bg-white';

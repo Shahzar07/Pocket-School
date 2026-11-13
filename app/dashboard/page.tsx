@@ -20,5 +20,5 @@ export default function DashboardIndex() {
     router.replace(landingPath(profile, stored));
   }, [loading, user, profile, router]);
 
-  return <p className="p-8 text-sm text-[#1E6A83]">Opening your dashboard.</p>;
+  return <p className="p-8 text-sm text-[#096ab7]">Opening your dashboard.</p>;
 }

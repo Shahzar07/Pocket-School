@@ -96,7 +96,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
   return (
     <DeskFrame title={t.classesTitle} lede={t.classesLede} state={state} onReset={() => resetToDemo(setState)} syncs="Assignments, gradebook, attendance, goals, report cards, parent view">
       <DeskLinks base={base} />
-      <p className="rounded-3xl bg-white p-5 text-sm text-[#1E6A83]">{t.helpCreate}</p>
+      <p className="rounded-3xl bg-white p-5 text-sm text-[#096ab7]">{t.helpCreate}</p>
       <p className="text-sm">{state.institution.teachersCanCreateClasses ? t.teachersAllowed : t.teachersBlocked}</p>
       <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
         <input className={deskStyles.field} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={t.filterSubject} placeholder={t.filterSubject} />
@@ -132,8 +132,8 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
           setState(result.state);
         }}>
           <h2 className="font-heading text-2xl">{t.bulkClasses}</h2>
-          <p className="text-sm text-[#1E6A83]">{t.bulkHelp}</p>
-          <label className="block text-sm text-[#1E6A83]">{t.bulkFile}
+          <p className="text-sm text-[#096ab7]">{t.bulkHelp}</p>
+          <label className="block text-sm text-[#096ab7]">{t.bulkFile}
             <input
               type="file"
               accept=".csv,text/csv"
@@ -146,7 +146,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               }}
             />
           </label>
-          <textarea className="h-24 w-full rounded-2xl border border-[#1E6A83]/30 p-3 text-sm" value={bulk} onChange={(event) => setBulk(event.target.value)} aria-label={t.bulkClasses} />
+          <textarea className="h-24 w-full rounded-2xl border border-[#096ab7]/30 p-3 text-sm" value={bulk} onChange={(event) => setBulk(event.target.value)} aria-label={t.bulkClasses} />
           <button type="submit" className={deskStyles.btn} data-action="bulk-classes">{t.bulkClasses}</button>
         </form>
       ) : null}
@@ -156,11 +156,11 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
             <li key={item.id}>
               <button type="button" className="w-full rounded-2xl bg-white px-3 py-3 text-left text-sm" onClick={() => setSelected(item.id)}>
                 <span className="block font-semibold">{item.name}</span>
-                <span className="text-[#1E6A83]">{item.level} · {item.campus} · {item.status}</span>
+                <span className="text-[#096ab7]">{item.level} · {item.campus} · {item.status}</span>
               </button>
             </li>
           ))}
-          {rows.length === 0 ? <li className="text-sm text-[#1E6A83]">{t.emptyClass}</li> : null}
+          {rows.length === 0 ? <li className="text-sm text-[#096ab7]">{t.emptyClass}</li> : null}
         </ul>
         <div className="space-y-4">
           <form className="grid gap-2 rounded-3xl bg-white p-5 sm:grid-cols-2" onSubmit={(event) => {
@@ -193,19 +193,19 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               <input key={key} className={deskStyles.field} value={form[key]} onChange={(event) => setField(key, event.target.value)} aria-label={t.field[key]} />
             ))}
             <LevelMenu ariaLabel={t.filterLevel} value={form.level} valueKind="label" onChange={(next) => setField('level', next)} />
-            <label className="text-sm text-[#1E6A83]">{t.visibility}
+            <label className="text-sm text-[#096ab7]">{t.visibility}
               <select className={`${deskStyles.field} mt-1 w-full`} value={visibility} data-class-visibility="1" aria-label={t.visibility} onChange={(event) => setVisibility(event.target.value === 'private' ? 'private' : 'school')}>
                 <option value="school">{t.schoolClass}</option>
                 <option value="private">{t.privateClass}</option>
               </select>
             </label>
-            <label className="flex items-center gap-2 text-sm text-[#1E6A83]">
+            <label className="flex items-center gap-2 text-sm text-[#096ab7]">
               <input type="checkbox" checked={autoApprove} data-class-auto="1" onChange={(event) => setAutoApprove(event.target.checked)} />
               {t.autoApprove}
             </label>
-            <p className="text-sm text-[#1E6A83] sm:col-span-2">{t.privateHelp}</p>
+            <p className="text-sm text-[#096ab7] sm:col-span-2">{t.privateHelp}</p>
             <button type="submit" className={deskStyles.btn} data-action="create-class">{t.create}</button>
-            {error ? <p className="text-sm text-[#1E6A83] sm:col-span-2">{error}</p> : null}
+            {error ? <p className="text-sm text-[#096ab7] sm:col-span-2">{error}</p> : null}
           </form>
           {klass ? (
             <form className="grid gap-2 rounded-3xl bg-white p-5 sm:grid-cols-2" onSubmit={(event) => {
@@ -228,7 +228,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
                 <input key={key} className={deskStyles.field} value={edit[key]} onChange={(event) => setEditField(key, event.target.value)} aria-label={t.field[key]} />
               ))}
               <LevelMenu ariaLabel={t.filterLevel} value={edit.level} valueKind="label" onChange={(next) => setEditField('level', next)} />
-              <label className="text-sm text-[#1E6A83]">{t.assignTeacher}
+              <label className="text-sm text-[#096ab7]">{t.assignTeacher}
                 <select className={`${deskStyles.field} mt-1 w-full`} value={klass.ownerTeacherName} aria-label={t.assignTeacher} onChange={(event) => {
                   const name = event.target.value;
                   setState(updateClass(state, klass.id, { ownerTeacherName: name, ownerTeacherId: name === state.actorName ? state.actorId : name }, state.actorName));
@@ -244,12 +244,12 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-heading text-3xl">{klass.name}</h2>
-                  <p className="text-sm text-[#1E6A83]">{klass.subject} · {klass.level} · {klass.programme} · {klass.term}</p>
-                  <p className="text-sm text-[#1E6A83]">{klass.campus} · {klass.room} · {klass.timetable}</p>
-                  <p className="text-sm text-[#1E6A83]">{t.coTeachers}: {klass.coTeachers.join(', ') || '—'} · {t.capacity} {klass.capacity}</p>
+                  <p className="text-sm text-[#096ab7]">{klass.subject} · {klass.level} · {klass.programme} · {klass.term}</p>
+                  <p className="text-sm text-[#096ab7]">{klass.campus} · {klass.room} · {klass.timetable}</p>
+                  <p className="text-sm text-[#096ab7]">{t.coTeachers}: {klass.coTeachers.join(', ') || '—'} · {t.capacity} {klass.capacity}</p>
                   <p className="text-sm">{klass.visibility === 'private' ? t.privateClass : t.schoolClass}{klass.inviteAutoApprove ? ` · ${t.autoApprove}` : ''}</p>
                   <p className="text-sm">{t.joinCode} {klass.joinCode}</p>
-                  <label className="mt-2 block text-sm text-[#1E6A83]">{t.inviteLink}
+                  <label className="mt-2 block text-sm text-[#096ab7]">{t.inviteLink}
                     <input className={`${deskStyles.field} mt-1 w-full`} readOnly value={`https://poketschool.ai/join/class/${klass.joinCode}`} aria-label={t.inviteLink} />
                   </label>
                 </div>
@@ -267,21 +267,21 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
               {tab === 'roster' && (
                 <div className="mt-4 space-y-2">
                   {people.map((item) => (
-                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#1E6A83]/15 px-3 py-2 text-sm">
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#096ab7]/15 px-3 py-2 text-sm">
                       <span>{item.studentName} · {item.joinMethod} · {item.status}{item.holdReason ? ` · ${item.holdReason}` : ''}</span>
                       {item.status === 'pending' ? (
                         <button type="button" data-action="approve-join" className={deskStyles.btn} onClick={() => setState(approveEnrolment(state, item.id, state.actorName))}>{t.approveJoin}</button>
                       ) : null}
                     </div>
                   ))}
-                  <textarea className="h-20 w-full rounded-2xl border border-[#1E6A83]/30 p-3 text-sm" value={csv} onChange={(event) => setCsv(event.target.value)} aria-label={t.importCsv} />
+                  <textarea className="h-20 w-full rounded-2xl border border-[#096ab7]/30 p-3 text-sm" value={csv} onChange={(event) => setCsv(event.target.value)} aria-label={t.importCsv} />
                   <button type="button" className={deskStyles.ghost} onClick={() => setState(importRoster(state, klass.id, csv, state.actorName))}>{t.importCsv}</button>
                   <input className={deskStyles.field} value={inviteName} onChange={(event) => setInviteName(event.target.value)} aria-label={t.inviteStudent} />
                   <input className={deskStyles.field} value={studentRecord} onChange={(event) => setStudentRecord(event.target.value)} aria-label={t.studentRecord} />
                   <button type="button" data-action="invite-student" className={deskStyles.ghost} onClick={() => setState(addEnrolment(state, { classId: klass.id, studentName: inviteName || 'Invited student', studentId: studentRecord, under18: true, institutionMember: true, joinMethod: 'invite' as JoinMethod }, state.actorName))}>{t.sendInvite}</button>
                   <button type="button" className={deskStyles.ghost} onClick={() => setState(addEnrolment(state, { classId: klass.id, studentName: inviteName || 'Code student', under18: true, institutionMember: true, joinMethod: 'code' as JoinMethod }, state.actorName))}>{t.joinByCode}</button>
                   <button type="button" className={deskStyles.ghost} onClick={() => setState(addEnrolment(state, { classId: klass.id, studentName: 'Walk-in student', under18: true, institutionMember: false, joinMethod: 'code' as JoinMethod }, state.actorName))}>{t.addMinor}</button>
-                  <p className="text-sm text-[#1E6A83]">{t.blockedMinor}</p>
+                  <p className="text-sm text-[#096ab7]">{t.blockedMinor}</p>
                 </div>
               )}
               {tab === 'attendance' && <a className={deskStyles.ghost} href={deskHref(base, '/dashboard/teacher/attendance')}>{t.attendanceTitle}</a>}
@@ -312,7 +312,7 @@ export function ClassDesk({ base = 'dashboard', role = 'teacher' }: { base?: 'da
                   <button type="button" className={deskStyles.btn} onClick={() => { if (news.trim()) setState(postAnnouncement(state, klass.id, news.trim(), state.actorName)); }}>{t.create}</button>
                 </div>
               )}
-              <p className="mt-4 text-sm text-[#1E6A83]">{t.attendanceTitle} {attendanceRate(state.attendance.filter((item) => item.classId === klass.id))}%</p>
+              <p className="mt-4 text-sm text-[#096ab7]">{t.attendanceTitle} {attendanceRate(state.attendance.filter((item) => item.classId === klass.id))}%</p>
             </section>
           ) : null}
         </div>

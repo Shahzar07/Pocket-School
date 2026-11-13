@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Plus_Jakarta_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew, Noto_Sans_Tamil, DM_Sans, DM_Serif_Display } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_Arabic, Noto_Sans_Hebrew, Noto_Sans_Tamil } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AppChrome } from '@/components/app-chrome';
 
 /** Body and UI. The homepage is built on this, so it stays the base face. */
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-jakarta',
   weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
@@ -34,19 +34,6 @@ const notoTamil = Noto_Sans_Tamil({
   weight: ['400', '600', '700'],
   display: 'swap',
   preload: false,
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-dm-sans',
-  display: 'swap',
-});
-
-const dmSerif = DM_Serif_Display({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-dm-serif',
-  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -78,7 +65,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, notoArabic.variable, notoHebrew.variable, notoTamil.variable, dmSans.variable, dmSerif.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans antialiased", plusJakarta.variable, notoArabic.variable, notoHebrew.variable, notoTamil.variable)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground" suppressHydrationWarning>
         <AppChrome>{children}</AppChrome>
       </body>

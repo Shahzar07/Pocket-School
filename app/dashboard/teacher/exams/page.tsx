@@ -145,7 +145,7 @@ export default function TeacherExamsPage() {
           {view === 'list' && (
             <Button
               onClick={() => setView('create')}
-              className="h-11 gap-2 rounded-full bg-[#3FE0D0] px-5 font-bold text-[#203337] hover:opacity-90"
+              className="h-11 gap-2 rounded-full bg-[#d9efff] px-5 font-bold text-[#11131b] hover:opacity-90"
             >
               <Plus className="w-4 h-4" /> New Exam
             </Button>

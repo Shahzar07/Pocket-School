@@ -36,10 +36,10 @@ function Cta({
   className?: string;
 }) {
   const tones = {
-    solid: 'bg-white text-[#1E6A83] hover:bg-[#E9F7FA]',
+    solid: 'bg-white text-[#096ab7] hover:bg-[#eaf6ff]',
     ghost: 'border border-white/70 text-white hover:bg-white/10',
-    ink: 'bg-[#1E6A83] text-white hover:bg-[#18586e]',
-    line: 'border border-[#1E6A83]/30 text-[#1E6A83] hover:bg-[#E9F7FA] dark:border-[#6FBBCE]/40 dark:text-[#A7D9E5] dark:hover:bg-white/5',
+    ink: 'bg-[#096ab7] text-white hover:bg-[#18586e]',
+    line: 'border border-[#096ab7]/30 text-[#096ab7] hover:bg-[#eaf6ff] dark:border-[#8bc9f5]/40 dark:text-[#A7D9E5] dark:hover:bg-white/5',
     cyan: 'border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] text-[var(--ps-cyan-ink)] hover:brightness-[0.97]',
   } as const;
   const classNames = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ps-cyan)] ${tones[tone]} ${className}`;
@@ -62,13 +62,13 @@ function PlanCard({ plan }: { plan: OfferPlan }) {
     <article
       className={`flex h-full flex-col rounded-3xl border bg-card p-6 shadow-[var(--shadow-card)] ${
         plan.popular
-          ? 'border-[#1E6A83] ring-2 ring-[#1E6A83]/20'
+          ? 'border-[#096ab7] ring-2 ring-[#096ab7]/20'
           : 'border-border'
       }`}
     >
       {plan.popular ? (
         <p className="mb-3">
-          <span className="rounded-full bg-[#1E6A83] px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-white">
+          <span className="rounded-full bg-[#096ab7] px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-white">
             {offerCopy.plans.popular}
           </span>
         </p>
@@ -76,11 +76,11 @@ function PlanCard({ plan }: { plan: OfferPlan }) {
       <h3 className="font-heading text-lg leading-tight text-foreground">{plan.name}</h3>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{plan.tagline}</p>
       <p className="mt-5 font-heading text-4xl tracking-tight text-foreground">{plan.price}</p>
-      <p className={`mt-1 text-sm font-medium ${plan.ctaTone === 'cyan' ? 'text-[var(--ps-cyan-text)]' : 'text-[#1E6A83] dark:text-[#8ecbda]'}`}>{plan.priceNote}</p>
+      <p className={`mt-1 text-sm font-medium ${plan.ctaTone === 'cyan' ? 'text-[var(--ps-cyan-text)]' : 'text-[#096ab7] dark:text-[#8ecbda]'}`}>{plan.priceNote}</p>
       <ul className="mt-5 flex-1 space-y-2.5 text-sm leading-relaxed text-foreground">
         {plan.features.map((feature) => (
           <li key={feature} className="flex gap-2">
-            <Check className={`mt-0.5 h-4 w-4 shrink-0 ${plan.ctaTone === 'cyan' ? 'text-[var(--ps-cyan-text)]' : 'text-[#1E6A83] dark:text-[#8ecbda]'}`} aria-hidden />
+            <Check className={`mt-0.5 h-4 w-4 shrink-0 ${plan.ctaTone === 'cyan' ? 'text-[var(--ps-cyan-text)]' : 'text-[#096ab7] dark:text-[#8ecbda]'}`} aria-hidden />
             <span>{feature}</span>
           </li>
         ))}
@@ -104,10 +104,10 @@ export function OfferLanding() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <a href="#offer-main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-[#1E6A83]">
+      <a href="#offer-main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-[#096ab7]">
         Skip to content
       </a>
-      <header className="bg-[#1E6A83] text-white">
+      <header className="bg-[#096ab7] text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <Link href={OFFER_ROUTES.home} className="inline-flex min-w-0 items-center gap-2 font-semibold">
             <Globe className="h-5 w-5 shrink-0" aria-hidden />
@@ -165,7 +165,7 @@ export function OfferLanding() {
               const span = index < 3 ? 'xl:col-span-2' : 'xl:col-span-3';
               return (
                 <li key={item.title} className={`rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-card)] ${span}`}>
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E9F7FA] text-[#1E6A83] dark:bg-[#17282D] dark:text-[#8ecbda]">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eaf6ff] text-[#096ab7] dark:bg-[#17282D] dark:text-[#8ecbda]">
                     <Icon className="h-5 w-5" aria-hidden />
                   </span>
                   <h3 className="mt-4 font-heading text-lg">{item.title}</h3>
@@ -176,7 +176,7 @@ export function OfferLanding() {
           </ul>
         </section>
 
-        <section className="border-y border-border bg-[#E9F7FA]/60 py-14 dark:bg-[#121E22] sm:py-16" aria-labelledby="offer-plans">
+        <section className="border-y border-border bg-[#eaf6ff]/60 py-14 dark:bg-[#121E22] sm:py-16" aria-labelledby="offer-plans">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <h2 id="offer-plans" className="font-heading text-3xl tracking-tight sm:text-4xl">
               {offerCopy.plans.title}
@@ -193,11 +193,11 @@ export function OfferLanding() {
                   <h3 className="font-heading text-lg text-foreground">{plan.name}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{plan.tagline}</p>
                   <p className="mt-3 font-heading text-3xl tracking-tight text-foreground">{plan.price}</p>
-                  <p className="mt-1 text-sm font-medium text-[#1E6A83] dark:text-[#8ecbda]">{plan.priceNote}</p>
+                  <p className="mt-1 text-sm font-medium text-[#096ab7] dark:text-[#8ecbda]">{plan.priceNote}</p>
                   <ul className="mt-4 space-y-2 text-sm leading-relaxed text-foreground">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex gap-2">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#1E6A83] dark:text-[#8ecbda]" aria-hidden />
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#096ab7] dark:text-[#8ecbda]" aria-hidden />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -220,14 +220,14 @@ export function OfferLanding() {
           <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
               <li key={feature.title} className="rounded-3xl border border-border bg-card p-5">
-                <h3 className="font-semibold text-[#1E6A83] dark:text-[#8ecbda]">{feature.title}</h3>
+                <h3 className="font-semibold text-[#096ab7] dark:text-[#8ecbda]">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{feature.body}</p>
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="bg-[#1E6A83] text-white" aria-label="Poket School at a glance">
+        <section className="bg-[#096ab7] text-white" aria-label="Poket School at a glance">
           <dl className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
             {offerCopy.stats.map((stat) => (
               <div key={stat.label}>
@@ -256,7 +256,7 @@ export function OfferLanding() {
         </section>
       </main>
 
-      <footer className="bg-[#203337] text-white">
+      <footer className="bg-[#11131b] text-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6">
           <div>
             <p className="text-sm font-semibold text-white/70">{offerCopy.footer.domain}</p>

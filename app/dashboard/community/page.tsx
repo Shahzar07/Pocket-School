@@ -12,8 +12,8 @@ function CommunityPageInner() {
   return (
     <FeatureGate flag="community">
       <div className="mb-3 flex gap-2 px-3 pt-3">
-        <a href="/dashboard/community" className={`inline-flex h-9 items-center rounded-full px-4 text-xs font-semibold ${channels ? 'bg-[#F4F6F6] text-[#1E6A83]' : 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]'}`}>Wall</a>
-        <a href="/dashboard/community?tab=channels" className={`inline-flex h-9 items-center rounded-full px-4 text-xs font-semibold ${channels ? 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'bg-[#F4F6F6] text-[#1E6A83]'}`}>Class channels</a>
+        <a href="/dashboard/community" className={`inline-flex h-9 items-center rounded-full px-4 text-xs font-semibold ${channels ? 'bg-[#f8fafc] text-[#096ab7]' : 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]'}`}>Wall</a>
+        <a href="/dashboard/community?tab=channels" className={`inline-flex h-9 items-center rounded-full px-4 text-xs font-semibold ${channels ? 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'bg-[#f8fafc] text-[#096ab7]'}`}>Class channels</a>
       </div>
       {channels ? <ClassChannels /> : <WallScreen />}
     </FeatureGate>
@@ -22,7 +22,7 @@ function CommunityPageInner() {
 
 export default function CommunityPage() {
   return (
-    <Suspense fallback={<p className="p-6 text-sm text-[#203337]">Loading the wall…</p>}>
+    <Suspense fallback={<p className="p-6 text-sm text-[#11131b]">Loading the wall…</p>}>
       <CommunityPageInner />
     </Suspense>
   );

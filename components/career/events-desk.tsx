@@ -149,7 +149,7 @@ export function EventsDesk({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1E6A83]">Rochford demo · {person}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#096ab7]">Rochford demo · {person}</p>
       <div className="flex flex-wrap gap-2">
         {([
           ['events', 'Events'],
@@ -159,41 +159,41 @@ export function EventsDesk({
           ['cv', 'Verified CV'],
           ['mentoring', 'Mentoring'],
         ] as const).map(([id, label]) => (
-          <button key={id} type="button" onClick={() => setTab(id)} className={`h-10 rounded-full px-4 text-sm font-semibold ${tab === id ? 'bg-[#3FE0D0] text-[#203337]' : 'border border-[#E7EDED] bg-white text-[#1E6A83]'}`}>{label}</button>
+          <button key={id} type="button" onClick={() => setTab(id)} className={`h-10 rounded-full px-4 text-sm font-semibold ${tab === id ? 'bg-[#d9efff] text-[#11131b]' : 'border border-[#e5ebf2] bg-white text-[#096ab7]'}`}>{label}</button>
         ))}
       </div>
-      {notice ? <p role="status" className="text-sm text-[#1E6A83]">{notice}</p> : null}
+      {notice ? <p role="status" className="text-sm text-[#096ab7]">{notice}</p> : null}
 
       {tab === 'events' ? (
         <div className="space-y-4">
           {canEdit ? (
-            <button type="button" className="h-10 rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white" onClick={() => setDraft({ ...BLANK, id: `event-${events.length + 1}` })}>Add an event</button>
+            <button type="button" className="h-10 rounded-full bg-[#096ab7] px-4 text-sm font-semibold text-white" onClick={() => setDraft({ ...BLANK, id: `event-${events.length + 1}` })}>Add an event</button>
           ) : null}
-          {shown.length === 0 ? <p className="text-sm text-[#1E6A83]">No events yet.</p> : null}
+          {shown.length === 0 ? <p className="text-sm text-[#096ab7]">No events yet.</p> : null}
           <ul className="space-y-3">
             {shown.map((event) => (
-              <li key={event.id} className="rounded-3xl border border-[#E7EDED] bg-white p-4">
-                <p className="font-heading text-xl text-[#203337]">{event.title}</p>
-                <p className="mt-1 text-sm text-[#1E6A83]">{event.speaker} · {event.organiser}</p>
-                <p className="mt-2 text-sm text-[#203337]">{event.date} · {event.start}–{event.end} · {event.timezone}</p>
-                <p className="text-sm text-[#203337]">
+              <li key={event.id} className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
+                <p className="font-heading text-xl text-[#11131b]">{event.title}</p>
+                <p className="mt-1 text-sm text-[#096ab7]">{event.speaker} · {event.organiser}</p>
+                <p className="mt-2 text-sm text-[#11131b]">{event.date} · {event.start}–{event.end} · {event.timezone}</p>
+                <p className="text-sm text-[#11131b]">
                   {event.venueKind === 'online' ? 'Online' : event.venueKind === 'hybrid' ? 'Hybrid' : 'In person'}
                   {event.address ? ` · ${event.address}` : ''}
                 </p>
                 <p className="mt-1 flex flex-wrap gap-3 text-sm">
-                  {event.mapUrl ? <a className="font-semibold text-[#1E6A83]" href={event.mapUrl}>Map</a> : null}
-                  {event.onlineUrl ? <a className="font-semibold text-[#1E6A83]" href={event.onlineUrl}>Online link</a> : null}
+                  {event.mapUrl ? <a className="font-semibold text-[#096ab7]" href={event.mapUrl}>Map</a> : null}
+                  {event.onlineUrl ? <a className="font-semibold text-[#096ab7]" href={event.onlineUrl}>Online link</a> : null}
                 </p>
-                <p className="mt-2 text-sm text-[#203337]">{seatsLeft(event)} seats left of {event.capacity}. {event.eligibility}.</p>
-                <p className="text-sm text-[#1E6A83]">Reminder: {event.reminder}</p>
+                <p className="mt-2 text-sm text-[#11131b]">{seatsLeft(event)} seats left of {event.capacity}. {event.eligibility}.</p>
+                <p className="text-sm text-[#096ab7]">Reminder: {event.reminder}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" data-action="career-rsvp" className="h-10 rounded-full bg-[#3FE0D0] px-4 text-sm font-semibold text-[#203337]" onClick={() => book(event)}>RSVP</button>
-                  <button type="button" className="h-10 rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" onClick={() => download(event)}>Download .ics</button>
-                  <a className="inline-flex h-10 items-center rounded-full border border-[#1E6A83] px-4 text-sm font-semibold text-[#1E6A83]" href={googleCalendarUrl(event)} target="_blank" rel="noreferrer">Google Calendar</a>
+                  <button type="button" data-action="career-rsvp" className="h-10 rounded-full bg-[#d9efff] px-4 text-sm font-semibold text-[#11131b]" onClick={() => book(event)}>RSVP</button>
+                  <button type="button" className="h-10 rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]" onClick={() => download(event)}>Download .ics</button>
+                  <a className="inline-flex h-10 items-center rounded-full border border-[#096ab7] px-4 text-sm font-semibold text-[#096ab7]" href={googleCalendarUrl(event)} target="_blank" rel="noreferrer">Google Calendar</a>
                   {canEdit ? (
                     <>
-                      <button type="button" className="h-10 rounded-full border border-[#E7EDED] px-4 text-sm font-semibold" onClick={() => setDraft(event)}>Edit</button>
-                      <button type="button" className="h-10 rounded-full border border-[#E7EDED] px-4 text-sm font-semibold" onClick={() => {
+                      <button type="button" className="h-10 rounded-full border border-[#e5ebf2] px-4 text-sm font-semibold" onClick={() => setDraft(event)}>Edit</button>
+                      <button type="button" className="h-10 rounded-full border border-[#e5ebf2] px-4 text-sm font-semibold" onClick={() => {
                         if (!uid) return;
                         void deleteDoc(doc(db, 'career_events', event.id)).then(() => setEvents((current) => removeEvent(current, event.id))).catch(() => setNotice('The event could not be deleted.'));
                       }}>Delete</button>
@@ -203,16 +203,16 @@ export function EventsDesk({
               </li>
             ))}
           </ul>
-          <section className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+          <section className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
             <h2 className="font-heading text-xl">My registrations</h2>
-            {mine.length === 0 ? <p className="mt-2 text-sm text-[#1E6A83]">You have not registered yet.</p> : (
+            {mine.length === 0 ? <p className="mt-2 text-sm text-[#096ab7]">You have not registered yet.</p> : (
               <ul className="mt-2 space-y-1 text-sm">
                 {mine.map((event) => <li key={event.id}>{event.title} · {event.date} · {registrations.find((row) => row.eventId === event.id)?.reminder}</li>)}
               </ul>
             )}
           </section>
           {draft ? (
-            <form className="grid gap-2 rounded-3xl border border-[#E7EDED] bg-white p-4 sm:grid-cols-2" onSubmit={(formEvent) => {
+            <form className="grid gap-2 rounded-3xl border border-[#e5ebf2] bg-white p-4 sm:grid-cols-2" onSubmit={(formEvent) => {
               formEvent.preventDefault();
               if (!draft.title.trim() || !uid) return;
               void setDoc(doc(db, 'career_events', draft.id), { ...draft, ownerId: uid }).then(() => {
@@ -241,7 +241,7 @@ export function EventsDesk({
               <label className="text-sm font-semibold">Capacity<input type="number" className="mt-1 h-11 w-full rounded-xl border px-3" value={draft.capacity} onChange={(event) => setDraft({ ...draft, capacity: Number(event.target.value) || 0 })} /></label>
               <label className="text-sm font-semibold">Eligibility<input className="mt-1 h-11 w-full rounded-xl border px-3" value={draft.eligibility} onChange={(event) => setDraft({ ...draft, eligibility: event.target.value })} /></label>
               <div className="flex gap-2 sm:col-span-2">
-                <button type="submit" className="h-10 rounded-full bg-[#1E6A83] px-4 text-sm font-semibold text-white">Save event</button>
+                <button type="submit" className="h-10 rounded-full bg-[#096ab7] px-4 text-sm font-semibold text-white">Save event</button>
                 <button type="button" className="h-10 rounded-full border px-4 text-sm font-semibold" onClick={() => setDraft(null)}>Cancel</button>
               </div>
             </form>
@@ -250,20 +250,20 @@ export function EventsDesk({
       ) : null}
 
       {tab === 'passport' ? (
-        <ul className="divide-y divide-[#E7EDED] rounded-3xl border border-[#E7EDED] bg-white px-4">
+        <ul className="divide-y divide-[#e5ebf2] rounded-3xl border border-[#e5ebf2] bg-white px-4">
           {skills.map((skill) => (
             <li key={skill.name} className="py-3">
               <p className="font-semibold">{skill.name}</p>
-              <p className="text-sm text-[#1E6A83]">{skill.evidence} · {skill.visible ? 'Shown on the CV' : 'Hidden'}</p>
+              <p className="text-sm text-[#096ab7]">{skill.evidence} · {skill.visible ? 'Shown on the CV' : 'Hidden'}</p>
             </li>
           ))}
         </ul>
       ) : null}
 
       {tab === 'matcher' ? (
-        <div className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+        <div className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
           <h2 className="font-heading text-xl">ET AI matcher</h2>
-          <p className="mt-1 text-sm text-[#1E6A83]">Matches come from opportunities the school entered. ET AI does not invent one.</p>
+          <p className="mt-1 text-sm text-[#096ab7]">Matches come from opportunities the school entered. ET AI does not invent one.</p>
           {matches.length === 0 ? <p className="mt-3 text-sm">No matches yet.</p> : (
             <ul className="mt-3 space-y-2">
               {matches.map((row) => <li key={row.title} className="text-sm"><span className="font-semibold">{row.title}</span> · {row.organisation} · {row.kind}</li>)}
@@ -276,9 +276,9 @@ export function EventsDesk({
         jobs.length === 0 ? <p className="text-sm">No jobs yet.</p> : (
         <ul className="space-y-2">
           {jobs.map((job) => (
-            <li key={job.title} className="rounded-2xl border border-[#E7EDED] bg-white p-4 text-sm">
+            <li key={job.title} className="rounded-2xl border border-[#e5ebf2] bg-white p-4 text-sm">
               <p className="font-semibold">{job.title}</p>
-              <p className="text-[#1E6A83]">{job.employer} · {job.level} · {job.deadline}</p>
+              <p className="text-[#096ab7]">{job.employer} · {job.level} · {job.deadline}</p>
             </li>
           ))}
         </ul>
@@ -286,9 +286,9 @@ export function EventsDesk({
       ) : null}
 
       {tab === 'cv' ? (
-        <article className="rounded-3xl border border-[#E7EDED] bg-white p-4">
+        <article className="rounded-3xl border border-[#e5ebf2] bg-white p-4">
           <h2 className="font-heading text-xl">Verified CV</h2>
-          <p className="mt-1 text-sm text-[#1E6A83]">{person}. Skills below are verified by Poket School. The PDF stays with the student until they share it.</p>
+          <p className="mt-1 text-sm text-[#096ab7]">{person}. Skills below are verified by Poket School. The PDF stays with the student until they share it.</p>
           {skills.filter((skill) => skill.visible).length === 0 ? <p className="mt-3 text-sm">No verified skills yet.</p> : (
             <ul className="mt-3 list-disc pl-5 text-sm">
               {skills.filter((skill) => skill.visible).map((skill) => <li key={skill.name}>{skill.name} — {skill.evidence}</li>)}
@@ -301,9 +301,9 @@ export function EventsDesk({
         mentors.length === 0 ? <p className="text-sm">No mentors yet.</p> : (
         <ul className="space-y-2">
           {mentors.map((mentor) => (
-            <li key={mentor.name} className="rounded-2xl border border-[#E7EDED] bg-white p-4 text-sm">
+            <li key={mentor.name} className="rounded-2xl border border-[#e5ebf2] bg-white p-4 text-sm">
               <p className="font-semibold">{mentor.name}</p>
-              <p className="text-[#1E6A83]">{mentor.field} · {mentor.optedIn ? 'Opted in' : 'Invite only'}. A teacher approves the match.</p>
+              <p className="text-[#096ab7]">{mentor.field} · {mentor.optedIn ? 'Opted in' : 'Invite only'}. A teacher approves the match.</p>
             </li>
           ))}
         </ul>

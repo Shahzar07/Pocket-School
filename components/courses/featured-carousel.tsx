@@ -106,7 +106,7 @@ export function FeaturedCarousel({
       aria-roledescription="carousel"
       aria-labelledby={labelId}
       tabIndex={0}
-      className={`relative overflow-hidden rounded-3xl border border-[#1E6A83]/15 bg-[#0B1417] text-white outline-none focus-visible:ring-2 focus-visible:ring-[#3FE0D0] ${hero ? 'min-h-[280px]' : 'min-h-[220px]'}`}
+      className={`relative overflow-hidden rounded-3xl border border-[#096ab7]/15 bg-[#0B1417] text-white outline-none focus-visible:ring-2 focus-visible:ring-[#d9efff] ${hero ? 'min-h-[280px]' : 'min-h-[220px]'}`}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -134,7 +134,7 @@ export function FeaturedCarousel({
         if (start - end > 40) go(index + 1);
       }}
     >
-      <h2 id={labelId} className={hero ? 'sr-only' : 'px-5 pt-4 text-xs font-bold uppercase tracking-[0.16em] text-[#3FE0D0]'}>
+      <h2 id={labelId} className={hero ? 'sr-only' : 'px-5 pt-4 text-xs font-bold uppercase tracking-[0.16em] text-[#d9efff]'}>
         {PLACE.featuredCourses}
       </h2>
       <p className="sr-only" aria-live="polite">{`${slide.title}. ${position}`}</p>
@@ -144,9 +144,9 @@ export function FeaturedCarousel({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={slide.cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
           ) : (
-            <div className="absolute inset-0 bg-[linear-gradient(160deg,#1E6A83,#0B1417)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(160deg,#096ab7,#0B1417)]" />
           )}
-          <span className="absolute left-4 top-4 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#203337]">
+          <span className="absolute left-4 top-4 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#11131b]">
             {kindLabel(slide.kind)}
           </span>
         </div>
@@ -155,11 +155,11 @@ export function FeaturedCarousel({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={slide.teacherSrc} alt={slide.teacherName} className="h-12 w-12 rounded-full object-cover" />
             <div>
-              <p className="text-sm font-semibold text-[#3FE0D0]">{slide.teacherName}</p>
+              <p className="text-sm font-semibold text-[#d9efff]">{slide.teacherName}</p>
               {slide.level ? <p className="text-xs text-white/75">{slide.level}</p> : null}
             </div>
           </div>
-          <Link href={slide.href} onClick={trackClick} className="mt-3 text-2xl font-semibold leading-tight text-white hover:text-[#3FE0D0]">
+          <Link href={slide.href} onClick={trackClick} className="mt-3 text-2xl font-semibold leading-tight text-white hover:text-[#d9efff]">
             {slide.title}
           </Link>
           {slide.rating != null && slide.ratingCount > 0 ? (
@@ -167,7 +167,7 @@ export function FeaturedCarousel({
           ) : null}
           <p className="mt-2 text-lg font-semibold text-white">{slide.priceLabel || PLACE.included}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href={slide.buyHref} onClick={trackClick} className="inline-flex min-h-11 items-center rounded-xl bg-[#3FE0D0] px-4 text-sm font-bold text-[#203337]">
+            <Link href={slide.buyHref} onClick={trackClick} className="inline-flex min-h-11 items-center rounded-xl bg-[#d9efff] px-4 text-sm font-bold text-[#11131b]">
               {PLACE.buy}
             </Link>
             <Link href={slide.enrolHref} onClick={trackClick} className="inline-flex min-h-11 items-center rounded-xl border border-white/40 px-4 text-sm font-semibold">
@@ -188,7 +188,7 @@ export function FeaturedCarousel({
                 type="button"
                 aria-label={`${PLACE.slide} ${dot + 1}`}
                 aria-current={dot === index}
-                className={`h-2.5 w-2.5 rounded-full ${dot === index ? 'bg-[#3FE0D0]' : 'bg-white/40'}`}
+                className={`h-2.5 w-2.5 rounded-full ${dot === index ? 'bg-[#d9efff]' : 'bg-white/40'}`}
                 onClick={() => go(dot)}
               />
             ))}

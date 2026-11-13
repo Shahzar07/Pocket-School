@@ -66,7 +66,7 @@ export function LessonManuscript({
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan-soft)] px-3 py-2 text-xs text-[var(--ps-cyan-text)]">
           <p>An unsaved copy of this lesson is on this device.</p>
           <span className="flex gap-2">
-            <button type="button" className="h-8 rounded-full bg-[#203337] px-3 font-bold text-white" onClick={() => { onChange(deviceDraft); setDeviceDraft(null); }}>Restore it</button>
+            <button type="button" className="h-8 rounded-full bg-[#11131b] px-3 font-bold text-white" onClick={() => { onChange(deviceDraft); setDeviceDraft(null); }}>Restore it</button>
             <button type="button" className="h-8 rounded-full border border-[var(--ps-cyan-border)] px-3 font-semibold" onClick={() => setDeviceDraft(null)}>Keep the saved lesson</button>
           </span>
         </div>

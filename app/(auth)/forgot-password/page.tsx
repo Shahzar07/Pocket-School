@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
       {!sent ? (
         <>
           <div className="mb-9">
-            <h2 className="font-heading text-[2rem] leading-tight tracking-tight text-foreground mb-2">{t('authForm.resetTitle')}</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-2">{t('authForm.resetTitle')}</h2>
             <p className="text-muted-foreground text-sm">
               {t('authForm.resetHint')}
             </p>
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="h-12 rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary/20 transition-all"
+                className="h-12 rounded-2xl bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20 transition-all"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={loading}
@@ -87,14 +87,14 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center mb-6">
             <MailCheck className="w-7 h-7 text-primary" />
           </div>
-          <h2 className="font-heading text-[2rem] leading-tight tracking-tight text-foreground mb-2">{t('authForm.inboxTitle')}</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-2">{t('authForm.inboxTitle')}</h2>
           <p className="text-muted-foreground text-sm mb-8">
             {t('authForm.inboxBody', { email })}
           </p>
           <Button
             onClick={() => { setSent(false); setEmail(''); }}
             variant="outline"
-            className="rounded-2xl border-border bg-card text-foreground/80 hover:bg-muted hover:text-foreground"
+            className="rounded-2xl border-border bg-muted text-foreground hover:bg-muted hover:text-foreground"
           >
             {t('authForm.differentEmail')}
           </Button>
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
 
       <p className="text-center mt-7 text-muted-foreground text-sm">
         {t('authForm.remembered')}{' '}
-        <Link href="/login" className="text-primary font-semibold underline-offset-4 hover:underline transition-colors">{t('authForm.back')}</Link>
+        <Link href="/login" className="text-primary font-semibold hover:text-foreground transition-colors">{t('authForm.back')}</Link>
       </p>
     </motion.div>
   );

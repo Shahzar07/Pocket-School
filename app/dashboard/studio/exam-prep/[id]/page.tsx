@@ -250,7 +250,7 @@ export default function ExamPrepPage({ params }: { params: Promise<{ id: string 
                     <span className="text-[12px] font-semibold tabular-nums">{m}%</span>
                     <div className="col-span-2 relative h-2 rounded-full bg-muted mt-1">
                       <motion.div className={`absolute inset-y-0 left-0 rounded-full ${m >= prep.targetScore ? 'bg-success' : 'bg-primary'}`} initial={{ width: 0 }} animate={{ width: `${m}%` }} />
-                      <span className="absolute -top-0.5 w-0.5 h-3 bg-[#1E6A83]" style={{ left: `${prep.targetScore}%` }} />
+                      <span className="absolute -top-0.5 w-0.5 h-3 bg-[#096ab7]" style={{ left: `${prep.targetScore}%` }} />
                     </div>
                   </li>
                 );
@@ -353,7 +353,7 @@ function StudyCalendar({ days, examDate }: { days: string[]; examDate: string })
       <div className="grid grid-rows-7 grid-flow-col gap-1 w-max">
         {cells.map(d => (
           <span key={d} title={d}
-            className={`w-3.5 h-3.5 rounded-[4px] ${d === examDate ? 'bg-[#1E6A83]' : set.has(d) ? 'bg-primary' : d > today ? 'bg-transparent' : 'bg-muted'}`} />
+            className={`w-3.5 h-3.5 rounded-[4px] ${d === examDate ? 'bg-[#096ab7]' : set.has(d) ? 'bg-primary' : d > today ? 'bg-transparent' : 'bg-muted'}`} />
         ))}
       </div>
     </div>

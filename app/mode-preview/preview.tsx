@@ -105,7 +105,7 @@ export function ModePreview({
                   <input type="checkbox" className="mt-1" checked={accepted} onChange={event => setAccepted(event.target.checked)} />
                   <span>I understand a marketplace course stays in review until Poket School publishes it.</span>
                 </label>
-                <button type="submit" className="h-10 rounded-full bg-[#203337] px-4 text-sm font-semibold text-white">Become an instructor</button>
+                <button type="submit" className="h-10 rounded-full bg-[#11131b] px-4 text-sm font-semibold text-white">Become an instructor</button>
               </form>
             )}
           </section>

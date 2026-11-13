@@ -88,7 +88,7 @@ export function QuizView({ questions, onComplete }: { questions: QuizQuestion[];
                     : state === 'wrong' ? 'border-[var(--ps-cyan-border)] bg-[var(--ps-tile-wash)] text-[var(--ps-tile-ink)]'
                     : state === 'dim' ? 'border-border opacity-60'
                     : 'border-border hover:border-primary/50 hover:bg-primary/5'}`}>
-                  <span className={`w-7 h-7 rounded-full grid place-items-center text-[13px] font-bold shrink-0 ${state === 'right' ? 'bg-success text-white' : state === 'wrong' ? 'bg-[#1E6A83] text-white' : 'bg-muted text-foreground'}`}>
+                  <span className={`w-7 h-7 rounded-full grid place-items-center text-[13px] font-bold shrink-0 ${state === 'right' ? 'bg-success text-white' : state === 'wrong' ? 'bg-[#096ab7] text-white' : 'bg-muted text-foreground'}`}>
                     {state === 'right' ? <CheckCircle2 className="w-4 h-4" /> : state === 'wrong' ? <XCircle className="w-4 h-4" /> : String.fromCharCode(65 + k)}
                   </span>
                   <span className="[&_p]:my-0"><MathMarkdown>{o}</MathMarkdown></span>

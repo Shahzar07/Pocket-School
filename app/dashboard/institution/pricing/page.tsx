@@ -73,9 +73,9 @@ export default function InstitutionPricingPage() {
         description="Select every programme this academy needs. The price adds each one. Micro through Enterprise follow unique students, and a larger count moves the academy up a tier."
       />
       <PriceCalculator institutionName="Academy" onApply={(selection) => void apply(selection)} />
-      <section className="rounded-3xl border border-[#203337]/10 bg-white p-4">
-        <h2 className="font-semibold text-[#203337]">Who receives a programme</h2>
-        <p className="mt-1 text-sm text-[#203337]/70">Assign a level name, a student, or both. A student then sees courses for programmes the academy has paid for at that level.</p>
+      <section className="rounded-3xl border border-[#11131b]/10 bg-white p-4">
+        <h2 className="font-semibold text-[#11131b]">Who receives a programme</h2>
+        <p className="mt-1 text-sm text-[#11131b]/70">Assign a level name, a student, or both. A student then sees courses for programmes the academy has paid for at that level.</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <label className="text-sm">Programme
             <select className="mt-1 h-11 w-full rounded-xl border px-3" value={itemId} onChange={(event) => setItemId(event.target.value)}>
@@ -91,7 +91,7 @@ export default function InstitutionPricingPage() {
             <Input className="mt-1" value={studentId} onChange={(event) => setStudentId(event.target.value)} />
           </label>
         </div>
-        <Button className="mt-3 h-11 rounded-full bg-[#203337]" disabled={!institutionId} onClick={() => void assign()}>Save assignment</Button>
+        <Button className="mt-3 h-11 rounded-full bg-[#11131b]" disabled={!institutionId} onClick={() => void assign()}>Save assignment</Button>
       </section>
     </DashPage>
   );

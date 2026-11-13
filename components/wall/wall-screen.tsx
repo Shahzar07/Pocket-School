@@ -52,13 +52,13 @@ function AudienceIcon({ audience }: { audience: Audience }) {
 function RichBody({ body }: { body: string }) {
   const parts = body.split(/(@[a-z0-9-]+|#[a-z0-9-]+)/gi);
   return (
-    <p className="whitespace-pre-wrap text-[15px] leading-6 text-[#203337]">
+    <p className="whitespace-pre-wrap text-[15px] leading-6 text-[#11131b]">
       {parts.map((part, index) => {
         if (part.startsWith('@')) {
           const handle = part.slice(1).toLowerCase();
-          return <Link key={`${part}-${index}`} href={`/u/${handle}`} className="font-semibold text-[#1E6A83]">{part}</Link>;
+          return <Link key={`${part}-${index}`} href={`/u/${handle}`} className="font-semibold text-[#096ab7]">{part}</Link>;
         }
-        if (part.startsWith('#')) return <span key={`${part}-${index}`} className="font-semibold text-[#1E6A83]">{part}</span>;
+        if (part.startsWith('#')) return <span key={`${part}-${index}`} className="font-semibold text-[#096ab7]">{part}</span>;
         return <span key={`${part}-${index}`}>{part}</span>;
       })}
     </p>
@@ -75,12 +75,12 @@ function ImageGrid({ images, onOpen }: { images: string[]; onOpen: (index: numbe
         <button
           key={src}
           type="button"
-          className={`relative overflow-hidden bg-[#E7EDED] ${spans[index] === 2 ? 'col-span-2' : ''} ${shown.length === 1 ? 'max-h-[420px]' : 'h-44 sm:h-52'}`}
+          className={`relative overflow-hidden bg-[#e5ebf2] ${spans[index] === 2 ? 'col-span-2' : ''} ${shown.length === 1 ? 'max-h-[420px]' : 'h-44 sm:h-52'}`}
           onClick={() => onOpen(index)}
         >
           <img src={src} alt="" className="h-full w-full object-cover" />
           {index === shown.length - 1 && extra > 0 ? (
-            <span className="absolute inset-0 grid place-items-center bg-[#203337]/55 text-2xl font-semibold text-white">+{extra}</span>
+            <span className="absolute inset-0 grid place-items-center bg-[#11131b]/55 text-2xl font-semibold text-white">+{extra}</span>
           ) : null}
         </button>
       ))}
@@ -183,9 +183,9 @@ export function WallScreen({
   return (
     <div className="mx-auto grid max-w-[1180px] gap-4 px-3 py-4 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_300px]">
       <aside className="hidden space-y-3 lg:block">
-        {sampleFeed ? <p className="rounded-full bg-[#3FE0D0] px-2 py-0.5 text-xs font-bold text-[#203337]">Sample data</p> : null}
+        {sampleFeed ? <p className="rounded-full bg-[#d9efff] px-2 py-0.5 text-xs font-bold text-[#11131b]">Sample data</p> : null}
         <ProfileMini people={people} viewer={viewer} actorName={actor?.name ?? ''} onSaved={() => { setSavedOnly(true); setFilter('all'); }} />
-        <nav className="rounded-2xl border border-[#E7EDED] bg-white p-2 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
+        <nav className="rounded-2xl border border-[#e5ebf2] bg-white p-2 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
           {([
             ['all', 'All posts'],
             ['school', 'School'],
@@ -194,7 +194,7 @@ export function WallScreen({
             ['alumni', 'Alumni'],
             ['event', 'Events'],
           ] as const).map(([id, label]) => (
-            <button key={id} type="button" onClick={() => { setFilter(id); setSavedOnly(false); setCount(PAGE); }} className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-sm font-semibold ${filter === id && !savedOnly ? 'bg-[#D4F6F2] text-[#203337]' : 'text-[#203337]'}`}>
+            <button key={id} type="button" onClick={() => { setFilter(id); setSavedOnly(false); setCount(PAGE); }} className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-sm font-semibold ${filter === id && !savedOnly ? 'bg-[#D4F6F2] text-[#11131b]' : 'text-[#11131b]'}`}>
               {label}
             </button>
           ))}
@@ -203,9 +203,9 @@ export function WallScreen({
 
       <section className="min-w-0 space-y-3">
         {missingProfile ? (
-          <div className="rounded-2xl border border-dashed border-[#1E6A83] bg-white px-6 py-12 text-center">
-            <p className="font-heading text-2xl text-[#203337]">No profile for this name</p>
-            <p className="mt-2 text-sm text-[#1E6A83]">This timeline only shows people in your school.</p>
+          <div className="rounded-2xl border border-dashed border-[#096ab7] bg-white px-6 py-12 text-center">
+            <p className="font-heading text-2xl text-[#11131b]">No profile for this name</p>
+            <p className="mt-2 text-sm text-[#096ab7]">This timeline only shows people in your school.</p>
           </div>
         ) : null}
         {profile ? <ProfileHero person={profile} /> : null}
@@ -237,24 +237,24 @@ export function WallScreen({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex gap-1 rounded-full bg-white p-1">
             {(['recent', 'top'] as const).map((mode) => (
-              <button key={mode} type="button" onClick={() => setSort(mode)} className={`h-9 rounded-full px-4 text-sm font-semibold ${sort === mode ? 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'text-[#1E6A83]'}`}>
+              <button key={mode} type="button" onClick={() => setSort(mode)} className={`h-9 rounded-full px-4 text-sm font-semibold ${sort === mode ? 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'text-[#096ab7]'}`}>
                 {mode === 'recent' ? 'Recent' : 'Top'}
               </button>
             ))}
           </div>
-          <p className="text-xs text-[#1E6A83]">Under-18 posts stay inside this school.</p>
+          <p className="text-xs text-[#096ab7]">Under-18 posts stay inside this school.</p>
         </div>
         {incoming.length > 0 && !profile ? (
-          <button type="button" className="mx-auto block rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-4 py-2 text-sm font-semibold text-[#203337]" onClick={() => { setPosts((current) => [...incoming, ...current]); setIncoming([]); }}>
+          <button type="button" className="mx-auto block rounded-full border border-[#096ab7] bg-[#d9efff] px-4 py-2 text-sm font-semibold text-[#11131b]" onClick={() => { setPosts((current) => [...incoming, ...current]); setIncoming([]); }}>
             {incoming.length} new post{incoming.length === 1 ? '' : 's'}
           </button>
         ) : null}
-        {notice ? <p className="rounded-2xl bg-white px-4 py-3 text-sm text-[#203337]">{notice}</p> : null}
-        {actor && !liveReady ? <p className="rounded-2xl bg-white px-4 py-3 text-sm text-[#203337]">Loading saved posts…</p> : null}
+        {notice ? <p className="rounded-2xl bg-white px-4 py-3 text-sm text-[#11131b]">{notice}</p> : null}
+        {actor && !liveReady ? <p className="rounded-2xl bg-white px-4 py-3 text-sm text-[#11131b]">Loading saved posts…</p> : null}
         {page.length === 0 && (!actor || liveReady) ? (
-          <div className="rounded-2xl border border-dashed border-[#1E6A83] bg-white px-6 py-12 text-center">
-            <p className="font-heading text-2xl text-[#203337]">Nothing on this wall yet</p>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-[#1E6A83]">Posts from your school, class, and groups show up here. Public posts stay with adults.</p>
+          <div className="rounded-2xl border border-dashed border-[#096ab7] bg-white px-6 py-12 text-center">
+            <p className="font-heading text-2xl text-[#11131b]">Nothing on this wall yet</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-[#096ab7]">Posts from your school, class, and groups show up here. Public posts stay with adults.</p>
           </div>
         ) : null}
         {page.map((post) => (
@@ -332,63 +332,63 @@ export function WallScreen({
 
       <aside className="hidden space-y-3 xl:block">
         <SideCard title="Upcoming">
-          {side.events.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">Nothing scheduled.</p> : null}
+          {side.events.length === 0 ? <p className="py-2 text-sm text-[#096ab7]">Nothing scheduled.</p> : null}
           {side.events.map((event) => (
-            <p key={event.id} className="py-2 text-sm text-[#203337]"><span className="font-semibold">{event.title}</span><span className="block text-[#1E6A83]">{event.when} · {event.place}</span></p>
+            <p key={event.id} className="py-2 text-sm text-[#11131b]"><span className="font-semibold">{event.title}</span><span className="block text-[#096ab7]">{event.when} · {event.place}</span></p>
           ))}
         </SideCard>
         <SideCard title="Suggested groups">
-          {side.groups.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">No groups yet.</p> : null}
+          {side.groups.length === 0 ? <p className="py-2 text-sm text-[#096ab7]">No groups yet.</p> : null}
           {side.groups.map((group) => (
-            <p key={group.id} className="flex items-center justify-between py-2 text-sm text-[#203337]"><span>{group.name}</span><span className="text-[#1E6A83]">{group.members}</span></p>
+            <p key={group.id} className="flex items-center justify-between py-2 text-sm text-[#11131b]"><span>{group.name}</span><span className="text-[#096ab7]">{group.members}</span></p>
           ))}
         </SideCard>
         <SideCard title="Birthdays and achievements">
-          {side.moments.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">No moments yet.</p> : null}
+          {side.moments.length === 0 ? <p className="py-2 text-sm text-[#096ab7]">No moments yet.</p> : null}
           {side.moments.map((moment) => (
-            <p key={moment.id} className="py-2 text-sm text-[#203337]"><span className="font-semibold">{moment.name}</span><span className="block text-[#1E6A83]">{moment.detail}</span></p>
+            <p key={moment.id} className="py-2 text-sm text-[#11131b]"><span className="font-semibold">{moment.name}</span><span className="block text-[#096ab7]">{moment.detail}</span></p>
           ))}
         </SideCard>
         <SideCard title="Online in your school">
-          {side.online.length === 0 ? <p className="py-2 text-sm text-[#1E6A83]">No one listed.</p> : null}
+          {side.online.length === 0 ? <p className="py-2 text-sm text-[#096ab7]">No one listed.</p> : null}
           {side.online.map((person) => (
-            <Link key={person.handle} href={`/u/${person.handle}`} className="flex items-center gap-2 py-2 text-sm font-semibold text-[#203337]">
+            <Link key={person.handle} href={`/u/${person.handle}`} className="flex items-center gap-2 py-2 text-sm font-semibold text-[#11131b]">
               <span className="h-2.5 w-2.5 rounded-full bg-[#1F8A70]" aria-hidden />
               {person.name}
             </Link>
           ))}
-          <p className="pt-1 text-xs text-[#1E6A83]">Classmates outside your school are hidden.</p>
+          <p className="pt-1 text-xs text-[#096ab7]">Classmates outside your school are hidden.</p>
         </SideCard>
         <SideCard title="Poket SafeLine">
-          <p className="text-sm text-[#203337]">Report a post, or open SafeLine if something feels wrong.</p>
-          <p className="mt-2 text-xs font-semibold text-[#203337]">Not an emergency service. In danger? Call 999.</p>
-          <p className="mt-2 text-xs text-[#203337]">{NO_LEGAL_DUTY}</p>
-          <Link href="/safety-terms" className="mt-2 inline-flex text-sm font-semibold text-[#1E6A83]">Safety terms</Link>
+          <p className="text-sm text-[#11131b]">Report a post, or open SafeLine if something feels wrong.</p>
+          <p className="mt-2 text-xs font-semibold text-[#11131b]">Not an emergency service. In danger? Call 999.</p>
+          <p className="mt-2 text-xs text-[#11131b]">{NO_LEGAL_DUTY}</p>
+          <Link href="/safety-terms" className="mt-2 inline-flex text-sm font-semibold text-[#096ab7]">Safety terms</Link>
         </SideCard>
         <SideCard title="Notifications">
           {sampleFeed ? (
             <>
-              <p className="flex gap-2 py-2 text-sm text-[#203337]"><Bell className="mt-0.5 h-4 w-4 text-[#1E6A83]" aria-hidden /> Wei Lin liked your pond notes.</p>
-              <p className="flex gap-2 py-2 text-sm text-[#203337]"><Bell className="mt-0.5 h-4 w-4 text-[#1E6A83]" aria-hidden /> Priya Shah mentioned you in class.</p>
+              <p className="flex gap-2 py-2 text-sm text-[#11131b]"><Bell className="mt-0.5 h-4 w-4 text-[#096ab7]" aria-hidden /> Wei Lin liked your pond notes.</p>
+              <p className="flex gap-2 py-2 text-sm text-[#11131b]"><Bell className="mt-0.5 h-4 w-4 text-[#096ab7]" aria-hidden /> Priya Shah mentioned you in class.</p>
             </>
           ) : (
-            <p className="py-2 text-sm text-[#1E6A83]" data-wall-notices-empty="1">No notifications yet.</p>
+            <p className="py-2 text-sm text-[#096ab7]" data-wall-notices-empty="1">No notifications yet.</p>
           )}
         </SideCard>
       </aside>
 
       {lightbox ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-[#203337]/80 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-[#11131b]/80 p-4"
           role="dialog"
           aria-label="Photo"
           onMouseDown={(event) => { if (event.target === event.currentTarget) setLightbox(null); }}
         >
-          <CloseControl onClose={() => setLightbox(null)} className="absolute top-3 right-3 z-10 bg-white text-[#203337] hover:bg-white" />
+          <CloseControl onClose={() => setLightbox(null)} className="absolute top-3 right-3 z-10 bg-white text-[#11131b] hover:bg-white" />
           <img src={lightbox.images[lightbox.index]} alt="" className="max-h-[80vh] max-w-full rounded-2xl object-contain" />
           <div className="absolute bottom-6 flex gap-2">
             {lightbox.images.map((src, index) => (
-              <button key={src} type="button" aria-label={`Photo ${index + 1}`} className={`h-12 w-12 overflow-hidden rounded-lg ${index === lightbox.index ? 'ring-2 ring-[#3FE0D0]' : ''}`} onClick={() => setLightbox({ images: lightbox.images, index })}>
+              <button key={src} type="button" aria-label={`Photo ${index + 1}`} className={`h-12 w-12 overflow-hidden rounded-lg ${index === lightbox.index ? 'ring-2 ring-[#d9efff]' : ''}`} onClick={() => setLightbox({ images: lightbox.images, index })}>
                 <img src={src} alt="" className="h-full w-full object-cover" />
               </button>
             ))}
@@ -404,29 +404,29 @@ function ProfileMini({ people, viewer, actorName, onSaved }: { people: ReturnTyp
   if (!me && !actorName) return null;
   if (!me) {
     return (
-      <div className="overflow-hidden rounded-2xl border border-[#E7EDED] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
+      <div className="overflow-hidden rounded-2xl border border-[#e5ebf2] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
         <div className="h-16" style={{ background: 'var(--ps-hero)' }} />
         <div className="-mt-6 px-4 pb-4">
-          <span className="grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-[#3FE0D0] text-sm font-bold text-[#203337]">{actorName.slice(0, 2).toUpperCase()}</span>
-          <p className="mt-2 font-semibold text-[#203337]">{actorName}</p>
-          <button type="button" onClick={onSaved} className="mt-3 block w-full rounded-lg px-2 py-1.5 text-left text-sm text-[#203337] hover:bg-[#F4F6F6]">Saved</button>
+          <span className="grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-[#d9efff] text-sm font-bold text-[#11131b]">{actorName.slice(0, 2).toUpperCase()}</span>
+          <p className="mt-2 font-semibold text-[#11131b]">{actorName}</p>
+          <button type="button" onClick={onSaved} className="mt-3 block w-full rounded-lg px-2 py-1.5 text-left text-sm text-[#11131b] hover:bg-[#f8fafc]">Saved</button>
         </div>
       </div>
     );
   }
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E7EDED] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
+    <div className="overflow-hidden rounded-2xl border border-[#e5ebf2] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
       <div className="h-16" style={{ background: 'var(--ps-hero)' }} />
       <div className="-mt-6 px-4 pb-4">
-        <Link href={`/u/${me.handle}`} className="grid h-12 w-12 place-items-center rounded-full border-2 border-white text-sm font-bold text-[#203337]" style={{ background: me.tint }}>{me.initials}</Link>
-        <p className="mt-2 font-semibold text-[#203337]">{me.name}</p>
-        <p className="text-xs text-[#1E6A83]">{me.role}</p>
+        <Link href={`/u/${me.handle}`} className="grid h-12 w-12 place-items-center rounded-full border-2 border-white text-sm font-bold text-[#11131b]" style={{ background: me.tint }}>{me.initials}</Link>
+        <p className="mt-2 font-semibold text-[#11131b]">{me.name}</p>
+        <p className="text-xs text-[#096ab7]">{me.role}</p>
         <div className="mt-3 space-y-1 text-sm">
-          <Link href="/dashboard/student/network" className="block rounded-lg px-2 py-1.5 text-[#203337] hover:bg-[#F4F6F6]">My class</Link>
-          <Link href="/dashboard/alumni" className="block rounded-lg px-2 py-1.5 text-[#203337] hover:bg-[#F4F6F6]">Alumni</Link>
-          <Link href="/dashboard/network/groups" className="block rounded-lg px-2 py-1.5 text-[#203337] hover:bg-[#F4F6F6]">Groups</Link>
-          <Link href="/dashboard/student/career" className="block rounded-lg px-2 py-1.5 text-[#203337] hover:bg-[#F4F6F6]">Events</Link>
-          <button type="button" onClick={onSaved} className="block w-full rounded-lg px-2 py-1.5 text-left text-[#203337] hover:bg-[#F4F6F6]">Saved</button>
+          <Link href="/dashboard/student/network" className="block rounded-lg px-2 py-1.5 text-[#11131b] hover:bg-[#f8fafc]">My class</Link>
+          <Link href="/dashboard/alumni" className="block rounded-lg px-2 py-1.5 text-[#11131b] hover:bg-[#f8fafc]">Alumni</Link>
+          <Link href="/dashboard/network/groups" className="block rounded-lg px-2 py-1.5 text-[#11131b] hover:bg-[#f8fafc]">Groups</Link>
+          <Link href="/dashboard/student/career" className="block rounded-lg px-2 py-1.5 text-[#11131b] hover:bg-[#f8fafc]">Events</Link>
+          <button type="button" onClick={onSaved} className="block w-full rounded-lg px-2 py-1.5 text-left text-[#11131b] hover:bg-[#f8fafc]">Saved</button>
         </div>
       </div>
     </div>
@@ -436,27 +436,27 @@ function ProfileMini({ people, viewer, actorName, onSaved }: { people: ReturnTyp
 function ProfileHero({ person }: { person: ReturnType<typeof rochfordWall>['people'][number] }) {
   const [tab, setTab] = useState<'posts' | 'photos' | 'about' | 'groups'>('posts');
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#E7EDED] bg-white">
+    <div className="overflow-hidden rounded-2xl border border-[#e5ebf2] bg-white">
       <div className="h-36 bg-cover bg-center sm:h-48" style={{ backgroundImage: `linear-gradient(180deg, rgba(32,51,55,0.05), rgba(32,51,55,0.25)), url(${person.cover})` }} />
       <div className="px-5 pb-5">
         <div className="-mt-8 flex items-end gap-3">
-          <span className="grid h-16 w-16 place-items-center rounded-full border-4 border-white text-lg font-bold text-[#203337]" style={{ background: person.tint }}>{person.initials}</span>
+          <span className="grid h-16 w-16 place-items-center rounded-full border-4 border-white text-lg font-bold text-[#11131b]" style={{ background: person.tint }}>{person.initials}</span>
           <div>
-            <h1 className="flex items-center gap-1 font-heading text-3xl text-[#203337]">{person.name}{person.verified ? <BadgeCheck className="h-5 w-5 text-[#1E6A83]" aria-label="Verified" /> : null}</h1>
-            <p className="text-sm text-[#1E6A83]">@{person.handle} · {person.role} · {person.school}</p>
+            <h1 className="flex items-center gap-1 font-heading text-3xl text-[#11131b]">{person.name}{person.verified ? <BadgeCheck className="h-5 w-5 text-[#096ab7]" aria-label="Verified" /> : null}</h1>
+            <p className="text-sm text-[#096ab7]">@{person.handle} · {person.role} · {person.school}</p>
           </div>
         </div>
         <div className="mt-4 flex gap-2">
           {(['posts', 'photos', 'about', 'groups'] as const).map((id) => (
-            <button key={id} type="button" onClick={() => setTab(id)} className={`h-9 rounded-full px-3 text-sm font-semibold capitalize ${tab === id ? 'border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]' : 'text-[#1E6A83]'}`}>{id}</button>
+            <button key={id} type="button" onClick={() => setTab(id)} className={`h-9 rounded-full px-3 text-sm font-semibold capitalize ${tab === id ? 'border border-[#096ab7] bg-[#d9efff] text-[#11131b]' : 'text-[#096ab7]'}`}>{id}</button>
           ))}
         </div>
-        {tab === 'about' ? <p className="mt-4 text-sm leading-6 text-[#203337]">{person.about}</p> : null}
-        {tab === 'groups' ? <ul className="mt-4 space-y-1 text-sm text-[#203337]">{person.groups.map((group) => <li key={group}>{group}</li>)}</ul> : null}
+        {tab === 'about' ? <p className="mt-4 text-sm leading-6 text-[#11131b]">{person.about}</p> : null}
+        {tab === 'groups' ? <ul className="mt-4 space-y-1 text-sm text-[#11131b]">{person.groups.map((group) => <li key={group}>{group}</li>)}</ul> : null}
         {tab === 'photos' ? (
           <div className="mt-4 grid grid-cols-3 gap-1">{person.photos.map((src) => <img key={src} src={src} alt="" className="h-24 w-full rounded-lg object-cover" />)}</div>
         ) : null}
-        {tab !== 'posts' ? null : <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#1E6A83]">Posts</p>}
+        {tab !== 'posts' ? null : <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#096ab7]">Posts</p>}
       </div>
     </div>
   );
@@ -520,16 +520,16 @@ function Composer({ viewer, actor, onPublish }: { viewer: WallViewer; actor: Wal
   };
 
   return (
-    <form onSubmit={publish} className="rounded-2xl border border-[#E7EDED] bg-white p-4 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
+    <form onSubmit={publish} className="rounded-2xl border border-[#e5ebf2] bg-white p-4 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
       <div className="flex gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#D4F6F2] text-xs font-bold text-[#203337]">AR</span>
-        <button type="button" onClick={() => setOpen(true)} className="h-10 flex-1 rounded-full bg-[#F4F6F6] px-4 text-left text-sm text-[#1E6A83]">What&apos;s on your mind?</button>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#D4F6F2] text-xs font-bold text-[#11131b]">AR</span>
+        <button type="button" onClick={() => setOpen(true)} className="h-10 flex-1 rounded-full bg-[#f8fafc] px-4 text-left text-sm text-[#096ab7]">What&apos;s on your mind?</button>
       </div>
       {open ? (
         <div className="mt-3 space-y-3">
-          <textarea value={body} onChange={(event) => setBody(event.target.value)} aria-label="Post" placeholder="Share something with your school" className="min-h-24 w-full resize-none rounded-2xl border border-[#E7EDED] px-3 py-2 text-sm text-[#203337]" />
+          <textarea value={body} onChange={(event) => setBody(event.target.value)} aria-label="Post" placeholder="Share something with your school" className="min-h-24 w-full resize-none rounded-2xl border border-[#e5ebf2] px-3 py-2 text-sm text-[#11131b]" />
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">
+            <label className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border border-[#e5ebf2] px-3 text-xs font-semibold text-[#096ab7]">
               <ImagePlus className="h-3.5 w-3.5" aria-hidden /> Photo or video
               <input type="file" accept="image/*,video/mp4,video/webm" multiple className="sr-only" onChange={(event) => {
                 const picked = [...(event.target.files ?? [])].slice(0, 4);
@@ -546,7 +546,7 @@ function Composer({ viewer, actor, onPublish }: { viewer: WallViewer; actor: Wal
                 setImages(picked.map((file) => URL.createObjectURL(file)));
               }} />
             </label>
-            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">
+            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#e5ebf2] px-3 text-xs font-semibold text-[#096ab7]">
               <Smile className="h-3.5 w-3.5" aria-hidden />
               <select aria-label="Feeling" value={feeling} onChange={(event) => setFeeling(event.target.value)} className="bg-transparent">
                 <option value="">Feeling</option>
@@ -555,18 +555,18 @@ function Composer({ viewer, actor, onPublish }: { viewer: WallViewer; actor: Wal
                 <option value="curious">Curious</option>
               </select>
             </label>
-            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">
+            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#e5ebf2] px-3 text-xs font-semibold text-[#096ab7]">
               Tag
               <input aria-label="Tag classmates" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="amina, wei" className="w-24 bg-transparent outline-none" />
             </label>
-            <button type="button" onClick={() => setPoll((value) => !value)} className="h-9 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">Poll</button>
-            <button type="button" onClick={() => setEventOn((value) => !value)} className="h-9 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">Event</button>
-            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#E7EDED] px-3 text-xs font-semibold text-[#1E6A83]">
+            <button type="button" onClick={() => setPoll((value) => !value)} className="h-9 rounded-full border border-[#e5ebf2] px-3 text-xs font-semibold text-[#096ab7]">Poll</button>
+            <button type="button" onClick={() => setEventOn((value) => !value)} className="h-9 rounded-full border border-[#e5ebf2] px-3 text-xs font-semibold text-[#096ab7]">Event</button>
+            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#e5ebf2] px-3 text-xs font-semibold text-[#096ab7]">
               <MapPin className="h-3.5 w-3.5" aria-hidden />
               <input type="checkbox" checked={locationOn} onChange={(event) => setLocationOn(event.target.checked)} />
               Location
             </label>
-            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#1E6A83] px-3 text-xs font-semibold text-[#203337]">
+            <label className="inline-flex h-9 items-center gap-1 rounded-full border border-[#096ab7] px-3 text-xs font-semibold text-[#11131b]">
               <AudienceIcon audience={audience} />
               <select aria-label="Audience" value={audience} onChange={(event) => setAudience(event.target.value as Audience)} className="bg-transparent">
                 {choices.map((choice) => <option key={choice} value={choice}>{audienceLabel(choice)}</option>)}
@@ -575,18 +575,18 @@ function Composer({ viewer, actor, onPublish }: { viewer: WallViewer; actor: Wal
           </div>
           {poll ? (
             <div className="grid gap-2 sm:grid-cols-2">
-              <input aria-label="Poll option one" value={optionA} onChange={(event) => setOptionA(event.target.value)} placeholder="Option one" className="h-10 rounded-xl border border-[#E7EDED] px-3 text-sm" />
-              <input aria-label="Poll option two" value={optionB} onChange={(event) => setOptionB(event.target.value)} placeholder="Option two" className="h-10 rounded-xl border border-[#E7EDED] px-3 text-sm" />
+              <input aria-label="Poll option one" value={optionA} onChange={(event) => setOptionA(event.target.value)} placeholder="Option one" className="h-10 rounded-xl border border-[#e5ebf2] px-3 text-sm" />
+              <input aria-label="Poll option two" value={optionB} onChange={(event) => setOptionB(event.target.value)} placeholder="Option two" className="h-10 rounded-xl border border-[#e5ebf2] px-3 text-sm" />
             </div>
           ) : null}
-          {eventOn ? <input aria-label="Event title" value={eventTitle} onChange={(event) => setEventTitle(event.target.value)} placeholder="Event title" className="h-10 w-full rounded-xl border border-[#E7EDED] px-3 text-sm" /> : null}
+          {eventOn ? <input aria-label="Event title" value={eventTitle} onChange={(event) => setEventTitle(event.target.value)} placeholder="Event title" className="h-10 w-full rounded-xl border border-[#e5ebf2] px-3 text-sm" /> : null}
           {images.length > 0 ? <ImageGrid images={images} onOpen={() => undefined} /> : null}
-          {error ? <p className="text-sm text-[#203337]">{error}</p> : null}
-          <p className="text-xs text-[#1E6A83]">Location stays off unless you tick it. Photos are resized on this device and location data is removed.</p>
-          <button type="submit" className="h-10 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-5 text-sm font-semibold text-[#203337]">Post</button>
+          {error ? <p className="text-sm text-[#11131b]">{error}</p> : null}
+          <p className="text-xs text-[#096ab7]">Location stays off unless you tick it. Photos are resized on this device and location data is removed.</p>
+          <button type="submit" className="h-10 rounded-full border border-[#096ab7] bg-[#d9efff] px-5 text-sm font-semibold text-[#11131b]">Post</button>
         </div>
       ) : (
-        <div className="mt-3 flex gap-2 border-t border-[#E7EDED] pt-3 text-xs font-semibold text-[#1E6A83]">
+        <div className="mt-3 flex gap-2 border-t border-[#e5ebf2] pt-3 text-xs font-semibold text-[#096ab7]">
           <span className="inline-flex items-center gap-1"><ImagePlus className="h-3.5 w-3.5" aria-hidden /> Photo</span>
           <span className="inline-flex items-center gap-1"><Smile className="h-3.5 w-3.5" aria-hidden /> Feeling</span>
           <span>Poll</span>
@@ -630,16 +630,16 @@ function PostCard(props: {
   const pollTotal = post.poll ? post.poll.options.reduce((sum, option) => sum + option.votes, 0) : 0;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-[#E7EDED] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
+    <article className="overflow-hidden rounded-2xl border border-[#e5ebf2] bg-white shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
       <header className="flex items-start gap-3 p-4">
-        <Link href={`/u/${post.authorHandle}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-[#203337]" style={{ background: author?.tint ?? '#D4F6F2' }}>{author?.initials ?? 'PS'}</Link>
+        <Link href={`/u/${post.authorHandle}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-[#11131b]" style={{ background: author?.tint ?? '#D4F6F2' }}>{author?.initials ?? 'PS'}</Link>
         <div className="min-w-0 flex-1">
-          <p className="flex flex-wrap items-center gap-1 text-sm font-semibold text-[#203337]">
+          <p className="flex flex-wrap items-center gap-1 text-sm font-semibold text-[#11131b]">
             <Link href={`/u/${post.authorHandle}`}>{author?.name ?? post.authorHandle}</Link>
-            {author?.verified ? <BadgeCheck className="h-4 w-4 text-[#1E6A83]" aria-label="Verified" /> : null}
-            {post.feeling ? <span className="font-normal text-[#1E6A83]">is feeling {post.feeling}</span> : null}
+            {author?.verified ? <BadgeCheck className="h-4 w-4 text-[#096ab7]" aria-label="Verified" /> : null}
+            {post.feeling ? <span className="font-normal text-[#096ab7]">is feeling {post.feeling}</span> : null}
           </p>
-          <p className="flex items-center gap-1 text-xs text-[#1E6A83]">
+          <p className="flex items-center gap-1 text-xs text-[#096ab7]">
             {author?.role} · {author?.school}
             <span aria-hidden>·</span>
             {relativeTime(post.createdAt, NOW)}
@@ -648,11 +648,11 @@ function PostCard(props: {
             <span className="sr-only">{audienceLabel(post.audience)}</span>
           </p>
         </div>
-        {post.pinned ? <span className="rounded-full bg-[#D4F6F2] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#203337]">Pinned</span> : null}
+        {post.pinned ? <span className="rounded-full bg-[#D4F6F2] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#11131b]">Pinned</span> : null}
         <div className="relative">
-          <button type="button" aria-label="Post menu" onClick={props.onMenu} className="rounded-full p-2 text-[#203337]"><MoreHorizontal className="h-4 w-4" /></button>
+          <button type="button" aria-label="Post menu" onClick={props.onMenu} className="rounded-full p-2 text-[#11131b]"><MoreHorizontal className="h-4 w-4" /></button>
           {props.menu ? (
-            <div className="absolute right-0 z-10 w-52 rounded-xl border border-[#E7EDED] bg-white p-1 text-sm shadow-lg">
+            <div className="absolute right-0 z-10 w-52 rounded-xl border border-[#e5ebf2] bg-white p-1 text-sm shadow-lg">
               <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={props.onSave}>{post.saved ? 'Unsave' : 'Save'}</button>
               <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={props.onHide}>Hide</button>
               <button type="button" className="block w-full rounded-lg px-3 py-2 text-left" onClick={props.onReport}>Report</button>
@@ -664,51 +664,51 @@ function PostCard(props: {
       </header>
       <div className="space-y-3 px-4 pb-3">
         {post.body ? <RichBody body={body} /> : null}
-        {long ? <button type="button" className="text-sm font-semibold text-[#1E6A83]" onClick={() => setMore((value) => !value)}>{more ? 'See less' : 'See more'}</button> : null}
+        {long ? <button type="button" className="text-sm font-semibold text-[#096ab7]" onClick={() => setMore((value) => !value)}>{more ? 'See less' : 'See more'}</button> : null}
         {showImages ? <ImageGrid images={post.images} onOpen={props.onOpen} /> : null}
         {post.link ? (
-          <a className="flex overflow-hidden rounded-xl border border-[#E7EDED]" href={`https://${post.link.domain}`}>
+          <a className="flex overflow-hidden rounded-xl border border-[#e5ebf2]" href={`https://${post.link.domain}`}>
             {post.link.image ? <img src={post.link.image} alt="" className="h-24 w-28 object-cover" /> : null}
-            <span className="p-3 text-sm"><span className="block text-xs text-[#1E6A83]">{post.link.domain}</span><span className="font-semibold text-[#203337]">{post.link.title}</span></span>
+            <span className="p-3 text-sm"><span className="block text-xs text-[#096ab7]">{post.link.domain}</span><span className="font-semibold text-[#11131b]">{post.link.title}</span></span>
           </a>
         ) : null}
         {post.poll ? (
           <div className="space-y-2">
             {post.poll.options.map((option) => (
-              <button key={option.id} type="button" disabled={Boolean(post.poll?.voted)} onClick={() => props.onVote(option.id)} className="block w-full overflow-hidden rounded-xl border border-[#E7EDED] text-left text-sm">
+              <button key={option.id} type="button" disabled={Boolean(post.poll?.voted)} onClick={() => props.onVote(option.id)} className="block w-full overflow-hidden rounded-xl border border-[#e5ebf2] text-left text-sm">
                 <span className="block h-10" style={{ background: `linear-gradient(90deg, #D4F6F2 ${pollTotal ? (option.votes / pollTotal) * 100 : 0}%, transparent 0)` }}>
-                  <span className="flex h-10 items-center justify-between px-3 text-[#203337]"><span>{option.label}</span><span>{option.votes}</span></span>
+                  <span className="flex h-10 items-center justify-between px-3 text-[#11131b]"><span>{option.label}</span><span>{option.votes}</span></span>
                 </span>
               </button>
             ))}
           </div>
         ) : null}
         {post.event ? (
-          <div className="rounded-xl border border-[#E7EDED] p-3 text-sm text-[#203337]">
-            <p className="flex items-center gap-2 font-semibold"><CalendarDays className="h-4 w-4 text-[#1E6A83]" aria-hidden />{post.event.title}</p>
-            <p className="text-[#1E6A83]">{post.event.when}</p>
+          <div className="rounded-xl border border-[#e5ebf2] p-3 text-sm text-[#11131b]">
+            <p className="flex items-center gap-2 font-semibold"><CalendarDays className="h-4 w-4 text-[#096ab7]" aria-hidden />{post.event.title}</p>
+            <p className="text-[#096ab7]">{post.event.when}</p>
             <p>{post.event.place}</p>
           </div>
         ) : null}
         {props.shared ? (
-          <div className="rounded-xl border border-[#E7EDED] p-3">
-            <p className="text-sm font-semibold text-[#203337]">{personByHandle(people, props.shared.authorHandle)?.name}</p>
-            <p className="mt-1 text-sm text-[#203337]">{props.shared.body}</p>
+          <div className="rounded-xl border border-[#e5ebf2] p-3">
+            <p className="text-sm font-semibold text-[#11131b]">{personByHandle(people, props.shared.authorHandle)?.name}</p>
+            <p className="mt-1 text-sm text-[#11131b]">{props.shared.body}</p>
           </div>
         ) : null}
       </div>
-      <div className="flex items-center justify-between px-4 pb-2 text-xs text-[#1E6A83]">
+      <div className="flex items-center justify-between px-4 pb-2 text-xs text-[#096ab7]">
         <p>{total > 0 ? `${total} reactions` : 'Be the first to react'}</p>
         <p>{post.comments.length} comments · {post.shares} shares</p>
       </div>
-      <div className="grid grid-cols-4 border-t border-[#E7EDED] text-sm font-semibold text-[#203337]">
+      <div className="grid grid-cols-4 border-t border-[#e5ebf2] text-sm font-semibold text-[#11131b]">
         <div className="group relative">
           <button type="button" className="flex h-11 w-full items-center justify-center gap-1" onClick={() => props.onReact(post.mine || 'like')}>
             {post.mine ? REACTION_META.find((item) => item.id === post.mine)?.glyph : '👍'} {post.mine ? REACTION_META.find((item) => item.id === post.mine)?.label : 'Like'}
           </button>
-          <div className="absolute bottom-11 left-2 hidden gap-1 rounded-full border border-[#E7EDED] bg-white p-1 shadow-lg group-hover:flex">
+          <div className="absolute bottom-11 left-2 hidden gap-1 rounded-full border border-[#e5ebf2] bg-white p-1 shadow-lg group-hover:flex">
             {REACTION_META.map((item) => (
-              <button key={item.id} type="button" aria-label={item.label} className="grid h-9 w-9 place-items-center rounded-full hover:bg-[#F4F6F6]" onClick={() => props.onReact(item.id)}>{item.glyph}</button>
+              <button key={item.id} type="button" aria-label={item.label} className="grid h-9 w-9 place-items-center rounded-full hover:bg-[#f8fafc]" onClick={() => props.onReact(item.id)}>{item.glyph}</button>
             ))}
           </div>
         </div>
@@ -717,13 +717,13 @@ function PostCard(props: {
         <button type="button" className="flex h-11 items-center justify-center gap-1" onClick={props.onSave}><Bookmark className="h-4 w-4" aria-hidden /> {post.saved ? 'Saved' : 'Save'}</button>
       </div>
       {props.open ? (
-        <div className="space-y-3 border-t border-[#E7EDED] bg-[#F4F6F6] p-4">
+        <div className="space-y-3 border-t border-[#e5ebf2] bg-[#f8fafc] p-4">
           {post.comments.map((comment) => (
             <CommentBlock key={comment.id} comment={comment} people={people} replyTo={replyTo} reply={reply} setReplyTo={setReplyTo} setReply={setReply} onReply={props.onReply} />
           ))}
           <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); if (!draft.trim()) return; props.onComment(draft.trim()); setDraft(''); }}>
-            <input aria-label="Write a comment" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a comment" className="h-10 flex-1 rounded-full border border-[#E7EDED] bg-white px-3 text-sm" />
-            <button type="submit" aria-label="Send comment" className="grid h-10 w-10 place-items-center rounded-full border border-[#1E6A83] bg-[#3FE0D0] text-[#203337]"><Send className="h-4 w-4" /></button>
+            <input aria-label="Write a comment" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a comment" className="h-10 flex-1 rounded-full border border-[#e5ebf2] bg-white px-3 text-sm" />
+            <button type="submit" aria-label="Send comment" className="grid h-10 w-10 place-items-center rounded-full border border-[#096ab7] bg-[#d9efff] text-[#11131b]"><Send className="h-4 w-4" /></button>
           </form>
         </div>
       ) : null}
@@ -745,21 +745,21 @@ function CommentBlock({
   const author = personByHandle(people, comment.authorHandle);
   return (
     <div className="text-sm">
-      <p className="font-semibold text-[#203337]">{author?.name ?? comment.authorHandle}</p>
+      <p className="font-semibold text-[#11131b]">{author?.name ?? comment.authorHandle}</p>
       <RichBody body={comment.body} />
       {comment.image ? <img src={comment.image} alt="" className="mt-2 h-24 rounded-lg object-cover" /> : null}
-      <button type="button" className="mt-1 text-xs font-semibold text-[#1E6A83]" onClick={() => setReplyTo(comment.id)}>Reply</button>
+      <button type="button" className="mt-1 text-xs font-semibold text-[#096ab7]" onClick={() => setReplyTo(comment.id)}>Reply</button>
       {replyTo === comment.id ? (
         <form className="mt-2 flex gap-2" onSubmit={(event) => { event.preventDefault(); if (!reply.trim()) return; onReply(comment.id, reply.trim()); setReply(''); setReplyTo(''); }}>
-          <input aria-label="Write a reply" value={reply} onChange={(event) => setReply(event.target.value)} className="h-9 flex-1 rounded-full border border-[#E7EDED] bg-white px-3 text-sm" />
-          <button type="submit" className="h-9 rounded-full border border-[#1E6A83] bg-[#3FE0D0] px-3 text-xs font-semibold text-[#203337]">Reply</button>
+          <input aria-label="Write a reply" value={reply} onChange={(event) => setReply(event.target.value)} className="h-9 flex-1 rounded-full border border-[#e5ebf2] bg-white px-3 text-sm" />
+          <button type="submit" className="h-9 rounded-full border border-[#096ab7] bg-[#d9efff] px-3 text-xs font-semibold text-[#11131b]">Reply</button>
         </form>
       ) : null}
       {comment.replies.length > 0 ? (
         <ul className="mt-2 space-y-2 border-l-2 border-[#D4F6F2] pl-3">
           {comment.replies.map((item) => (
             <li key={item.id}>
-              <p className="font-semibold text-[#203337]">{personByHandle(people, item.authorHandle)?.name}</p>
+              <p className="font-semibold text-[#11131b]">{personByHandle(people, item.authorHandle)?.name}</p>
               <RichBody body={item.body} />
             </li>
           ))}
@@ -771,8 +771,8 @@ function CommentBlock({
 
 function SideCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[#E7EDED] bg-white p-4 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
-      <h2 className="text-sm font-bold text-[#203337]">{title}</h2>
+    <section className="rounded-2xl border border-[#e5ebf2] bg-white p-4 shadow-[0_8px_24px_rgba(32,51,55,0.04)]">
+      <h2 className="text-sm font-bold text-[#11131b]">{title}</h2>
       <div className="mt-1">{children}</div>
     </section>
   );

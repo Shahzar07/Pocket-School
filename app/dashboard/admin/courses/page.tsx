@@ -151,7 +151,7 @@ export default function AdminCourseMgmt() {
       >
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ps-tile-ink)] flex items-center gap-2">
-            <span className="w-5 h-px bg-[#1E6A83] inline-block" /> Course management
+            <span className="w-5 h-px bg-[#096ab7] inline-block" /> Course management
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl text-foreground tracking-tight mt-3">
             All <span className="gradient-text italic">courses</span>
@@ -167,7 +167,7 @@ export default function AdminCourseMgmt() {
             Seed catalogue
           </Button>
           <Button onClick={onCreate}
-            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#1E6A83] to-[#3FE0D0] hover:opacity-90 text-white"
+            className="rounded-full h-11 px-5 gap-2 font-bold bg-gradient-to-r from-[#096ab7] to-[#d9efff] hover:opacity-90 text-white"
           >
             <Plus className="w-4 h-4" /> New Product
           </Button>
@@ -180,7 +180,7 @@ export default function AdminCourseMgmt() {
           { label: 'All Courses', value: courses.length, icon: BookOpen, accent: 'text-primary', bar: 'bg-primary' },
           { label: 'Pending', value: pendingCourses.length, icon: Clock, accent: 'text-[var(--ps-cyan-text)]', bar: 'bg-[var(--ps-cyan)]' },
           { label: 'Published', value: courses.filter(c => c.status === 'published').length, icon: CheckCircle2, accent: 'text-success', bar: 'bg-success' },
-          { label: 'Drafts', value: courses.filter(c => c.status === 'draft').length, icon: Edit, accent: 'text-[var(--ps-tile-ink)]', bar: 'bg-[#1E6A83]' },
+          { label: 'Drafts', value: courses.filter(c => c.status === 'draft').length, icon: Edit, accent: 'text-[var(--ps-tile-ink)]', bar: 'bg-[#096ab7]' },
         ].map((s, i) => (
           <motion.div key={s.label} variants={fadeUp} initial="hidden" animate="visible" custom={1 + i}
             className="bg-card border border-border rounded-3xl p-5 sm:p-6 relative overflow-hidden card-glow"

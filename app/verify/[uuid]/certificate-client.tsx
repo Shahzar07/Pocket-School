@@ -132,7 +132,7 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
   const claimId = verified === true ? 'certificate' : 'lookup';
 
   return (
-    <div className="min-h-screen bg-[#F4F7F8] px-4 py-10 text-[#203337] dark:bg-[#0B1417] dark:text-[#E8F4F6]">
+    <div className="min-h-screen bg-[#F4F7F8] px-4 py-10 text-[#11131b] dark:bg-[#0B1417] dark:text-[#E8F4F6]">
       <div className="max-w-3xl mx-auto">
         <FlowTrail
           steps={claimSteps}
@@ -145,14 +145,14 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
           }}
         />
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-[#1E6A83] font-bold tracking-[0.22em] text-[11px] dark:text-[#3FE0D0]">
+          <Link href="/" className="inline-flex items-center gap-2 text-[#096ab7] font-bold tracking-[0.22em] text-[11px] dark:text-[#d9efff]">
             <Award className="w-4 h-4" /> POKET SCHOOL
           </Link>
           <h1 className="font-heading text-4xl text-[#1c2b30] mt-3 dark:text-[#E8F4F6]">Verify a certificate</h1>
-          <p className="text-sm text-[#526066] mt-2 dark:text-[#3FE0D0]">Anyone can confirm a certificate. This page shows the student number, name, course and issue date.</p>
+          <p className="text-sm text-[#526066] mt-2 dark:text-[#d9efff]">Anyone can confirm a certificate. This page shows the student number, name, course and issue date.</p>
         </div>
         {!checksOpen && (
-          <p className="rounded-2xl border border-[#203337]/10 bg-white px-4 py-4 text-sm text-center">Certificate checks are with a super admin at the moment.</p>
+          <p className="rounded-2xl border border-[#11131b]/10 bg-white px-4 py-4 text-sm text-center">Certificate checks are with a super admin at the moment.</p>
         )}
 
         {checksOpen && <div className="flex gap-2 mb-8 max-w-xl mx-auto">
@@ -163,7 +163,7 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
             placeholder="Certificate ID"
             className="flex-1 h-12 rounded-xl bg-white font-mono text-sm"
           />
-          <Button onClick={() => handleVerify()} disabled={loading || !uuid.trim()} className="h-12 rounded-xl border border-[#1E6A83] bg-[#3FE0D0] px-5 text-[#203337] hover:brightness-110">
+          <Button onClick={() => handleVerify()} disabled={loading || !uuid.trim()} className="h-12 rounded-xl border border-[#096ab7] bg-[#d9efff] px-5 text-[#11131b] hover:brightness-110">
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
           </Button>
         </div>}
@@ -172,7 +172,7 @@ export function CertificateVerify({ initialId }: { initialId: string }) {
           <>
           {portfolioUrl ? (
             <p className="mb-4 text-center text-sm">
-              <Link href={portfolioUrl} className="font-semibold text-[#1E6A83]">Public portfolio</Link>
+              <Link href={portfolioUrl} className="font-semibold text-[#096ab7]">Public portfolio</Link>
             </p>
           ) : null}
           <VerificationRecord
@@ -253,17 +253,17 @@ function VerificationRecord({
   ];
   return (
     <div className="space-y-4">
-      <div className={`rounded-3xl border p-6 ${revoked ? 'bg-[#FDE8E8] border-[#E7B3AE]' : sample ? 'bg-[#E7FAF7] border-[#3FE0D0]' : 'bg-[#E7F6F1] border-[#B7E4D4]'}`}>
-        <div className={`flex items-center justify-center gap-2 font-semibold ${revoked ? 'text-[#9B1C1C]' : sample ? 'text-[#203337]' : 'text-[#0F6E56]'}`}>
+      <div className={`rounded-3xl border p-6 ${revoked ? 'bg-[#FDE8E8] border-[#E7B3AE]' : sample ? 'bg-[#E7FAF7] border-[#d9efff]' : 'bg-[#E7F6F1] border-[#B7E4D4]'}`}>
+        <div className={`flex items-center justify-center gap-2 font-semibold ${revoked ? 'text-[#9B1C1C]' : sample ? 'text-[#11131b]' : 'text-[#0F6E56]'}`}>
           {revoked ? <XCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
           {revoked ? 'Revoked' : sample ? 'Template sample' : 'Valid'}
         </div>
-        {sample ? <p className="mt-3 text-center text-sm text-[#203337]">This is the certificate template sample. It shows that the verify link resolves. It is not a student award.</p> : null}
+        {sample ? <p className="mt-3 text-center text-sm text-[#11131b]">This is the certificate template sample. It shows that the verify link resolves. It is not a student award.</p> : null}
         <dl className="mt-4 bg-white rounded-2xl border border-[#DADCE0] divide-y divide-[#DADCE0]">
           {rows.map((row) => (
             <div key={row.label} className="flex justify-between gap-4 px-4 py-3 text-sm">
               <dt className="text-[#526066] shrink-0">{row.label}</dt>
-              <dd className={`font-semibold text-right break-all ${row.label === 'Certificate ID' || row.label === 'Student number' ? 'font-mono text-xs sm:text-sm' : ''} ${row.label === 'Status' ? (revoked ? 'text-[#9B1C1C]' : sample ? 'text-[#203337]' : 'text-[#0F6E56]') : 'text-[#1c2b30]'}`}>
+              <dd className={`font-semibold text-right break-all ${row.label === 'Certificate ID' || row.label === 'Student number' ? 'font-mono text-xs sm:text-sm' : ''} ${row.label === 'Status' ? (revoked ? 'text-[#9B1C1C]' : sample ? 'text-[#11131b]' : 'text-[#0F6E56]') : 'text-[#1c2b30]'}`}>
                 {row.value}
               </dd>
             </div>

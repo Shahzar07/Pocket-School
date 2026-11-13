@@ -9,6 +9,7 @@ import {
   ClipboardList, FileQuestionMark, FileText, GraduationCap, HelpCircle, Home, Layers, LayoutDashboard,
   Library, Menu, MessageSquare, Package, PenLine, Phone, Plus, Search, Sparkles, Store, Upload, User as UserIcon, Users,
 } from 'lucide-react';
+import { PoketMark } from '@/components/poket-wordmark';
 import { AccountMenu } from '@/components/account/account-menu';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { DashboardSearch } from '@/components/dashboard-search';
@@ -33,7 +34,7 @@ import type { TourRole } from '@/lib/tour-steps';
 const TOUR_ROLES = new Set<string>(['student', 'teacher', 'parent', 'admin', 'institution_admin']);
 
 export const SHELL_LINK = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--studio-dim)] transition-colors hover:bg-[var(--studio-surface-hover)] hover:text-[var(--studio-text)]';
-export const SHELL_ACTIVE = 'flex w-full items-center gap-2.5 rounded-lg bg-[#3FE0D0] px-3 py-2 text-sm font-semibold text-[#203337]';
+export const SHELL_ACTIVE = 'flex w-full items-center gap-2.5 rounded-lg bg-[#d9efff] px-3 py-2 text-sm font-semibold text-[#11131b]';
 
 const TOOL_GLYPH: Record<ToolIconName, typeof Home> = {
   sparkles: Sparkles,
@@ -59,7 +60,7 @@ const TOOL_GLYPH: Record<ToolIconName, typeof Home> = {
 };
 
 export function StudioDot({ active = false }: { active?: boolean }) {
-  return <span className={`h-2 w-2 shrink-0 rounded-full ${active ? 'bg-[#203337]' : 'bg-[#3FE0D0]'}`} data-studio-dot="1" aria-hidden />;
+  return <span className={`h-2 w-2 shrink-0 rounded-full ${active ? 'bg-[#11131b]' : 'bg-[#d9efff]'}`} data-studio-dot="1" aria-hidden />;
 }
 
 export function ToolGlyph({ name }: { name: ToolIconName }) {
@@ -158,7 +159,7 @@ function ShellAccount({ email }: { email: string }) {
       onBecomeInstructor={account.canBecome ? () => router.push('/dashboard/student/become-instructor') : undefined}
     >
       <span className="flex items-center gap-2.5 rounded-xl bg-[var(--studio-surface)] px-2.5 py-2">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#3FE0D0] text-[10px] font-bold text-[#203337]">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#d9efff] text-[10px] font-bold text-[#11131b]">
           {(email || 'U').slice(0, 2).toUpperCase()}
         </span>
         <span className="truncate text-xs text-[var(--studio-dim)]">{email}</span>
@@ -232,12 +233,12 @@ export function ShellSidebar({
     >
       <div className="shrink-0 p-3">
         <Link href={place === 'dashboard' ? '/dashboard/studio' : '/'} className="mb-1 flex items-center gap-2.5 px-2 py-2" onClick={onClose}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3FE0D0]">
-            <Asterisk className="h-5 w-5 text-[#203337]" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d9efff]">
+            <PoketMark className="h-6 w-6 text-[#11131b]" />
           </div>
           <div>
             <p className="text-[15px] font-bold leading-tight text-[var(--studio-text)]">ET</p>
-            <p className="text-[10px] uppercase leading-tight tracking-[0.2em] text-[var(--studio-accent-text)]">AI STUDIO</p>
+            <p className="text-[11px] leading-tight text-[var(--studio-accent-text)]">AI STUDIO</p>
           </div>
         </Link>
       </div>
@@ -250,10 +251,10 @@ export function ShellSidebar({
             <Plus className="h-4 w-4 shrink-0 text-[var(--studio-accent-text)]" aria-hidden /> {newLabel}
           </button>
           {beforeTools ?? <StudioShortcuts onClose={onClose} />}
-          <div data-studio-primary="1" className="space-y-0.5">{primary.map(renderTool)}</div>
-          <p className="px-3 pb-1.5 pt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--studio-faint)]">Recents</p>
+          <div data-studio-primary="1" className="space-y-0.5">{primary.map(tool => renderTool(tool))}</div>
+          <p className="px-3 pb-1.5 pt-3 text-[11px] font-medium text-[var(--studio-faint)]">Recents</p>
           <div className="space-y-0.5">{recents}</div>
-          <p className="px-3 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--studio-faint)]">Tools</p>
+          <p className="px-3 pb-1.5 pt-4 text-[11px] font-medium text-[var(--studio-faint)]">Tools</p>
           <div data-studio-tools="list" className="space-y-0.5">
             {roots.map(tool => renderTool(tool))}
             {afterTools}

@@ -20,7 +20,7 @@ export default function PreviewCertificatePage() {
   return (
     <main className="min-h-screen bg-[#F4F7F8] px-4 py-10">
       <div className="max-w-3xl mx-auto space-y-4">
-        <p className="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-[#1E6A83]">Preview</p>
+        <p className="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-[#096ab7]">Preview</p>
         <h1 className="text-center font-heading text-3xl text-[#1c2b30]">Module certificate</h1>
         <CertificateDocument certificate={sample} />
         <CredentialPanel id={sample.id} />

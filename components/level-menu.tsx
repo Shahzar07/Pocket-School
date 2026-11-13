@@ -65,7 +65,7 @@ export function LevelMenu({
         className="flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-border bg-background px-3 text-left text-sm font-normal text-foreground disabled:opacity-50"
       >
         <span className="truncate">{shown}</span>
-        <span aria-hidden className="text-[#1E6A83]">▾</span>
+        <span aria-hidden className="text-[#096ab7]">▾</span>
       </button>
       {open ? (
         <ul
@@ -84,7 +84,7 @@ export function LevelMenu({
           ) : null}
           {LEVEL_GROUPS.map((group) => (
             <li key={group.id} className="mt-1">
-              <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E6A83] dark:text-[#3FE0D0]">{group.label}</p>
+              <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#096ab7] dark:text-[#d9efff]">{group.label}</p>
               <ul>
                 {levelsInGroup(group.id).map((level) => {
                   const stored = valueKind === 'label' ? level.label : level.id;
@@ -98,7 +98,7 @@ export function LevelMenu({
                         aria-selected={selected}
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => choose(stored)}
-                        className={`w-full rounded-xl px-3 py-2 text-left text-sm ${selected ? 'bg-[#3FE0D0] font-semibold text-[#203337]' : 'hover:bg-muted'}`}
+                        className={`w-full rounded-xl px-3 py-2 text-left text-sm ${selected ? 'bg-[#d9efff] font-semibold text-[#11131b]' : 'hover:bg-muted'}`}
                       >
                         {level.label}
                       </button>

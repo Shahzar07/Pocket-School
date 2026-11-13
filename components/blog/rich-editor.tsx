@@ -9,13 +9,13 @@ import { StarterKit } from '@tiptap/starter-kit';
 import { toast } from 'sonner';
 import { htmlToMarkdown, markdownToHtml, wordCount } from '@/lib/blog/richtext';
 
-const button = 'h-11 rounded-full border border-border px-3 text-sm font-semibold text-[var(--studio-text,#203337)]';
+const button = 'h-11 rounded-full border border-border px-3 text-sm font-semibold text-[var(--studio-text,#11131b)]';
 
 function Tool({ editor, label, on, active, disabled }: { editor: Editor | null; label: string; on: () => void; active?: boolean; disabled?: boolean }) {
   return (
     <button
       type="button"
-      className={`${button} ${active ? 'bg-[#3FE0D0] text-[#203337]' : 'bg-[var(--studio-surface,#fff)]'}`}
+      className={`${button} ${active ? 'bg-[#d9efff] text-[#11131b]' : 'bg-[var(--studio-surface,#fff)]'}`}
       aria-pressed={active ? true : undefined}
       disabled={!editor || disabled}
       onClick={on}
@@ -135,12 +135,12 @@ export function RichEditor({
           value={markdown}
           onChange={(event) => onChange(event.target.value)}
           rows={14}
-          className="w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 py-2 font-mono text-sm text-[var(--studio-text,#203337)]"
+          className="w-full rounded-xl border border-border bg-[var(--studio-surface,#fff)] px-3 py-2 font-mono text-sm text-[var(--studio-text,#11131b)]"
         />
       ) : (
         <EditorContent
           editor={editor}
-          className="rounded-xl border border-border bg-[var(--studio-surface,#fff)] text-[var(--studio-text,#203337)] [&_.ProseMirror]:min-h-56 [&_blockquote]:border-l-4 [&_blockquote]:border-[#1E6A83] [&_blockquote]:pl-3 [&_h2]:font-heading [&_h2]:text-2xl [&_h3]:font-heading [&_h3]:text-xl [&_ol]:list-decimal [&_ol]:pl-5 [&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:px-2 [&_th]:border [&_th]:border-border [&_th]:px-2 [&_ul]:list-disc [&_ul]:pl-5"
+          className="rounded-xl border border-border bg-[var(--studio-surface,#fff)] text-[var(--studio-text,#11131b)] [&_.ProseMirror]:min-h-56 [&_blockquote]:border-l-4 [&_blockquote]:border-[#096ab7] [&_blockquote]:pl-3 [&_h2]:font-heading [&_h2]:text-2xl [&_h3]:font-heading [&_h3]:text-xl [&_ol]:list-decimal [&_ol]:pl-5 [&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:px-2 [&_th]:border [&_th]:border-border [&_th]:px-2 [&_ul]:list-disc [&_ul]:pl-5"
         />
       )}
     </div>

@@ -17,11 +17,11 @@ function contrast(foreground: string, background: string): number {
 }
 
 test('calendar subscription text clears WCAG AA on the dark ink card', () => {
-  assert.ok(contrast('#1E6A83', INK) < 4.5);
+  assert.ok(contrast('#096ab7', INK) < 4.5);
   assert.ok(contrast('#E7F4F2', INK) >= 4.5);
   assert.ok(contrast('#8FB8B4', INK) >= 4.5);
   const source = readFileSync(new URL('../../components/calendar/google-sync.tsx', import.meta.url), 'utf8');
-  assert.match(source, /const onInk = 'text-\[#1E6A83\] dark:text-\[#E7F4F2\]'/);
+  assert.match(source, /const onInk = 'text-\[#096ab7\] dark:text-\[#E7F4F2\]'/);
   const muted = source.split('\n').find(line => line.includes('const outlineMuted')) ?? '';
   assert.match(muted, /disabled:opacity-50/);
   assert.match(muted, /dark:disabled:opacity-100/);
