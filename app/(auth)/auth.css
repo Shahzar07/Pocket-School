@@ -1,0 +1,122 @@
+/* Sign-in and sign-up: a story panel beside a paper form. Builds on .poket-auth. */
+
+.poket-auth.pk-auth { grid-template-columns: minmax(0, 41fr) minmax(0, 59fr); }
+
+/* ── Story panel ── */
+.pk-auth .poket-auth__story { padding: 32px 0; gap: 24px; isolation: isolate; position: sticky; top: 0; height: 100dvh; }
+.pk-auth .poket-auth__sky { opacity: 1; z-index: -2; }
+.pk-auth .poket-auth__brand,
+.pk-auth .poket-auth__copy,
+.pk-auth .pk-trust,
+.pk-auth .pk-legal { padding-inline: clamp(24px, 6vw, 72px); }
+/* A slow breath of light over the sky. */
+.pk-auth__bloom {
+  position: absolute; z-index: -1; left: 30%; top: -6%; width: 80%; height: 52%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, .85), rgba(217, 239, 255, .35) 55%, transparent);
+  animation: pk-bloom 6s cubic-bezier(.45, 0, .55, 1) infinite alternate;
+}
+@keyframes pk-bloom { from { opacity: .35; transform: scale(.92); } to { opacity: 1; transform: scale(1.1); } }
+
+.pk-auth__mid { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 0; }
+.pk-auth .poket-auth__copy { max-width: none; margin: 0; padding-block: 0; }
+.pk-auth .poket-auth__copy h1 { max-width: 12em; font-size: clamp(30px, 2.9vw, 44px); line-height: 1.1; letter-spacing: -.034em; }
+.pk-auth .poket-auth__copy p { margin-top: 14px; max-width: 34ch; font-size: 16px; line-height: 1.55; color: #46566a; }
+.pk-line { display: block; overflow: hidden; padding-bottom: .12em; }
+.pk-line > span { display: block; animation: pk-rise .95s cubic-bezier(.16, 1, .3, 1) both; }
+
+/* Drifting glass cards */
+.pk-reel { position: relative; margin-top: 36px; height: 176px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
+.pk-reel__track { position: absolute; left: 0; top: 0; display: flex; gap: 16px; padding-left: clamp(24px, 6vw, 72px); animation: pk-reel 38s linear infinite; will-change: transform; }
+@media (hover: hover) { .pk-reel:hover .pk-reel__track { animation-play-state: paused; } }
+/* Four cards of 232px and four 16px gaps make one loop. */
+@keyframes pk-reel { from { transform: translateX(0); } to { transform: translateX(-992px); } }
+.pk-card {
+  flex: none; width: 232px; height: 176px; margin: 0; padding: 20px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, .7); border-radius: 18px;
+  background: rgba(255, 255, 255, .62);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1); backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow: 0 18px 40px -26px rgba(9, 106, 183, .45);
+}
+.pk-card__icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: #11131b; color: #fff; }
+.pk-card__icon svg { width: 18px; height: 18px; stroke-width: 1.6; }
+.pk-card strong { display: block; font-size: 14px; font-weight: 600; letter-spacing: -.01em; color: #11131b; }
+.pk-card figcaption span { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.45; color: #56657a; }
+
+/* Aligned with */
+.pk-trust { margin-top: 34px; }
+.pk-trust__rule { display: flex; align-items: center; gap: 10px; max-width: 420px; }
+.pk-trust__rule::before, .pk-trust__rule::after { content: ""; flex: 1; height: 1px; background: rgba(17, 19, 27, .16); }
+.pk-trust__rule span { font-size: 13px; color: #46566a; white-space: nowrap; }
+.pk-marks { max-width: 420px; margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px; }
+.pk-marks li { font-size: 14.5px; font-weight: 600; letter-spacing: -.02em; color: rgba(17, 19, 27, .5); white-space: nowrap; }
+.pk-legal { position: relative; z-index: 1; font-size: 13px; color: #56657a; }
+
+/* ── Form panel ── */
+.pk-auth .poket-auth__form { flex-direction: column; padding: 72px 24px 0; min-height: 100dvh; }
+.pk-auth .poket-auth__form-inner { max-width: 404px; margin-block: auto; }
+.pk-foot { display: flex; justify-content: center; gap: 20px; padding: 24px 0 30px; }
+.pk-foot a { font-size: 14px; color: var(--muted-foreground); transition: color .15s; }
+.pk-foot a:hover { color: var(--foreground); }
+
+.pk-auth h2 { font-size: 32px !important; line-height: 1.2; letter-spacing: -.022em !important; margin-bottom: 4px !important; }
+.pk-auth input:not([type="checkbox"]):not([type="radio"]),
+.pk-auth select {
+  height: 44px; border-radius: 10px; background: var(--card); border-color: var(--input);
+  box-shadow: 0 1px 2px rgba(17, 19, 27, .05); font-size: 14px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.pk-auth input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+.pk-auth select:focus-visible { border-color: #178bee; box-shadow: 0 0 0 3px rgba(23, 139, 238, .18); outline: none; }
+.pk-auth label { letter-spacing: 0; text-transform: none; font-size: 14px; font-weight: 500; color: var(--muted-foreground); }
+.pk-auth button[type="submit"] { height: 44px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: background-color .15s, transform .15s; }
+.pk-auth button[type="submit"]:hover { background: #262a36; filter: none; }
+.pk-auth button[type="submit"]:active { transform: scale(.99); }
+
+/* The quickest way in sits first, as the strongest button. */
+.pk-quick {
+  display: flex; align-items: center; gap: 12px; width: 100%; height: 46px; padding: 0 10px 0 16px;
+  border-radius: 10px; background: #11131b; color: #f9fafb; font-size: 15px; font-weight: 500; text-align: left;
+  transition: background-color .15s, transform .15s;
+}
+.pk-quick:hover { background: #262a36; }
+.pk-quick:active { transform: scale(.99); }
+.pk-quick:disabled { opacity: .6; }
+.pk-quick__mark { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: #fff; flex: none; }
+.pk-quick__mark svg { width: 16px; height: 16px; }
+.pk-quick__label { flex: 1; }
+.pk-pill { flex: none; padding: 3px 8px; border-radius: 6px; background: #178bee; color: #fff; font-size: 11.5px; font-weight: 600; }
+.dark .pk-quick { background: #f4f7fb; color: #11131b; }
+.dark .pk-quick:hover { background: #fff; }
+
+.pk-or { display: flex; align-items: center; gap: 16px; margin: 20px 0; }
+.pk-or::before, .pk-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.pk-or span { font-size: 13.5px; color: var(--muted-foreground); white-space: nowrap; }
+
+.pk-control { position: relative; }
+.pk-control > svg { position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--muted-foreground); pointer-events: none; }
+.pk-control input { padding-left: 36px !important; }
+.pk-control--reveal input { padding-right: 44px !important; }
+.pk-reveal { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; color: var(--muted-foreground); }
+.pk-reveal:hover { color: var(--foreground); }
+.pk-reveal svg { width: 16px; height: 16px; }
+
+/* ── Entrance ── */
+.pk-in { animation: pk-settle .7s cubic-bezier(.22, 1, .36, 1) both; }
+.pk-lift { animation: pk-lift 1.05s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes pk-rise { from { transform: translateY(125%); } to { transform: none; } }
+@keyframes pk-settle { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pk-lift { from { opacity: 0; transform: translateY(28px) scale(.985); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 1000px) {
+  .poket-auth.pk-auth { grid-template-columns: 1fr; }
+  .pk-auth .poket-auth__form { padding: 72px 20px 0; }
+}
+@media (max-height: 760px) and (min-width: 1001px) {
+  .pk-reel { height: 150px; margin-top: 24px; }
+  .pk-card { height: 150px; padding: 16px; }
+  .pk-trust { margin-top: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk-in, .pk-lift, .pk-line > span, .pk-reel__track, .pk-auth__bloom { animation: none !important; }
+}
