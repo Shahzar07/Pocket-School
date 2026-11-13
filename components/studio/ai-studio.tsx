@@ -26,7 +26,7 @@ import {
   Presentation, Image as ImageIcon, Calculator, FlipHorizontal,
   Loader2, Save, Trash2, Copy, Plus, ChevronRight,
   RefreshCw, X, Menu, Mic, Volume2, Camera, Paperclip,
-  Video, Headphones, Asterisk,
+  Video, Headphones, Asterisk, Check,
 } from 'lucide-react';
 import { AI_TEACHERS, ET_AI_TUTOR, type AiTeacher } from '@/lib/ai-teachers';
 import { TeacherPortrait } from '@/components/teachers/portrait';
@@ -847,13 +847,11 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           </div>
         ) : null}
         {/* Mobile top bar */}
-        <div className={`flex flex-wrap items-center gap-2 overflow-hidden border-b px-3 py-2 lg:hidden ${C.borderSoft}`} data-studio-tools="row">
-          <button type="button" onClick={() => setSidebarOpen(true)} className={C.dim} aria-label="Open ET AI menu" aria-expanded={sidebarOpen}><Menu className="w-5 h-5" /></button>
+        <div className={`flex flex-nowrap items-center gap-2 overflow-x-auto border-b px-3 py-2 [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden ${C.borderSoft}`} data-studio-tools="row">
+          <button type="button" onClick={() => setSidebarOpen(true)} className={`shrink-0 ${C.dim}`} aria-label="Open ET AI menu" aria-expanded={sidebarOpen}><Menu className="w-5 h-5" /></button>
           <Link href={dashboardHomeHref(profile?.role)} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">
             <Home className="h-3.5 w-3.5" aria-hidden /> Dashboard
           </Link>
-          <TeacherPortrait teacher={teacher} size={32} className="h-8 w-8 rounded-full object-cover" />
-          <span className="text-sm font-bold shrink-0">{teacher.name}</span>
           <button type="button" onClick={newChat} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.newChat}</button>
           <button type="button" onClick={() => { setView('library'); setSidebarOpen(false); }} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.library}</button>
           <button type="button" onClick={() => { setView('chat'); setSkill('problems'); setSubject('Mathematics'); }} className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold">{ET_COPY.maths}</button>
@@ -897,7 +895,7 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
           <>
             <header className="flex items-center gap-3 border-b border-border px-3 py-1.5" data-et-teacher={teacher.id}>
               <TeacherPortrait teacher={teacher} size={32} className="h-8 w-8 rounded-full object-cover" />
-              <div className="min-w-0">
+              <div className="min-w-0 max-sm:hidden">
                 <p className="truncate text-sm font-semibold">{teacher.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{teacher.title}</p>
               </div>
@@ -907,11 +905,11 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                 aria-label={ET_COPY.teacher}
                 value={teacher.id}
                 onChange={(event) => setTeacherId(event.target.value)}
-                className="max-w-[9rem] rounded-full border border-border bg-card px-2 py-1 text-xs"
+                className="min-w-0 max-w-[9rem] shrink rounded-full border border-border bg-card px-2 py-1 text-xs"
               >
                 {TEACHERS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
-              <div className="ms-auto min-w-0 overflow-hidden"><ShellEssentials /></div>
+              <div className="ms-auto min-w-0 shrink-0 max-sm:max-w-[62%]"><ShellEssentials /></div>
             </header>
             {/* Thread */}
             <div className="min-h-0 flex-1 overflow-y-auto" data-et-chat="1">
@@ -1084,9 +1082,6 @@ export function AiStudio({ embedded = false }: { embedded?: boolean } = {}) {
                   ) : null}
                   <div className="flex items-center gap-1.5 px-3 pb-3 flex-wrap">
                     <HandwritingCapture disabled={busy} onText={text => setInput(current => current.trim() ? `${current.trim()}\n${text}` : text)} />
-                    <button type="button" onClick={() => fileRef.current?.click()} className="rounded-full border border-[#3A3733] px-2.5 py-1.5 text-xs font-semibold text-[var(--studio-accent-text)] md:hidden">
-                      Upload photo
-                    </button>
                     <button type="button" onClick={() => void startRecording()} aria-pressed={recording} aria-label={ET_COPY.mic} data-mic="1" className={`flex h-9 w-9 items-center justify-center rounded-full border ${recording ? 'border-[#3FE0D0] bg-[#3FE0D0] text-[#203337]' : 'border-[#3A3733] text-[var(--studio-accent-text)]'}`}>
                       <Mic className="h-4 w-4" aria-hidden />
                     </button>
@@ -1334,45 +1329,124 @@ function LibraryView({ user, library, loading, onDelete, onNew }: {
   );
 }
 
+/* ─── Interactive quiz and flashcards ──────────────────────── */
+
+interface StudioQuizQuestion { question?: string; options?: unknown[]; answer?: unknown; explanation?: string }
+
+function isCorrectOption(q: StudioQuizQuestion, option: string, index: number): boolean {
+  const answer = String(q.answer ?? '').trim();
+  return answer === option.trim() || answer.toUpperCase() === String.fromCharCode(65 + index);
+}
+
+/** The learner answers first. The key and the reason show after each choice. */
+function StudioQuiz({ questions }: { questions: StudioQuizQuestion[] }) {
+  const [picked, setPicked] = useState<Record<number, number>>({});
+  const [revealAll, setRevealAll] = useState(false);
+  const answered = Object.keys(picked).length;
+  const score = questions.reduce((sum, q, i) => {
+    const choice = picked[i];
+    if (choice === undefined) return sum;
+    const option = String((q.options ?? [])[choice] ?? '');
+    return sum + (isCorrectOption(q, option, choice) ? 1 : 0);
+  }, 0);
+  return (
+    <div className="space-y-4" data-studio-quiz="1">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span aria-live="polite">
+          {answered === 0
+            ? 'Pick an answer for each question.'
+            : `${score} of ${answered} correct${answered === questions.length ? '. Quiz complete.' : ''}`}
+        </span>
+        <span className="flex items-center gap-3">
+          {answered > 0 ? (
+            <button type="button" onClick={() => { setPicked({}); setRevealAll(false); }} className="font-semibold text-[var(--studio-accent-text)] hover:underline">
+              Try again
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setRevealAll(value => !value)} aria-pressed={revealAll} className="font-semibold text-[var(--studio-accent-text)] hover:underline">
+            {revealAll ? 'Hide answers' : 'Show answers'}
+          </button>
+        </span>
+      </div>
+      {questions.map((q, i) => {
+        const options = (q.options ?? []).map(option => String(option));
+        const choice = picked[i];
+        const shown = revealAll || choice !== undefined;
+        return (
+          <fieldset key={i} className="rounded-xl border border-border bg-muted p-4">
+            <legend className="sr-only">Question {i + 1}</legend>
+            <p className="mb-3 text-sm font-semibold text-foreground">{i + 1}. {q.question}</p>
+            <div className="mb-1 space-y-1.5">
+              {options.map((option, j) => {
+                const correct = isCorrectOption(q, option, j);
+                const mine = choice === j;
+                const tone = !shown
+                  ? 'border-transparent bg-background hover:border-[var(--ps-cyan-border)]'
+                  : correct
+                    ? 'border-success/50 bg-success/10'
+                    : mine
+                      ? 'border-foreground/40 bg-foreground/[0.06]'
+                      : 'border-transparent bg-background opacity-70';
+                return (
+                  <button
+                    key={j}
+                    type="button"
+                    disabled={choice !== undefined}
+                    onClick={() => setPicked(prev => ({ ...prev, [i]: j }))}
+                    aria-pressed={mine}
+                    className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm text-foreground transition-colors disabled:cursor-default ${tone}`}
+                  >
+                    <span className="font-semibold">{String.fromCharCode(65 + j)}.</span>
+                    <span className="min-w-0 flex-1">{option}</span>
+                    {shown && correct ? <Check className="h-4 w-4 shrink-0 text-success" aria-label="Correct answer" /> : null}
+                    {shown && mine && !correct ? <X className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="Your answer" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+            {shown && q.explanation ? <p className="mt-3 text-xs italic text-muted-foreground">{q.explanation}</p> : null}
+          </fieldset>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Question first. A tap turns the card over. */
+function StudioFlashcards({ cards }: { cards: { question?: string; answer?: string }[] }) {
+  const [open, setOpen] = useState<Record<number, boolean>>({});
+  return (
+    <div className="grid gap-3 sm:grid-cols-2" data-studio-flashcards="1">
+      {cards.map((item, i) => {
+        const flipped = !!open[i];
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setOpen(prev => ({ ...prev, [i]: !prev[i] }))}
+            aria-pressed={flipped}
+            className="flex min-h-32 flex-col rounded-xl border border-border bg-muted p-4 text-left transition-colors hover:border-[var(--ps-cyan-border)]"
+          >
+            <span className={`mb-2 text-[10px] font-semibold uppercase tracking-widest ${flipped ? 'text-[#166534] dark:text-[#86EFAC]' : 'text-[var(--studio-accent-text)]'}`}>
+              {flipped ? 'Answer' : 'Question'}
+            </span>
+            <span className="flex-1 text-sm text-foreground">{flipped ? item.answer : item.question}</span>
+            <span className="mt-3 text-[11px] font-semibold text-muted-foreground">{flipped ? 'Tap for the question' : 'Tap for the answer'}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Generation output renderer ───────────────────────────── */
 
 function GenerationOutput({ format, data }: { format: FormatId; data: any }) {
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === 'dark';
   const card = 'rounded-xl bg-muted border border-border p-4';
-  if (format === 'flashcards' && Array.isArray(data)) {
-    return (
-      <div className="grid sm:grid-cols-2 gap-3">
-        {data.map((cardItem: any, i: number) => (
-          <div key={i} className={card}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 text-[var(--studio-accent-text)]">Question</p>
-            <p className="text-sm text-foreground mb-3">{cardItem.question}</p>
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 text-[#166534] dark:text-[#86EFAC]">Answer</p>
-            <p className="text-sm text-foreground">{cardItem.answer}</p>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (format === 'quiz' && Array.isArray(data)) {
-    return (
-      <div className="space-y-4">
-        {data.map((q: any, i: number) => (
-          <div key={i} className={card}>
-            <p className="text-sm font-semibold text-foreground mb-3">{i + 1}. {q.question}</p>
-            <ul className="space-y-1.5 mb-3">
-              {q.options?.map((opt: string, j: number) => (
-                <li key={j} className={`text-sm rounded-lg px-3 py-2 text-foreground ${q.answer === String.fromCharCode(65 + j) || q.answer === opt ? 'bg-success/10 border border-success/40 dark:border-success/40' : 'bg-background border border-transparent'}`}>
-                  {String.fromCharCode(65 + j)}. {opt}
-                </li>
-              ))}
-            </ul>
-            {q.explanation && <p className="text-xs text-muted-foreground italic">{q.explanation}</p>}
-          </div>
-        ))}
-      </div>
-    );
-  }
+  if (format === 'flashcards' && Array.isArray(data)) return <StudioFlashcards cards={data} />;
+  if (format === 'quiz' && Array.isArray(data)) return <StudioQuiz questions={data} />;
   if (format === 'slides' && Array.isArray(data)) {
     return (
       <div className="space-y-4">

@@ -106,13 +106,15 @@ export function ShellEssentials() {
   const tourRole = (TOUR_ROLES.has(profile?.role ?? '') ? profile?.role : 'student') as TourRole;
   const [searchOpen, setSearchOpen] = useState(false);
   return (
-    <div className="flex min-w-0 flex-wrap items-center justify-end gap-1 overflow-hidden" data-studio-essentials="1">
-      <PipGuide role={tourRole} compact />
-      <ThemeToggle onDark={onDark} />
-      <LanguageSwitcher tone={onDark ? 'onDark' : 'default'} compact />
+    <div className="flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-hidden sm:flex-wrap" data-studio-essentials="1">
+      {/* A phone has room for one row. The tour, language and currency live in
+          the menu and on the dashboard, so they step aside below 640px. */}
+      <span className="contents max-sm:hidden"><PipGuide role={tourRole} compact /></span>
+      <span className="contents max-sm:hidden"><ThemeToggle onDark={onDark} /></span>
+      <span className="contents max-sm:hidden"><LanguageSwitcher tone={onDark ? 'onDark' : 'default'} compact /></span>
       <NotificationsBell tone={onDark ? 'onDark' : 'default'} />
       <SparksChip />
-      <CurrencySwitcher tone={onDark ? 'onDark' : 'default'} />
+      <span className="contents max-sm:hidden"><CurrencySwitcher tone={onDark ? 'onDark' : 'default'} /></span>
       <button
         type="button"
         aria-label="Search"

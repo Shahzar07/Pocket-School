@@ -100,7 +100,7 @@ export function DashFab({ role }: { role: ShellRole }) {
   return (
     <Link
       href={home.fab.href}
-      className="fixed end-4 z-40 inline-flex h-14 min-h-12 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] lg:hidden"
+      className="fixed start-4 z-40 inline-flex h-12 min-h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] lg:hidden"
       style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
     >
       <Plus className="h-6 w-6" aria-hidden="true" />
