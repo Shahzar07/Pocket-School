@@ -7,3 +7,7 @@
   NODE_VERSION = "22"
   # The app is large; the default 2 GB heap runs out during the build.
   NODE_OPTIONS = "--max-old-space-size=6144"
+
+# Without this the build output is published as static files and every route answers 404.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
