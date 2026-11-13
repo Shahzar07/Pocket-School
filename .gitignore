@@ -14,3 +14,7 @@ coverage/
 .env*
 !.env.example
 tsconfig.tsbuildinfo
+
+# Netlify deploy tool output
+.netlify/
+deploy-*.zip
