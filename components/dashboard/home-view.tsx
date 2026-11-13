@@ -13,7 +13,6 @@ import {
 import type { PreviewAlert, PreviewBadge, PreviewChild, PreviewRow, PreviewStat } from '@/lib/dashboard/preview';
 import { AlertCard, BadgeArt, DashSkeleton, InsightMap, ListCard, StatCard, TileLink } from './cards';
 import { CategoryIcon } from './icons';
-import { CloseControl } from '@/components/ui/close-control';
 
 export function HomeView({
   role,
@@ -117,23 +116,6 @@ export function HomeView({
           ))}
         </div>
       </header>
-
-      {showCoach ? (
-        <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-border bg-card px-4 py-3 pe-16" role="note">
-          {onDismissCoach ? <CloseControl onClose={onDismissCoach} className="absolute top-2 right-2" /> : null}
-          <p className="text-sm text-foreground">
-            New here? The onboarding course walks through these tiles. Start with the three tasks above.
-          </p>
-          <div className="flex gap-2">
-            <Link href="/onboarding" className="inline-flex min-h-12 items-center rounded-full border border-[var(--ps-cyan-border)] bg-[var(--ps-cyan)] px-4 text-sm font-semibold text-[var(--ps-cyan-ink)] shadow-[0_8px_22px_var(--ps-glow)]">
-              Open the course
-            </Link>
-            <button type="button" onClick={onDismissCoach} className="inline-flex min-h-12 items-center rounded-full border border-border px-4 text-sm font-semibold">
-              Got it
-            </button>
-          </div>
-        </div>
-      ) : null}
 
       <section aria-label="Start here" className="grid gap-3 sm:grid-cols-3">
         {home.tasks.map(task => (

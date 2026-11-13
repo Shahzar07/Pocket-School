@@ -682,7 +682,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const fullBleed = immersive || pathwayDesk;
 
   return (
-    <div className="flex h-dvh overflow-hidden" data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} data-pathway-desk={pathwayDesk ? '1' : undefined} style={pathwayDesk ? { background: 'var(--background)', color: 'var(--foreground)' } : immersive ? undefined : { background: accent.wash }}>
+    <div className="flex h-dvh overflow-hidden" data-dashboard-role={role} data-studio-immersive={immersive ? '1' : undefined} data-pathway-desk={pathwayDesk ? '1' : undefined} style={pathwayDesk ? { background: 'var(--background)', color: 'var(--foreground)' } : immersive ? undefined : { background: 'var(--background)' }}>
       <AcademySession />
       <a href="#dashboard-main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-card focus:px-3 focus:py-2">
         Skip to content
@@ -873,8 +873,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
             {/* Onboarding belongs on the role's landing page. It used to sit above
                 every page and pushed the page's own content below the fold. */}
-            {roleHomePage ? <WelcomeResume role={role} /> : null}
-            {roleHomePage ? <RoleChecklist role={role} /> : null}
+            {roleHomePage ? (
+              <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-4 [&>*]:min-w-0 [&>*]:flex-1">
+                <WelcomeResume role={role} />
+                <RoleChecklist role={role} />
+              </div>
+            ) : null}
             <PagePurpose pathname={pathname} />
             {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
             <ActiveTimeTracker />

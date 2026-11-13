@@ -37,7 +37,7 @@ export default function LoginPage() {
   const buttonClass = accent
     ? 'w-full h-12 rounded-2xl font-semibold text-base transition-all mt-2'
     : 'w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:brightness-110 font-semibold text-base shadow-lg shadow-blue-900/30 transition-all mt-2';
-  const linkClass = linkColor ? 'font-semibold' : 'text-[#6FBBCE] font-semibold hover:text-[#93C5FD] transition-colors';
+  const linkClass = linkColor ? 'font-semibold' : 'text-primary font-semibold underline-offset-4 hover:underline transition-colors';
   const router = useRouter();
   const [linkedInEnabled, setLinkedInEnabled] = useState(false);
   const [linkedInNote, setLinkedInNote] = useState('');
@@ -311,16 +311,16 @@ export default function LoginPage() {
       {step === 'credentials' && (
         <>
           <div className="mb-9">
-            <h2 className="text-3xl font-bold text-white mb-2">{branding.loginHeadline || t('authForm.welcome')}</h2>
-            <p className="text-white/45 text-sm">{branding.loginBody || branding.tagline || t('authForm.details')}</p>
+            <h2 className="font-heading text-[2rem] leading-tight tracking-tight text-foreground mb-2">{branding.loginHeadline || t('authForm.welcome')}</h2>
+            <p className="text-muted-foreground text-sm">{branding.loginBody || branding.tagline || t('authForm.details')}</p>
             {institution?.signupPolicy === 'invite' && (
-              <p className="mt-3 text-sm text-white/60">This academy adds people by invitation.</p>
+              <p className="mt-3 text-sm text-muted-foreground">This academy adds people by invitation.</p>
             )}
             {institution?.signupPolicy === 'domain' && (
-              <p className="mt-3 text-sm text-white/60">New accounts use an email on an allowed academy domain.</p>
+              <p className="mt-3 text-sm text-muted-foreground">New accounts use an email on an allowed academy domain.</p>
             )}
             {institution?.require2fa && (
-              <p className="mt-3 text-sm text-white/60">This academy requires an email code at sign-in.</p>
+              <p className="mt-3 text-sm text-muted-foreground">This academy requires an email code at sign-in.</p>
             )}
           </div>
 
@@ -328,7 +328,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full h-12 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium transition-all flex items-center justify-center gap-3 mb-6"
+            className="w-full h-12 rounded-2xl border border-border bg-card hover:bg-muted text-foreground/80 hover:text-foreground font-medium transition-all flex items-center justify-center gap-3 mb-6"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -338,30 +338,30 @@ export default function LoginPage() {
             </svg>
             {t('authForm.google')}
           </button>
-          {linkedInNote ? <p className="mb-4 text-sm text-white/70">{linkedInNote}</p> : null}
+          {linkedInNote ? <p className="mb-4 text-sm text-foreground/80">{linkedInNote}</p> : null}
           {linkedInEnabled ? (
             <a
               href="/api/auth/linkedin?start=login"
-              className="w-full h-12 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium transition-all flex items-center justify-center gap-3 mb-6"
+              className="w-full h-12 rounded-2xl border border-border bg-card hover:bg-muted text-foreground/80 hover:text-foreground font-medium transition-all flex items-center justify-center gap-3 mb-6"
             >
               Sign in with LinkedIn
             </a>
           ) : null}
 
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-white/8" />
-            <span className="px-4 text-xs text-white/30 font-medium uppercase tracking-widest">{t('authForm.orEmail')}</span>
-            <div className="flex-1 border-t border-white/8" />
+            <div className="flex-1 border-t border-border" />
+            <span className="px-4 text-xs text-muted-foreground/70 font-medium uppercase tracking-widest">{t('authForm.orEmail')}</span>
+            <div className="flex-1 border-t border-border" />
           </div>
 
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-white/60 text-xs font-semibold uppercase tracking-wider">{t('authForm.email')}</Label>
+              <Label htmlFor="email" className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">{t('authForm.email')}</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 transition-all"
+                className="h-12 rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground/60 transition-all"
                 style={accent ? { outlineColor: accent } : undefined}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -370,7 +370,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-white/60 text-xs font-semibold uppercase tracking-wider">{t('authForm.password')}</Label>
+                <Label htmlFor="password" className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">{t('authForm.password')}</Label>
                 <Link href="/forgot-password" className={`text-xs font-medium ${linkClass}`} style={linkColor ? { color: linkColor } : undefined}>
                   {t('authForm.forgot')}
                 </Link>
@@ -379,7 +379,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="h-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/25 transition-all"
+                className="h-12 rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground/60 transition-all"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 disabled={loading}
@@ -395,14 +395,14 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center mt-7 text-white/40 text-sm">
+          <p className="text-center mt-7 text-muted-foreground text-sm">
             {t('authForm.noAccount')}{' '}
             <Link href="/signup" className={linkClass} style={linkColor ? { color: linkColor } : undefined}>
               {t('authForm.createFree')}
             </Link>
           </p>
           {!branding.isWhiteLabel && (
-            <p className="mt-4 text-center text-sm text-white/50">
+            <p className="mt-4 text-center text-sm text-muted-foreground">
               <Link href="/institutions/login" className={linkClass} style={linkColor ? { color: linkColor } : undefined}>Institution admin sign-in</Link>
               {' · '}
               <Link href="/institutions/register" className={linkClass} style={linkColor ? { color: linkColor } : undefined}>For Schools & Organisations</Link>
@@ -414,29 +414,29 @@ export default function LoginPage() {
       {step === 'twofa' && (
         <>
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">{t('authForm.checkEmail')}</h2>
-            <p className="text-white/45 text-sm">
-              {t('authForm.codeSent')} <span className="text-white/70 font-semibold">{email}</span>.
+            <h2 className="font-heading text-[2rem] leading-tight tracking-tight text-foreground mb-2">{t('authForm.checkEmail')}</h2>
+            <p className="text-muted-foreground text-sm">
+              {t('authForm.codeSent')} <span className="text-foreground/80 font-semibold">{email}</span>.
             </p>
           </div>
 
           {codeSent && (
             <form onSubmit={verifyTwoFa} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="2fa-code" className="text-white/60 text-xs font-semibold uppercase tracking-wider">{t('authForm.codeLabel')}</Label>
+                <Label htmlFor="2fa-code" className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">{t('authForm.codeLabel')}</Label>
                 <Input
                   id="2fa-code"
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="123456"
-                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white text-center text-2xl tracking-[0.5em] font-bold placeholder:text-white/20"
+                  className="h-14 rounded-2xl bg-card border-border text-foreground text-center text-2xl tracking-[0.5em] font-bold placeholder:text-muted-foreground/60"
                   value={code}
                   onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                   autoFocus
                   disabled={loading}
                 />
-                <p className="text-xs text-white/30">{t('authForm.codeHint')}</p>
+                <p className="text-xs text-muted-foreground/70">{t('authForm.codeHint')}</p>
               </div>
               <Button
                 type="submit"
@@ -462,7 +462,7 @@ export default function LoginPage() {
             type="button"
             onClick={cancelTwoFa}
             disabled={loading}
-            className="w-full mt-4 text-sm text-white/30 hover:text-white/60 transition-colors"
+            className="w-full mt-4 text-sm text-muted-foreground/70 hover:text-foreground transition-colors"
           >
             ← {t('authForm.cancelSignOut')}
           </button>
