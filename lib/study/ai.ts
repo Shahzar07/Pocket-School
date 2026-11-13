@@ -1,5 +1,6 @@
 import 'server-only';
 import { protectLatexInJson } from '@/lib/latex-json';
+import { isReasoningModel, openRouterFetch } from '@/lib/openrouter';
 
 /**
  * Model access for the study features.
@@ -14,10 +15,10 @@ import { protectLatexInJson } from '@/lib/latex-json';
  *  - TUTOR    the live conversation. Starts speaking almost immediately.
  */
 export const MODELS = {
-  SOLVER: ['openai/gpt-5-mini', 'google/gemini-2.5-flash', 'openai/gpt-4o-mini'],
-  VISION: ['google/gemini-2.5-flash', 'google/gemini-2.0-flash-001', 'openai/gpt-4o-mini'],
-  FAST: ['google/gemini-2.0-flash-001', 'openai/gpt-4o-mini', 'google/gemini-2.5-flash'],
-  TUTOR: ['google/gemini-2.0-flash-001', 'openai/gpt-4o-mini', 'google/gemini-2.5-flash'],
+  SOLVER: ['openai/gpt-5-mini', 'google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'z-ai/glm-4.6'],
+  VISION: ['google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001', 'openai/gpt-5-mini'],
+  FAST: ['google/gemini-2.0-flash-001', 'google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'z-ai/glm-4.6'],
+  TUTOR: ['google/gemini-2.0-flash-001', 'google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'z-ai/glm-4.6'],
 } as const;
 
 export type ModelChain = readonly string[];
@@ -42,33 +43,25 @@ interface ChatOptions {
   signal?: AbortSignal;
 }
 
-const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
-
-function body(opts: ChatOptions, stream: boolean) {
-  const [model, ...rest] = opts.models;
-  const reasoning = model.startsWith('openai/gpt-5');
-  return JSON.stringify({
-    model,
-    models: [model, ...rest].slice(0, 3),
-    ...(reasoning
-      ? { reasoning: { effort: opts.effort ?? 'low' } }
-      : { temperature: opts.temperature ?? 0.4 }),
-    max_tokens: opts.maxTokens ?? 4000,
-    ...(opts.json && !reasoning ? { response_format: { type: 'json_object' } } : {}),
-    ...(stream ? { stream: true } : {}),
-    messages: opts.messages,
-  });
+function build(opts: ChatOptions, stream: boolean) {
+  return (model: string, fallbacks: string[]) => {
+    const reasoning = isReasoningModel(model);
+    return {
+      model,
+      ...(fallbacks.length ? { models: [model, ...fallbacks] } : {}),
+      ...(reasoning
+        ? { reasoning: { effort: opts.effort ?? 'low' } }
+        : { temperature: opts.temperature ?? 0.4 }),
+      max_tokens: opts.maxTokens ?? 4000,
+      ...(opts.json && !reasoning ? { response_format: { type: 'json_object' } } : {}),
+      ...(stream ? { stream: true } : {}),
+      messages: opts.messages,
+    };
+  };
 }
 
-function headers() {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error('AI is not configured on this server (OPENROUTER_API_KEY).');
-  return {
-    Authorization: `Bearer ${key}`,
-    'Content-Type': 'application/json',
-    'HTTP-Referer': 'https://poketschool.ai',
-    'X-Title': 'Poket School',
-  };
+function requireKey() {
+  if (!process.env.OPENROUTER_API_KEY) throw new Error('AI is not configured on this server (OPENROUTER_API_KEY).');
 }
 
 /** One completion, retried on rate limits and transient failures. */
@@ -80,7 +73,8 @@ export async function chat(opts: ChatOptions): Promise<string> {
     const timer = setTimeout(() => ctrl.abort(), 90_000);
     opts.signal?.addEventListener('abort', () => ctrl.abort());
     try {
-      const res = await fetch(ENDPOINT, { method: 'POST', headers: headers(), body: body(opts, false), signal: ctrl.signal });
+      requireKey();
+      const res = await openRouterFetch({ chain: opts.models, build: build(opts, false), signal: ctrl.signal });
       if (res.ok) {
         const data = await res.json();
         const text: string | undefined = data.choices?.[0]?.message?.content;
@@ -162,7 +156,8 @@ export async function chatJSON<T>(opts: ChatOptions): Promise<T> {
 
 /** Stream a completion as plain text deltas. */
 export async function streamChat(opts: ChatOptions): Promise<ReadableStream<Uint8Array>> {
-  const upstream = await fetch(ENDPOINT, { method: 'POST', headers: headers(), body: body(opts, true), signal: opts.signal });
+  requireKey();
+  const upstream = await openRouterFetch({ chain: opts.models, build: build(opts, true), signal: opts.signal });
   if (!upstream.ok || !upstream.body) {
     const err = await upstream.text().catch(() => '');
     throw new Error(`AI provider error ${upstream.status}: ${err.slice(0, 200)}`);

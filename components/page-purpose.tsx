@@ -7,12 +7,15 @@ export function PagePurpose({ pathname }: { pathname: string }) {
   const page = pageForPath(pathname);
   if (!page || page.title.includes('(retired)')) return null;
   return (
-    <section
+    <details
       aria-label="What this page is for"
-      className="mb-4 rounded-2xl border border-border bg-card/80 px-4 py-3"
+      className="group mb-3 w-fit max-w-full rounded-2xl border border-border bg-card/80 text-sm open:w-full"
     >
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What this page is for</p>
-      <p className="mt-1 text-sm leading-relaxed text-foreground">{page.purpose}</p>
-    </section>
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-border text-[10px] font-bold">i</span>
+        What this page is for
+      </summary>
+      <p className="px-3 pb-3 leading-relaxed text-foreground">{page.purpose}</p>
+    </details>
   );
 }

@@ -1,6 +1,6 @@
 import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
-import { callOpenRouter, LIVE_MODEL } from '@/lib/openrouter';
+import { callOpenRouter, friendlyAiError, isReasoningModel, LIVE_MODEL, modelChain, openRouterFetch } from '@/lib/openrouter';
 import { languageInstruction } from '@/lib/languages';
 
 export const maxDuration = 60;
@@ -77,32 +77,29 @@ export async function POST(req: NextRequest) {
       const apiKey = process.env.OPENROUTER_API_KEY;
       if (!apiKey) return NextResponse.json({ error: 'OPENROUTER_API_KEY is not set. ET AI cannot reply until that key is added.' }, { status: 500 });
       const imageUrl = typeof image === 'string' && image.startsWith('data:image/') && image.length < 2_000_000 ? image : '';
-      const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://poketschool.ai',
-          'X-Title': 'Poket School',
-        },
-        body: JSON.stringify({
-          model: LIVE_MODEL,
-          models: [LIVE_MODEL, 'openai/gpt-4o-mini', 'z-ai/glm-4.6'],
-          temperature: 0.8,
+      const outgoing = messages.map((entry, index) => (
+        imageUrl && index === messages.length - 1
+          ? { ...entry, content: [{ type: 'text', text: entry.content }, { type: 'image_url', image_url: { url: imageUrl } }] }
+          : entry
+      ));
+      const upstream = await openRouterFetch({
+        chain: modelChain(LIVE_MODEL),
+        signal: req.signal,
+        build: (model, fallbacks) => ({
+          model,
+          ...(fallbacks.length ? { models: [model, ...fallbacks] } : {}),
+          ...(isReasoningModel(model) ? { reasoning: { effort: 'low' } } : { temperature: 0.8 }),
           // A spoken turn is a few sentences. Capping it keeps replies
           // conversational and the first words arriving fast.
           max_tokens: 900,
           stream: true,
-          messages: messages.map((entry, index) => (
-            imageUrl && index === messages.length - 1
-              ? { ...entry, content: [{ type: 'text', text: entry.content }, { type: 'image_url', image_url: { url: imageUrl } }] }
-              : entry
-          )),
+          messages: outgoing,
         }),
       });
       if (!upstream.ok || !upstream.body) {
         const err = await upstream.text().catch(() => '');
-        return NextResponse.json({ error: `Upstream ${upstream.status}: ${err.slice(0, 200)}` }, { status: 502 });
+        console.error('[tutor] upstream', upstream.status, err.slice(0, 300));
+        return NextResponse.json({ error: friendlyAiError(`${upstream.status} ${err.slice(0, 200)}`) }, { status: 502 });
       }
 
       const decoder = new TextDecoder();
@@ -129,8 +126,10 @@ export async function POST(req: NextRequest) {
                 } catch { /* ignore keep-alive/comment lines */ }
               }
             }
+          } catch {
+            /* the learner closed the tab or the provider dropped the stream */
           } finally {
-            controller.close();
+            try { controller.close(); } catch { /* already closed */ }
           }
         },
       });
@@ -143,6 +142,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ reply });
   } catch (err: any) {
     console.error('[tutor]', err);
-    return NextResponse.json({ error: err.message || 'AI tutor failed' }, { status: 500 });
+    return NextResponse.json({ error: friendlyAiError(err) }, { status: 500 });
   }
 }

@@ -5,6 +5,9 @@ import { localSeoSuggestion } from '@/lib/blog/seo';
 import { isOpenRouterConfigured, callOpenRouter, FAST_MODEL } from '@/lib/openrouter';
 import { loadToolActor } from '@/lib/server/tool-actor';
 
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
+
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {

@@ -1,6 +1,9 @@
 import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
-import { callOpenRouter, FAST_MODEL } from '@/lib/openrouter';
+import { callOpenRouter, FAST_MODEL, friendlyAiError } from '@/lib/openrouter';
+
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
 
 /** Legacy quizzes stored letter answers ("A") while students select option
  * text — resolve either form to the same comparable string. */
@@ -74,6 +77,6 @@ Respond with ONLY a JSON object — no other text:
     });
   } catch (err: any) {
     console.error('[quiz-grade]', err);
-    return NextResponse.json({ error: err.message || 'Grading failed' }, { status: 500 });
+    return NextResponse.json({ error: friendlyAiError(err) }, { status: 500 });
   }
 }

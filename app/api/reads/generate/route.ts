@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { callOpenRouter, CONTENT_MODEL } from '@/lib/openrouter';
 import { isPlatformAdmin } from '@/lib/reads/verify-admin';
 
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
+
 export const runtime = 'nodejs';
 
 /**

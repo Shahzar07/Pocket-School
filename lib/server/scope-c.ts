@@ -9,7 +9,7 @@ import {
 } from '../community/policy';
 import { type ModerationResult } from '../community/moderation';
 import { type ModerationSurface } from '../moderation/screen';
-import { callOpenRouter, FAST_MODEL } from '../openrouter';
+import { callOpenRouter, FAST_MODEL, openRouterFetch } from '../openrouter';
 import { isWithinQuietHours, nextVisibleAt, parseClock } from '../community/quiet-hours';
 import { mockStillOpen, predictedGrade, scoreAttempt, type PaperQuestion } from '../community/grades';
 import { guidanceFor } from '../community/guidance';
@@ -1068,18 +1068,12 @@ export async function allocateResource(actorId: string, resourceId: string, stud
 }
 
 async function ocrImage(imageBase64: string): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error('OCR is not configured');
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://poketschool.ai',
-      'X-Title': 'Poket School',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-2.0-flash-001',
+  if (!process.env.OPENROUTER_API_KEY) throw new Error('OCR is not configured');
+  const res = await openRouterFetch({
+    chain: ['google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001'],
+    build: (model, fallbacks) => ({
+      model,
+      ...(fallbacks.length ? { models: [model, ...fallbacks] } : {}),
       max_tokens: 600,
       messages: [{
         role: 'user',

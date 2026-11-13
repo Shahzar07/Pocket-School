@@ -98,11 +98,13 @@ export function CookieConsent() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed bottom-0 inset-x-0 z-[200] p-3 sm:p-5 print:hidden"
+          className="pointer-events-none fixed bottom-0 inset-x-0 z-[200] p-3 sm:p-5 print:hidden"
           role="dialog"
           aria-label={t('cookie.dialog')}
         >
-          <div className="max-w-4xl mx-auto rounded-3xl border border-border bg-card shadow-2xl overflow-hidden">
+          {/* A compact card in the corner. The full-width bar used to sit on top of
+              the ET AI message box and swallow clicks beside it. */}
+          <div className="pointer-events-auto mx-auto max-h-[calc(100dvh-1.5rem)] max-w-lg overflow-y-auto rounded-3xl border border-border bg-card shadow-2xl sm:mx-0 sm:max-w-md">
             <div className="p-5 sm:p-6">
               <div className="flex items-start gap-3">
                 <span className="w-9 h-9 rounded-xl bg-[var(--ps-cyan-soft)] dark:bg-[var(--ps-cyan-soft)] flex items-center justify-center shrink-0">
@@ -157,31 +159,31 @@ export function CookieConsent() {
                 )}
               </AnimatePresence>
 
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={acceptAll}
-                  className="h-11 w-full shrink-0 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 sm:flex-1"
+                  className="h-11 w-full shrink-0 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
                 >
                   {t('cookie.acceptAll')}
                 </button>
                 {managing ? (
                   <button
                     onClick={() => persist(prefs)}
-                    className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:flex-1"
+                    className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-foreground transition-colors hover:bg-muted min-[380px]:w-auto min-[380px]:flex-1"
                   >
                     {t('cookie.saveChoices')}
                   </button>
                 ) : (
                   <button
                     onClick={() => setManaging(true)}
-                    className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:flex-1"
+                    className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-foreground transition-colors hover:bg-muted min-[380px]:w-auto min-[380px]:flex-1"
                   >
                     {t('cookie.manage')}
                   </button>
                 )}
                 <button
                   onClick={rejectAll}
-                  className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted sm:flex-1"
+                  className="h-11 w-full shrink-0 rounded-xl border border-border text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted min-[380px]:w-auto min-[380px]:flex-1"
                 >
                   {t('cookie.reject')}
                 </button>

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { enforceAiAccess } from '@/lib/api-guard';
 import { callOpenRouter, LIVE_MODEL } from '@/lib/openrouter';
 
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
+
 export const runtime = 'nodejs';
 
 /** Ask ET about the chapter currently open. Fiction answers stay inside that chapter. */

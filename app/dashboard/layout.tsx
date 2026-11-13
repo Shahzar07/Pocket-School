@@ -675,6 +675,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const dashRole: DashRole = role === 'institution_admin' ? 'institution' : role === 'partner_merchant' ? 'student' : role;
   const compactNav = !sidebarOpen;
   const immersive = isAiToolPath(pathname);
+  /** The landing page of a role: /dashboard, /dashboard/student, /dashboard/teacher … */
+  const roleHomePage = /^\/dashboard(?:\/(?:student|teacher|parent|institution|admin|partner))?\/?$/.test(pathname);
   const shellOwnsPage = ownsStudioShell(pathname);
   const pathwayDesk = pathname.startsWith('/dashboard/admin/pathways');
   const fullBleed = immersive || pathwayDesk;
@@ -869,8 +871,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {ACCESS_DENIED_MESSAGE}
               </div>
             )}
-            <WelcomeResume role={role} />
-            <RoleChecklist role={role} />
+            {/* Onboarding belongs on the role's landing page. It used to sit above
+                every page and pushed the page's own content below the fold. */}
+            {roleHomePage ? <WelcomeResume role={role} /> : null}
+            {roleHomePage ? <RoleChecklist role={role} /> : null}
             <PagePurpose pathname={pathname} />
             {role === 'teacher' || role === 'institution_admin' || role === 'admin' ? <AllStaffBanner /> : null}
             <ActiveTimeTracker />

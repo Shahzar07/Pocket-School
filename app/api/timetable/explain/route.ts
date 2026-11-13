@@ -4,6 +4,9 @@ import { applyParsedConstraint, parseNaturalConstraint } from '@/lib/timetable/e
 import { explainSolve, proposeSoftFixes, requestedCount, solveTimetable } from '@/lib/timetable/solver';
 import type { TimetableDoc } from '@/lib/timetable/types';
 
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
+
 export const runtime = 'nodejs';
 
 /** Deterministic explanation. A model paragraph is added only when OPENROUTER_API_KEY is set. */

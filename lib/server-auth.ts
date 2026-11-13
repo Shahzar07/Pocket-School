@@ -1,6 +1,7 @@
 import 'server-only';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import firebaseConfig from '../firebase-applet-config.json';
+import { friendlyAiError } from './openrouter';
 
 /**
  * Verify a Firebase ID token without the Admin SDK.
@@ -74,7 +75,11 @@ export async function requireUser(req: Request): Promise<AuthedUser> {
 /** Turn an error into the JSON response every study route returns. */
 export function errorResponse(err: unknown, fallback = 'Something went wrong.') {
   const status = err instanceof AuthError ? 401 : 500;
-  const message = err instanceof Error && err.message ? err.message : fallback;
+  const raw = err instanceof Error && err.message ? err.message : fallback;
   if (status === 500) console.error('[study]', err);
+  // Provider failures carry status codes and raw JSON. Learners get a plain sentence.
+  const message = status === 500 && /AI provider error|OpenRouter error|OPENROUTER_API_KEY|fetch failed|aborted/i.test(raw)
+    ? friendlyAiError(err)
+    : raw;
   return Response.json({ error: message }, { status });
 }

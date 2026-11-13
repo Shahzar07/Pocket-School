@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { openRouterFetch } from '@/lib/openrouter';
 import { enforceAiAccess } from '@/lib/api-guard';
 import {
   AI_CALENDAR_UNAVAILABLE,
@@ -8,6 +9,9 @@ import {
   importCalendarText,
   type ImportDraft,
 } from '@/lib/insights/planner-import';
+
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
 
 export const runtime = 'nodejs';
 
@@ -137,16 +141,11 @@ async function readImage(bytes: Buffer, mime: string): Promise<string | null> {
   const gemini = process.env.GEMINI_API_KEY?.trim();
   try {
     if (openRouter && aiKeyPresent({ OPENROUTER_API_KEY: openRouter })) {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${openRouter}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://poketschool.ai',
-          'X-Title': 'Poket School',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-001',
+      const response = await openRouterFetch({
+        chain: ['google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001'],
+        build: (model, fallbacks) => ({
+          model,
+          ...(fallbacks.length ? { models: [model, ...fallbacks] } : {}),
           messages: [{
             role: 'user',
             content: [
@@ -162,7 +161,7 @@ async function readImage(bytes: Buffer, mime: string): Promise<string | null> {
     }
     if (gemini && aiKeyPresent({ GEMINI_API_KEY: gemini })) {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(gemini)}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(gemini)}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

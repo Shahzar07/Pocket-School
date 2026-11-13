@@ -1,24 +1,21 @@
 import { NextResponse } from 'next/server';
-import { isOpenRouterConfigured, LIVE_MODEL } from '@/lib/openrouter';
+import { isOpenRouterConfigured, LIVE_MODEL, openRouterFetch } from '@/lib/openrouter';
 import { decodeDataUrl, parsePaperTimetable, textChunksFromPng } from '@/lib/timetable/paper';
+
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
 
 export const runtime = 'nodejs';
 
 const PROMPT = 'Read this photographed school timetable. Return only lines you can see, each as: Monday, P1, Subject, Level, Teacher, Room. Use level names such as Primary 2 or IGCSE. Do not invent a row.';
 
 async function readPhoto(image: string): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return '';
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://poketschool.ai',
-      'X-Title': 'Poket School',
-    },
-    body: JSON.stringify({
-      model: LIVE_MODEL,
+  if (!process.env.OPENROUTER_API_KEY) return '';
+  const response = await openRouterFetch({
+    chain: [LIVE_MODEL, ...['google/gemini-2.5-flash', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001']],
+    build: (model, fallbacks) => ({
+      model,
+      ...(fallbacks.length ? { models: [model, ...fallbacks] } : {}),
       max_tokens: 800,
       messages: [{
         role: 'user',
@@ -28,7 +25,8 @@ async function readPhoto(image: string): Promise<string> {
         ],
       }],
     }),
-  });
+  }).catch(() => null);
+  if (!response) return '';
   if (!response.ok) return '';
   const data = await response.json() as { choices?: { message?: { content?: unknown } }[] };
   const content = data.choices?.[0]?.message?.content;

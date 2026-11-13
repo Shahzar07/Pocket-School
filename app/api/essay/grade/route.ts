@@ -4,6 +4,9 @@ import { markEssayAtLevel, mergeModelMark } from '@/lib/essay/mark-level';
 import { criteriaFor, levelLabel, toEssayLevelId } from '@/lib/essay/scale-config';
 import { chat, MODELS } from '@/lib/study/ai';
 
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
+
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {

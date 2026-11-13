@@ -45,6 +45,8 @@ function cleanForSpeech(text: string): string {
 
 /** Prebuilt Gemini TTS voices. Each AI teacher is pinned to one of these so
  * students can recognise who is speaking without looking at the screen. */
+const TTS_MODELS = ['gemini-2.5-flash-preview-tts', 'gemini-2.5-flash-tts', 'gemini-2.5-pro-preview-tts'];
+
 const VOICES = [
   'Kore', 'Puck', 'Charon', 'Aoede', 'Leda', 'Zephyr',
   'Fenrir', 'Orus', 'Iapetus',
@@ -106,23 +108,35 @@ export async function POST(req: NextRequest) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-tts',
-      contents: [{ role: 'user', parts: [{ text }] }],
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: twoVoices
-          ? {
-              multiSpeakerVoiceConfig: {
-                speakerVoiceConfigs: [
-                  { speaker: 'Host', voiceConfig: { prebuiltVoiceConfig: { voiceName: voices.A } } },
-                  { speaker: 'Guest', voiceConfig: { prebuiltVoiceConfig: { voiceName: voices.B } } },
-                ],
-              },
-            }
-          : { voiceConfig: { prebuiltVoiceConfig: { voiceName: dialogue ? voices.A : voice } } },
-      },
-    });
+    const speechConfig = twoVoices
+      ? {
+          multiSpeakerVoiceConfig: {
+            speakerVoiceConfigs: [
+              { speaker: 'Host', voiceConfig: { prebuiltVoiceConfig: { voiceName: voices.A } } },
+              { speaker: 'Guest', voiceConfig: { prebuiltVoiceConfig: { voiceName: voices.B } } },
+            ],
+          },
+        }
+      : { voiceConfig: { prebuiltVoiceConfig: { voiceName: dialogue ? voices.A : voice } } };
+    // Preview voices are renamed and retired without much notice. Try each
+    // name in turn before handing the client the browser-voice fallback.
+    let response: Awaited<ReturnType<typeof ai.models.generateContent>> | null = null;
+    let lastError: unknown = null;
+    for (const model of TTS_MODELS) {
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents: [{ role: 'user', parts: [{ text }] }],
+          config: { responseModalities: ['AUDIO'], speechConfig },
+        });
+        break;
+      } catch (err) {
+        lastError = err;
+        const message = err instanceof Error ? err.message : String(err);
+        if (!/404|not found|not supported|deprecat|INVALID_ARGUMENT|400/i.test(message)) break;
+      }
+    }
+    if (!response) throw lastError ?? new Error('TTS failed');
 
     const b64 = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
     if (!b64) {
@@ -153,6 +167,6 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('[ai/audio]', err?.message || err);
     // Quota/model errors shouldn't brick the UI — let the client fall back.
-    return NextResponse.json({ fallback: true, reason: err?.message || 'TTS failed' });
+    return NextResponse.json({ fallback: true, reason: 'TTS failed' });
   }
 }

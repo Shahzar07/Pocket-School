@@ -1,6 +1,6 @@
 import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
-import { callOpenRouter, CONTENT_MODEL, VIDEO_MODEL } from '@/lib/openrouter';
+import { callOpenRouter, CONTENT_MODEL, friendlyAiError, VIDEO_MODEL } from '@/lib/openrouter';
 import { LANGUAGE_NAMES as LANG_NAMES } from '@/lib/languages';
 import { getTemplate, formatDirective, type ContentTemplate } from '@/lib/content-templates';
 import {
@@ -14,6 +14,9 @@ import {
   inventedNumbers, lessonUsesCjk, plannedSceneCount, questionsWithSingleAnswer,
   stripStrayCjk, stripStrayCjkFromQuiz, type QuizQuestion,
 } from '@/lib/cms-guards';
+
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 120;
 
 /** Video and audio scripts use the dedicated narrative model; everything
  * else uses the ultra-cheap content model. */
@@ -222,6 +225,13 @@ export async function POST(req: NextRequest) {
     // Curriculum CMS passes the lesson's authored generation brief; prepend it
     // so every format follows the curriculum team's instructions.
     const cappedContent = String(content).slice(0, MAX_CONTENT_CHARS);
+    // AI Studio sends a bare topic ("Topic: photosynthesis"), not a lesson.
+    // The prompts say "use only what is in the lesson", which left the model
+    // with nothing to write from and flagged every figure as invented.
+    const topicOnly = cappedContent.length < 600 && /^\s*Topic:/i.test(cappedContent);
+    const topicNote = topicOnly
+      ? '\n\nNOTE: no lesson text was supplied, only a topic, subject and level. Treat that as the brief. Write accurate, syllabus-standard content for that topic at that level from your own subject knowledge. Where an instruction above says to use only what appears in the lesson, use well-established facts instead. Never mention that a lesson is missing.'
+      : '';
     const brief = briefPrompt ? String(briefPrompt).slice(0, MAX_BRIEF_CHARS) : '';
     // Problems, mind maps, and infographics have a fixed shape. A lesson brief
     // that asks for study-note headings must not replace that shape.
@@ -278,6 +288,7 @@ export async function POST(req: NextRequest) {
         prompt += `\n\nSCENE PLAN: the brief already lists ${planned} scenes. Write exactly ${planned} scenes, one per planned scene, in the same order. Do not merge, drop, or add scenes.`;
       }
     }
+    prompt += topicNote;
     if (format === 'problems' && scaffold === true) {
       prompt += '\n\nAlso include a short "Idea" hint and a worked-example scaffold before the problems.';
     }
@@ -326,6 +337,7 @@ export async function POST(req: NextRequest) {
           { status: 422 },
         );
       }
+      if (topicOnly) return NextResponse.json({ result: stripStrayCjk(worked) });
       const prose = await groundProse(prompt, format, worked, cappedContent);
       return prose;
     }
@@ -341,6 +353,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ result: JSON.stringify(map) });
     }
 
+    if (format === 'infographic' && topicOnly) {
+      return NextResponse.json({ result: stripStrayCjk(text) });
+    }
+
     if (format === 'infographic') {
       const grounded = await groundedInfographic(prompt, text, cappedContent);
       return groundProse(prompt, format, grounded, cappedContent);
@@ -350,7 +366,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('[generate]', err);
     await noteGenerationFailure();
-    return NextResponse.json({ error: err.message || 'AI generation failed' }, { status: 500 });
+    return NextResponse.json({ error: friendlyAiError(err) }, { status: 500 });
   }
 }
 

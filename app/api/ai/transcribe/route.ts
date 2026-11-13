@@ -7,26 +7,32 @@ export const maxDuration = 60;
 
 const MAX_AUDIO = 2_500_000;
 
+/** Tried in order. A retired model answers 404 and the next one is used. */
+const TRANSCRIBE_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+
 async function transcribeWithGemini(apiKey: string, audio: string, mime: string, languageName: string): Promise<string | null> {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: `Transcribe this learner voice note in ${languageName}. Reply with only the spoken words. If the audio is silent, reply with an empty string.` },
-            { inline_data: { mime_type: mime, data: audio } },
-          ],
-        }],
-      }),
-    },
-  );
-  if (!response.ok) return null;
-  const payload = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-  const text = payload.candidates?.[0]?.content?.parts?.map(part => part.text ?? '').join(' ').trim() ?? '';
-  return text;
+  for (const model of TRANSCRIBE_MODELS) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: `Transcribe this learner voice note in ${languageName}. Reply with only the spoken words. If the audio is silent, reply with an empty string.` },
+              { inline_data: { mime_type: mime, data: audio } },
+            ],
+          }],
+        }),
+      },
+    );
+    if (response.status === 404 || response.status === 400) continue;
+    if (!response.ok) return null;
+    const payload = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    return payload.candidates?.[0]?.content?.parts?.map(part => part.text ?? '').join(' ').trim() ?? '';
+  }
+  return null;
 }
 
 /**

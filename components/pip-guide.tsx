@@ -197,6 +197,10 @@ export function PipGuide({ role, compact = false }: { role: TourRole; compact?: 
     let timer = 0;
     const begin = () => {
       if (cancel || tourWaitsForCookieConsent()) return;
+      // Not over the AI workspace: someone who opens ET AI wants to type, and
+      // the dimmed tour layer blocked the message box. It starts on the next
+      // dashboard page instead.
+      if (window.location.pathname.startsWith('/dashboard/studio')) return;
       timer = window.setTimeout(() => { startTour(defaultTour(role)); }, 400);
     };
     begin();

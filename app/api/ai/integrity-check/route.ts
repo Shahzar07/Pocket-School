@@ -2,6 +2,9 @@ import { enforceAiAccess } from '@/lib/api-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { callOpenRouter, SMART_MODEL } from '@/lib/openrouter';
 
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const denied = await enforceAiAccess(req);
   if (denied) return denied;

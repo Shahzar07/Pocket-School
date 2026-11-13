@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminFromVerifiedIdentity } from './admin-access';
 import { adminAuth, adminDb, isAdminConfigured } from './firebase-admin';
+import { bearerToken, lookupIdToken } from './identity-token';
 
 const buckets = new Map<string, { n: number; reset: number }>();
 
@@ -71,10 +72,35 @@ export async function requireUser(
   }
 }
 
-/** Guard for every AI route. Returns a response when the caller must be stopped. */
+/**
+ * Guard for every AI route. Returns a response when the caller must be stopped.
+ *
+ * The AI routes only need to know the caller is a signed-in account. Without
+ * a service account the Admin SDK cannot check that, and every AI feature
+ * used to answer 503. The ID token is a JWT signed by Google, so its
+ * signature, issuer and audience are checked against Google's public keys
+ * instead. That is the same check the Admin SDK performs.
+ */
 export async function enforceAiAccess(req: NextRequest): Promise<NextResponse | null> {
-  const result = await requireUser(req, { limit: 30, windowMs: 60_000 });
-  return isNextResponse(result) ? result : null;
+  if (isAdminConfigured()) {
+    const result = await requireUser(req, { limit: 30, windowMs: 60_000 });
+    return isNextResponse(result) ? result : null;
+  }
+  const token = bearerToken(req.headers.get('authorization'));
+  if (!token) {
+    return NextResponse.json({ error: 'Sign in required.', code: 'UNAUTHENTICATED' }, { status: 401 });
+  }
+  const identity = await lookupIdToken(token);
+  if (!identity) {
+    return NextResponse.json({ error: 'Your session has expired. Sign in again.', code: 'UNAUTHENTICATED' }, { status: 401 });
+  }
+  if (!rateLimit(`${identity.uid}:${req.nextUrl.pathname}`, 30, 60_000)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a moment and try again.', code: 'RATE_LIMIT' },
+      { status: 429 },
+    );
+  }
+  return null;
 }
 
 export async function loadUser(uid: string): Promise<Record<string, unknown> | null> {

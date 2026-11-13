@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { friendlyAiError } from '@/lib/openrouter';
 import { enforceAiAccess } from '@/lib/api-guard';
 import { chat, MODELS } from '@/lib/study/ai';
+
+/** Model calls outlast the platform default. Without this the request is cut off mid-answer. */
+export const maxDuration = 60;
 
 export const runtime = 'nodejs';
 
@@ -22,7 +26,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ text: text.trim() });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'ET AI is unavailable.';
-    return NextResponse.json({ error: message }, { status: 503 });
+    console.error('[draft]', error);
+    return NextResponse.json({ error: friendlyAiError(error) }, { status: 503 });
   }
 }
