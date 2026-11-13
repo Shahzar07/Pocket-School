@@ -1,0 +1,57 @@
+/* Role landing page: a sky hero with the first three actions in one card. */
+
+.dh-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; gap: 24px; align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  padding: clamp(20px, 3vw, 36px);
+  border-radius: 28px; border: 1px solid var(--ps-card-edge, var(--border));
+  background: #eaf6ff; color: #11131b;
+  box-shadow: 0 30px 70px -48px rgba(9, 106, 183, .55);
+}
+@media (min-width: 1024px) { .dh-hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
+.dh-hero__sky { position: absolute; inset: 0; z-index: -2; pointer-events: none; }
+.dh-hero__sky .scene-image { width: 100%; height: 100%; object-fit: cover; }
+.dh-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(234, 246, 255, .82), rgba(234, 246, 255, .25) 60%, transparent); pointer-events: none; }
+.dark .dh-hero { background: #101c28; color: #eff5fa; }
+.dark .dh-hero__sky { opacity: .22; }
+.dark .dh-hero::after { background: linear-gradient(90deg, rgba(16, 28, 40, .9), rgba(16, 28, 40, .5)); }
+
+.dh-eyebrow { font-size: 14px; font-weight: 500; opacity: .72; }
+.dh-name { margin-top: 4px; font-size: clamp(34px, 4.2vw, 56px); line-height: 1.02; letter-spacing: -.04em; font-weight: 700; }
+.dh-blurb { margin-top: 12px; max-width: 44ch; font-size: 15px; line-height: 1.55; opacity: .78; }
+
+.dh-children { display: flex; gap: 8px; margin-top: 18px; overflow-x: auto; padding-bottom: 2px; }
+.dh-child { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; font-size: 14px; font-weight: 600; background: rgba(255, 255, 255, .55); color: inherit; border: 1px solid transparent; transition: background-color .2s, border-color .2s; }
+.dh-child[aria-selected="true"] { background: #11131b; color: #fff; }
+.dark .dh-child { background: rgba(255, 255, 255, .08); }
+.dark .dh-child[aria-selected="true"] { background: #eff5fa; color: #11131b; }
+.dh-child span { margin-inline-start: 8px; font-size: 12px; font-weight: 500; opacity: .75; }
+
+.dh-actions {
+  border-radius: 22px; padding: 8px; background: rgba(255, 255, 255, .86); border: 1px solid rgba(255, 255, 255, .9);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: 0 24px 50px -34px rgba(17, 19, 27, .45);
+}
+.dark .dh-actions { background: rgba(23, 33, 45, .86); border-color: rgba(255, 255, 255, .08); }
+.dh-actions__title { padding: 10px 14px 6px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: #626976; }
+.dark .dh-actions__title { color: #b0bdcc; }
+.dh-action { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 10px 14px; border-radius: 16px; color: #11131b; transition: background-color .2s, transform .2s cubic-bezier(.2, .8, .2, 1); }
+.dark .dh-action { color: #eff5fa; }
+.dh-action + .dh-action { margin-top: 2px; }
+.dh-action:hover { background: #eaf6ff; }
+.dark .dh-action:hover { background: rgba(255, 255, 255, .06); }
+.dh-action__icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 14px; }
+.dh-action__text { min-width: 0; flex: 1; }
+.dh-action__label { display: block; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.dh-action__hint { display: block; margin-top: 2px; font-size: 13px; color: #626976; }
+.dark .dh-action__hint { color: #b0bdcc; }
+.dh-action__go { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; color: #626976; transition: transform .25s cubic-bezier(.2, .8, .2, 1), background-color .2s, color .2s; }
+.dh-action:hover .dh-action__go { background: #11131b; color: #fff; transform: translateX(2px); }
+[dir="rtl"] .dh-action__go svg { transform: scaleX(-1); }
+
+.dh-section-title { font-size: 20px; font-weight: 700; letter-spacing: -.025em; }
+
+.dh-in { animation: dh-settle .6s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes dh-settle { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dh-in { animation: none; } .dh-action, .dh-action__go { transition: none; } }

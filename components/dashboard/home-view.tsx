@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { Scene } from '@/components/poket-home/Brand';
+import './home-view.css';
 import {
   applyTileOrder,
   CATEGORY_STYLE,
@@ -77,51 +80,50 @@ export function HomeView({
 
   return (
     <div className="dash-kit space-y-5" data-dashboard-home={role}>
-      <header className="ps-hero-panel rounded-[24px] px-5 py-6 shadow-[var(--shadow-card)]">
-        <span className="ps-blob" style={{ insetInlineStart: 'auto' }} aria-hidden />
-        <span className="ps-blob-warm" style={{ insetInlineStart: 'auto', insetInlineEnd: '8%' }} aria-hidden />
-        <p className="relative text-sm font-medium text-foreground">{greetingFor(hour)}</p>
-        <h1 className="relative font-heading text-4xl tracking-tight text-foreground">{name}</h1>
-        <p className="relative mt-1 max-w-xl text-sm text-foreground">{home.blurb}</p>
-        {children.length > 0 ? (
-          <div className="relative mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Your children">
-            {children.map(child => {
-              const active = child.id === selected?.id;
-              return (
-                <button
-                  key={child.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setChildId(child.id)}
-                  className={`min-h-12 shrink-0 rounded-full px-4 text-sm font-semibold ${active ? 'bg-card text-foreground' : 'bg-card/60 text-muted-foreground'}`}
-                >
-                  {child.name}
-                  <span className="ms-2 text-xs font-medium opacity-80">{child.level}</span>
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-        <div className="relative mt-4 flex gap-2 overflow-x-auto pb-1">
+      <header className="dh-hero dh-in">
+        <div className="dh-hero__sky" aria-hidden="true"><Scene scene="sky" /></div>
+        <div className="min-w-0">
+          <p className="dh-eyebrow">{greetingFor(hour)}</p>
+          <h1 className="dh-name">{name}</h1>
+          <p className="dh-blurb">{home.blurb}</p>
+          {children.length > 0 ? (
+            <div className="dh-children" role="tablist" aria-label="Your children">
+              {children.map(child => {
+                const active = child.id === selected?.id;
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setChildId(child.id)}
+                    className="dh-child"
+                  >
+                    {child.name}
+                    <span>{child.level}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+        {/* The first three things to do, once. They used to appear as pills here and again as tiles below. */}
+        <nav className="dh-actions" aria-label="Start here">
+          <p className="dh-actions__title">Start here</p>
           {home.tasks.map(task => (
-            <Link
-              key={task.id}
-              href={task.href}
-              className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full bg-card px-4 text-sm font-semibold text-foreground"
-            >
-              <span style={{ color: CATEGORY_STYLE[task.category].ink }}><CategoryIcon category={task.category} className="h-5 w-5" /></span>
-              {task.label}
+            <Link key={task.id} href={task.href} className="dh-action">
+              <span className="dh-action__icon" style={{ background: CATEGORY_STYLE[task.category].wash, color: CATEGORY_STYLE[task.category].ink }}>
+                <CategoryIcon category={task.category} className="h-5 w-5" />
+              </span>
+              <span className="dh-action__text">
+                <span className="dh-action__label">{task.label}</span>
+                {task.hint ? <span className="dh-action__hint">{task.hint}</span> : null}
+              </span>
+              <span className="dh-action__go" aria-hidden><ArrowRight className="h-4 w-4" /></span>
             </Link>
           ))}
-        </div>
+        </nav>
       </header>
-
-      <section aria-label="Start here" className="grid gap-3 sm:grid-cols-3">
-        {home.tasks.map(task => (
-          <TileLink key={task.id} href={task.href} label={task.label} hint={task.hint} category={task.category} />
-        ))}
-      </section>
 
       <section aria-label="At a glance" className="grid gap-3 sm:grid-cols-3">
         {stats.map(stat => (
@@ -133,7 +135,7 @@ export function HomeView({
 
       <section aria-label="More">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="font-heading text-xl text-foreground">More</h2>
+          <h2 className="dh-section-title text-foreground">More</h2>
           {onArrange ? (
             <button
               type="button"
